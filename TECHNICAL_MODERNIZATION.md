@@ -821,9 +821,9 @@ Die Bewertung gilt für einen konkreten Produktionsrelease. `GO` bedeutet nicht 
 | Shop-Funktionen | Repository-Regressionssuite grün | CMS, Suche, Medien, Warenkorb, Checkout, Kontakt und Anfrage lokal bestanden | Mit realen Staging-Daten, Themes, Zahl-/Mailkonfigurationen kontrolliert Ende-zu-Ende prüfen | QA und Shop-Fachverantwortung | Abnahmeprotokoll aller kritischen Journeys ohne produktive Testübertragung | NO-GO |
 | Consent und Analytics | Consent- und Conversionsteuerung implementiert | 41 Serverfälle sowie Chromium-/Formularregressionen bestanden | Reale Dienste, Snippets, Datenschutzerklärung, Ziele und Anbieterempfang fachlich prüfen | Datenschutz- und Marketingverantwortung | Kein Dienst vor Einwilligung; Ablehnung/Widerruf wirksam; freigegebene Events korrekt empfangen | NO-GO |
 | Sicherheit und Mandantenisolierung | Umfangreiche negative Regressionen grün | Berechtigungs-, Tenant-, Datei-, Session-, Host-, CSRF-, Injection-, Cache- und Checkouttests bestanden | Zielkonfiguration, Secrets, Berechtigungsrollen, Logs und externe CDN-/Embeddingquellen abnehmen | Sicherheits- und Anwendungsverantwortung | Keine offene kritische Abweichung; dokumentierte Konfigurations- und Rollenprüfung | NO-GO |
-| SEO und Redirects | Technische Ausgabe, Inhaltsprüfung, automatische Historie und sichere aktuelle Slash-Normalisierung implementiert | 39 Crawler-, 49 Metadaten-, 37 Robots/Sitemap-, 148 URL-/Such-, 71 Slug- und 35 Legacy-HTML-Fälle bestanden | Vollständige Alt-URL-Liste fachlich zuordnen; reale Website crawlen und Inhaltsbefunde schließen | SEO- und Contentverantwortung | Keine defekten internen Links, Ketten, falschen Canonicals oder ungeklärten wichtigen Alt-/WYSIWYG-Inhalte | NO-GO |
+| SEO und Redirects | Technische Ausgabe, Inhaltsprüfung, automatische Historie und sichere aktuelle Slash-Normalisierung implementiert | 39 Crawler-, 50 Metadaten-, 37 Robots/Sitemap-, 151 URL-/Such-, 71 Slug- und 35 Legacy-HTML-Fälle bestanden | Vollständige Alt-URL-Liste fachlich zuordnen; reale Website crawlen und Inhaltsbefunde schließen | SEO- und Contentverantwortung | Keine defekten internen Links, Ketten, falschen Canonicals oder ungeklärten wichtigen Alt-/WYSIWYG-Inhalte | NO-GO |
 | Reale Staging-Inhalte | Kein freigegebenes Ziel vorhanden | Ausschließlich synthetische lokale Inhalte geprüft | Medien, WYSIWYG, Einbettungen, Menüs, Rechtstexte, Formulare und Mixed Content real prüfen | Content-, Datenschutz- und QA-Verantwortung | Vollständiger archivierter Crawl und fachliche Inhaltsabnahme ohne P0/P1-Befund | NICHT GEPRÜFT |
-| Manuelle Accessibility-Prüfung | Automatisierte Basis grün | 95 Chromium-Fälle; kein vollständiger WCAG-Nachweis | Screenreader, Tastatur, Zoom, Forced Colors, Touch, reale Themes/Inhalte manuell prüfen | Accessibility- und QA-Verantwortung | Dokumentierte manuelle Abnahme der vereinbarten WCAG-2.2-AA-Stichprobe | NICHT GEPRÜFT |
+| Manuelle Accessibility-Prüfung | Automatisierte Basis grün | 98 Chromium-Fälle; kein vollständiger WCAG-Nachweis | Screenreader, Tastatur, Zoom, Forced Colors, Touch, reale Themes/Inhalte manuell prüfen | Accessibility- und QA-Verantwortung | Dokumentierte manuelle Abnahme der vereinbarten WCAG-2.2-AA-Stichprobe | NICHT GEPRÜFT |
 | Deployment und Rollback | Reihenfolge und zustandsabhängiger Rollback dokumentiert | Synthetische Restore- und technische Regressionen bestanden | Wartungsfenster, Rollen, Stop-/Rollbackkriterien und vollständige Generalprobe bestätigen | Releaseleitung und Betrieb | Abgezeichnetes Runbook, getesteter Snapshot, erreichbare Verantwortliche und erfolgreiche Generalprobe | NO-GO |
 
 Gesamtbewertung: **NO-GO für einen Produktionsrelease**, bis alle NO-GO- und NICHT-GEPRÜFT-Punkte mit installationsbezogenen Nachweisen geschlossen und durch den Betreiber ausdrücklich freigegeben wurden. Der Repository-Stand selbst ist kein Ersatz für diese Entscheidung.
@@ -839,18 +839,18 @@ Konkret releaseblockierend bleiben der gelesene Datenbankzustand bestehender bez
 | JavaScript-Ausführung | Chromium-Frontend-, Conversion-, Navigation-, Formular- und Accessibility-Prüfungen bestanden; ein eigenständiges Node.js-Binary ist in der Testumgebung nicht installiert |
 | Consent-gesteuerte Conversionmarker, sofortiger Widerruf, Datenminimierung, Einmaligkeit, Schnittstellen- und Shopisolation | 41 Prüfungen bestanden |
 | Reale lokale HTTP-Crawler-, SEO-, Redirect-, Sitemap-, Ressourcen-, Legacy-HTML-, Bildperformance- und Begrenzungsfälle | 39 Prüfungen bestanden |
-| SEO-Metadaten, Open Graph, Breadcrumbs, strukturierte Daten und Überschriften | 49 Prüfungen bestanden |
+| SEO-Metadaten, Open Graph, Breadcrumbs, strukturierte Daten und Überschriften | 50 Prüfungen bestanden |
 | Legacy-HTML-Filter, normale/AJAX-Speicherwege, H1, Links, Bilder, Styles und Einbettungen | 35 Prüfungen bestanden |
-| Technische HTML5-/Indexierungs-/Header-/Consent-Baseline einschließlich dynamischer No-Store-Policy sowie strikter Host-, Port-, Basispfad- und Origin-Prüfung | 103 Prüfungen bestanden |
+| Technische HTML5-/Indexierungs-/Header-/Consent-Baseline einschließlich dynamischer No-Store-Policy sowie strikter Host-, Port-, Basispfad- und Origin-Prüfung | 132 Prüfungen bestanden |
 | Robots, Sitemap, normalisierte kanonische Basis-URL, Routing und Isolation | 37 Prüfungen bestanden |
 | Isolierte Apache-HTTP-/HTTPS-, Canonical-Host-, Methoden-, ACME-, Proxy-Header- und TLS-Header-Prüfung | 35 Prüfungen bestanden; temporäres selbstsigniertes Zertifikat, keine externe Verbindung |
 | Slug-Normalisierung, Tag-HTML-Speicherwege, Hierarchie, Kollisionen, Redirect-Erzeugung und Kompatibilität | 71 Prüfungen bestanden |
-| Site-CMS-Struktur, öffentliche Fehlerdarstellung, inhaltsversionierte Assets, Accessibility, SRI, Bildpriorisierung und responsive Medienflächen | 191 Prüfungen bestanden |
+| Site-CMS-Struktur, öffentliche Fehlerdarstellung, inhaltsversionierte Assets, Accessibility, SRI, Bildpriorisierung und responsive Medienflächen | 197 Prüfungen bestanden |
 | Dateizugriff, öffentliche Medienvalidatoren/304, private No-Store-Policy, Medienvarianten, LCP-Attribute und Mandantenisolation | 395 Prüfungen bestanden |
 | Isolierte Chromium-Bildprioritäts-, Doppeldownload-, CLS- und Übertragungsmessung | 4 Prüfungen bestanden; LCP-/INP-Grenzen ausdrücklich dokumentiert |
-| Reale jQuery-/Bootstrap-Dateien in Chromium: öffentliche Komponenten, Navigation, Shop-Abläufe, AJAX, Conversion-Dispatcher, Suche und Checkout | 75 Prüfungen bei 500 und 1365 Pixeln bestanden; keine Browser-/Ressourcenfehler |
-| ChromeDriver-Tastatur, Fokus, ARIA, Consent, Tracking-Requests, Formulare, Warenkorb, Header-Komponenten, Kontrast und Reflow | 95 Prüfungen bei 320, 375, 500, 768 und 1365 Pixeln bestanden |
-| Öffentliche Suche, kanonische URL-Varianten, Querybehandlung, interne Ergebnislinks, 301-/410-Auflösung und Statusverhalten | 148 Prüfungen bestanden |
+| Reale jQuery-/Bootstrap-Dateien in Chromium: öffentliche Komponenten, Navigation, Shop-Abläufe, AJAX, Conversion-Dispatcher, Suche und Checkout | 79 Prüfungen bei 500 und 1365 Pixeln bestanden; keine Browser-/Ressourcenfehler |
+| ChromeDriver-Tastatur, Fokus, ARIA, Consent, Tracking-Requests, Formulare, Warenkorb, Header-Komponenten, Kontrast und Reflow | 98 Prüfungen bei 320, 375, 500, 768 und 1365 Pixeln bestanden |
+| Öffentliche Suche, kanonische URL-Varianten, Querybehandlung, interne Ergebnislinks, 301-/410-Auflösung und Statusverhalten | 151 Prüfungen bestanden |
 | Öffentliche HTML-/JSON-/HEAD-Fehlerantworten, Canonical- und Noindex-Verhalten | 10 Prüfungen bestanden |
 | Manuelle historische Redirects und 410-Pfade, CSV-Vorschau/-Import, Konflikte, CSRF, Isolation, Root-/Unterpfade und Transaktionsrollback | 61 Prüfungen bestanden |
 | Manuelle Shopzuordnung und Varianten | 26 Prüfungen bestanden |
@@ -863,7 +863,7 @@ Konkret releaseblockierend bleiben der gelesene Datenbankzustand bestehender bez
 | Isolierte Checkout-Transaktion, Rollback, Replay, Parallelität und Isolation | 17 Prüfungen bestanden |
 | Kontaktpersonen | 66 Prüfungen bestanden |
 | Kontaktrollen | 32 Prüfungen bestanden |
-| Berechtigungen | 408 Prüfungen bestanden |
+| Berechtigungen | 414 Prüfungen bestanden |
 | Adminzugriff einschließlich historischer Redirect-Aktionen | 68 Prüfungen bestanden |
 | Mandantenzugriff | 268 Prüfungen bestanden |
 | Mandantenwechsel | 53 Prüfungen bestanden |
@@ -1278,6 +1278,64 @@ Inhalt:
 - Präzise zustandsabhängige Nacharbeitsübersicht für teilweise migrierte 1.1.8-Installationen einschließlich Checkout-Token, Unique-Index und `slugredirect.status`.
 - Aktualisierte Release-NO-GO-Matrix, spätere Modernisierungen und kompakte Übergabedaten für einen folgenden Entwicklungs-Chat.
 
+### Commit 30: `fix oversized shop category images`
+
+Inhalt:
+
+- Getrennte, responsive Medienflächen für Kategorie-Karten und Kategorie-Detailansicht ohne Eingriff in Produktgalerien, Hero-Bilder oder Slider.
+- Erhalt der zentralen Bildausgabe, responsiven Quellen, Lazy-Loading- und Priorisierungsregeln.
+- Ergänzte CSS-, Struktur- und Chromium-Regressionen für breite und hochformatige Kategoriebilder.
+
+### Commit 31: `fix shop cookie consent actions`
+
+Inhalt:
+
+- Websitebezogene Consent-Action und sichere Rückkehr auf Root- und Unterverzeichnisinstallationen.
+- Unveränderte Same-Origin-, Cookie-, Consent-Gating- und Mandantenschutzregeln für Zustimmung, Ablehnung und spätere Änderung.
+- Ergänzte Server-, Routing- und echte Chromium-Regressionen für beide Consent-Entscheidungen.
+
+### Commit 32: `avoid empty shop category image areas`
+
+Inhalt:
+
+- Kategorie-Medienflächen werden nur ausgegeben, wenn tatsächlich ein verwendbares öffentliches Bild vorhanden ist.
+- Textkarten ohne Bild erhalten keinen künstlichen Leerraum; vorhandene Medienmechanismen bleiben unverändert.
+
+### Commit 33: `harden shop consent return paths`
+
+Inhalt:
+
+- Rückkehrpfade bleiben auf die aktive Website und deren Basispfad begrenzt.
+- Doppelte Separatoren, Punktsegmente, kodierte Pfadtrenner, Doppel-Kodierung und Response-Splitting werden abgewiesen.
+
+### Commit 34: `hide invalid shop category media overlays`
+
+Inhalt:
+
+- Nicht verwendbare Kategorie-Medien erzeugen weder leere Overlays noch leere interaktive Ziele.
+- Karten- und Detaildarstellung bleiben getrennt und auf gültige Bildausgaben begrenzt.
+
+### Commit 35: `reject ambiguous site base paths`
+
+Inhalt:
+
+- Kanonische Basispfade und eingehende Resolverpfade weisen mehrdeutige Separatoren, Backslashes, Leerraum, fehlerhafte Prozentkodierung und Doppel-Kodierung vor der Websiteauswahl ab.
+- Korrekt UTF-8-kodierte Pfade bleiben erlaubt; negative Routing- und Mandantenregressionen wurden ergänzt.
+
+### Commit 36: `preserve encoded consent base paths`
+
+Inhalt:
+
+- Consent-Rückkehrpfade werden gegen den dekodierten kanonischen Basispfad verglichen, während Redirect und Fallback die gültige kodierte URL-Form behalten.
+- Zustimmung, Ablehnung und der POST-Endpunkt bleiben auch unter UTF-8-kodierten Installationspfaden korrekt begrenzt.
+
+### Commit 37: `update site modernization review results`
+
+Inhalt:
+
+- Aktualisierte Prüfzähler nach den gezielten Bild-, Consent-, Routing- und Sicherheitsregressionen.
+- Dauerhaft prüfbare Git-Übergabe ohne schnell veraltende Aussage über den aktuellen Remote- oder Branchabstand.
+
 Wegen der Schemaänderungen in Commit 3, Commit 6 und Commit 26 darf der Gesamtstand nicht ohne abgestimmte Deployment-Migration ausgerollt werden.
 
 ## 12. Abschlussstatus und Übergabe für den nächsten Chat
@@ -1299,7 +1357,7 @@ Wegen der Schemaänderungen in Commit 3, Commit 6 und Commit 26 darf der Gesamts
 
 ### Git und Datenbank
 
-- Geprüfter Ausgangs-HEAD für Phase 6.5 ist `927724ed4839d287431becc6a19cec67d9fae92d` (`complete site url and seo consistency review`); `origin/master` steht auf `0e8a7750`. Nach dem Abschluss liegen lokal genau dieser Commit und der Commit `complete site modernization final review`, der diesen Abschnitt enthält, vor `origin/master`. Dessen Hash ist wegen der unmöglichen Selbstreferenz nicht im eigenen Commitinhalt gespeichert und ist mit `git rev-parse HEAD` eindeutig abrufbar.
+- Geprüfter Ausgangs-HEAD für Phase 6.5 war `927724ed4839d287431becc6a19cec67d9fae92d` (`complete site url and seo consistency review`); der Abschlusscommit ist `7a553e6d` (`complete site modernization final review`). Die anschließend geprüften Bugfixes sind in Commit 30 bis 36 dokumentiert. Den jeweils aktuellen lokalen HEAD, Remote-Stand und Branchabstand verbindlich mit `git rev-parse HEAD`, `git rev-parse origin/master` und `git status --short --branch` ermitteln; diese beweglichen Werte werden nicht als dauerhafter Dokumentationsstatus festgeschrieben.
 - Der veröffentlichte Produktstand bleibt 1.1.7; die nächste und einzige laufende Migration ist `install/config/update-1.1.7-1.1.8.sql`. Es existiert keine 1.1.9-Migration.
 - Neuinstallation und vollständiges Upgrade auf 1.1.8 wurden auf einer temporären MariaDB erfolgreich geprüft. Enthalten sind unter anderem `shop.indexable`, Kontakt-/Rollen-, Anfrage-, Lagerplanungs-, `slugredirect`- einschließlich `status`- sowie `shoporder.token`-/Unique-Index-Änderungen.
 - Teilweise manuell aktualisierte Installationen dürfen nicht die gesamte Migration erneut ausführen. Vor jeder Nacharbeit sind ausschließlich lesend die fünf Zustände aus Abschnitt 6.2 festzustellen und nur die dort bezeichneten offiziellen Schritte nach vollständigem Backup anzuwenden.
