@@ -95,15 +95,18 @@ class DEEC_Pdf
 		$file = $this->getOutputFile($payload);
 
 		if (empty($payload['meta']['overwrite']) && $file['exists']) {
+			self::assertCompletePdfFile($file['path']);
+			if (!empty($payload['meta']['createOriginal'])) throw new RuntimeException('Original PDF path is already occupied');
 			return $file;
 		}
 
-		if (empty($payload['meta']['overwrite']) && $this->restorePdfAttachment($payload, $file)) {
-			return $this->getOutputFile($payload);
+		if (empty($payload['meta']['overwrite']) && empty($payload['meta']['createOriginal']) && $this->restorePdfAttachment($payload, $file)) {
+			$file = $this->getOutputFile($payload);
+			self::assertCompletePdfFile($file['path']);
+			return $file;
 		}
 
-		if ($payload['meta']['module'] === 'sales' && in_array($payload['meta']['controller'], ['invoice', 'creditnote'], true)
-			&& DEEC_Permission::isDocumentReadonly('sales', $payload['meta']['controller'], $payload['document'])
+		if (DEEC_Permission::isDocumentReadonly($payload['meta']['module'], $payload['meta']['controller'], $payload['document'])
 			&& empty($request['createOriginal'])) {
 			throw new RuntimeException('Original PDF is unavailable');
 		}
@@ -170,6 +173,7 @@ class DEEC_Pdf
 				'templateid' => $issued ? null : ($templateId ?: null),
 				'storage' => $issued ? 'contact' : (string)($request['storage'] ?? 'cache'),
 				'overwrite' => !$issued && !empty($request['overwrite']),
+				'createOriginal' => !empty($request['createOriginal']),
 				'baseUrl' => $view->baseUrl(),
 			],
 			'document' => $document,
@@ -334,6 +338,7 @@ class DEEC_Pdf
 	{
 		$file = $this->getOutputFile($payload);
 		$this->mkdirp(dirname($file['path']));
+		if (!empty($payload['meta']['createOriginal']) && $file['exists']) throw new RuntimeException('Original PDF path is already occupied');
 
 		if (!empty($payload['meta']['overwrite'])) {
 			$pdf->Output($file['path'], 'F');
@@ -343,14 +348,16 @@ class DEEC_Pdf
 
 			try {
 				$pdf->Output($tempFile, 'F');
+				self::assertCompletePdfFile($tempFile);
 				$this->publishPdfFile($tempFile, $file, $payload, 'render');
 			} finally {
-				unlink($tempFile);
+				if (is_file($tempFile)) unlink($tempFile);
 			}
 		}
 
 		clearstatcache(true, $file['path']);
 		$file['exists'] = is_file($file['path']);
+		self::assertCompletePdfFile($file['path']);
 
 		return $file;
 	}
@@ -365,6 +372,7 @@ class DEEC_Pdf
 		DEEC_Emailattachment::checkPath($attachment);
 
 		if (!is_file($attachment)) return false;
+		self::assertCompletePdfFile($attachment);
 
 		$this->mkdirp(dirname($file['path']));
 		$tempFile = tempnam(dirname($file['path']), '.pdf-');
@@ -372,9 +380,13 @@ class DEEC_Pdf
 
 		try {
 			if (!copy($attachment, $tempFile)) throw new RuntimeException('Could not restore PDF attachment');
+			self::assertCompletePdfFile($tempFile);
 			$this->publishPdfFile($tempFile, $file, $payload, 'attachment');
+			if (!hash_equals(hash_file('sha256', $attachment), hash_file('sha256', $file['path']))) {
+				throw new RuntimeException('Restored PDF differs from attachment');
+			}
 		} finally {
-			unlink($tempFile);
+			if (is_file($tempFile)) unlink($tempFile);
 		}
 
 		return true;
@@ -392,7 +404,29 @@ class DEEC_Pdf
 		}
 
 		clearstatcache(true, $file['path']);
-		if (!is_file($file['path'])) throw new RuntimeException('Could not store PDF file');
+		if (!empty($payload['meta']['createOriginal'])) throw new RuntimeException('Original PDF publication conflict');
+		self::assertCompletePdfFile($file['path']);
+	}
+
+	public static function assertCompletePdfFile(string $path): void
+	{
+		clearstatcache(true, $path);
+		if (!is_file($path) || !is_readable($path) || filesize($path) < 12) {
+			throw new RuntimeException('PDF file is incomplete');
+		}
+		$handle = @fopen($path, 'rb');
+		if (!$handle) throw new RuntimeException('PDF file is incomplete');
+		try {
+			$header = fread($handle, 5);
+			$length = filesize($path);
+			fseek($handle, max(0, $length - 2048));
+			$tail = stream_get_contents($handle);
+		} finally {
+			fclose($handle);
+		}
+		if ($header !== '%PDF-' || !str_ends_with(rtrim((string)$tail), '%%EOF')) {
+			throw new RuntimeException('PDF file is incomplete');
+		}
 	}
 
 	protected function getOutputFile(array $payload): array

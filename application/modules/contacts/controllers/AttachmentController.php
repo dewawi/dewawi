@@ -62,6 +62,7 @@ class Contacts_AttachmentController extends DEEC_Controller_Action
 				if($error !== UPLOAD_ERR_OK || !$upload->isUploaded($file)) return $this->uploadError('MESSAGES_UPLOAD_FAILED');
 				if(!in_array(strtolower(pathinfo((string)$info['name'], PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'csv', 'zip'], true)) return $this->uploadError('MESSAGES_UPLOAD_TYPE');
 				if(!$upload->isValid($file) || !DEEC_Emailattachment::validUpload((string)$info['name'], (string)$info['tmp_name'])) return $this->uploadError('MESSAGES_UPLOAD_TYPE');
+				$db->assertUploadFilename($context, (string)$module, (string)$controller, (string)$info['name']);
 				$path = $destination . '/' . $info['name'];
 				DEEC_Emailattachment::checkPath($path);
 				if(file_exists($path) || isset($names[$info['name']])) return $this->uploadError('MESSAGES_UPLOAD_EXISTS', 409);
@@ -252,6 +253,7 @@ class Contacts_AttachmentController extends DEEC_Controller_Action
 				$attachment = $db->getEmailattachment($id, 'delete');
 				if(!$attachment) return $this->reject();
 				DEEC_Emailattachment::getPath($attachment, false);
+				$db->assertEmailattachmentDeletable($attachment);
 			}
 			foreach(array_unique($ids) as $id) $db->deleteEmailattachment($id);
 		} catch(Exception $e) {

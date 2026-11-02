@@ -297,37 +297,41 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 	protected function generatePdfDocument(int $id, array $options = []): array
 	{
 		$row = $this->loadRow($id);
-		$createOriginal = false;
 
 		if (!$row) {
 			throw new RuntimeException('Document not found');
 		}
 
-		if (!empty($options['finalize'])) {
-			if (empty($row[$this->getDocumentNumberField()])) {
-				$db = $this->getDb();
-				$adapter = $db->getAdapter();
-				$adapter->beginTransaction();
-				try {
-					$row = $db->getByIdForUpdate($id);
-					if (!$row) throw new RuntimeException('Document not found');
-					if (empty($row[$this->getDocumentNumberField()])) {
-						$this->assertDocumentCanFinalize($row);
-						$createOriginal = true;
-						$this->_helper->Calculate($id, $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName());
-						$row = $this->loadRow($id);
-					}
+		if (!empty($options['finalize']) && empty($row[$this->getDocumentNumberField()])) {
+			$db = $this->getDb();
+			$adapter = $db->getAdapter();
+			$adapter->beginTransaction();
+			try {
+				$row = $db->getByIdForUpdate($id);
+				if (!$row) throw new RuntimeException('Document not found');
+				if (empty($row[$this->getDocumentNumberField()])) {
+					$this->assertDocumentCanFinalize($row);
+					$this->_helper->Calculate($id, $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName());
+					$row = $this->loadRow($id);
 					$row = $this->finalizeDocument($row);
+					$result = $this->generatePdf($row, $options, true);
 					$adapter->commit();
-				} catch (Throwable $exception) {
-					$adapter->rollBack();
-					throw $exception;
+					return $result;
 				}
-			} else {
-				$row = $this->finalizeDocument($row);
+				$adapter->commit();
+			} catch (Throwable $exception) {
+				$adapter->rollBack();
+				throw $exception;
 			}
+		} elseif (!empty($options['finalize'])) {
+			$row = $this->finalizeDocument($row);
 		}
 
+		return $this->generatePdf($row, $options, false);
+	}
+
+	protected function generatePdf(array $row, array $options, bool $createOriginal): array
+	{
 		$pdf = new DEEC_Pdf();
 
 		return $pdf->generate([

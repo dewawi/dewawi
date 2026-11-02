@@ -135,6 +135,12 @@ foreach ([false, true] as $shared) {
     check(!$media->allowed('contacts/7/0/7/1/0/100', 'contacts/7/0/7/1/0/100/invoice.pdf'), 'Manager bypassed invoice permissions');
     check($media->allowed('contacts/7/0/7/1/0/100', 'contacts/7/0/7/1/0/100/quote.pdf'), 'Manager denied authorized document read');
     check(!$media->allowed('contacts/7/0/7/1/0/100', 'contacts/7/0/7/1/0/100/quote.pdf', 'edit'), 'Manager bypassed document write permission');
+    $adapter->rows['permission'][0]['sales'] = '{"quote":["view","edit"]}';
+    check(!$media->allowed('contacts/7/0/7/1/0/100', 'contacts/7/0/7/1/0/100/quote.pdf', 'edit'), 'Manager edit permission allowed replacing an issued original');
+    unlink(BASE_PATH . '/files/contacts/7/0/7/1/0/100/quote.pdf');
+    check(!$media->allowed('contacts/7/0/7/1/0/100', 'contacts/7/0/7/1/0/100/quote.pdf', 'edit'), 'Manager upload could pre-empt a missing issued original');
+    storedFixture('files/contacts/7/0/7/1/0/100/quote.pdf');
+    $adapter->rows['permission'][0]['sales'] = '{"quote":["view"]}';
     check(storedResponse('files/contacts/7/0/7/1/0/100/quote.pdf')[0] === 200, 'Quote permission lost');
     $adapter->rows['invoice'][0]['deleted'] = 1;
     check(storedResponse('files/contacts/7/0/7/1/0/100/invoice.pdf')[0] === 404, 'Deleted invoice released as an ordinary contact file');

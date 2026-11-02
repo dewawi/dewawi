@@ -87,7 +87,8 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 					if (count($matches) !== 1) return false;
 					[$module, $controller, $documentId] = $matches[0];
 					$context = $this->getParentContext($documentId, $module, $controller, $action);
-					return $context && $context['clientid'] === (int)$owner;
+					return $context && $context['clientid'] === (int)$owner
+						&& ($action === 'view' || !DEEC_Permission::isDocumentReadonly($module, $controller, $context['parent']));
 				}
 			}
 			$context = $this->getParentContext($id, $kind === 'contacts' ? 'contacts' : 'items', $kind === 'contacts' ? 'contact' : 'item', $action);
@@ -181,6 +182,7 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 	{
 		$context = $this->getParentContext($data['documentid'] ?? 0, $data['module'] ?? '', $data['controller'] ?? '', 'upload');
 		if(!$context) throw new RuntimeException('Attachment access denied');
+		$this->assertUploadFilename($context, (string)($data['module'] ?? ''), (string)($data['controller'] ?? ''), (string)($data['filename'] ?? ''));
 		$data['clientid'] = $context['clientid'];
 		DEEC_Emailattachment::getPath($data);
 		$data['uploaded'] = $this->_date;
@@ -215,16 +217,25 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 		$contactUrl = $directory->getUrl((string)(int)$document['contactid'], (string)$context['clientid']);
 		$documentUrl = $directory->getUrl((string)$document['id'], (string)$context['clientid']);
 		$filename = (string)($document['filename'] ?? '');
+		$source = realpath(BASE_PATH) . '/files/contacts/' . $contactUrl . '/' . $filename;
+		DEEC_Emailattachment::checkPath($source);
 		$attachments = $this->getEmailattachments($document['id'], $module, $controller);
 		$exists = false;
 		foreach($attachments as $attachment) {
-			if($attachment['filename'] === $filename) $exists = true;
+			if($attachment['filename'] === $filename) {
+				$exists = true;
+				$attachmentPath = DEEC_Emailattachment::getPath($attachment);
+				DEEC_Pdf::assertCompletePdfFile($attachmentPath);
+				if (is_file($source)) {
+					DEEC_Pdf::assertCompletePdfFile($source);
+					if (!hash_equals(hash_file('sha256', $source), hash_file('sha256', $attachmentPath))) throw new RuntimeException('Attachment differs from original PDF');
+				}
+			}
 		}
 		if(!$exists && (int)$document['contactid'] > 0 && DEEC_Emailattachment::validFilename($filename)) {
-			$source = realpath(BASE_PATH) . '/files/contacts/' . $contactUrl . '/' . $filename;
 			$target = DEEC_Emailattachment::getDirectory($module, $controller, (int)$document['id'], $context['clientid']);
-			DEEC_Emailattachment::checkPath($source);
 			if(is_file($source)) {
+				DEEC_Pdf::assertCompletePdfFile($source);
 				if(!is_dir($target) && !mkdir($target, 0775, true) && !is_dir($target)) throw new RuntimeException('Attachment directory is not available');
 				$path = $target . '/' . $filename;
 				DEEC_Emailattachment::checkPath($path);
@@ -241,6 +252,8 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 					if($input) fclose($input);
 					fclose($output);
 				}
+				DEEC_Pdf::assertCompletePdfFile($path);
+				if (!hash_equals(hash_file('sha256', $source), hash_file('sha256', $path))) throw new RuntimeException('Attachment differs from original PDF');
 				// Register the stored document copy using its verified parent, not posted upload data.
 				try {
 					$this->insert([
@@ -279,11 +292,35 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 	{
 		$attachment = $this->getEmailattachment($id, 'delete');
 		if(!$attachment) throw new RuntimeException('Attachment access denied');
+		$this->assertEmailattachmentDeletable($attachment);
 		$path = DEEC_Emailattachment::getPath($attachment, false);
 		$this->update(['deleted' => 1], $this->attachmentWhere($attachment));
 		$references = $this->fetchAll($this->select()->where('clientid = ?', (int)$attachment['clientid'])
 			->where('documentid = ?', (int)$attachment['documentid'])->where('module = ?', $attachment['module'])
 			->where('controller = ?', $attachment['controller'])->where('filename = ?', $attachment['filename'])->where('deleted = ?', 0));
 		if(count($references) === 0 && is_file($path) && !unlink($path)) throw new RuntimeException('Attachment could not be deleted');
+	}
+
+	public function assertEmailattachmentDeletable(array $attachment): void
+	{
+		$context = $this->getParentContext($attachment['documentid'] ?? 0, (string)($attachment['module'] ?? ''), (string)($attachment['controller'] ?? ''), 'delete');
+		if (!$context) throw new RuntimeException('Attachment access denied');
+		if ($this->isOriginalDocumentFile($context['parent'], (string)$attachment['module'], (string)$attachment['controller'], (string)$attachment['filename'])) {
+			throw new RuntimeException('Original document attachment is immutable');
+		}
+	}
+
+	public function assertUploadFilename(array $context, string $module, string $controller, string $filename): void
+	{
+		if ($this->isOriginalDocumentFile((array)($context['parent'] ?? []), $module, $controller, $filename)) {
+			throw new RuntimeException('Original document attachment is immutable');
+		}
+	}
+
+	private function isOriginalDocumentFile(array $document, string $module, string $controller, string $filename): bool
+	{
+		return DEEC_Permission::isDocument($module, $controller) && $filename !== ''
+			&& hash_equals((string)($document['filename'] ?? ''), $filename)
+			&& DEEC_Permission::isDocumentReadonly($module, $controller, $document);
 	}
 }

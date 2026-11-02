@@ -157,7 +157,7 @@ class MediaController extends DEEC_Controller_Action
 		if ($folder !== '' && $path !== $folder && !str_starts_with($path, $folder . '/')) return false;
 		$target = $base . $path;
 		try { DEEC_Emailattachment::checkPath(rtrim($target, '/')); } catch (Exception $exception) { return false; }
-		if ($base === BASE_PATH . '/files/' && is_file($target) && preg_match('~^(contacts|items)/~', $path)
+		if ($base === BASE_PATH . '/files/' && !is_dir($target) && preg_match('~^(contacts|items)/~', $path)
 			&& !(new Contacts_Model_DbTable_Emailattachment())->canReadStoredFile('files/' . $path, $action)) return false;
 		while (!file_exists($target) && !is_link($target)) $target = dirname($target);
 		$real = realpath($target);

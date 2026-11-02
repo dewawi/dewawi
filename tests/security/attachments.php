@@ -330,9 +330,31 @@ foreach (['sales' => 'quote', 'purchases' => 'purchaseorder', 'processes' => 'pr
     check(file_get_contents(DEEC_Emailattachment::getPath($attachment)) === $original, 'Stored PDF bytes changed');
     check(count($service->sync($document, [], $controller)['attachments']) === 1, 'Repeated synchronization duplicated metadata');
     check(attachmentAction('download', ['id' => $attachment['id']])[0] === 200, 'Stored PDF unavailable for download');
-    check(attachmentAction('delete', [], 'POST', ['id' => [$attachment['id']]])[0] === 200, 'Stored PDF could not be deleted');
-    check(file_get_contents($source) === $original, 'Deleting an attachment modified the original document');
+    $attachmentPath = DEEC_Emailattachment::getPath($attachment);
+    file_put_contents($attachmentPath, "%PDF-1.4\nChanged archived document\n%%EOF\n");
+    try {
+        $service->sync($document, [], $controller);
+        throw new LogicException('Divergent original attachment was accepted');
+    } catch (RuntimeException $expected) {
+        check($expected->getMessage() === 'Attachment differs from original PDF', 'Unexpected divergent attachment error');
+    }
+    file_put_contents($attachmentPath, $original);
+    $deleteStatus = attachmentAction('delete', [], 'POST', ['id' => [$attachment['id']]])[0];
+    if (DEEC_Permission::isDocument($module, $controller)) {
+        check($deleteStatus === 404 && is_file($attachmentPath), 'Issued document attachment could be deleted');
+    } else {
+        check($deleteStatus === 200 && !is_file($attachmentPath), 'Ordinary process attachment could not be deleted');
+    }
+    check(file_get_contents($source) === $original, 'Attachment operation modified the original document');
 }
+
+// A user upload may not pre-empt the immutable attachment name of an issued document.
+setupAttachments();
+$adapter->rows['quote'][0]['filename'] = 'protected-original.pdf';
+AttachmentTestController::$upload->files = ['file' => uploadFixture('protected-original.pdf')];
+$protectedPath = DEEC_Emailattachment::getDirectory('sales', 'quote', 10, 7) . '/protected-original.pdf';
+check(attachmentAction('upload', ['cmodule' => 'sales', 'ccontroller' => 'quote', 'id' => 10], 'POST')[0] === 400, 'Upload replaced or pre-empted an original attachment');
+check(!is_file($protectedPath) && count($adapter->rows['emailattachment']) === 6, 'Rejected original-name upload left file or metadata');
 
 setupAttachments();
 $special = attachmentFile(['id' => 609, 'filename' => 'offer + #ä.pdf']);

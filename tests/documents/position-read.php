@@ -67,12 +67,20 @@ class PositionReadTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
     public array $rows = [];
     public array $writes = [];
     public bool $allowWrites = false;
+    public bool $failCommit = false;
     public ?string $failUpdateTable = null;
     public ?Closure $beforeTransaction = null;
     private ?array $transactionSnapshot = null;
     private int $lastId = 100;
     protected function _connect() {}
     protected function _quote($value) { return Zend_Db_Adapter_Abstract::_quote($value); }
+    public function getConnection()
+    {
+        return new class($this->transactionSnapshot !== null) {
+            public function __construct(private bool $active) {}
+            public function inTransaction() { return $this->active; }
+        };
+    }
     public function beginTransaction()
     {
         if ($this->transactionSnapshot !== null) throw new RuntimeException('Nested fixture transaction');
@@ -83,7 +91,12 @@ class PositionReadTestAdapter extends Zend_Db_Adapter_Pdo_Mysql
         $this->transactionSnapshot = [$this->rows, $this->writes];
         return $this;
     }
-    public function commit() { $this->transactionSnapshot = null; return $this; }
+    public function commit()
+    {
+        if ($this->failCommit) throw new RuntimeException('Simulated database commit failure');
+        $this->transactionSnapshot = null;
+        return $this;
+    }
     public function rollBack()
     {
         if ($this->transactionSnapshot === null) throw new RuntimeException('No fixture transaction');
@@ -157,14 +170,23 @@ class ReadPurchasesPositionController extends Purchases_PositionController { pub
 class ReadProcessesPositionController extends Processes_PositionController { public function init() { $this->view = new Zend_View(); } }
 
 // PDF generation itself is covered in pdf.php; observe the row sent to finalization here.
-class DEEC_Pdf { public function generate(array $request): array { return $request; } }
+class DEEC_Pdf
+{
+    public static ?Closure $callback = null;
+    public function generate(array $request): array { return self::$callback ? (self::$callback)($request) : $request; }
+}
 class CalculationDocumentController extends DEEC_Controller_DocumentAction
 {
     public array $finalizedRow = [];
+    public bool $persistFinalization = false;
     public function init() { $this->_user = Zend_Registry::get('User'); }
     public function issue(int $id): array { return $this->generatePdfDocument($id, ['finalize' => true]); }
     public function defaults(array $data): array { return $this->beforeCreate($data); }
-    protected function finalizeDocument(array $row): array { $this->finalizedRow = $row; return $row; }
+    protected function finalizeDocument(array $row): array
+    {
+        $this->finalizedRow = $row;
+        return $this->persistFinalization ? parent::finalizeDocument($row) : $row;
+    }
 }
 
 $adapter = new PositionReadTestAdapter(['host' => 'unused', 'username' => 'unused', 'password' => 'unused', 'dbname' => 'unused']);
@@ -298,5 +320,62 @@ $before = $adapter->rows;
 $adapter->allowWrites = false;
 check($controller->issue(1)['createOriginal'] === false, 'Repeated finalization authorized PDF reconstruction');
 check($adapter->rows === $before && $controller->finalizedRow['total'] === $parent['total'], 'Repeated finalization recalculated issued document');
+
+// Completion, number allocation and calculation commit only after the original PDF is confirmed.
+$adapter->allowWrites = true;
+$controller->persistFinalization = true;
+$draft = array_replace($parent, ['state' => 100, 'completed' => 0, 'completeddate' => null, 'completedby' => 0, 'filename' => null]) + ['quoteid' => null, 'quotedate' => null];
+$adapter->rows['quote'] = [$draft];
+$adapter->rows['quotepos'] = [$position, $child];
+$adapter->rows['pricerulepos'] = [$rule];
+$adapter->rows['increment'] = [['id' => 1, 'clientid' => 7, 'quoteid' => 7000, 'deleted' => 0]];
+$adapter->rows['filename'] = [['id' => 1, 'clientid' => 7, 'language' => 'de_DE', 'quote' => 'quote_%NUMBER%.pdf', 'deleted' => 0]];
+$before = $adapter->rows;
+DEEC_Pdf::$callback = static function (array $request) use ($adapter): array {
+    check($request['createOriginal'] === true && $adapter->rows['quote'][0]['quoteid'] === 7000 && $adapter->rows['quote'][0]['completed'] === 1, 'PDF was not generated from the transactionally finalized row');
+    throw new RuntimeException('Simulated PDF storage failure');
+};
+try {
+    $controller->issue(1);
+    throw new LogicException('Finalization ignored PDF storage failure');
+} catch (RuntimeException $expected) {
+    check($expected->getMessage() === 'Simulated PDF storage failure', 'Unexpected PDF storage failure');
+}
+check($adapter->rows === $before, 'PDF storage failure committed document completion or number allocation');
+
+DEEC_Pdf::$callback = static function (array $request): array { return $request; };
+$result = $controller->issue(1);
+check($result['createOriginal'] === true && $adapter->rows['quote'][0]['quoteid'] === 7000 && $adapter->rows['quote'][0]['completed'] === 1, 'Verified original did not commit finalization');
+check($adapter->rows['increment'][0]['quoteid'] === 7001, 'Verified finalization did not advance number exactly once');
+
+// A database failure after successful publication rolls back the document; the occupied path is handled by the PDF conflict checks.
+$adapter->rows['quote'] = [$draft];
+$adapter->rows['increment'][0]['quoteid'] = 7500;
+$before = $adapter->rows;
+$pdfStored = false;
+$adapter->failCommit = true;
+DEEC_Pdf::$callback = static function (array $request) use (&$pdfStored): array { $pdfStored = true; return $request; };
+try {
+    $controller->issue(1);
+    throw new LogicException('Finalization ignored database commit failure');
+} catch (RuntimeException $expected) {
+    check($expected->getMessage() === 'Simulated database commit failure', 'Unexpected database commit failure');
+}
+$adapter->failCommit = false;
+check($pdfStored && $adapter->rows === $before, 'Commit failure retained finalization data or skipped prior PDF publication');
+
+// A request losing the row lock observes the winner and never creates another original.
+$adapter->rows['quote'] = [$draft];
+$adapter->rows['increment'][0]['quoteid'] = 8000;
+$adapter->beforeTransaction = static function () use ($adapter, $draft): void {
+    $adapter->rows['quote'][0] = array_replace($draft, ['quoteid' => 7999, 'quotedate' => '2026-11-02', 'filename' => 'quote_7999.pdf', 'state' => 105, 'completed' => 1]);
+};
+DEEC_Pdf::$callback = static function (array $request): array {
+    check($request['createOriginal'] === false, 'Losing concurrent request was allowed to create an original');
+    return $request;
+};
+$result = $controller->issue(1);
+check($result['createOriginal'] === false && $adapter->rows['increment'][0]['quoteid'] === 8000, 'Losing request changed number allocation');
+DEEC_Pdf::$callback = null;
 
 echo 'PASS: ' . $checks . " position read and write checks; views preserve data, copies and finalization update totals\n";
