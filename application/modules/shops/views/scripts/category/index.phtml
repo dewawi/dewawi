@@ -212,18 +212,17 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 					<?php if($item->title) : ?>
 						<div class="list-group-item">
 							<div class="row d-flex align-items-center"> <!-- Flexbox and vertical alignment -->
-								<div class="col-md-1 d-flex align-items-center">
+								<div class="col-md-1 d-flex align-items-center dw-product-list__thumbnail-column">
 									<!-- Image -->
 									<?php if($previewImage) : ?>
-										<div class="image-grid" style="width: 100%;">
+										<div class="image-grid dw-product-list__thumbnail">
 											<div class="image">
 												<a href="<?php echo $this->baseUrl(); ?>/media/images/<?php echo $this->escape($previewImage['url']); ?>" target="_blank">
 												<?php
 												$imageAlt = trim((string)($previewImage['title'] ?? '')) ?: (string)$item->title;
 												echo $this->SiteImage('/media/images/' . (string)$previewImage['url'], $imageAlt, [
-													'class' => 'image-thumbnail',
-													'style' => 'width: 100%;',
-													'sizes' => '(max-width: 767.98px) 100vw, 8vw',
+													'class' => 'image-thumbnail dw-product-list__thumbnail-image',
+													'sizes' => '80px',
 												]);
 												?>
 												</a>

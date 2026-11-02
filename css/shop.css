@@ -973,6 +973,30 @@ footer {
 	color: #555;
 }
 
+.dw-product-list__thumbnail-column {
+	padding-right: 7.5px;
+	padding-left: 7.5px;
+}
+
+.dw-product-list__thumbnail {
+	flex: 0 0 80px;
+	width: 80px;
+	max-width: 100%;
+}
+
+.dw-product-list__thumbnail .image,
+.dw-product-list__thumbnail a {
+	display: block;
+}
+
+.dw-product-list__thumbnail-image {
+	display: block;
+	width: 80px;
+	height: 80px;
+	max-width: 100%;
+	object-fit: contain;
+}
+
 .image-gallery .image-actions {
 	margin-top: 5px;
 }

@@ -195,6 +195,12 @@ checkCms(str_contains($categoryRenderer, 'dw-category-card__media') && str_conta
 checkCms(str_contains($categoryView, 'dw-category-carousel') && str_contains($categoryView, 'dw-category-carousel__image'), 'Category detail images do not use their dedicated responsive carousel area');
 checkCms(str_contains($shopCss, '.dw-category-card__media {') && str_contains($shopCss, '.dw-category-carousel .carousel-inner {'), 'Category image dimensions are not scoped to category views');
 checkCms(!str_contains($shopCss, '#subcategories .card-img-top'), 'Legacy category image spacing still targets the generic Bootstrap image class');
+checkCms(str_contains($categoryView, 'dw-product-list__thumbnail')
+	&& str_contains($categoryView, 'dw-product-list__thumbnail-image')
+	&& str_contains($categoryView, "'sizes' => '80px'")
+	&& !str_contains($categoryView, "'style' => 'width: 100%;'"), 'Product list thumbnails do not use their dedicated responsive image area');
+checkCms(str_contains($shopCss, '.dw-product-list__thumbnail-image {')
+	&& str_contains($shopCss, 'object-fit: contain;'), 'Product list thumbnail dimensions are not scoped to the list component');
 $categoryImageView = new CmsCategoryImageView();
 $categoryImageView->images = ['categories' => [5 => [['type' => 'image', 'url' => 'missing.jpg', 'title' => 'Image title']]]];
 $categoryRendererHelper = new Zend_View_Helper_RenderCategory();
