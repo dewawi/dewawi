@@ -415,42 +415,16 @@ class DEEC_Pdf
 		$relativeDir = '';
 		$dirAbs = '';
 		$dirUrl = '';
+		$fileAbsOverride = null;
 
 		if ($storage === 'archive' && $clientId > 0 && $contactId > 0) {
-			$archiveDirectory = (new DEEC_Directory())->getUrl((string)$document['id'], (string)$clientId);
-			$archivePath = DEEC_Emailattachment::getDirectory($module, $controller, (int)$document['id'], $clientId) . '/' . $filename;
+			$archive = new DEEC_DocumentArchive(BASE_PATH);
+			$archivePath = $archive->path($clientId, $module, $controller, (int)$document['id'], 'pdf');
 			DEEC_Emailattachment::checkPath($archivePath);
-			$locations = [[
-				'relative' => $archiveDirectory . '/',
-				'path' => $archivePath,
-				'url' => $baseUrl . '/files/attachments/' . $module . '/' . $controller . '/' . $archiveDirectory . '/' . rawurlencode($filename),
-			]];
-			if (empty($payload['meta']['createOriginal'])) {
-				$storageIds = [$contactId];
-				$contactRecordId = $this->getContactRecordId($contactId, $clientId);
-				if ($contactRecordId > 0 && $contactRecordId !== $contactId) $storageIds[] = $contactRecordId;
-				foreach ($storageIds as $storageId) {
-				$directory = $this->contactUrl((string)$storageId, (string)$clientId);
-				$path = BASE_PATH . '/files/contacts/' . $directory . $filename;
-				DEEC_Emailattachment::checkPath($path);
-				$locations[] = [
-					'relative' => $directory,
-					'path' => $path,
-					'url' => $baseUrl . '/files/contacts/' . $directory . rawurlencode($filename),
-				];
-				}
-			}
-			$existing = array_values(array_filter($locations, static fn(array $location): bool => is_file($location['path'])));
-			foreach ($existing as $location) self::assertCompletePdfFile($location['path']);
-			if (count($existing) > 1) {
-				if (count(array_unique(array_map(static fn(array $location): string => hash_file('sha256', $location['path']), $existing))) > 1) {
-					throw new RuntimeException('Original PDF locations differ');
-				}
-			}
-			$location = $existing[0] ?? $locations[0];
-			$relativeDir = $location['relative'];
-			$dirAbs = dirname($location['path']) . '/';
-			$dirUrl = substr($location['url'], 0, -strlen(rawurlencode($filename)));
+			$relativeDir = dirname($archive->relativePath($clientId, $module, $controller, (int)$document['id'], 'pdf')) . '/';
+			$dirAbs = dirname($archivePath) . '/';
+			$dirUrl = $baseUrl . '/' . $module . '/' . $controller . '/download/id/' . (int)$document['id'] . '/';
+			$fileAbsOverride = $archivePath;
 		} else {
 			$safeModule = preg_replace('/[^a-z0-9_-]+/i', '_', $module);
 			$safeController = preg_replace('/[^a-z0-9_-]+/i', '_', $controller);
@@ -459,9 +433,9 @@ class DEEC_Pdf
 			$dirUrl = $baseUrl . '/cache/document/' . $relativeDir;
 		}
 
-		$fileAbs = $dirAbs . $filename;
+		$fileAbs = $fileAbsOverride ?? $dirAbs . $filename;
 		DEEC_Emailattachment::checkPath($fileAbs);
-		$fileUrl = $dirUrl . rawurlencode($filename);
+		$fileUrl = $storage === 'archive' ? rtrim($dirUrl, '/') : $dirUrl . rawurlencode($filename);
 		clearstatcache(true, $fileAbs);
 
 		return [
@@ -474,29 +448,9 @@ class DEEC_Pdf
 		];
 	}
 
-	private function getContactRecordId(int $contactNumber, int $documentClientId): int
-	{
-		if (!Zend_Registry::isRegistered('Client')) return 0;
-		$client = Zend_Registry::get('Client');
-		$owner = (int)($client['modules']['contacts'] ?? $documentClientId);
-		if ($owner <= 0) return 0;
-		$contact = (new Contacts_Model_DbTable_Contact())->setClientId($owner)->getContactWithID($contactNumber);
-		return (int)($contact['id'] ?? 0);
-	}
-
 	private function mkdirp($dir)
 	{
 		if (!is_dir($dir)) @mkdir($dir, 0775, true);
-	}
-
-	private function contactUrl($contactId, $clientId)
-	{
-		// reproduce your “files/contacts” sharding scheme
-		$dir1 = substr($clientId, 0, 1);
-		$dir2 = (strlen($clientId) > 1) ? substr($clientId, 1, 1) : '0';
-		$c1 = substr($contactId, 0, 1);
-		$c2 = (strlen((string)$contactId) > 1) ? substr((string)$contactId, 1, 1) : '0';
-		return $dir1.'/'.$dir2.'/'.$clientId.'/'.$c1.'/'.$c2.'/'.$contactId.'/';
 	}
 
 	private function renderCompactHeader(TCPDF $pdf, array $document, array $template, string $controller, string $website = '', array $contact = [])

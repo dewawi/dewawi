@@ -305,6 +305,8 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		if (!empty($options['finalize']) && empty($row[$this->getDocumentNumberField()])) {
 			$db = $this->getDb();
 			$adapter = $db->getAdapter();
+			$publishedOriginal = null;
+			$commitStarted = false;
 			$adapter->beginTransaction();
 			try {
 				$row = $db->getByIdForUpdate($id);
@@ -315,13 +317,26 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 					$row = $this->loadRow($id);
 					$row = $this->finalizeDocument($row);
 					$result = $this->generatePdf($row, $options, true);
+					$publishedOriginal = $result['path'] ?? null;
 					$this->registerPdfDocument($row);
+					$commitStarted = true;
 					$adapter->commit();
 					return $result;
 				}
+				$commitStarted = true;
 				$adapter->commit();
 			} catch (Throwable $exception) {
-				$adapter->rollBack();
+				$rolledBack = false;
+				try { $adapter->rollBack(); $rolledBack = true; }
+				catch (Throwable $rollbackException) { error_log('Document finalization rollback failed: ' . $rollbackException->getMessage()); }
+				if (!$commitStarted && $rolledBack && is_string($publishedOriginal) && is_file($publishedOriginal) && !is_link($publishedOriginal)) {
+					try {
+						$expected = (new DEEC_DocumentArchive(BASE_PATH))->path((int)$row['clientid'], $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName(), (int)$row['id'], 'pdf');
+						if (hash_equals($expected, $publishedOriginal) && !unlink($publishedOriginal)) error_log('Failed to remove uncommitted document original: ' . $publishedOriginal);
+					} catch (Throwable $cleanupException) {
+						error_log('Failed to verify uncommitted document original cleanup: ' . $cleanupException->getMessage());
+					}
+				}
 				throw $exception;
 			}
 		} elseif (!empty($options['finalize'])) {
@@ -333,6 +348,9 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 
 	protected function generatePdf(array $row, array $options, bool $createOriginal): array
 	{
+		if (!$createOriginal && DEEC_Permission::isDocumentReadonly($this->getRequest()->getModuleName(), $this->getRequest()->getControllerName(), $row)) {
+			$this->assertPdfDocumentArchived($row);
+		}
 		$pdf = new DEEC_Pdf();
 
 		return $pdf->generate([
@@ -347,12 +365,21 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		]);
 	}
 
+	protected function assertPdfDocumentArchived(array $row): void
+	{
+		$archive = (new Application_Model_DbTable_Documentarchive())->getForDocument(
+			(int)$row['id'], $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName(), 'pdf'
+		);
+		if (!$archive) throw new RuntimeException('Original PDF archive metadata is unavailable');
+	}
+
 	protected function registerPdfDocument(array $row): void
 	{
-		(new Contacts_Model_DbTable_Emailattachment())->registerDocumentOriginal(
+		(new Application_Model_DbTable_Documentarchive())->registerOriginal(
 			$row,
 			$this->getRequest()->getModuleName(),
-			$this->getRequest()->getControllerName()
+			$this->getRequest()->getControllerName(),
+			'pdf'
 		);
 	}
 
@@ -378,7 +405,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		try {
 			$this->generatePdfDocument($id, [
 				'output' => 'file',
-				'storage' => 'contact',
+				'storage' => 'archive',
 				'overwrite' => false,
 			]);
 		} catch (RuntimeException $e) {

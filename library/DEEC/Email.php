@@ -129,8 +129,12 @@ class DEEC_Email {
 		$replyTo = trim((string)($message['replyTo'] ?? ''));
 		if($replyTo !== '') $mail->addReplyTo($replyTo);
 
-		foreach((array)($message['attachments'] ?? []) as $path) {
-			if($path && file_exists($path)) $mail->addAttachment($path);
+		foreach((array)($message['attachments'] ?? []) as $attachment) {
+			$path = is_array($attachment) ? (string)($attachment['path'] ?? '') : (string)$attachment;
+			$name = is_array($attachment) ? (string)($attachment['name'] ?? '') : '';
+			if($path === '' || !is_file($path) || !is_readable($path) || is_link($path)) throw new RuntimeException('Selected email attachment is unavailable');
+			if($name !== '' && !DEEC_Emailattachment::validFilename($name)) throw new RuntimeException('Selected email attachment filename is invalid');
+			$mail->addAttachment($path, $name);
 		}
 
 		foreach((array)($message['embeddedImages'] ?? []) as $image) {
@@ -280,12 +284,12 @@ class DEEC_Email {
 			}*/
 
 			$attachmentsSent = array();
-			$attachmentPaths = array();
+			$attachmentSources = array();
 			$emailattachmentArray = $this->emailattachment->getEmailattachments($campaign['id'], 'campaigns', 'campaign', $campaign['clientid']);
 
 			if($emailattachmentArray && count($emailattachmentArray)) {
 				foreach($emailattachmentArray as $file) {
-					$attachmentPaths[] = DEEC_Emailattachment::getPath($file);
+					$attachmentSources[] = ['path' => DEEC_Emailattachment::getPath($file), 'filename' => $file['filename'], 'emailattachmentid' => (int)$file['id']];
 					$attachmentsSent[] = $file['filename'];
 				}
 			}
@@ -348,31 +352,26 @@ class DEEC_Email {
 				]);
 
 				$emailmessage['clientid'] = $campaign['clientid'];
-				$emailmessage['messagesent'] = date('Y-m-d H:i:s');
-				$emailmessage['messagesentby'] = $user['id'];
+				$emailmessage['deliverystatus'] = 'pending';
 
 				$messageid = $this->emailmessage->addEmailmessage($emailmessage);
 
-				$sendResult = self::sendMessage($smtpConfig, [
-					'fromEmail' => $emailmessage['sender'],
-					'fromName' => $fromName,
-					'to' => $emailmessage['recipient'],
-					'cc' => $emailmessage['cc'],
-					'bcc' => $emailmessage['bcc'],
-					'replyTo' => $emailmessage['replyto'],
-					'subject' => $emailmessage['subject'],
-					'body' => $emailmessage['body'],
-					'attachments' => $attachmentPaths,
-					'emailmessageId' => $messageid,
-					'headers' => [
-						'List-Unsubscribe' => '<'.$unsubscribeUrl.'>',
-						'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click',
-					],
-				]);
+				try {
+					$attachmentPaths = $this->storeMessageAttachments((int)$messageid, (int)$campaign['clientid'], (int)$user['id'], $attachmentSources);
+					$sendResult = self::sendMessage($smtpConfig, [
+						'fromEmail' => $emailmessage['sender'], 'fromName' => $fromName, 'to' => $emailmessage['recipient'],
+						'cc' => $emailmessage['cc'], 'bcc' => $emailmessage['bcc'], 'replyTo' => $emailmessage['replyto'],
+						'subject' => $emailmessage['subject'], 'body' => $emailmessage['body'], 'attachments' => $attachmentPaths,
+						'emailmessageId' => $messageid, 'headers' => ['List-Unsubscribe' => '<'.$unsubscribeUrl.'>', 'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click'],
+					]);
+				} catch (Throwable $exception) {
+					$sendResult = ['sent' => false, 'error' => $exception->getMessage()];
+				}
 
 				if(!$sendResult['sent']) {
 					$this->emailmessage->updateEmailmessage($messageid, [
 						'response' => $sendResult['error'],
+						'deliverystatus' => 'failed',
 					]);
 
 					continue;
@@ -380,6 +379,9 @@ class DEEC_Email {
 
 				$this->emailmessage->updateEmailmessage($messageid, [
 					'response' => 'sent',
+					'deliverystatus' => 'accepted',
+					'messagesent' => date('Y-m-d H:i:s'),
+					'messagesentby' => $user['id'],
 				]);
 
 				$result['sent']++;
@@ -387,6 +389,61 @@ class DEEC_Email {
 		}
 
 		return $result;
+	}
+
+	private function storeMessageAttachments(int $messageId, int $clientId, int $userId, array $sources): array
+	{
+		$result = [];
+		$client = (string)$clientId;
+		$clientShard = $client[0] . '/' . ($client[1] ?? '0') . '/' . $client;
+		foreach ($sources as $index => $source) {
+			$ordering = $index + 1;
+			$filename = (string)$source['filename'];
+			$sourcePath = (string)$source['path'];
+			if (!DEEC_Emailattachment::validFilename($filename) || !is_file($sourcePath) || !is_readable($sourcePath) || is_link($sourcePath)) throw new RuntimeException('Selected email attachment is unavailable');
+			$extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+			if (!preg_match('/^[a-z0-9]{1,16}$/D', $extension)) $extension = 'bin';
+			$relative = 'files/attachments/emailmessage/' . $clientShard . '/' . intdiv($messageId, 1000) . '/' . $messageId . '/' . $ordering . '.' . $extension;
+			$target = BASE_PATH . '/' . $relative;
+			DEEC_Emailattachment::checkPath($target);
+			$this->ensureMessageAttachmentDirectory(dirname($target));
+			$output = @fopen($target, 'x+b');
+			if (!$output) throw new RuntimeException('Email attachment copy target is occupied');
+			$input = @fopen($sourcePath, 'rb');
+			try {
+				$size = filesize($sourcePath);
+				if (!$input || stream_copy_to_stream($input, $output) !== $size || !fflush($output) || (function_exists('fsync') && !fsync($output))) throw new RuntimeException('Email attachment copy failed');
+			} catch (Throwable $exception) {
+				fclose($output); if ($input) fclose($input); unlink($target); throw $exception;
+			}
+			fclose($output); if ($input) fclose($input);
+			$sha = hash_file('sha256', $sourcePath);
+			if (filesize($target) !== $size || !hash_equals($sha, hash_file('sha256', $target))) { unlink($target); throw new RuntimeException('Email attachment copy verification failed'); }
+			$type = (string)((new finfo(FILEINFO_MIME_TYPE))->file($target) ?: 'application/octet-stream');
+			$sourceId = (int)$source['emailattachmentid'];
+			$created = date('Y-m-d H:i:s');
+			$insert = $this->connection->prepare('INSERT INTO emailmessageattachment (emailmessageid, documentarchiveid, emailattachmentid, filename, filetype, filesize, sha256, path, ordering, clientid, created, createdby) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+			if (!$insert) { unlink($target); throw new RuntimeException('Email attachment copy metadata could not be prepared'); }
+			$insert->bind_param('iississiisi', $messageId, $sourceId, $filename, $type, $size, $sha, $relative, $ordering, $clientId, $created, $userId);
+			try { if (!$insert->execute()) throw new RuntimeException('Email attachment copy metadata could not be stored'); }
+			catch (Throwable $exception) { $insert->close(); unlink($target); throw $exception; }
+			$insert->close();
+			$result[] = ['path' => $target, 'name' => $filename];
+		}
+		return $result;
+	}
+
+	private function ensureMessageAttachmentDirectory(string $directory): void
+	{
+		$base = realpath(BASE_PATH);
+		if (!$base || !str_starts_with($directory, $base . '/')) throw new RuntimeException('Invalid email attachment directory');
+		$current = $base;
+		foreach (explode('/', substr($directory, strlen($base) + 1)) as $part) {
+			$current .= '/' . $part;
+			if (is_link($current)) throw new RuntimeException('Email attachment directory contains a symlink');
+			if (file_exists($current)) { if (!is_dir($current)) throw new RuntimeException('Email attachment directory collision'); continue; }
+			if (!mkdir($current, 0775)) throw new RuntimeException('Email attachment directory is unavailable');
+		}
 	}
 
 	private function personalizeBody(string $body, array $recipient): string {

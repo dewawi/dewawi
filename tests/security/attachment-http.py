@@ -152,6 +152,9 @@ with tempfile.TemporaryDirectory(prefix="dewawi-attachment-http-") as temp:
     public = site / "media/7/0/7/images/product.png"
     public.parent.mkdir(parents=True)
     public.write_bytes(b"Public media fixture")
+    document_original = site / "files/documents/7/0/7/sales/quote/0/10.pdf"
+    document_original.parent.mkdir(parents=True)
+    document_original.write_bytes(contents)
     (site / "session").mkdir()
     stored_files = ["files/contacts/7/0/7/1/0/100/notes.txt", "files/contacts/7/0/7/1/0/100/quote.pdf", "files/contacts/7/0/7/1/0/100/invoice.pdf", "cache/document/sales/quote/7/10/quote.pdf", "files/uploads/unmapped.pdf", "cache/item/501.pdf", "cache/internal.pdf", "cache/thumbs/files/unmapped.png"]
     for relative in stored_files:
@@ -269,6 +272,9 @@ DocumentRoot "{site}"
         for requested in [path, path + "?id=600", path.replace("files/attachments", "files//attachments"), path.replace("attachments/", "attachments//"), path.replace("files/attachments", "files%2fattachments"), "/files/attachments/sales/quote/7/0/7/1/0/10/%66ixture.pdf", "/files/attachments/sales/quote/7/0/7/1/0/10/fixture.pdf/extra"]:
             status, body = fetch(requested)
             assert status == 404 and contents not in body, f"Anonymous attachment exposed: {requested} (HTTP {status})"
+        for user in [None, "allowed", "foreign", "denied"]:
+            status, body = fetch("/files/documents/7/0/7/sales/quote/0/10.pdf", user)
+            assert status == 403 and contents not in body, "Direct document archive URL bypassed the authenticated document action"
         allowed = fetch(path, "allowed")
         assert allowed == (200, contents), f"Authorized legacy URL did not stream the original file (HTTP {allowed[0]}, response {allowed[1][:500]!r})"
         assert fetch("/contacts/attachment/download/id/600", "allowed") == (200, contents), "Authorized attachment ID did not stream the original file"

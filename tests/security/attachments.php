@@ -288,8 +288,23 @@ foreach ([false, true] as $shared) {
     $adapter->writes = [];
     DEEC_Email::$sent = [];
     check(sendQuoteEmail(['files' => [600]]), 'Allowed PDF attachment send failed');
-    check(DEEC_Email::$sent[0]['attachments'] === [$path], 'Mail helper selected a different file');
+	$sentCopy = DEEC_Email::$sent[0]['attachments'][0];
+	check($sentCopy['name'] === 'quote.pdf' && $sentCopy['path'] !== $path && file_get_contents($sentCopy['path']) === file_get_contents($path), 'Mail helper did not use a byte-identical protected send copy');
+	$copyRow = end($adapter->rows['emailmessageattachment']);
+	check($copyRow['sha256'] === hash_file('sha256', $path) && $copyRow['emailattachmentid'] === 600, 'Send copy metadata lost source or SHA-256');
+	check(attachmentAction('download', ['messageattachmentid' => $copyRow['id']])[0] === 200, 'Protected send copy is unavailable in history');
     check((end($adapter->rows['emailmessage'])['attachments'] ?? []) === ['quote.pdf'], 'Mail log lost the selected filename');
+	$firstCopyPath = $sentCopy['path'];
+	check(sendQuoteEmail(['files' => [600]]), 'Repeated attachment send failed');
+	$secondCopyPath = DEEC_Email::$sent[0]['attachments'][0]['path'];
+	check($secondCopyPath !== $firstCopyPath && is_file($firstCopyPath) && is_file($secondCopyPath), 'Repeated send overwrote a prior message copy');
+	DEEC_Email::$result = ['sent' => false, 'error' => 'Fixture attachment SMTP rejection'];
+	check(!sendQuoteEmail(['files' => [600]]), 'Rejected attachment send was reported as accepted');
+	$failedMessage = end($adapter->rows['emailmessage']);
+	$failedCopy = end($adapter->rows['emailmessageattachment']);
+	check($failedMessage['messagesent'] === null && $failedMessage['deliverystatus'] === 'failed' && $failedMessage['response'] === 'Fixture attachment SMTP rejection'
+		&& is_file(BASE_PATH . '/' . $failedCopy['path']), 'Failed send lost status or immutable attempted-send evidence');
+	DEEC_Email::$result = ['sent' => true, 'error' => ''];
     foreach ([601, 602, 603, 604, 605, 999, '600x', []] as $id) {
         try {
             sendQuoteEmail(['files' => [$id]]);
@@ -325,13 +340,22 @@ foreach (['sales' => 'quote', 'purchases' => 'purchaseorder', 'processes' => 'pr
     $service = new $class();
     $result = $service->sync($document, $adapter->rows['contact'][0], $controller);
     if (DEEC_Permission::isDocument($module, $controller)) {
-        check($result['attachments'] === [], 'Historical document was migrated during view synchronization: ' . $module);
-        $archive = DEEC_Emailattachment::getDirectory($module, $controller, 30, 7) . '/' . $document['filename'];
+		check(count($result['attachments']) === 1 && $result['attachments'][0]['available'] === false, 'Missing canonical original was not reported: ' . $module);
+		$archive = (new DEEC_DocumentArchive(BASE_PATH))->path(7, $module, $controller, 30, 'pdf');
         check(!is_file($archive), 'Historical synchronization created a canonical file: ' . $module);
         if (!is_dir(dirname($archive))) mkdir(dirname($archive), 0775, true);
         file_put_contents($archive, $original);
         (new Contacts_Model_DbTable_Emailattachment())->registerDocumentOriginal($document, $module, $controller);
         $result = $service->sync($document, $adapter->rows['contact'][0], $controller);
+		check(count($result['attachments']) === 1 && str_starts_with((string)$result['attachments'][0]['id'], 'archive:'), 'Canonical original was not offered: ' . $module);
+		$stored = (new Application_Model_DbTable_Documentarchive())->getForDocument(30, $module, $controller);
+		check($stored && file_get_contents((new Application_Model_DbTable_Documentarchive())->getPath($stored)) === $original, 'Stored original bytes changed');
+		check(count($service->sync($document, [], $controller)['attachments']) === 1, 'Repeated synchronization duplicated metadata');
+		file_put_contents($archive, "%PDF-1.4\nChanged archived document\n%%EOF\n");
+		$invalid = $service->sync($document, [], $controller);
+		check(count($invalid['attachments']) === 1 && $invalid['attachments'][0]['available'] === false, 'Divergent original was not reported');
+		file_put_contents($archive, $original);
+		continue;
     }
     check(count($result['attachments']) === 1, 'Stored PDF was not registered: ' . $module);
     $attachment = $result['attachments'][0];
@@ -349,18 +373,14 @@ foreach (['sales' => 'quote', 'purchases' => 'purchaseorder', 'processes' => 'pr
     }
     file_put_contents($attachmentPath, $original);
     $deleteStatus = attachmentAction('delete', [], 'POST', ['id' => [$attachment['id']]])[0];
-    if (DEEC_Permission::isDocument($module, $controller)) {
-        check($deleteStatus === 404 && is_file($attachmentPath), 'Issued document attachment could be deleted');
-    } else {
-        check($deleteStatus === 200 && !is_file($attachmentPath), 'Ordinary process attachment could not be deleted');
-    }
+	check($deleteStatus === 200 && !is_file($attachmentPath), 'Ordinary process attachment could not be deleted');
     check(file_get_contents($source) === $original, 'Attachment operation modified the original document');
 }
 
 // Document attachment synchronization also recognizes the pre-refactoring contact.id location.
 setupAttachments(true);
 $adapter->rows['permission'][0]['sales'] = '{"quote":["view","add","delete"]}';
-$legacyDocument = array_replace($adapter->rows['quote'][0], ['id' => 30, 'filename' => 'legacy-original.pdf']);
+$legacyDocument = array_replace($adapter->rows['quote'][0], ['id' => 31, 'filename' => 'legacy-original.pdf']);
 $adapter->rows['quote'][] = $legacyDocument;
 $legacyDirectory = BASE_PATH . '/files/contacts/' . (new DEEC_Directory())->getUrl('100', '7');
 if (!is_dir($legacyDirectory)) mkdir($legacyDirectory, 0775, true);
@@ -368,9 +388,16 @@ $legacySource = $legacyDirectory . '/legacy-original.pdf';
 $legacyBytes = "%PDF-1.4\nLegacy contact record original\n%%EOF\n";
 file_put_contents($legacySource, $legacyBytes);
 $legacyResult = (new Sales_Service_AttachmentService())->sync($legacyDocument, $adapter->rows['contact'][0], 'quote');
-check($legacyResult['contactUrl'] === '7/0/7/1/0/100' && $legacyResult['attachments'] === [], 'Legacy contact record path was not resolved safely');
-$legacyArchive = DEEC_Emailattachment::getDirectory('sales', 'quote', 30, 7) . '/legacy-original.pdf';
+check($legacyResult['contactUrl'] === '7/0/7/1/0/100' && count($legacyResult['attachments']) === 1 && $legacyResult['attachments'][0]['available'] === false, 'Legacy contact record path was not classified as a recovery candidate');
+$legacyArchive = (new DEEC_DocumentArchive(BASE_PATH))->path(7, 'sales', 'quote', 31, 'pdf');
 check(!is_file($legacyArchive) && file_get_contents($legacySource) === $legacyBytes, 'Legacy synchronization copied or changed original bytes');
+
+// Historical attachment copies bearing the issued document filename remain immutable recovery candidates.
+setupAttachments();
+$adapter->rows['quote'][0]['filename'] = 'quote.pdf';
+$issuedAttachment = $adapter->rows['emailattachment'][0];
+$issuedAttachmentPath = DEEC_Emailattachment::getPath($issuedAttachment);
+check(attachmentAction('delete', [], 'POST', ['id' => [$issuedAttachment['id']]])[0] === 404 && is_file($issuedAttachmentPath), 'Historical issued-document attachment could be deleted');
 
 // A user upload may not pre-empt the immutable attachment name of an issued document.
 setupAttachments();

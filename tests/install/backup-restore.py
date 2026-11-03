@@ -178,6 +178,7 @@ def fixture_files(source):
     fixtures = {
         'files/contacts/7/0/7/invoice.pdf': b'issued document',
         'files/attachments/7/0/7/original.pdf': b'protected attachment',
+        'files/documents/7/0/7/sales/invoice/59/59296.pdf': b'%PDF-1.4\narchived original\n%%EOF\n',
         'files/items/501/specification.pdf': b'item document',
         'files/downloads/7/0/7/manual.pdf': b'customer download',
         'files/images/logo.png': b'private image',

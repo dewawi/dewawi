@@ -128,6 +128,7 @@ class DEEC_Feedback
     {
         if (self::$failAttach) throw new RuntimeException('Fixture feedback attachment failure');
     }
+	public function deleteRequest(...$args): void {}
 }
 class QuoteEmailTestFlashMessenger extends Zend_Controller_Action_Helper_Abstract
 {

@@ -41,28 +41,31 @@ $uploadUrl = $this->baseUrl()
 								<?php if (!empty($this->attachments)) : ?>
 									<?php foreach ($this->attachments as $attachment) : ?>
 										<?php
-										$attachmentId = (int) $attachment['id'];
+										$attachmentId = (string) ($attachment['selection'] ?? $attachment['id']);
+										$domId = preg_replace('/[^a-zA-Z0-9_-]+/', '-', $attachmentId);
 										$filename = (string) $attachment['filename'];
-
-										$attachmentUrl = $this->baseUrl() . '/contacts/attachment/download/id/' . $attachmentId;
+										$attachmentUrl = $this->baseUrl() . ($attachment['url'] ?? ('/contacts/attachment/download/id/' . rawurlencode($attachmentId)));
 										?>
-										<div id="attachment<?= $attachmentId; ?>" class="dw-attachment-item">
+										<div id="attachment<?= $this->escape($domId); ?>" class="dw-attachment-item">
+											<?php if(($attachment['available'] ?? true) !== false) : ?>
 											<label class="dw-attachment-item__select">
-												<input type="checkbox" value="<?= $attachmentId; ?>" name="file[]"<?= $isCampaign ? '' : ' checked'; ?>>
+												<input type="checkbox" value="<?= $this->escape($attachmentId); ?>" name="file[]"<?= $isCampaign ? '' : ' checked'; ?>>
 												<span></span>
 											</label>
+											<?php endif; ?>
 
-											<a class="dw-attachment-item__link" href="<?= $attachmentUrl; ?>" target="_blank" rel="noopener">
+											<?php if(($attachment['available'] ?? true) !== false) : ?><a class="dw-attachment-item__link" href="<?= $attachmentUrl; ?>" target="_blank" rel="noopener"><?php else : ?><span class="dw-attachment-item__link"><?php endif; ?>
 												<span class="dw-attachment-item__name"><?= $this->escape($filename); ?></span>
 												<span class="dw-attachment-item__meta">(<?= $this->HumanFileSize($attachment['filesize']); ?>)</span>
-											</a>
+											<?php if(($attachment['available'] ?? true) !== false) : ?></a><?php else : ?></span><?php endif; ?>
+											<?php if(($attachment['available'] ?? true) === false) : ?><span class="dw-status-message dw-status-message--error"><?= $this->escape($this->translate('CONTACTS_DOCUMENT_FILE_MISSING')); ?></span><?php endif; ?>
 
-											<button
+											<?php if(($attachment['deletable'] ?? true) !== false) : ?><button
 												type="button"
 												class="dw-btn dw-btn--icon delete nolabel" aria-label="<?= $this->escape($this->translate('TOOLBAR_DELETE')); ?>"
-												onclick="deleteAttachment('<?= $attachmentId; ?>', deleteConfirm, 'attachment', 'contacts', this);">
+												onclick="deleteAttachment('<?= $this->escape($attachmentId); ?>', deleteConfirm, 'attachment', 'contacts', this);">
 												Delete
-											</button>
+											</button><?php endif; ?>
 										</div>
 									<?php endforeach; ?>
 								<?php else : ?>

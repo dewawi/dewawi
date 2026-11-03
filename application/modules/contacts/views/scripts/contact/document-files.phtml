@@ -15,7 +15,9 @@
 				<?php foreach ($this->documentFiles as $file) : ?>
 					<?php
 					$url = '';
-					if (!empty($file['relative'])) {
+					if (!empty($file['documentUrl'])) {
+						$url = $this->baseUrl() . $file['documentUrl'];
+					} elseif (!empty($file['relative'])) {
 						$url = $this->baseUrl() . '/' . implode('/', array_map('rawurlencode', explode('/', $file['relative'])));
 					} elseif (!empty($file['attachmentId'])) {
 						$url = $this->url([

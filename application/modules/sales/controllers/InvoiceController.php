@@ -86,6 +86,16 @@ class Sales_InvoiceController extends DEEC_Controller_DocumentAction
 				'warnings' => [],
 			], 404);
 		}
+		$download = (string)$request->getPost('download', '') === '1';
+		if ($download) {
+			try {
+				$archived = (new Application_Model_DbTable_Documentarchive())->getForDocument($id, 'sales', 'invoice', 'xml');
+				if ($archived) return $this->sendXRechnungArchive($archived);
+			} catch (Throwable $exception) {
+				error_log('XRechnung archive integrity failure: invoice=' . $id . ' ' . $exception->getMessage());
+				return $this->sendXRechnungJson(['ok' => false, 'valid' => false, 'errors' => [$this->xRechnungError('request', 'ARCHIVE', 'XRECHNUNG_REQUEST_FAILED')], 'warnings' => []], 409);
+			}
+		}
 
 		$context = $this->buildXRechnungContext($row);
 		$form = $this->createXRechnungForm($context);
@@ -107,7 +117,7 @@ class Sales_InvoiceController extends DEEC_Controller_DocumentAction
 		$export = $this->buildXRechnungExport($form->getFilteredValues(), $context);
 		try {
 			$result = (new Sales_Service_XRechnungService())->generate($id, $export);
-		} catch (RuntimeException $exception) {
+		} catch (Throwable $exception) {
 			return $this->sendXRechnungJson([
 				'ok' => false,
 				'valid' => false,
@@ -127,7 +137,7 @@ class Sales_InvoiceController extends DEEC_Controller_DocumentAction
 			]);
 		}
 
-		if ((string)$request->getPost('download', '') !== '1') {
+		if (!$download) {
 			return $this->sendXRechnungJson([
 				'ok' => true,
 				'valid' => true,
@@ -137,14 +147,28 @@ class Sales_InvoiceController extends DEEC_Controller_DocumentAction
 		}
 
 		$filename = $this->buildXRechnungFilename((string)$row['invoiceid']);
+		try {
+			$archived = (new Application_Model_DbTable_Documentarchive())->archiveBytes($row, 'sales', 'invoice', 'xml', $filename, $result['xml'], $export);
+			return $this->sendXRechnungArchive($archived);
+		} catch (Throwable $exception) {
+			error_log('XRechnung archive write failure: invoice=' . $id . ' ' . $exception->getMessage());
+			return $this->sendXRechnungJson(['ok' => false, 'valid' => false, 'errors' => [$this->xRechnungError('request', 'ARCHIVE', 'XRECHNUNG_REQUEST_FAILED')], 'warnings' => []], 409);
+		}
+	}
+
+	private function sendXRechnungArchive(array $archive)
+	{
+		$path = (new Application_Model_DbTable_Documentarchive())->getPath($archive);
+		$xml = file_get_contents($path);
+		if ($xml === false) throw new RuntimeException('XRechnung archive could not be read');
 		$response = $this->getResponse();
 		$response->clearHeaders();
 		$response->setHeader('Content-Type', 'application/xml; charset=UTF-8', true);
-		$response->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"', true);
-		$response->setHeader('Content-Length', (string)strlen($result['xml']), true);
+		$response->setHeader('Content-Disposition', 'attachment; filename="' . rawurlencode($archive['filename']) . '"; filename*=UTF-8\'\'' . rawurlencode($archive['filename']), true);
+		$response->setHeader('Content-Length', (string)strlen($xml), true);
 		$response->setHeader('Cache-Control', 'private, no-store', true);
 		$response->setHeader('X-Content-Type-Options', 'nosniff', true);
-		$response->setBody($result['xml']);
+		$response->setBody($xml);
 
 		return null;
 	}

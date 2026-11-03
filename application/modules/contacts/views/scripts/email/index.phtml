@@ -59,7 +59,13 @@ echo $this->Messages();
 							</td>
 
 							<td class="dw-col-attachments" data-label="<?php echo $this->translate('CONTACTS_ATTACHMENTS'); ?>">
-								<?php if ($emailmessage['attachment']) : ?>
+								<?php if (!empty($emailmessage['storedattachments'])) : ?>
+									<div class="dw-attachment-list">
+										<?php foreach ($emailmessage['storedattachments'] as $attachment) : ?>
+											<div class="dw-attachment-item"><a href="<?php echo $this->baseUrl(); ?>/contacts/attachment/download/messageattachmentid/<?php echo (int)$attachment['id']; ?>" target="_blank" rel="noopener"><?php echo $this->escape($attachment['filename']); ?></a></div>
+										<?php endforeach; ?>
+									</div>
+								<?php elseif ($emailmessage['attachment']) : ?>
 									<?php $attachments = explode(',', $emailmessage['attachment']); ?>
 									<div class="dw-attachment-list">
 										<?php foreach ($attachments as $attachment) : ?>
@@ -95,12 +101,13 @@ echo $this->Messages();
 
 							<td class="dw-col-status" data-label="Status">
 								<?php $response = trim((string)($emailmessage['response'] ?? '')); ?>
+								<?php $deliveryStatus = trim((string)($emailmessage['deliverystatus'] ?? '')); ?>
 
-								<?php if($response === '' || $response === 'sent') : ?>
+								<?php if($response === 'sent' || in_array($deliveryStatus, ['accepted', 'delivered'], true)) : ?>
 									<div class="dw-status-message dw-status-message--success">
 										<?php echo $this->translate('MESSAGES_EMAIL_SENT_SUCCESS'); ?>
 									</div>
-								<?php elseif($response === 'pending') : ?>
+								<?php elseif($response === '' || $response === 'pending' || $deliveryStatus === 'pending') : ?>
 									<div class="dw-status-message">
 										<?php echo $this->translate('MESSAGES_PENDING'); ?>
 									</div>

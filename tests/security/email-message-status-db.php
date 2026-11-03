@@ -98,14 +98,19 @@ function addEmailMessage(EmailMessageStatusTestAdapter $adapter, int $clientId, 
 $columns = array_column($adapter->fetchAll('SHOW COLUMNS FROM emailmessage'), 'Field');
 check(!in_array('modified', $columns, true) && !in_array('modifiedby', $columns, true), 'Fixture schema unexpectedly contains audit update columns');
 
+$pendingId = $model->addEmailmessage(['contactid' => 100, 'documentid' => 200, 'module' => 'sales', 'controller' => 'quote', 'sender' => 'sender@example.invalid', 'recipient' => 'recipient@example.invalid', 'subject' => 'Pending', 'body' => 'Pending', 'response' => 'pending']);
+$pending = $adapter->fetchRow('SELECT messagesent, messagesentby, response, deliverystatus FROM emailmessage WHERE id = ?', [$pendingId]);
+check($pending['messagesent'] === null && (int)$pending['messagesentby'] === 0 && $pending['response'] === 'pending' && $pending['deliverystatus'] === 'pending', 'Message creation was recorded as a successful send');
+
 $sentId = addEmailMessage($adapter, 7);
-$model->updateEmailmessage($sentId, ['response' => 'sent']);
-check($adapter->fetchOne('SELECT response FROM emailmessage WHERE id = ?', [$sentId]) === 'sent', 'Successful SMTP status remained pending');
-check($adapter->updates[0]['bind'] === ['response' => 'sent'], 'Status update added columns that are absent from emailmessage');
+$model->markAccepted($sentId);
+$accepted = $adapter->fetchRow('SELECT messagesent, messagesentby, response, deliverystatus FROM emailmessage WHERE id = ?', [$sentId]);
+check($accepted['messagesent'] !== null && (int)$accepted['messagesentby'] === 42 && $accepted['response'] === 'sent' && $accepted['deliverystatus'] === 'accepted', 'SMTP acceptance was not recorded distinctly');
 
 $failedId = addEmailMessage($adapter, 7);
-$model->updateEmailmessage($failedId, ['response' => 'Fixture SMTP rejection']);
-check($adapter->fetchOne('SELECT response FROM emailmessage WHERE id = ?', [$failedId]) === 'Fixture SMTP rejection', 'Negative SMTP status was not stored');
+$model->markFailed($failedId, 'Fixture SMTP rejection');
+$failed = $adapter->fetchRow('SELECT messagesent, messagesentby, response, deliverystatus FROM emailmessage WHERE id = ?', [$failedId]);
+check($failed['messagesent'] === null && (int)$failed['messagesentby'] === 0 && $failed['response'] === 'Fixture SMTP rejection' && $failed['deliverystatus'] === 'failed', 'Negative SMTP status was not stored');
 
 $otherTenantId = addEmailMessage($adapter, 8);
 $model->updateEmailmessage($otherTenantId, ['response' => 'sent']);
@@ -128,7 +133,7 @@ foreach ($adapter->updates as $update) {
     check(str_contains($where, 'deleted = 0'), 'Email message update lacks the soft-delete filter');
 }
 
-check((int)$adapter->fetchOne('SELECT COUNT(*) FROM emailmessage') === 5, 'Status handling retried or duplicated an email message');
+check((int)$adapter->fetchOne('SELECT COUNT(*) FROM emailmessage') === 6, 'Status handling retried or duplicated an email message');
 $controllerSource = file_get_contents($root . '/application/modules/contacts/controllers/EmailController.php');
 check(str_contains($controllerSource, "error_log('Email send action failed: '"), 'Send action exceptions are not logged');
 

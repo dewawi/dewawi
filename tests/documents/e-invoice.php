@@ -2,6 +2,16 @@
 
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 
+$archiveRoot = sys_get_temp_dir() . '/dewawi-einvoice-archive-' . bin2hex(random_bytes(8));
+mkdir($archiveRoot, 0700);
+define('BASE_PATH', $archiveRoot);
+register_shutdown_function(static function() use ($archiveRoot): void {
+	if (!is_dir($archiveRoot)) return;
+	$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($archiveRoot, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+	foreach ($iterator as $entry) $entry->isDir() && !$entry->isLink() ? rmdir($entry->getPathname()) : unlink($entry->getPathname());
+	rmdir($archiveRoot);
+});
+
 // Reuse the real models/calculation helpers and isolated adapter; never access a real database.
 ob_start();
 require __DIR__ . '/position-read.php';
@@ -436,12 +446,20 @@ check($status === 200 && !$json['valid'] && in_array('seller_contact_phone', arr
 $json = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
 check($status === 200 && $json['valid'] && $json['errors'] === [] && count($json['warnings']) === 2, 'Corrected XRechnung form did not pass the internal pre-check');
 check(str_contains(implode(' ', array_column($json['warnings'], 'message')), 'KoSIT'), 'Successful pre-check was not distinguished from external KoSIT validation');
+check([$adapter->rows, $adapter->writes] === $before, 'XRechnung pre-check created an original');
+$adapter->allowWrites = true;
 [$status, $xml, $headers] = xRechnungUiRequest($uiPost + ['download' => '1']);
+$adapter->allowWrites = false;
 check($status === 200 && str_starts_with($xml, '<?xml') && str_starts_with($headers['Content-Type'] ?? '', 'application/xml'), 'Validated XML was not returned directly');
 check(str_contains($headers['Content-Disposition'] ?? '', 'attachment; filename="XRechnung-7300.xml"'), 'XML download filename or disposition is unsafe or missing');
 $downloadDocument = new DOMDocument();
 check($downloadDocument->loadXML($xml, LIBXML_NONET) && $downloadDocument->getElementsByTagNameNS('*', 'DueDate')->item(0)->textContent === '2026-11-08', 'Localized form date was not mapped explicitly to the export payload');
-check([$adapter->rows, $adapter->writes] === $before, 'XRechnung UI requests changed invoice or master data');
+$archivedXml = (new DEEC_DocumentArchive(BASE_PATH))->path(7, 'sales', 'invoice', 1, 'xml');
+check(count($adapter->rows['documentarchive'] ?? []) === 1 && is_file($archivedXml) && hash_file('sha256', $archivedXml) === hash('sha256', $xml), 'Downloaded XRechnung was not archived byte-identically');
+$archiveRows = $adapter->rows;
+$archiveWrites = $adapter->writes;
+[$status, $repeatedXml] = xRechnungUiRequest(['download' => '1']);
+check($status === 200 && $repeatedXml === $xml && $adapter->rows === $archiveRows && $adapter->writes === $archiveWrites, 'Repeated XRechnung download regenerated or changed the original');
 
 foreach ([['state' => 100, 'completed' => 0], ['state' => 106, 'cancelled' => 1]] as $lifecycle) {
     $adapter->rows = $fixture;

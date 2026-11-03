@@ -121,12 +121,18 @@ class Contacts_AttachmentController extends DEEC_Controller_Action
 		$this->disableView();
 		if(!in_array($this->getRequest()->getMethod(), ['GET', 'HEAD'], true)) return $this->reject(405);
 		$db = new Contacts_Model_DbTable_Emailattachment();
+		$path = null;
 		try {
-			if($this->_getParam('attachmentPath') !== null) {
-				$path = parse_url($this->getRequest()->getRequestUri(), PHP_URL_PATH);
+			if($this->_getParam('messageattachmentid') !== null) {
+				$copyDb = new Contacts_Model_DbTable_Emailmessageattachment();
+				$attachment = $copyDb->getMessageAttachment((int)$this->_getParam('messageattachmentid'));
+				if(!$attachment) return $this->reject();
+				$path = $copyDb->getPath($attachment);
+			} elseif($this->_getParam('attachmentPath') !== null) {
+				$requestPath = parse_url($this->getRequest()->getRequestUri(), PHP_URL_PATH);
 				$prefix = rtrim($this->getRequest()->getBaseUrl(), '/') . '/files/attachments/';
-				if(!is_string($path) || !str_starts_with($path, $prefix)) return $this->reject();
-				$parts = explode('/', rawurldecode(substr($path, strlen($prefix))));
+				if(!is_string($requestPath) || !str_starts_with($requestPath, $prefix)) return $this->reject();
+				$parts = explode('/', rawurldecode(substr($requestPath, strlen($prefix))));
 				if(count($parts) !== 9) return $this->reject();
 				[$module, $controller, $c1, $c2, $clientId, $d1, $d2, $documentId, $filename] = $parts;
 				$attachment = null;
@@ -141,7 +147,7 @@ class Contacts_AttachmentController extends DEEC_Controller_Action
 				$attachment = $db->getEmailattachment($this->_getParam('id', 0));
 			}
 			if(!$attachment) return $this->reject();
-			$path = DEEC_Emailattachment::getPath($attachment);
+			if($path === null) $path = DEEC_Emailattachment::getPath($attachment);
 		} catch(Exception $e) {
 			return $this->reject();
 		}

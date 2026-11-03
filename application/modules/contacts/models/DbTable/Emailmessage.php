@@ -35,16 +35,31 @@ class Contacts_Model_DbTable_Emailmessage extends DEEC_Model_DbTable_Entity
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchAll($where, 'id DESC');
 		if(!$data) throw new Exception("Could not find email messages");
-		return $data->toArray();
+		$messages = $data->toArray();
+		$copies = new Contacts_Model_DbTable_Emailmessageattachment();
+		foreach($messages as &$message) $message['storedattachments'] = $copies->getMessageAttachments((int)$message['id']);
+		unset($message);
+		return $messages;
 	}
 
 	public function addEmailmessage($data)
 	{
 		$data['clientid'] = $this->_client['id'];
-		$data['messagesent'] = $this->_date;
-		$data['messagesentby'] = $this->_user['id'];
+		$data['messagesent'] = null;
+		$data['messagesentby'] = 0;
+		$data['deliverystatus'] = 'pending';
 		$this->insert($data);
 		return $this->getAdapter()->lastInsertId();
+	}
+
+	public function markAccepted(int $id): void
+	{
+		$this->updateEmailmessage($id, ['messagesent' => $this->_date, 'messagesentby' => (int)$this->_user['id'], 'response' => 'sent', 'deliverystatus' => 'accepted']);
+	}
+
+	public function markFailed(int $id, string $error): void
+	{
+		$this->updateEmailmessage($id, ['messagesent' => null, 'messagesentby' => 0, 'response' => $error, 'deliverystatus' => 'failed']);
 	}
 
 	public function updateEmailmessage($id, $data)
@@ -74,7 +89,7 @@ class Contacts_Model_DbTable_Emailmessage extends DEEC_Model_DbTable_Entity
 		];
 
 		if(($data['deliverystatus'] ?? '') === 'delivered') {
-			$where[] = '(deliverystatus IS NULL OR deliverystatus = "" OR deliverystatus = "delivered")';
+			$where[] = '(deliverystatus IS NULL OR deliverystatus = "" OR deliverystatus = "accepted" OR deliverystatus = "delivered")';
 		}
 
 		$this->update($data, $where);

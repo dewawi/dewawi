@@ -32,7 +32,7 @@ class DEEC_Emailmessage {
 
 	public function updateEmailmessage($id, $data) {
 		$id = (int)$id;
-		$allowed = ['response', 'providermessageid', 'deliverystatus', 'deliverydate', 'deliveryresponse'];
+		$allowed = ['response', 'messagesent', 'messagesentby', 'providermessageid', 'deliverystatus', 'deliverydate', 'deliveryresponse'];
 		$values = [];
 
 		foreach($allowed as $field) {

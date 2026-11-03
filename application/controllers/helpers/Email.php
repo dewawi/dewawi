@@ -201,7 +201,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$bcc = $module !== 'shops' || $recipientIndex === 0 ? ($data['bcc'] ?? '') : '';
 
 			$attachmentsSent = array();
-			$attachmentPaths = array();
+			$attachmentSources = array();
 			if($module == 'contacts') {
 				//Get email attachments
 				$emailattachmentDb = new Contacts_Model_DbTable_Emailattachment();
@@ -214,9 +214,16 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				if(isset($data['files'])) {
 					if(!is_array($data['files'])) throw new InvalidArgumentException('Invalid email attachments');
 					foreach($data['files'] as $file) {
+						if(is_string($file) && preg_match('/^archive:([1-9][0-9]*)$/D', $file, $match)) {
+							$archive = (new Application_Model_DbTable_Documentarchive())->getArchive((int)$match[1]);
+							if(!$archive || (int)$archive['documentid'] !== (int)$documentid || $archive['module'] !== $data['module'] || $archive['controller'] !== $data['controller']) throw new RuntimeException('Document original is not available');
+							$attachmentSources[] = ['path' => BASE_PATH . '/' . $archive['path'], 'filename' => $archive['filename'], 'documentarchiveid' => (int)$archive['id']];
+							$attachmentsSent[] = $archive['filename'];
+							continue;
+						}
 						$id = filter_var($file, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 						if(!$id || !isset($attachmentsAvailable[$id])) throw new RuntimeException('Email attachment is not available');
-						$attachmentPaths[] = DEEC_Emailattachment::getPath($attachmentsAvailable[$id]);
+						$attachmentSources[] = ['path' => DEEC_Emailattachment::getPath($attachmentsAvailable[$id]), 'filename' => $attachmentsAvailable[$id]['filename'], 'emailattachmentid' => (int)$id];
 						$attachmentsSent[] = $attachmentsAvailable[$id]['filename'];
 					}
 				}
@@ -256,7 +263,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 
 			if(!empty($formData['__attach_paths']) && is_array($formData['__attach_paths'])) {
 				foreach($formData['__attach_paths'] as $path) {
-					if($path && file_exists($path)) $attachmentPaths[] = $path;
+					$attachmentSources[] = ['path' => $path, 'filename' => basename($path)];
 				}
 			}
 
@@ -273,6 +280,16 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			}
 
 			try {
+				$attachmentPaths = [];
+				if($emailmessageDb instanceof Contacts_Model_DbTable_Emailmessage) {
+					$copyDb = new Contacts_Model_DbTable_Emailmessageattachment();
+					foreach($attachmentSources as $index => $source) {
+						$copy = $copyDb->storeCopy((int)$messageid, $source, $index + 1);
+						$attachmentPaths[] = ['path' => $copyDb->getPath($copy), 'name' => $copy['filename']];
+					}
+				} else {
+					foreach($attachmentSources as $source) $attachmentPaths[] = ['path' => $source['path'], 'name' => $source['filename']];
+				}
 				if($module === 'shops' && !DEEC_Filter::isValidEmail($recipient['email'])) {
 					throw new RuntimeException('Invalid shop email recipient');
 				}
@@ -292,8 +309,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					'emailmessageId' => $messageid,
 					'xMailer' => '',
 				]);
-			} catch(Exception $e) {
-				if($module !== 'shops') throw $e;
+			} catch(Throwable $e) {
 				$sendResult = ['sent' => false, 'error' => $e->getMessage()];
 			}
 
@@ -307,7 +323,9 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				$result['failed']++;
 				$error = trim((string)($sendResult['error'] ?? ''));
 				error_log('Email transport did not confirm SMTP acceptance: ' . $error);
-				$emailmessageDb->updateEmailmessage($messageid, ['response' => $error !== '' ? $error : 'Email transport did not confirm SMTP acceptance']);
+				$error = $error !== '' ? $error : 'Email transport did not confirm SMTP acceptance';
+				if($emailmessageDb instanceof Contacts_Model_DbTable_Emailmessage) $emailmessageDb->markFailed((int)$messageid, $error);
+				else $emailmessageDb->updateEmailmessage($messageid, ['response' => $error]);
 
 				if($feedback['service'] && $feedback['request'] && $feedback['created']) {
 					$feedback['service']->deleteRequest($feedback['request']);
@@ -322,7 +340,8 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				}
 			} else {
 				$result['sent']++;
-				$emailmessageDb->updateEmailmessage($messageid, ['response' => 'sent']);
+				if($emailmessageDb instanceof Contacts_Model_DbTable_Emailmessage) $emailmessageDb->markAccepted((int)$messageid);
+				else $emailmessageDb->updateEmailmessage($messageid, ['response' => 'sent']);
 
 				if($feedback['service'] && $feedback['request']) {
 					try {

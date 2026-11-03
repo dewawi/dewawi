@@ -132,6 +132,9 @@ foreach ([false, true] as $shared) {
         storedFixture($relative);
         check(storedResponse($relative)[0] === 404, 'Foreign or unmapped file accepted: ' . $relative);
     }
+	$directArchive = 'files/documents/7/0/7/sales/quote/0/10.pdf';
+	storedFixture($directArchive, "%PDF-1.4\nPrivate original\n%%EOF\n");
+	check(storedResponse($directArchive)[0] === 404, 'Authenticated generic file route exposed the document archive');
     $db = new Contacts_Model_DbTable_Emailattachment();
     $adapter->rows['permission'][0]['sales'] = '{"quote":["view"]}';
     check(storedResponse('files/contacts/7/0/7/1/0/100/invoice.pdf')[0] === 404, 'Contact view permission exposed an invoice');
@@ -176,6 +179,7 @@ $documentTypes = [
 ];
 $adapter->rows['invoice'] = [];
 $adapter->rows['emailattachment'] = [];
+$adapter->rows['documentarchive'] = [];
 $productionDocuments = [];
 foreach ([112153, 112279, 112468] as $index => $number) {
     $id = 900 + $index;
@@ -212,6 +216,14 @@ foreach (array_merge($productionDocuments, array_merge(...array_map(static fn(st
     file_put_contents(DEEC_Emailattachment::getPath($attachment), $pdf);
     $attachment['filesize'] = strlen($pdf);
     $adapter->rows['emailattachment'][] = $attachment;
+	$archive = new DEEC_DocumentArchive(BASE_PATH);
+	$relative = $archive->relativePath(100, $module, $controller, (int)$row['id'], 'pdf');
+	storedFixture($relative, $pdf);
+	$adapter->rows['documentarchive'][] = [
+		'id' => 2000 + (int)$row['id'], 'documentid' => (int)$row['id'], 'filename' => $row['filename'], 'format' => 'pdf', 'path' => $relative,
+		'filesize' => strlen($pdf), 'sha256' => hash('sha256', $pdf), 'module' => $module, 'controller' => $controller,
+		'version' => 1, 'correctionarchiveid' => null, 'clientid' => 100, 'archived' => '2026-11-03 12:00:00', 'archivedby' => 42,
+	];
 }
 
 $writesBeforeDocumentFiles = $adapter->writes;
@@ -221,8 +233,8 @@ $hiddenDocumentFiles = (new Contacts_Model_DbTable_Emailattachment())->getContac
 check(in_array('invoice-112153.pdf', $hiddenDocumentFiles, true) && in_array('purchaseorder-916.pdf', $hiddenDocumentFiles, true),
     'Issued documents were not separated from manual FileManager files');
 check($adapter->writes === $writesBeforeDocumentFiles, 'Contact document file discovery wrote database data');
-check($byNumber['112153']['source'] === 'attachment' && $byNumber['112153']['status'] === 'available', 'Canonical archive did not take precedence over the legacy original');
-check($byNumber['112279']['source'] === 'attachment' && $byNumber['112468']['source'] === 'attachment', 'Canonical archives did not take precedence over customer-number originals');
+check($byNumber['112153']['source'] === 'archive' && $byNumber['112153']['status'] === 'available' && $byNumber['112153']['attachmentId'] === 0, 'Canonical archive did not take precedence over the legacy original');
+check($byNumber['112279']['source'] === 'archive' && $byNumber['112468']['source'] === 'archive', 'Canonical archives did not take precedence over customer-number originals');
 check($byNumber['112500']['status'] === 'missing' && $byNumber['112500']['relative'] === '' && $byNumber['112500']['attachmentId'] === 0, 'Missing original was not reported explicitly');
 foreach ($documentTypes as $controller => $module) {
     check(count(array_filter($documentFiles, static fn(array $file): bool => $file['controller'] === $controller && $file['status'] === 'available')) === 1,

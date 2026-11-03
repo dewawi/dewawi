@@ -9,6 +9,16 @@ if (PHP_SAPI !== 'cli') {
 error_reporting(E_ALL & ~E_DEPRECATED);
 ini_set('display_errors', '1');
 $root = dirname(__DIR__, 2);
+if (!defined('BASE_PATH')) {
+	$positionArchiveRoot = sys_get_temp_dir() . '/dewawi-position-archive-' . bin2hex(random_bytes(8));
+	mkdir($positionArchiveRoot, 0700);
+	define('BASE_PATH', $positionArchiveRoot);
+	register_shutdown_function(static function() use ($positionArchiveRoot): void {
+		$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($positionArchiveRoot, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+		foreach ($iterator as $entry) $entry->isDir() && !$entry->isLink() ? rmdir($entry->getPathname()) : unlink($entry->getPathname());
+		rmdir($positionArchiveRoot);
+	});
+}
 set_include_path($root . '/library' . PATH_SEPARATOR . get_include_path());
 spl_autoload_register(static function (string $class) use ($root): void {
     if ($path = stream_resolve_include_path(str_replace('_', '/', $class) . '.php')) {
@@ -194,6 +204,7 @@ class CalculationDocumentController extends DEEC_Controller_DocumentAction
         $this->registeredRow = $row;
         if ($this->failRegistration) throw new RuntimeException('Simulated archive registration failure');
     }
+	protected function assertPdfDocumentArchived(array $row): void {}
 }
 
 $adapter = new PositionReadTestAdapter(['host' => 'unused', 'username' => 'unused', 'password' => 'unused', 'dbname' => 'unused']);
@@ -362,6 +373,12 @@ $adapter->rows['quote'] = [$draft];
 $adapter->rows['increment'][0]['quoteid'] = 7250;
 $before = $adapter->rows;
 $controller->failRegistration = true;
+$failedArchive = (new DEEC_DocumentArchive(BASE_PATH))->path(7, 'sales', 'quote', 1, 'pdf');
+DEEC_Pdf::$callback = static function (array $request) use ($failedArchive): array {
+	if (!is_dir(dirname($failedArchive))) mkdir(dirname($failedArchive), 0775, true);
+	file_put_contents($failedArchive, "%PDF-1.4\nUncommitted original\n%%EOF\n");
+	return $request + ['path' => $failedArchive];
+};
 try {
     $controller->issue(1);
     throw new LogicException('Finalization ignored archive registration failure');
@@ -369,15 +386,20 @@ try {
     check($expected->getMessage() === 'Simulated archive registration failure', 'Unexpected archive registration failure');
 }
 $controller->failRegistration = false;
-check($adapter->rows === $before && $controller->registeredRow['quoteid'] === 7250, 'Archive registration failure committed finalization data');
+check($adapter->rows === $before && $controller->registeredRow['quoteid'] === 7250 && !is_file($failedArchive), 'Archive registration failure committed data or retained uncommitted bytes');
 
-// A database failure after successful publication rolls back the document; the occupied path is handled by the PDF conflict checks.
+// An uncertain database commit never deletes a possibly committed original; an operator resolves the occupied path.
 $adapter->rows['quote'] = [$draft];
 $adapter->rows['increment'][0]['quoteid'] = 7500;
 $before = $adapter->rows;
 $pdfStored = false;
 $adapter->failCommit = true;
-DEEC_Pdf::$callback = static function (array $request) use (&$pdfStored): array { $pdfStored = true; return $request; };
+DEEC_Pdf::$callback = static function (array $request) use (&$pdfStored, $failedArchive): array {
+	$pdfStored = true;
+	if (!is_dir(dirname($failedArchive))) mkdir(dirname($failedArchive), 0775, true);
+	file_put_contents($failedArchive, "%PDF-1.4\nCommit failure original\n%%EOF\n");
+	return $request + ['path' => $failedArchive];
+};
 try {
     $controller->issue(1);
     throw new LogicException('Finalization ignored database commit failure');
@@ -385,7 +407,8 @@ try {
     check($expected->getMessage() === 'Simulated database commit failure', 'Unexpected database commit failure');
 }
 $adapter->failCommit = false;
-check($pdfStored && $adapter->rows === $before, 'Commit failure retained finalization data or skipped prior PDF publication');
+check($pdfStored && $adapter->rows === $before && is_file($failedArchive), 'Commit failure deleted a possibly committed original or skipped prior publication');
+unlink($failedArchive);
 
 // A request losing the row lock observes the winner and never creates another original.
 $adapter->rows['quote'] = [$draft];

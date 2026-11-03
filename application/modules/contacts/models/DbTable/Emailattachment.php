@@ -52,6 +52,7 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 		$user = Zend_Registry::get('User');
 		$client = Zend_Registry::get('Client');
 		$relative = preg_replace(['~^cache/thumbs/files/~', '~^cache/thumbs/media/~'], ['files/', 'media/'], $relative);
+		if (str_starts_with($relative, 'files/documents/')) return false;
 		if (str_starts_with($relative, 'files/images/')) {
 			$filename = substr($relative, strlen('files/images/'));
 			$permission = new DEEC_Permission($user);
@@ -243,9 +244,22 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 			'id' => (int)$document['id'], 'module' => $module, 'controller' => $controller,
 			'number' => (string)($document[$controller . 'id'] ?? ''),
 			'date' => (string)($document[$controller . 'date'] ?? ''), 'filename' => $filename,
-			'status' => 'missing', 'source' => '', 'relative' => '', 'attachmentId' => 0, 'fallbackAttachmentId' => 0,
+			'status' => 'missing', 'source' => '', 'relative' => '', 'attachmentId' => 0, 'fallbackAttachmentId' => 0, 'documentUrl' => '',
 		];
 		if (!DEEC_Emailattachment::validFilename($filename)) return $result;
+		try {
+			$archive = (new Application_Model_DbTable_Documentarchive())->getForDocument((int)$document['id'], $module, $controller, 'pdf');
+			if ($archive) {
+				$result['status'] = 'available';
+				$result['source'] = 'archive';
+				$result['documentUrl'] = '/' . $module . '/' . $controller . '/download/id/' . (int)$document['id'];
+				return $result;
+			}
+		} catch (RuntimeException $exception) {
+			error_log('Contact document archive integrity failure: ' . $module . '/' . $controller . ' id=' . (int)$document['id'] . ' ' . $exception->getMessage());
+			$result['status'] = 'invalid';
+			return $result;
+		}
 
 		$directory = new DEEC_Directory();
 		$originals = [];
@@ -280,12 +294,8 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 			return $result;
 		}
 
-		$chosen = $attachments[0] ?? $originals[0];
-		$result['source'] = $chosen['source'];
-		$result['relative'] = (string)($chosen['relative'] ?? '');
-		$result['attachmentId'] = (int)($chosen['attachmentId'] ?? 0);
-		$result['fallbackAttachmentId'] = (int)($attachments[0]['attachmentId'] ?? 0);
-		$result['status'] = $invalid ? 'invalid' : (!$originals ? 'attachment_only' : (!$attachments ? 'original_only' : 'available'));
+		$result['source'] = 'recovery';
+		$result['status'] = $invalid ? 'invalid' : 'migration_required';
 		return $result;
 	}
 
@@ -388,6 +398,26 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 		if(!$context) return ['contactUrl' => '', 'documentUrl' => '', 'attachments' => []];
 		$document = $context['parent'];
 		$directory = new DEEC_Directory();
+		if (DEEC_Permission::isDocument($module, $controller)) {
+			$contactRecordId = $this->getContactRecordId((int)$document['contactid']);
+			$contactUrl = $contactRecordId > 0 ? $directory->getUrl((string)$contactRecordId, (string)$context['clientid']) : '';
+			$attachments = array_values(array_filter($this->getEmailattachments($document['id'], $module, $controller), static function(array $attachment) use ($document): bool {
+				return (string)$attachment['filename'] !== (string)($document['filename'] ?? '');
+			}));
+			try {
+				$original = (new Application_Model_DbTable_Documentarchive())->getForDocument((int)$document['id'], $module, $controller, 'pdf');
+				if ($original) array_unshift($attachments, [
+					'id' => 'archive:' . (int)$original['id'], 'selection' => 'archive:' . (int)$original['id'], 'archiveid' => (int)$original['id'],
+					'filename' => $original['filename'], 'filesize' => $original['filesize'], 'filetype' => 'application/pdf', 'deletable' => false,
+					'url' => '/' . $module . '/' . $controller . '/download/id/' . (int)$document['id'],
+				]);
+				else array_unshift($attachments, ['id' => 'archive-missing', 'filename' => (string)($document['filename'] ?? ''), 'filesize' => 0, 'deletable' => false, 'available' => false]);
+			} catch (RuntimeException $exception) {
+				error_log('Document archive unavailable for email composer: ' . $module . '/' . $controller . ' id=' . (int)$document['id'] . ' ' . $exception->getMessage());
+				array_unshift($attachments, ['id' => 'archive-invalid', 'filename' => (string)($document['filename'] ?? ''), 'filesize' => 0, 'deletable' => false, 'available' => false]);
+			}
+			return ['contactUrl' => $contactUrl, 'documentUrl' => '', 'attachments' => $attachments];
+		}
 		$contactIds = [(int)$document['contactid']];
 		$contactRecordId = $this->getContactRecordId((int)$document['contactid']);
 		if ($contactRecordId > 0 && $contactRecordId !== (int)$document['contactid']) $contactIds[] = $contactRecordId;
@@ -457,41 +487,7 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 
 	public function registerDocumentOriginal(array $document, string $module, string $controller): array
 	{
-		$context = $this->getParentContext($document['id'] ?? 0, $module, $controller);
-		if (!$context || !DEEC_Permission::isDocumentReadonly($module, $controller, $context['parent'])) {
-			throw new RuntimeException('Document archive access denied');
-		}
-		$document = $context['parent'];
-		$filename = (string)($document['filename'] ?? '');
-		if (!DEEC_Emailattachment::validFilename($filename)) throw new RuntimeException('Invalid PDF filename');
-		$directory = DEEC_Emailattachment::getDirectory($module, $controller, (int)$document['id'], $context['clientid']);
-		$path = $directory . '/' . $filename;
-		DEEC_Emailattachment::checkPath($path);
-		DEEC_Pdf::assertCompletePdfFile($path);
-		$hash = hash_file('sha256', $path);
-		$matches = [];
-		foreach ($this->getEmailattachments($document['id'], $module, $controller) as $attachment) {
-			if ((string)$attachment['filename'] !== $filename) continue;
-			$attachmentPath = DEEC_Emailattachment::getPath($attachment);
-			DEEC_Pdf::assertCompletePdfFile($attachmentPath);
-			if ((int)$attachment['clientid'] !== (int)$context['clientid'] || $attachmentPath !== $path
-				|| !hash_equals($hash, hash_file('sha256', $attachmentPath))) {
-				throw new RuntimeException('Document archive metadata differs');
-			}
-			$matches[] = $attachment;
-		}
-		if (count($matches) > 1) throw new RuntimeException('Document archive metadata is ambiguous');
-		if ($matches) return $matches[0];
-
-		$this->insert([
-			'documentid' => (int)$document['id'], 'module' => $module, 'controller' => $controller, 'clientid' => $context['clientid'],
-			'filename' => $filename, 'location' => $directory, 'filetype' => 'application/pdf', 'filesize' => filesize($path),
-			'ordering' => 1, 'uploaded' => $this->_date, 'uploadedby' => (int)$this->_user['id'],
-		]);
-		foreach ($this->getEmailattachments($document['id'], $module, $controller) as $attachment) {
-			if ((string)$attachment['filename'] === $filename && (int)$attachment['clientid'] === (int)$context['clientid']) return $attachment;
-		}
-		throw new RuntimeException('Document archive metadata could not be stored');
+		return (new Application_Model_DbTable_Documentarchive())->registerOriginal($document, $module, $controller, 'pdf');
 	}
 
 	public function updateEmailattachment($id, $data)

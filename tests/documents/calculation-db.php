@@ -20,6 +20,8 @@ class DEEC_Pdf { public function generate(array $request): array { return $reque
 class DbIssueController extends DEEC_Controller_DocumentAction {
     public function init() { $this->_user = Zend_Registry::get('User'); }
     public function issue(int $id) { return $this->generatePdfDocument($id, ['finalize' => true]); }
+	protected function registerPdfDocument(array $row): void {}
+	protected function assertPdfDocumentArchived(array $row): void {}
 }
 class DbPositionController extends Sales_PositionController {
     public function init() { $this->_user = Zend_Registry::get('User'); $this->view = new Zend_View(); }

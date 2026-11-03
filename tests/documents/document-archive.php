@@ -36,13 +36,20 @@ function archiveWrite(string $path, string $bytes): void
 }
 register_shutdown_function(static function () use ($work): void { archiveRemove($work); });
 
+$linkedBase = $work . '-link';
+symlink($work, $linkedBase);
+try { new DEEC_DocumentArchive($linkedBase); throw new RuntimeException('Symlink archive base was accepted'); }
+catch (InvalidArgumentException $expected) { archiveCheck($expected->getMessage() === 'Invalid archive base', 'Unexpected symlink base result'); }
+unlink($linkedBase);
+
 $archive = new DEEC_DocumentArchive($work);
 $base = [
 	'module' => 'sales', 'controller' => 'invoice', 'id' => 112143, 'clientid' => 100,
 	'contactid' => 58101, 'contact_record_id' => 80560, 'document_number' => '112143', 'filename' => 'Rechnung-112143.pdf',
 ];
 $paths = $archive->paths($base);
-archiveCheck(str_ends_with($paths['canonical'], '/files/attachments/sales/invoice/1/0/100/1/1/112143/Rechnung-112143.pdf'), 'Canonical path is not document based');
+archiveCheck(str_ends_with($paths['canonical'], '/files/documents/1/0/100/sales/invoice/112/112143.pdf'), 'Canonical path is not document-ID based');
+archiveCheck(str_ends_with($paths['attachment'], '/files/attachments/sales/invoice/1/0/100/1/1/112143/Rechnung-112143.pdf'), 'Historical attachment candidate changed');
 archiveCheck(str_ends_with($paths['current'], '/files/contacts/1/0/100/5/8/58101/Rechnung-112143.pdf'), 'Customer-number path changed');
 archiveCheck(str_ends_with($paths['legacy'], '/files/contacts/1/0/100/8/0/80560/Rechnung-112143.pdf'), 'Contact-record path changed');
 archiveCheck($archive->plan($base)['reason'] === 'original_missing', 'Missing original was not blocked');
@@ -58,12 +65,13 @@ $plan = $archive->plan($base);
 archiveCheck($plan['status'] === 'ready' && $plan['action'] === 'register_metadata', 'Restart did not retain the copied archive');
 $metadata = [[
 	'id' => 1, 'documentid' => 112143, 'module' => 'sales', 'controller' => 'invoice', 'clientid' => 100,
-	'filename' => $base['filename'], 'location' => dirname($paths['canonical']), 'filesize' => strlen($bytes), 'deleted' => 0,
+	'filename' => $base['filename'], 'format' => 'pdf', 'path' => substr($paths['canonical'], strlen($work) + 1),
+	'filesize' => strlen($bytes), 'sha256' => hash('sha256', $bytes), 'version' => 1,
 ]];
 archiveCheck($archive->plan($base, $metadata)['status'] === 'complete', 'Verified metadata was not idempotent');
 $foreign = [array_replace($metadata[0], ['clientid' => 101])];
 archiveCheck($archive->plan($base, $foreign)['reason'] === 'metadata_differs', 'Foreign-tenant metadata was accepted');
-$wrongLocation = [array_replace($metadata[0], ['location' => $work])];
+$wrongLocation = [array_replace($metadata[0], ['path' => 'files/documents/wrong.pdf'])];
 archiveCheck($archive->plan($base, $wrongLocation)['reason'] === 'metadata_differs', 'Wrong archive assignment was accepted');
 archiveCheck($archive->plan($base, [$metadata[0], array_replace($metadata[0], ['id' => 2])])['reason'] === 'metadata_ambiguous', 'Duplicate metadata was accepted');
 archiveCheck($archive->plan(array_replace($base, ['contact_match_count' => 2]))['reason'] === 'contact_mapping_ambiguous', 'Ambiguous contact mapping was accepted');
@@ -111,7 +119,7 @@ $samePaths = $archive->paths($sameId);
 archiveWrite($samePaths['current'], $bytes);
 archiveCheck($samePaths['current'] === $samePaths['legacy'] && $archive->plan($sameId)['status'] === 'ready', 'Equal contact ID and customer number produced a conflict');
 
-$linked = array_replace($base, ['id' => 112145, 'filename' => 'linked-target.pdf']);
+$linked = array_replace($base, ['id' => 999145, 'filename' => 'linked-target.pdf']);
 $linkedPaths = $archive->paths($linked);
 $linkedDirectory = dirname($linkedPaths['canonical']);
 if (!is_dir(dirname($linkedDirectory))) mkdir(dirname($linkedDirectory), 0775, true);
@@ -127,9 +135,18 @@ foreach (DEEC_DocumentArchive::documents() as $module => $controllers) {
 	foreach ($controllers as $controller) {
 		$fixture = array_replace($base, ['module' => $module, 'controller' => $controller, 'id' => ++$base['id'], 'filename' => $controller . '.pdf']);
 		$typePaths = $archive->paths($fixture);
-		archiveCheck(str_contains($typePaths['canonical'], '/files/attachments/' . $module . '/' . $controller . '/1/0/100/'), 'Document type uses a non-canonical root');
+		archiveCheck(str_contains($typePaths['canonical'], '/files/documents/1/0/100/' . $module . '/' . $controller . '/'), 'Document type uses a non-canonical root');
 	}
 }
 archiveCheck(file_get_contents($manual) === 'manual contact file', 'Manual contact file was changed');
+
+$xmlDocument = array_replace($base, ['id' => 59296, 'format' => 'xml', 'filename' => 'XRechnung-112143.xml']);
+$xmlPath = $archive->path(100, 'sales', 'invoice', 59296, 'xml');
+$xml = '<?xml version="1.0" encoding="UTF-8"?><Invoice><ID>112143</ID></Invoice>';
+$storedXml = $archive->store($xml, 100, 'sales', 'invoice', 59296, 'xml');
+archiveCheck(str_ends_with($xmlPath, '/files/documents/1/0/100/sales/invoice/59/59296.xml'), 'XML archive path is not stable');
+archiveCheck($storedXml['status'] === 'ok' && file_get_contents($xmlPath) === $xml, 'Issued XML original was not stored unchanged');
+try { $archive->store(str_replace('112143', 'changed', $xml), 100, 'sales', 'invoice', 59296, 'xml'); throw new RuntimeException('XML original was overwritten'); }
+catch (RuntimeException $expected) { archiveCheck($expected->getMessage() === 'Archive target collision', 'Unexpected XML collision result'); }
 
 echo 'PASS: ' . $checks . " document archive checks; all eight types covered, sources retained, conflicts blocked\n";

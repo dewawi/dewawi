@@ -4,13 +4,13 @@
 
 Ausgestellte Originale werden unter
 
-`files/attachments/<module>/<controller>/<client-shard>/<document-id-shard>/<filename>`
+`files/documents/<client-shard>/<module>/<controller>/<intdiv(document-id,1000)>/<document-id>.<format>`
 
-abgelegt. Diese bereits vorhandene Struktur ist gegenüber den Kontaktordnern stabil, weil sie die interne Beleg-ID und den Belegmandanten verwendet. Sie ist schon durch Dokumentrechte, Mandantenprüfung und Löschschutz abgesichert und wird für E-Mail-Anhänge verwendet. Es wird deshalb kein weiteres Archivverzeichnis eingeführt.
+abgelegt. Beispiel: `files/documents/1/0/100/sales/invoice/59/59296.pdf`. Der physische Name verwendet ausschließlich interne, stabile IDs; sichtbare Belegnummer und Downloadname stehen in `documentarchive`. Direkte HTTP-Zugriffe auf diesen Root sind gesperrt, Downloads laufen durch die bestehende Dokumentaktion.
 
-Die acht Belegarten sind `sales/quote`, `sales/salesorder`, `sales/invoice`, `sales/deliveryorder`, `sales/creditnote`, `sales/reminder`, `purchases/quoterequest` und `purchases/purchaseorder`. Die bisherigen Pfade unter `files/contacts` mit Kundennummer beziehungsweise interner Kontakt-ID bleiben unverändert als historische Quellen erhalten. Manuelle Kontaktdateien werden weder erfasst noch kopiert.
+Die acht Belegarten sind `sales/quote`, `sales/salesorder`, `sales/invoice`, `sales/deliveryorder`, `sales/creditnote`, `sales/reminder`, `purchases/quoterequest` und `purchases/purchaseorder`. Die bisherigen Pfade unter `files/contacts` mit Kundennummer beziehungsweise interner Kontakt-ID und dokumentbezogene Kopien unter `files/attachments` bleiben unverändert als historische Quellen erhalten. Manuelle Kontaktdateien werden gemeldet, aber weder erfasst noch kopiert.
 
-Neue Belege werden beim erstmaligen Abschluss direkt im kanonischen Verzeichnis atomar veröffentlicht. Größe und vollständige PDF-Struktur werden vor dem Commit geprüft; anschließend wird dieselbe Datei in `emailattachment` registriert. Bestehende Belege werden weiterhin zuerst aus dem kanonischen Archiv und ersatzweise aus beiden historischen Kontaktpfaden gelesen. Bei abweichenden Fassungen wird der Zugriff als Konflikt abgebrochen. Es findet keine automatische historische Kopie oder PDF-Neuerzeugung statt.
+Neue Belege werden beim erstmaligen Abschluss direkt im kanonischen Verzeichnis exklusiv veröffentlicht. Größe, vollständige PDF-/XML-Struktur und SHA-256 werden geprüft; anschließend wird dieselbe Datei in `documentarchive` registriert. Reguläre Abrufe verwenden ausschließlich dieses Archiv. Historische Kontakt- und Attachment-Dateien sind nur Wiederherstellungskandidaten des Operators. Bei fehlenden Metadaten, fehlenden Dateien oder abweichenden Fassungen wird der Zugriff abgebrochen; es findet keine automatische Kopie oder Neugenerierung statt.
 
 ## Betreiberwerkzeug
 
@@ -37,10 +37,13 @@ php tests/documents/document-archive-migration.php \
   --contacts-client=100 \
   --contact=58101 \
   --type=sales/invoice \
-  --document-id=112143
+  --document-number=112143
 ```
 
-Das Werkzeug akzeptiert nur gespeicherte, strukturell vollständige PDFs. Es meldet fehlende Dateien, leere oder beschädigte PDFs, Symlinks, Verzeichniskollisionen, abweichende historische beziehungsweise kanonische Fassungen, falsche Mandanten-/Pfadmetadaten, gelöschte oder mehrdeutige Metadatensätze und fehlende Archivkopien getrennt. Rechnung 112143 wird nur dann als `copy_and_register` geplant, wenn genau eine inhaltlich eindeutige gültige historische Fassung vorhanden ist. Es wird niemals ein PDF erzeugt.
+`--document-id` bezeichnet immer die interne Datenbank-ID (beispielsweise `59296`). Die sichtbare Rechnungsnummer wird mit `--document-number` gefiltert.
+Der globale Scan nach nicht zugeordneten Dateien läuft nur ohne Beleg-, Kontakt- oder Typfilter; gefilterte Läufe prüfen ausschließlich die ausgewählten Belege und deren XML-Originale.
+
+Das Werkzeug akzeptiert nur gespeicherte, strukturell vollständige PDFs beziehungsweise XML-Dateien. Es meldet fehlende Dateien, leere oder beschädigte Originale, Symlinks, Verzeichniskollisionen, abweichende historische beziehungsweise kanonische Fassungen, falsche Mandanten-/Pfadmetadaten, mehrdeutige Metadatensätze und nicht zugeordnete Dateien getrennt. Rechnung 112143 wird nur dann als `copy_and_register` geplant, wenn genau eine inhaltlich eindeutige gültige historische Fassung vorhanden ist. Es wird niemals ein Dokument erzeugt.
 
 ## Kontrollierte Ausführung
 
@@ -65,6 +68,6 @@ Bei Parent-Child-Mandanten bezeichnet `--client` immer den Eigentümer der Beleg
 
 ## Auswirkungen und Grenzen
 
-Dokumentdownload, Kontaktdateien-Tab, E-Mail-Anhänge und Kundenhistorie verwenden weiterhin die vorhandenen Dokumentrechte. FileManager-Verzeichnisse werden nicht vereinigt. Datenbankreferenzen und Belegnummern bleiben unverändert. Der bestehende GoBD-Export exportiert weiterhin CSV-Daten und Dateinamen, aber keine PDFs; die Archivumstellung ändert deshalb seinen Inhalt nicht und schließt seine bereits dokumentierte PDF-/Manifest-Lücke nicht. Eine spätere GoBD-Paketerweiterung muss ausschließlich kanonische, tatsächlich gespeicherte Originale verwenden und fehlende Dateien als Fehler behandeln.
+Dokumentdownload, Kontaktdateien-Tab, E-Mail-Anhänge und Kundenhistorie verwenden weiterhin die vorhandenen Dokumentrechte. FileManager-Verzeichnisse werden nicht vereinigt. Versandkopien werden nachrichtenbezogen unter `files/attachments/emailmessage` abgelegt und sind keine Originale. Datenbankreferenzen und Belegnummern bleiben unverändert. Der bestehende GoBD-Export exportiert weiterhin CSV-Daten und Dateinamen, aber keine PDFs; die Archivumstellung ändert deshalb seinen Inhalt nicht. Eine spätere GoBD-Paketerweiterung kann PDF-/XML-Originale und SHA-256 aus `documentarchive` datensatzbezogen beziehen und muss fehlende Dateien als Fehler behandeln.
 
 Die strukturelle PDF-Prüfung und SHA-256 belegen Dateiidentität, nicht die fachliche Richtigkeit des Inhalts oder Schutz gegen privilegierte Betriebssystemzugriffe. Produktive Dry-Runs und Ausführungen erfolgen ausschließlich durch den Betreiber; die lokale Entwicklung öffnet oder verändert keine Produktivdatenbank.

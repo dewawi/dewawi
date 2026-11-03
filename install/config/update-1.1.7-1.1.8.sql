@@ -186,3 +186,45 @@ SET @dewawi_slugredirect_status_sql = IF(
 PREPARE dewawi_slugredirect_status_statement FROM @dewawi_slugredirect_status_sql;
 EXECUTE dewawi_slugredirect_status_statement;
 DEALLOCATE PREPARE dewawi_slugredirect_status_statement;
+CREATE TABLE IF NOT EXISTS `documentarchive` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `documentid` int(11) NOT NULL,
+  `filename` varchar(255) NOT NULL,
+  `format` varchar(16) NOT NULL,
+  `path` varchar(512) NOT NULL,
+  `filesize` bigint(20) unsigned NOT NULL,
+  `sha256` char(64) NOT NULL,
+  `module` varchar(64) NOT NULL,
+  `controller` varchar(64) NOT NULL,
+  `version` int(11) NOT NULL DEFAULT 1,
+  `correctionarchiveid` int(11) DEFAULT NULL,
+  `parameters` longtext DEFAULT NULL,
+  `clientid` int(11) NOT NULL,
+  `archived` datetime NOT NULL,
+  `archivedby` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `document_format_version` (`clientid`,`module`,`controller`,`documentid`,`format`,`version`),
+  UNIQUE KEY `archive_path` (`path`),
+  KEY `correctionarchiveid` (`correctionarchiveid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `emailmessageattachment` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `emailmessageid` int(11) NOT NULL,
+  `documentarchiveid` int(11) DEFAULT NULL,
+  `emailattachmentid` int(11) DEFAULT NULL,
+  `filename` varchar(255) NOT NULL,
+  `filetype` varchar(255) NOT NULL,
+  `filesize` bigint(20) unsigned NOT NULL,
+  `sha256` char(64) NOT NULL,
+  `path` varchar(512) NOT NULL,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `message_ordering` (`clientid`,`emailmessageid`,`ordering`),
+  UNIQUE KEY `message_attachment_path` (`path`),
+  KEY `documentarchiveid` (`documentarchiveid`),
+  KEY `emailattachmentid` (`emailattachmentid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
