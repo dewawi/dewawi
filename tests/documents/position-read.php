@@ -178,7 +178,9 @@ class DEEC_Pdf
 class CalculationDocumentController extends DEEC_Controller_DocumentAction
 {
     public array $finalizedRow = [];
+    public array $registeredRow = [];
     public bool $persistFinalization = false;
+    public bool $failRegistration = false;
     public function init() { $this->_user = Zend_Registry::get('User'); }
     public function issue(int $id): array { return $this->generatePdfDocument($id, ['finalize' => true]); }
     public function defaults(array $data): array { return $this->beforeCreate($data); }
@@ -186,6 +188,11 @@ class CalculationDocumentController extends DEEC_Controller_DocumentAction
     {
         $this->finalizedRow = $row;
         return $this->persistFinalization ? parent::finalizeDocument($row) : $row;
+    }
+    protected function registerPdfDocument(array $row): void
+    {
+        $this->registeredRow = $row;
+        if ($this->failRegistration) throw new RuntimeException('Simulated archive registration failure');
     }
 }
 
@@ -335,18 +342,34 @@ DEEC_Pdf::$callback = static function (array $request) use ($adapter): array {
     check($request['createOriginal'] === true && $adapter->rows['quote'][0]['quoteid'] === 7000 && $adapter->rows['quote'][0]['completed'] === 1, 'PDF was not generated from the transactionally finalized row');
     throw new RuntimeException('Simulated PDF storage failure');
 };
+$controller->registeredRow = [];
 try {
     $controller->issue(1);
     throw new LogicException('Finalization ignored PDF storage failure');
 } catch (RuntimeException $expected) {
     check($expected->getMessage() === 'Simulated PDF storage failure', 'Unexpected PDF storage failure');
 }
-check($adapter->rows === $before, 'PDF storage failure committed document completion or number allocation');
+check($adapter->rows === $before && $controller->registeredRow === [], 'PDF storage failure committed document completion or registered missing bytes');
 
 DEEC_Pdf::$callback = static function (array $request): array { return $request; };
 $result = $controller->issue(1);
-check($result['createOriginal'] === true && $adapter->rows['quote'][0]['quoteid'] === 7000 && $adapter->rows['quote'][0]['completed'] === 1, 'Verified original did not commit finalization');
+check($result['createOriginal'] === true && $adapter->rows['quote'][0]['quoteid'] === 7000 && $adapter->rows['quote'][0]['completed'] === 1
+    && $controller->registeredRow['quoteid'] === 7000, 'Verified original was not registered before committing finalization');
 check($adapter->rows['increment'][0]['quoteid'] === 7001, 'Verified finalization did not advance number exactly once');
+
+// Archive metadata failure rolls the document transaction back after file publication.
+$adapter->rows['quote'] = [$draft];
+$adapter->rows['increment'][0]['quoteid'] = 7250;
+$before = $adapter->rows;
+$controller->failRegistration = true;
+try {
+    $controller->issue(1);
+    throw new LogicException('Finalization ignored archive registration failure');
+} catch (RuntimeException $expected) {
+    check($expected->getMessage() === 'Simulated archive registration failure', 'Unexpected archive registration failure');
+}
+$controller->failRegistration = false;
+check($adapter->rows === $before && $controller->registeredRow['quoteid'] === 7250, 'Archive registration failure committed finalization data');
 
 // A database failure after successful publication rolls back the document; the occupied path is handled by the PDF conflict checks.
 $adapter->rows['quote'] = [$draft];

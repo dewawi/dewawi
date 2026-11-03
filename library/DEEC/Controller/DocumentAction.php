@@ -315,6 +315,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 					$row = $this->loadRow($id);
 					$row = $this->finalizeDocument($row);
 					$result = $this->generatePdf($row, $options, true);
+					$this->registerPdfDocument($row);
 					$adapter->commit();
 					return $result;
 				}
@@ -344,6 +345,15 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 			'overwrite' => !empty($options['overwrite']),
 			'createOriginal' => $createOriginal,
 		]);
+	}
+
+	protected function registerPdfDocument(array $row): void
+	{
+		(new Contacts_Model_DbTable_Emailattachment())->registerDocumentOriginal(
+			$row,
+			$this->getRequest()->getModuleName(),
+			$this->getRequest()->getControllerName()
+		);
 	}
 
 	protected function ensurePdfDocumentExists(int $id): void

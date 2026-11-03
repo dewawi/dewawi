@@ -221,8 +221,8 @@ $hiddenDocumentFiles = (new Contacts_Model_DbTable_Emailattachment())->getContac
 check(in_array('invoice-112153.pdf', $hiddenDocumentFiles, true) && in_array('purchaseorder-916.pdf', $hiddenDocumentFiles, true),
     'Issued documents were not separated from manual FileManager files');
 check($adapter->writes === $writesBeforeDocumentFiles, 'Contact document file discovery wrote database data');
-check($byNumber['112153']['source'] === 'legacy' && $byNumber['112153']['status'] === 'available', 'Legacy internal contact ID original was not resolved');
-check($byNumber['112279']['source'] === 'current' && $byNumber['112468']['source'] === 'current', 'Customer-number originals were not resolved');
+check($byNumber['112153']['source'] === 'attachment' && $byNumber['112153']['status'] === 'available', 'Canonical archive did not take precedence over the legacy original');
+check($byNumber['112279']['source'] === 'attachment' && $byNumber['112468']['source'] === 'attachment', 'Canonical archives did not take precedence over customer-number originals');
 check($byNumber['112500']['status'] === 'missing' && $byNumber['112500']['relative'] === '' && $byNumber['112500']['attachmentId'] === 0, 'Missing original was not reported explicitly');
 foreach ($documentTypes as $controller => $module) {
     check(count(array_filter($documentFiles, static fn(array $file): bool => $file['controller'] === $controller && $file['status'] === 'available')) === 1,

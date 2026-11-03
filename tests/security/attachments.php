@@ -324,6 +324,15 @@ foreach (['sales' => 'quote', 'purchases' => 'purchaseorder', 'processes' => 'pr
     $class = ucfirst($module) . '_Service_AttachmentService';
     $service = new $class();
     $result = $service->sync($document, $adapter->rows['contact'][0], $controller);
+    if (DEEC_Permission::isDocument($module, $controller)) {
+        check($result['attachments'] === [], 'Historical document was migrated during view synchronization: ' . $module);
+        $archive = DEEC_Emailattachment::getDirectory($module, $controller, 30, 7) . '/' . $document['filename'];
+        check(!is_file($archive), 'Historical synchronization created a canonical file: ' . $module);
+        if (!is_dir(dirname($archive))) mkdir(dirname($archive), 0775, true);
+        file_put_contents($archive, $original);
+        (new Contacts_Model_DbTable_Emailattachment())->registerDocumentOriginal($document, $module, $controller);
+        $result = $service->sync($document, $adapter->rows['contact'][0], $controller);
+    }
     check(count($result['attachments']) === 1, 'Stored PDF was not registered: ' . $module);
     $attachment = $result['attachments'][0];
     check($attachment['clientid'] === 7 && $attachment['documentid'] === 30 && $attachment['module'] === $module, 'Stored PDF used an incorrect context');
@@ -336,7 +345,7 @@ foreach (['sales' => 'quote', 'purchases' => 'purchaseorder', 'processes' => 'pr
         $service->sync($document, [], $controller);
         throw new LogicException('Divergent original attachment was accepted');
     } catch (RuntimeException $expected) {
-        check($expected->getMessage() === 'Attachment differs from original PDF', 'Unexpected divergent attachment error');
+        check(in_array($expected->getMessage(), ['Original PDF locations differ', 'Attachment differs from original PDF'], true), 'Unexpected divergent attachment error');
     }
     file_put_contents($attachmentPath, $original);
     $deleteStatus = attachmentAction('delete', [], 'POST', ['id' => [$attachment['id']]])[0];
@@ -359,9 +368,9 @@ $legacySource = $legacyDirectory . '/legacy-original.pdf';
 $legacyBytes = "%PDF-1.4\nLegacy contact record original\n%%EOF\n";
 file_put_contents($legacySource, $legacyBytes);
 $legacyResult = (new Sales_Service_AttachmentService())->sync($legacyDocument, $adapter->rows['contact'][0], 'quote');
-check($legacyResult['contactUrl'] === '7/0/7/1/0/100' && count($legacyResult['attachments']) === 1, 'Legacy contact record original was not synchronized');
-check(file_get_contents(DEEC_Emailattachment::getPath($legacyResult['attachments'][0])) === $legacyBytes
-    && file_get_contents($legacySource) === $legacyBytes, 'Legacy attachment synchronization changed original bytes');
+check($legacyResult['contactUrl'] === '7/0/7/1/0/100' && $legacyResult['attachments'] === [], 'Legacy contact record path was not resolved safely');
+$legacyArchive = DEEC_Emailattachment::getDirectory('sales', 'quote', 30, 7) . '/legacy-original.pdf';
+check(!is_file($legacyArchive) && file_get_contents($legacySource) === $legacyBytes, 'Legacy synchronization copied or changed original bytes');
 
 // A user upload may not pre-empt the immutable attachment name of an issued document.
 setupAttachments();

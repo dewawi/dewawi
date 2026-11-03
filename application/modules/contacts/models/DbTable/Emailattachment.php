@@ -280,7 +280,7 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 			return $result;
 		}
 
-		$chosen = $originals[0] ?? $attachments[0];
+		$chosen = $attachments[0] ?? $originals[0];
 		$result['source'] = $chosen['source'];
 		$result['relative'] = (string)($chosen['relative'] ?? '');
 		$result['attachmentId'] = (int)($chosen['attachmentId'] ?? 0);
@@ -404,8 +404,15 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 			$sources[] = ['path' => $path, 'url' => $url, 'hash' => hash_file('sha256', $path)];
 		}
 		if (count(array_unique(array_column($sources, 'hash'))) > 1) throw new RuntimeException('Original PDF locations differ');
-		$source = $sources[0]['path'] ?? realpath(BASE_PATH) . '/files/contacts/' . $contactUrl . '/' . $filename;
+		$contactSource = $sources[0]['path'] ?? '';
 		if ($sources) $contactUrl = $sources[0]['url'];
+		$archive = DEEC_Emailattachment::getDirectory($module, $controller, (int)$document['id'], $context['clientid']) . '/' . $filename;
+		DEEC_Emailattachment::checkPath($archive);
+		if (is_file($archive)) {
+			DEEC_Pdf::assertCompletePdfFile($archive);
+			$sources[] = ['path' => $archive, 'url' => $documentUrl, 'hash' => hash_file('sha256', $archive)];
+		}
+		if (count(array_unique(array_column($sources, 'hash'))) > 1) throw new RuntimeException('Original PDF locations differ');
 		$attachments = $this->getEmailattachments($document['id'], $module, $controller);
 		$exists = false;
 		foreach($attachments as $attachment) {
@@ -413,47 +420,78 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 				$exists = true;
 				$attachmentPath = DEEC_Emailattachment::getPath($attachment);
 				DEEC_Pdf::assertCompletePdfFile($attachmentPath);
-				if (is_file($source)) {
-					if (!hash_equals(hash_file('sha256', $source), hash_file('sha256', $attachmentPath))) throw new RuntimeException('Attachment differs from original PDF');
-				}
+				if ($sources && !hash_equals($sources[0]['hash'], hash_file('sha256', $attachmentPath))) throw new RuntimeException('Attachment differs from original PDF');
 			}
 		}
-		if(!$exists && (int)$document['contactid'] > 0 && DEEC_Emailattachment::validFilename($filename)) {
-			$target = DEEC_Emailattachment::getDirectory($module, $controller, (int)$document['id'], $context['clientid']);
-			if(is_file($source)) {
-				if(!is_dir($target) && !mkdir($target, 0775, true) && !is_dir($target)) throw new RuntimeException('Attachment directory is not available');
-				$path = $target . '/' . $filename;
-				DEEC_Emailattachment::checkPath($path);
-				if(file_exists($path)) return ['contactUrl' => $contactUrl, 'documentUrl' => $documentUrl, 'attachments' => $attachments];
-				$output = @fopen($path, 'x');
-				if(!$output) throw new RuntimeException('Attachment could not be stored');
-				$input = fopen($source, 'rb');
-				try {
-					if(!$input || stream_copy_to_stream($input, $output) !== filesize($source)) throw new RuntimeException('Attachment could not be stored');
-				} catch(Exception $e) {
-					unlink($path);
-					throw $e;
-				} finally {
-					if($input) fclose($input);
-					fclose($output);
-				}
-				DEEC_Pdf::assertCompletePdfFile($path);
-				if (!hash_equals(hash_file('sha256', $source), hash_file('sha256', $path))) throw new RuntimeException('Attachment differs from original PDF');
-				// Register the stored document copy using its verified parent, not posted upload data.
-				try {
-					$this->insert([
-						'documentid' => $document['id'], 'module' => $module, 'controller' => $controller, 'clientid' => $context['clientid'],
-						'filename' => $filename, 'location' => $target, 'filetype' => mime_content_type($path), 'filesize' => filesize($path),
-						'ordering' => 1, 'uploaded' => $this->_date, 'uploadedby' => $this->_user['id'],
-					]);
-				} catch(Exception $e) {
-					unlink($path);
-					throw $e;
-				}
-				$attachments = $this->getEmailattachments($document['id'], $module, $controller);
+		if (!DEEC_Permission::isDocument($module, $controller) && !$exists && $contactSource !== '' && DEEC_Emailattachment::validFilename($filename)) {
+			$target = dirname($archive);
+			if (!is_dir($target) && !mkdir($target, 0775, true) && !is_dir($target)) throw new RuntimeException('Attachment directory is not available');
+			$output = @fopen($archive, 'x');
+			if (!$output) throw new RuntimeException('Attachment could not be stored');
+			$input = fopen($contactSource, 'rb');
+			try {
+				if (!$input || stream_copy_to_stream($input, $output) !== filesize($contactSource)) throw new RuntimeException('Attachment could not be stored');
+			} catch (Throwable $exception) {
+				unlink($archive);
+				throw $exception;
+			} finally {
+				if ($input) fclose($input);
+				fclose($output);
 			}
+			DEEC_Pdf::assertCompletePdfFile($archive);
+			if (!hash_equals(hash_file('sha256', $contactSource), hash_file('sha256', $archive))) throw new RuntimeException('Attachment differs from original PDF');
+			try {
+				$this->insert([
+					'documentid' => $document['id'], 'module' => $module, 'controller' => $controller, 'clientid' => $context['clientid'],
+					'filename' => $filename, 'location' => $target, 'filetype' => mime_content_type($archive), 'filesize' => filesize($archive),
+					'ordering' => 1, 'uploaded' => $this->_date, 'uploadedby' => $this->_user['id'],
+				]);
+			} catch (Throwable $exception) {
+				unlink($archive);
+				throw $exception;
+			}
+			$attachments = $this->getEmailattachments($document['id'], $module, $controller);
 		}
 		return ['contactUrl' => $contactUrl, 'documentUrl' => $documentUrl, 'attachments' => $attachments];
+	}
+
+	public function registerDocumentOriginal(array $document, string $module, string $controller): array
+	{
+		$context = $this->getParentContext($document['id'] ?? 0, $module, $controller);
+		if (!$context || !DEEC_Permission::isDocumentReadonly($module, $controller, $context['parent'])) {
+			throw new RuntimeException('Document archive access denied');
+		}
+		$document = $context['parent'];
+		$filename = (string)($document['filename'] ?? '');
+		if (!DEEC_Emailattachment::validFilename($filename)) throw new RuntimeException('Invalid PDF filename');
+		$directory = DEEC_Emailattachment::getDirectory($module, $controller, (int)$document['id'], $context['clientid']);
+		$path = $directory . '/' . $filename;
+		DEEC_Emailattachment::checkPath($path);
+		DEEC_Pdf::assertCompletePdfFile($path);
+		$hash = hash_file('sha256', $path);
+		$matches = [];
+		foreach ($this->getEmailattachments($document['id'], $module, $controller) as $attachment) {
+			if ((string)$attachment['filename'] !== $filename) continue;
+			$attachmentPath = DEEC_Emailattachment::getPath($attachment);
+			DEEC_Pdf::assertCompletePdfFile($attachmentPath);
+			if ((int)$attachment['clientid'] !== (int)$context['clientid'] || $attachmentPath !== $path
+				|| !hash_equals($hash, hash_file('sha256', $attachmentPath))) {
+				throw new RuntimeException('Document archive metadata differs');
+			}
+			$matches[] = $attachment;
+		}
+		if (count($matches) > 1) throw new RuntimeException('Document archive metadata is ambiguous');
+		if ($matches) return $matches[0];
+
+		$this->insert([
+			'documentid' => (int)$document['id'], 'module' => $module, 'controller' => $controller, 'clientid' => $context['clientid'],
+			'filename' => $filename, 'location' => $directory, 'filetype' => 'application/pdf', 'filesize' => filesize($path),
+			'ordering' => 1, 'uploaded' => $this->_date, 'uploadedby' => (int)$this->_user['id'],
+		]);
+		foreach ($this->getEmailattachments($document['id'], $module, $controller) as $attachment) {
+			if ((string)$attachment['filename'] === $filename && (int)$attachment['clientid'] === (int)$context['clientid']) return $attachment;
+		}
+		throw new RuntimeException('Document archive metadata could not be stored');
 	}
 
 	public function updateEmailattachment($id, $data)

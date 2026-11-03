@@ -159,7 +159,7 @@ foreach (['sales' => ['quote', 'invoice', 'salesorder', 'deliveryorder', 'credit
         $generator->failResolution = true;
         foreach (['download', 'inline', 'file'] as $output) {
             $result = $generator->generate(['module' => $module, 'controller' => $controller, 'documentId' => 1, 'output' => $output, 'storage' => 'cache', 'overwrite' => true, 'templateid' => 999]);
-            check($result['path'] === $original && $result['storage'] === 'contact' && $result['output'] === $output && $result['exists'], 'Original file was not selected');
+            check($result['path'] === $original && $result['storage'] === 'archive' && $result['output'] === $output && $result['exists'], 'Original file was not selected');
             check($result['url'] === '/files/contacts/7/0/7/1/2/12/original.pdf', 'Original URL changed');
             check(file_get_contents($original) === $originalBytes && filemtime($original) === 1000000000, 'Original content or timestamp changed');
         }
@@ -226,7 +226,7 @@ foreach (['', '../original.pdf', '..\\original.pdf', "original\0.pdf"] as $filen
     }
 }
 
-// Recover an existing attachment before considering the current template.
+// Use the canonical archive directly before considering the current template.
 $adapter->rows['invoice'] = [$issued];
 unlink($original);
 $attachmentDir = BASE_PATH . '/files/attachments/sales/invoice/7/0/7/1/0/1';
@@ -235,12 +235,10 @@ $attachment = $attachmentDir . '/original.pdf';
 file_put_contents($attachment, $originalBytes);
 $generator = new DocumentPdfTestGenerator();
 $generator->failResolution = true;
-check($generator->generate($request)['path'] === $original && file_get_contents($original) === $originalBytes, 'Original attachment was not recovered');
-check($generator->bootstraps === 0 && $generator->resolutions === 0, 'Attachment recovery loaded a template');
-check(file_get_contents($attachment) === $originalBytes && $adapter->rows['invoice'] === [$issued], 'Attachment recovery changed source or metadata');
-check(str_contains(file_get_contents($testPath . '/pdf.log'), 'source=attachment'), 'Attachment recovery was not logged');
+check($generator->generate($request)['path'] === $attachment && file_get_contents($attachment) === $originalBytes, 'Canonical archive was not selected');
+check($generator->bootstraps === 0 && $generator->resolutions === 0, 'Canonical retrieval loaded a template');
+check(!is_file($original) && file_get_contents($attachment) === $originalBytes && $adapter->rows['invoice'] === [$issued], 'Canonical retrieval copied or changed the original');
 unlink($attachment);
-unlink($original);
 
 // None of the eight issued document types can be reconstructed from mutable current data.
 foreach (['sales' => ['quote', 'invoice', 'salesorder', 'deliveryorder', 'creditnote', 'reminder'], 'purchases' => ['quoterequest', 'purchaseorder']] as $module => $controllers) {
@@ -260,16 +258,34 @@ foreach ($controllers as $controller) {
     $archiveDir = BASE_PATH . '/files/attachments/' . $module . '/' . $controller . '/7/0/7/1/0/1';
     if (!is_dir($archiveDir)) mkdir($archiveDir, 0775, true);
     file_put_contents($archiveDir . '/original.pdf', $originalBytes);
-    check($generator->generate(array_replace($request, ['module' => $module, 'controller' => $controller]))['path'] === $original, 'Archived original was not restored');
-    check(file_get_contents($original) === $originalBytes && $generator->renders === 0, 'Recovery changed original bytes');
+    $archivePath = $archiveDir . '/original.pdf';
+    check($generator->generate(array_replace($request, ['module' => $module, 'controller' => $controller]))['path'] === $archivePath, 'Archived original was not selected');
+    check(file_get_contents($archivePath) === $originalBytes && !is_file($original) && $generator->renders === 0, 'Archive retrieval changed original bytes');
     $adapter->rows[$controller][0]['notes'] = 'Changed internal note';
     $generator->generate(array_replace($request, ['module' => $module, 'controller' => $controller]));
-    check(file_get_contents($original) === $originalBytes && $generator->renders === 0, 'Note change or repeated download regenerated the original');
+    check(file_get_contents($archivePath) === $originalBytes && !is_file($original) && $generator->renders === 0, 'Note change or repeated download regenerated the original');
     unlink($archiveDir . '/original.pdf');
-    unlink($original);
+    $first = (new DocumentPdfTestGenerator())->generate(array_replace($request, [
+        'module' => $module, 'controller' => $controller, 'createOriginal' => true,
+    ]));
+    check($first['path'] === $archivePath && $first['storage'] === 'archive' && str_starts_with(file_get_contents($archivePath), '%PDF-'),
+        'Initial finalization did not publish directly to the canonical archive: ' . $module . '/' . $controller);
+    unlink($archivePath);
 }
 }
 $adapter->rows['invoice'] = [$issued];
+
+// Canonical archive paths may not traverse a symlink, even to a valid PDF.
+$outsideArchive = BASE_PATH . '/outside-archive.pdf';
+file_put_contents($outsideArchive, $originalBytes);
+symlink($outsideArchive, $attachment);
+try {
+    (new DocumentPdfTestGenerator())->generate($request);
+    throw new LogicException('Canonical archive symlink was accepted');
+} catch (InvalidArgumentException $expected) {
+    check($expected->getMessage() === 'Invalid attachment path', 'Unexpected canonical symlink error');
+}
+unlink($attachment);
 
 // Existing and archived files must be structurally complete PDFs.
 foreach ([$original, $attachment] as $incomplete) {
@@ -288,43 +304,43 @@ foreach ([$original, $attachment] as $incomplete) {
 $initialRequest = $request + ['createOriginal' => true];
 $generator = new DocumentPdfTestGenerator();
 $restored = $generator->generate($initialRequest);
-check($generator->renders === 1 && $generator->lastOptions === ['templateid' => null], 'Restore accepted a template override');
-check($restored['path'] === $original && str_starts_with(file_get_contents($original), '%PDF-'), 'Missing original was not restored as a PDF');
-check((fileperms($original) & 0777) === (0666 & ~umask()), 'Restored file permissions changed');
-$hash = hash_file('sha256', $original);
+check($generator->renders === 1 && $generator->lastOptions === ['templateid' => null], 'Initial archive accepted a template override');
+check($restored['path'] === $attachment && str_starts_with(file_get_contents($attachment), '%PDF-'), 'Initial original was not archived as a PDF');
+check((fileperms($attachment) & 0777) === (0666 & ~umask()), 'Archived file permissions changed');
+$hash = hash_file('sha256', $attachment);
 $generator->failResolution = true;
-check($generator->generate($request)['path'] === $original && hash_file('sha256', $original) === $hash && $generator->renders === 1, 'Restored original was regenerated');
-check($adapter->rows['invoice'] === [$issued], 'Restore changed document metadata');
+check($generator->generate($request)['path'] === $attachment && hash_file('sha256', $attachment) === $hash && $generator->renders === 1, 'Archived original was regenerated');
+check($adapter->rows['invoice'] === [$issued], 'Archive changed document metadata');
 check(str_contains(file_get_contents($testPath . '/pdf.log'), 'source=render'), 'Missing original generation was not logged');
 
 // A competing request that finishes during rendering wins without being overwritten.
-unlink($original);
+unlink($attachment);
 $generator = new DocumentPdfTestGenerator();
-$generator->duringRender = [$original, $originalBytes];
+$generator->duringRender = [$attachment, $originalBytes];
 try {
     $generator->generate($initialRequest);
     throw new LogicException('Concurrent original was accepted for first finalization');
 } catch (RuntimeException $expected) {
     check($expected->getMessage() === 'Original PDF path is already occupied', 'Unexpected render race error');
 }
-check(file_get_contents($original) === $originalBytes, 'Concurrent original was overwritten');
-check(glob($originalDir . '/.pdf-*') === [], 'Temporary PDFs were left behind');
+check(file_get_contents($attachment) === $originalBytes, 'Concurrent original was overwritten');
+check(glob($attachmentDir . '/.pdf-*') === [], 'Temporary PDFs were left behind');
 
 // Also cover the race between the last existence check and atomic publication.
-unlink($original);
+unlink($attachment);
 $generator = new DocumentPdfTestGenerator();
-$generator->duringPublish = [$original, $originalBytes];
+$generator->duringPublish = [$attachment, $originalBytes];
 try {
     $generator->generate($initialRequest);
     throw new LogicException('Publication race was accepted for first finalization');
 } catch (RuntimeException $expected) {
     check($expected->getMessage() === 'Original PDF publication conflict', 'Unexpected publication race error');
 }
-check(file_get_contents($original) === $originalBytes, 'Original created immediately before publication was overwritten');
-check(glob($originalDir . '/.pdf-*') === [], 'Publish race left temporary PDFs behind');
+check(file_get_contents($attachment) === $originalBytes, 'Original created immediately before publication was overwritten');
+check(glob($attachmentDir . '/.pdf-*') === [], 'Publish race left temporary PDFs behind');
 
-// A failed restore must not publish an empty original or change completion data.
-unlink($original);
+// A failed initial archive must not publish an empty original or change completion data.
+unlink($attachment);
 $generator = new DocumentPdfTestGenerator();
 $generator->failResolution = true;
 try {
@@ -333,7 +349,7 @@ try {
 } catch (RuntimeException $expected) {
     check($expected->getMessage() === 'Template unavailable', 'Unexpected template failure');
 }
-check(!is_file($original) && $adapter->rows['invoice'] === [$issued], 'Failed restore changed original or metadata');
+check(!is_file($attachment) && $adapter->rows['invoice'] === [$issued], 'Failed archive changed original or metadata');
 
 class DocumentPdfFailedOutput extends TCPDF
 {
@@ -349,7 +365,7 @@ try {
 } catch (RuntimeException $expected) {
     check($expected->getMessage() === 'Output failed', 'Unexpected output error');
 }
-check(!is_file($original) && glob($originalDir . '/.pdf-*') === [], 'Failed output published an incomplete PDF or left temporary files');
+check(!is_file($attachment) && glob($attachmentDir . '/.pdf-*') === [], 'Failed output published an incomplete PDF or left temporary files');
 
 // Draft previews remain replaceable even if a copied draft carries an old filename.
 file_put_contents($original, $originalBytes);
@@ -378,4 +394,4 @@ check($controller->previewAction()['path'] === $original, 'Preview controller di
 $controller->ensureOriginal();
 check(file_get_contents($original) === $originalBytes && $adapter->rows['invoice'] === [$issued], 'View preparation changed original or metadata');
 
-echo 'PASS: ' . $checks . " PDF checks; originals preserved, missing files restored, tenant isolation retained\n";
+echo 'PASS: ' . $checks . " PDF checks; canonical archive and historical originals preserved, tenant isolation retained\n";

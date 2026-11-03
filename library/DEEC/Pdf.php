@@ -100,12 +100,6 @@ class DEEC_Pdf
 			return $file;
 		}
 
-		if (empty($payload['meta']['overwrite']) && empty($payload['meta']['createOriginal']) && $this->restorePdfAttachment($payload, $file)) {
-			$file = $this->getOutputFile($payload);
-			self::assertCompletePdfFile($file['path']);
-			return $file;
-		}
-
 		if (DEEC_Permission::isDocumentReadonly($payload['meta']['module'], $payload['meta']['controller'], $payload['document'])
 			&& empty($request['createOriginal'])) {
 			throw new RuntimeException('Original PDF is unavailable');
@@ -171,7 +165,7 @@ class DEEC_Pdf
 				'documentId' => $documentId,
 				'output' => $output,
 				'templateid' => $issued ? null : ($templateId ?: null),
-				'storage' => $issued ? 'contact' : (string)($request['storage'] ?? 'cache'),
+				'storage' => $issued ? 'archive' : (string)($request['storage'] ?? 'cache'),
 				'overwrite' => !$issued && !empty($request['overwrite']),
 				'createOriginal' => !empty($request['createOriginal']),
 				'baseUrl' => $view->baseUrl(),
@@ -362,36 +356,6 @@ class DEEC_Pdf
 		return $file;
 	}
 
-	protected function restorePdfAttachment(array $payload, array $file): bool
-	{
-		if ($file['storage'] !== 'contact') return false;
-
-		$directory = $this->contactUrl((string)$payload['document']['id'], (string)$payload['clientId']);
-		$attachment = BASE_PATH . '/files/attachments/' . $payload['meta']['module'] . '/'
-			. $payload['meta']['controller'] . '/' . $directory . $file['filename'];
-		DEEC_Emailattachment::checkPath($attachment);
-
-		if (!is_file($attachment)) return false;
-		self::assertCompletePdfFile($attachment);
-
-		$this->mkdirp(dirname($file['path']));
-		$tempFile = tempnam(dirname($file['path']), '.pdf-');
-		if ($tempFile === false) throw new RuntimeException('Could not create temporary PDF file');
-
-		try {
-			if (!copy($attachment, $tempFile)) throw new RuntimeException('Could not restore PDF attachment');
-			self::assertCompletePdfFile($tempFile);
-			$this->publishPdfFile($tempFile, $file, $payload, 'attachment');
-			if (!hash_equals(hash_file('sha256', $attachment), hash_file('sha256', $file['path']))) {
-				throw new RuntimeException('Restored PDF differs from attachment');
-			}
-		} finally {
-			if (is_file($tempFile)) unlink($tempFile);
-		}
-
-		return true;
-	}
-
 	protected function publishPdfFile(string $tempFile, array $file, array $payload, string $source): void
 	{
 		chmod($tempFile, 0666 & ~umask());
@@ -452,12 +416,20 @@ class DEEC_Pdf
 		$dirAbs = '';
 		$dirUrl = '';
 
-		if ($storage === 'contact' && $clientId > 0 && $contactId > 0) {
-			$storageIds = [$contactId];
-			$contactRecordId = $this->getContactRecordId($contactId, $clientId);
-			if ($contactRecordId > 0 && $contactRecordId !== $contactId) $storageIds[] = $contactRecordId;
-			$locations = [];
-			foreach ($storageIds as $storageId) {
+		if ($storage === 'archive' && $clientId > 0 && $contactId > 0) {
+			$archiveDirectory = (new DEEC_Directory())->getUrl((string)$document['id'], (string)$clientId);
+			$archivePath = DEEC_Emailattachment::getDirectory($module, $controller, (int)$document['id'], $clientId) . '/' . $filename;
+			DEEC_Emailattachment::checkPath($archivePath);
+			$locations = [[
+				'relative' => $archiveDirectory . '/',
+				'path' => $archivePath,
+				'url' => $baseUrl . '/files/attachments/' . $module . '/' . $controller . '/' . $archiveDirectory . '/' . rawurlencode($filename),
+			]];
+			if (empty($payload['meta']['createOriginal'])) {
+				$storageIds = [$contactId];
+				$contactRecordId = $this->getContactRecordId($contactId, $clientId);
+				if ($contactRecordId > 0 && $contactRecordId !== $contactId) $storageIds[] = $contactRecordId;
+				foreach ($storageIds as $storageId) {
 				$directory = $this->contactUrl((string)$storageId, (string)$clientId);
 				$path = BASE_PATH . '/files/contacts/' . $directory . $filename;
 				DEEC_Emailattachment::checkPath($path);
@@ -466,10 +438,11 @@ class DEEC_Pdf
 					'path' => $path,
 					'url' => $baseUrl . '/files/contacts/' . $directory . rawurlencode($filename),
 				];
+				}
 			}
 			$existing = array_values(array_filter($locations, static fn(array $location): bool => is_file($location['path'])));
+			foreach ($existing as $location) self::assertCompletePdfFile($location['path']);
 			if (count($existing) > 1) {
-				foreach ($existing as $location) self::assertCompletePdfFile($location['path']);
 				if (count(array_unique(array_map(static fn(array $location): string => hash_file('sha256', $location['path']), $existing))) > 1) {
 					throw new RuntimeException('Original PDF locations differ');
 				}
