@@ -467,10 +467,10 @@ $adapter->denyReads = false;
 // The shop quote grant is bound to this session, site, tenant, object and exact file.
 Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 1, 'clientid' => 7]));
 $session = new Zend_Session_Namespace('MultiStepForm');
-$relative = 'files/contacts/7/0/7/1/0/100/quote.pdf';
+$relative = $directArchive;
 $session->downloadFile = ['siteid' => 1, 'clientid' => 7, 'quoteid' => 10, 'relative' => $relative];
 check(storedResponse($relative)[0] === 200, 'Guest own inquiry quote unavailable');
-check(storedResponse(str_replace('quote.pdf', 'invoice.pdf', $relative))[0] === 404, 'Inquiry grant exposed another document');
+check(storedResponse(str_replace('10.pdf', '11.pdf', $relative))[0] === 404, 'Inquiry grant exposed another document');
 $session->downloadFile = array_replace($session->downloadFile, ['siteid' => 2]);
 check(storedResponse($relative)[0] === 404, 'Inquiry grant crossed shops');
 unset($session->downloadFile);

@@ -312,6 +312,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 				$quoteId = $this->createQuoteFromInquiry($allFormValues, (int)$stored['id']);
 			} catch (Throwable $e) {
 				error_log('Stored shop inquiry could not create a quote: ' . $e->getMessage());
+				$failedInquiry = $inquiryDb->getById((int)$stored['id']);
+				if (!empty($failedInquiry['quoteid'])) $offerStatus = 'pdf_failed';
 			}
 
 			if ($quoteId) {
@@ -751,64 +753,108 @@ class Shops_InquiryController extends Shops_Controller_Action
 		if ($uom === '') throw new RuntimeException('Invalid item unit');
 
 		$quoteDb = new Shops_Model_DbTable_Quote();
+		$inquiryDb = new Shops_Model_DbTable_Inquirydata();
 		$adapter = $quoteDb->getAdapter();
+		$adapter->beginTransaction();
+		$quoteId = 0;
+
+		try {
+			$inquiry = $inquiryDb->getByIdForUpdate($inquiryId);
+			if (!$inquiry) throw new RuntimeException('Inquiry is unavailable');
+			$quoteId = (int)($inquiry['quoteid'] ?? 0);
+
+			if ($quoteId <= 0) {
+				[$contactRowId, $contact, $existingContact] = $this->resolveInquiryContact($data);
+				$contactId = (int)($contact['contactid'] ?? 0);
+				if ($contactRowId <= 0 || $contactId <= 0) throw new RuntimeException('Inquiry contact is unavailable');
+				if ($existingContact && !empty($contact['taxfree'])) {
+					throw new RuntimeException('Unverified inquiry contact requires manual tax handling');
+				}
+				$snapshot = $this->buildInquiryAddressSnapshot($data);
+				$quoteId = $quoteDb->addQuote(array_merge($snapshot, [
+					'title' => trim((string)($data['titel'] ?? '')) ?: (string)$item['title'],
+					'reference' => trim((string)($data['projektname'] ?? '')),
+					'currency' => (string)$currency['code'],
+					'state' => 100,
+					'header' => $this->formRow['quoteheader'] ?? null,
+					'footer' => $this->formRow['quotefooter'] ?? null,
+					'contactid' => $contactId,
+					'subtotal' => 0,
+					'taxes' => 0,
+					'total' => 0,
+					'language' => $language,
+					'contactperson' => '',
+					'templateid' => (int)$template['id'],
+					'pdfshowprices' => 1,
+				]));
+
+				(new Shops_Model_DbTable_Quotepos())->addPosition([
+					'parentid' => $quoteId,
+					'itemid' => (int)$item['id'],
+					'possetid' => 0,
+					'sku' => (string)$item['sku'],
+					'title' => (string)$item['title'],
+					'description' => (string)($item['description'] ?? ''),
+					'price' => $price,
+					'taxrate' => $taxRate,
+					'total' => 0,
+					'quantity' => $quantity,
+					'uom' => $uom,
+					'currency' => (string)$currency['code'],
+				]);
+
+				$clientId = (int)$this->_siteContext->getClientId();
+				Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->direct($quoteId, 'sales', 'quote', $clientId);
+				if (!$inquiryDb->linkQuoteIfEmpty($inquiryId, $contactRowId, $quoteId)) {
+					throw new RuntimeException('Inquiry quote was already linked');
+				}
+			} elseif (!$quoteDb->getById($quoteId)) {
+				throw new RuntimeException('Linked inquiry quote is unavailable');
+			}
+
+			$adapter->commit();
+		} catch (Throwable $e) {
+			$adapter->rollBack();
+			throw $e;
+		}
+
+		return $this->finalizeInquiryQuote($inquiryId, $quoteId);
+	}
+
+	protected function finalizeInquiryQuote(int $inquiryId, int $quoteId): int
+	{
+		$quoteDb = new Shops_Model_DbTable_Quote();
+		$inquiryDb = new Shops_Model_DbTable_Inquirydata();
+		$adapter = $quoteDb->getAdapter();
+		$publishedOriginal = null;
 		$adapter->beginTransaction();
 
 		try {
-			[$contactRowId, $contact, $existingContact] = $this->resolveInquiryContact($data);
-			$contactId = (int)($contact['contactid'] ?? 0);
-			if ($contactRowId <= 0 || $contactId <= 0) throw new RuntimeException('Inquiry contact is unavailable');
-			if ($existingContact && !empty($contact['taxfree'])) {
-				throw new RuntimeException('Unverified inquiry contact requires manual tax handling');
+			$inquiry = $inquiryDb->getByIdForUpdate($inquiryId);
+			$quote = $quoteDb->getByIdForUpdate($quoteId);
+			if (!$inquiry || (int)($inquiry['quoteid'] ?? 0) !== $quoteId || !$quote) {
+				throw new RuntimeException('Linked inquiry quote is unavailable');
 			}
-			$snapshot = $this->buildInquiryAddressSnapshot($data);
-			$quoteId = $quoteDb->addQuote(array_merge($snapshot, [
-				'title' => trim((string)($data['titel'] ?? '')) ?: (string)$item['title'],
-				'reference' => trim((string)($data['projektname'] ?? '')),
-				'currency' => (string)$currency['code'],
-				'state' => 100,
-				'header' => $this->formRow['quoteheader'] ?? null,
-				'footer' => $this->formRow['quotefooter'] ?? null,
-				'contactid' => $contactId,
-				'subtotal' => 0,
-				'taxes' => 0,
-				'total' => 0,
-				'language' => $language,
-				'contactperson' => '',
-				'templateid' => (int)$template['id'],
-				'pdfshowprices' => 1,
-			]));
 
-			(new Shops_Model_DbTable_Quotepos())->addPosition([
-				'parentid' => $quoteId,
-				'itemid' => (int)$item['id'],
-				'possetid' => 0,
-				'sku' => (string)$item['sku'],
-				'title' => (string)$item['title'],
-				'description' => (string)($item['description'] ?? ''),
-				'price' => $price,
-				'taxrate' => $taxRate,
-				'total' => 0,
-				'quantity' => $quantity,
-				'uom' => $uom,
-				'currency' => (string)$currency['code'],
-			]);
-
-			$clientId = (int)$this->_siteContext->getClientId();
-			Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->direct($quoteId, 'sales', 'quote', $clientId);
-
-			$incrementDb = new Shops_Model_DbTable_Increment();
-			$quoteNumber = $incrementDb->reserveIncrement('quoteid');
-			$filename = (new Shops_Model_DbTable_Filename())->getFilename('quote', $language);
-			$quoteDb->saveQuote($quoteId, $quoteNumber, str_replace('%NUMBER%', (string)$quoteNumber, $filename));
-			if (!(new Shops_Model_DbTable_Inquirydata())->linkQuoteIfEmpty($inquiryId, $contactRowId, $quoteId)) {
-				throw new RuntimeException('Inquiry quote was already linked');
+			if (empty($quote['quoteid'])) {
+				$quoteNumber = (new Shops_Model_DbTable_Increment())->reserveIncrement('quoteid');
+				$filename = (new Shops_Model_DbTable_Filename())->getFilename('quote', (string)$quote['language']);
+				$quoteDb->saveQuote($quoteId, $quoteNumber, str_replace('%NUMBER%', (string)$quoteNumber, $filename));
+				$pdf = $this->generateQuotePdf($quoteId, true);
+				$publishedOriginal = $pdf['path'] ?? null;
+			} elseif (!(new Application_Model_DbTable_Documentarchive())->getForSiteQuote($quoteId)) {
+				throw new RuntimeException('Finalized inquiry quote archive is unavailable');
 			}
 
 			$adapter->commit();
 			return $quoteId;
 		} catch (Throwable $e) {
-			$adapter->rollBack();
+			try {
+				$adapter->rollBack();
+			} catch (Throwable $rollbackError) {
+				error_log('Inquiry quote finalization rollback failed: ' . $rollbackError->getMessage());
+			}
+			if (is_string($publishedOriginal)) $this->removeUncommittedQuotePdf($quoteId, $publishedOriginal);
 			throw $e;
 		}
 	}
@@ -886,20 +932,41 @@ class Shops_InquiryController extends Shops_Controller_Action
 		];
 	}
 
-	protected function generateQuotePdf(int $quoteId): array
+	protected function generateQuotePdf(int $quoteId, bool $createOriginal = false): array
 	{
-		$result = (new DEEC_Pdf())->generate([
-			'module' => 'shops',
-			'controller' => 'quote',
-			'documentId' => $quoteId,
-			'output' => 'file',
-		]);
-		if (!empty($result['path'])) $this->setQuoteDownloadGrant($quoteId, (string)$result['path']);
+		$archiveDb = new Application_Model_DbTable_Documentarchive();
+		if ($createOriginal) {
+			$result = (new DEEC_Pdf())->generate([
+				'module' => 'shops',
+				'controller' => 'quote',
+				'documentId' => $quoteId,
+				'output' => 'file',
+				'createOriginal' => true,
+			]);
+			try {
+				$archiveDb->registerSiteQuoteOriginal($quoteId);
+				$result['url'] = $this->setQuoteDownloadGrant($quoteId, (string)$result['path']);
+			} catch (Throwable $e) {
+				if (!empty($result['path'])) $this->removeUncommittedQuotePdf($quoteId, (string)$result['path']);
+				throw $e;
+			}
+		} else {
+			$archive = $archiveDb->getForSiteQuote($quoteId);
+			if (!$archive) throw new RuntimeException('Inquiry quote archive is unavailable');
+			$result = [
+				'path' => $archiveDb->getPath($archive),
+				'filename' => (string)$archive['filename'],
+				'output' => 'file',
+				'storage' => 'archive',
+				'exists' => true,
+			];
+		}
+		if (!$createOriginal && !empty($result['path'])) $result['url'] = $this->setQuoteDownloadGrant($quoteId, (string)$result['path']);
 
 		return $result;
 	}
 
-	protected function setQuoteDownloadGrant(int $quoteId, string $path): void
+	protected function setQuoteDownloadGrant(int $quoteId, string $path): string
 	{
 		DEEC_Emailattachment::checkPath($path);
 		$basePath = realpath(BASE_PATH);
@@ -914,6 +981,26 @@ class Shops_InquiryController extends Shops_Controller_Action
 			'quoteid' => $quoteId,
 			'relative' => substr($realPath, strlen($basePath) + 1),
 		];
+
+		return rtrim((string)$this->view->baseUrl(), '/') . '/' . $this->formDataSession->downloadFile['relative'];
+	}
+
+	protected function removeUncommittedQuotePdf(int $quoteId, string $path): void
+	{
+		try {
+			$expected = (new DEEC_DocumentArchive(BASE_PATH))->path(
+				(int)$this->_siteContext->getClientId(),
+				'sales',
+				'quote',
+				$quoteId,
+				'pdf'
+			);
+			if (hash_equals($expected, $path) && is_file($path) && !is_link($path) && !unlink($path)) {
+				error_log('Failed to remove uncommitted inquiry quote PDF: ' . $path);
+			}
+		} catch (Throwable $e) {
+			error_log('Failed to verify uncommitted inquiry quote PDF cleanup: ' . $e->getMessage());
+		}
 	}
 
 	protected function restoreInquiryResult(array $inquiry): array
@@ -924,6 +1011,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 		if ($quoteId <= 0 || !(new Shops_Model_DbTable_Quote())->getById($quoteId)) return ['url' => null, 'status' => $status];
 
 		try {
+			$this->finalizeInquiryQuote((int)$inquiry['id'], $quoteId);
 			$pdf = $this->generateQuotePdf($quoteId);
 			return ['url' => $pdf['url'] ?? null, 'status' => 'ready'];
 		} catch (Throwable $e) {

@@ -185,7 +185,8 @@ check(array_column($inserted, 'clientid') === [7, 7], 'Shop email history lost t
 check(DEEC_Email::$messages[0]['to'] === ['customer@example.invalid'] && DEEC_Email::$messages[1]['to'] === ['shop@example.invalid'], 'Recipients still share an SMTP envelope');
 check(DEEC_Email::$messages[0]['cc'] === 'copy-one@example.invalid,copy-two@example.invalid' && DEEC_Email::$messages[1]['cc'] === null, 'CC recipients were lost or duplicated');
 check(DEEC_Email::$messages[0]['bcc'] === 'blind@example.invalid' && DEEC_Email::$messages[1]['bcc'] === null, 'BCC recipients were lost or duplicated');
-check(DEEC_Email::$messages[0]['attachments'] === [__FILE__] && DEEC_Email::$messages[1]['attachments'] === [__FILE__], 'Attachments were not retained for both recipients');
+$expectedAttachments = [['path' => __FILE__, 'name' => basename(__FILE__)]];
+check(DEEC_Email::$messages[0]['attachments'] === $expectedAttachments && DEEC_Email::$messages[1]['attachments'] === $expectedAttachments, 'Attachments were not retained for both recipients');
 check(DEEC_Email::$messages[0]['fromEmail'] === 'shop@example.invalid' && DEEC_Email::$messages[1]['fromEmail'] === 'shop@example.invalid', 'Shop sender changed between attempts');
 check(DEEC_Email::$messages[0]['replyTo'] === 'reply@example.invalid' && DEEC_Email::$messages[1]['replyTo'] === 'reply@example.invalid', 'Reply-To changed between attempts');
 check(DEEC_Email::$messages[0]['subject'] === DEEC_Email::$messages[1]['subject'] && DEEC_Email::$messages[0]['body'] === DEEC_Email::$messages[1]['body'], 'Existing template content changed between recipients');

@@ -62,6 +62,14 @@ class Shops_Model_DbTable_Inquirydata extends DEEC_Model_DbTable_SiteEntity
 		return $row ? $row->toArray() : null;
 	}
 
+	public function getByQuoteId(int $quoteId): ?array
+	{
+		if ($quoteId <= 0) return null;
+		$rows = $this->fetchAll($this->getPublicSelect()->where('quoteid = ?', $quoteId)->limit(2));
+
+		return count($rows) === 1 ? $rows->current()->toArray() : null;
+	}
+
 	public function linkQuoteIfEmpty(int $id, int $contactId, int $quoteId): bool
 	{
 		$where = $this->getEntityWhere($id);

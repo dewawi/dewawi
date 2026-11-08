@@ -157,6 +157,8 @@ class DEEC_Pdf
 		}
 
 		$view = Zend_Controller_Action_HelperBroker::getStaticHelper('ViewRenderer')->view;
+		$archiveModule = $module === 'shops' && $controller === 'quote' ? 'sales' : $module;
+		$archiveController = $module === 'shops' && $controller === 'quote' ? 'quote' : $controller;
 
 		return [
 			'meta' => [
@@ -169,6 +171,8 @@ class DEEC_Pdf
 				'overwrite' => !$issued && !empty($request['overwrite']),
 				'createOriginal' => !empty($request['createOriginal']),
 				'baseUrl' => $view->baseUrl(),
+				'archiveModule' => $archiveModule,
+				'archiveController' => $archiveController,
 			],
 			'document' => $document,
 			'clientId' => (int)($document['clientid'] ?? 0),
@@ -401,6 +405,8 @@ class DEEC_Pdf
 		$baseUrl = $payload['meta']['baseUrl'] ?? '';
 		$module = $payload['meta']['module'] ?? 'document';
 		$controller = $payload['meta']['controller'] ?? 'document';
+		$archiveModule = $payload['meta']['archiveModule'] ?? $module;
+		$archiveController = $payload['meta']['archiveController'] ?? $controller;
 		$clientId = (int)($payload['clientId'] ?? 0);
 		$contactId = (int)($document['contactid'] ?? 0);
 
@@ -419,11 +425,11 @@ class DEEC_Pdf
 
 		if ($storage === 'archive' && $clientId > 0 && $contactId > 0) {
 			$archive = new DEEC_DocumentArchive(BASE_PATH);
-			$archivePath = $archive->path($clientId, $module, $controller, (int)$document['id'], 'pdf');
+			$archivePath = $archive->path($clientId, $archiveModule, $archiveController, (int)$document['id'], 'pdf');
 			DEEC_Emailattachment::checkPath($archivePath);
-			$relativeDir = dirname($archive->relativePath($clientId, $module, $controller, (int)$document['id'], 'pdf')) . '/';
+			$relativeDir = dirname($archive->relativePath($clientId, $archiveModule, $archiveController, (int)$document['id'], 'pdf')) . '/';
 			$dirAbs = dirname($archivePath) . '/';
-			$dirUrl = $baseUrl . '/' . $module . '/' . $controller . '/download/id/' . (int)$document['id'] . '/';
+			$dirUrl = $baseUrl . '/' . $archiveModule . '/' . $archiveController . '/download/id/' . (int)$document['id'] . '/';
 			$fileAbsOverride = $archivePath;
 		} else {
 			$safeModule = preg_replace('/[^a-z0-9_-]+/i', '_', $module);

@@ -10,12 +10,25 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 	{
 		$context = (new Contacts_Model_DbTable_Emailattachment())->getParentContext($documentId, $module, $controller);
 		if (!$context || !DEEC_DocumentArchive::validDocumentType($module, $controller)) return null;
-		$row = $this->fetchRow($this->select()->where('documentid = ?', $documentId)->where('module = ?', $module)
-			->where('controller = ?', $controller)->where('clientid = ?', (int)$context['clientid'])->where('format = ?', strtolower($format))
+		return $this->getOriginal($context['parent'], (int)$context['clientid'], $module, $controller, $format);
+	}
+
+	public function getForSiteQuote(int $documentId): ?array
+	{
+		$context = $this->getSiteQuoteContext($documentId);
+		if (!$context) return null;
+
+		return $this->getOriginal($context['parent'], $context['clientid'], 'sales', 'quote', 'pdf');
+	}
+
+	private function getOriginal(array $document, int $clientId, string $module, string $controller, string $format): ?array
+	{
+		$row = $this->fetchRow($this->select()->where('documentid = ?', (int)$document['id'])->where('module = ?', $module)
+			->where('controller = ?', $controller)->where('clientid = ?', $clientId)->where('format = ?', strtolower($format))
 			->where('version = ?', 1)->limit(1));
 		if (!$row) return null;
 		$data = $row->toArray();
-		if (strtolower($format) === 'pdf' && !hash_equals((string)($context['parent']['filename'] ?? ''), (string)$data['filename'])) throw new RuntimeException('Document archive filename differs');
+		if (strtolower($format) === 'pdf' && !hash_equals((string)($document['filename'] ?? ''), (string)$data['filename'])) throw new RuntimeException('Document archive filename differs');
 		$this->assertStoredFile($data);
 		return $data;
 	}
@@ -35,19 +48,37 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 	{
 		$context = (new Contacts_Model_DbTable_Emailattachment())->getParentContext($document['id'] ?? 0, $module, $controller);
 		if (!$context || !DEEC_Permission::isDocumentReadonly($module, $controller, $context['parent'])) throw new RuntimeException('Document archive access denied');
-		$document = $context['parent'];
+
+		return $this->registerOriginalForDocument($context['parent'], (int)$context['clientid'], $module, $controller, $format, $filename, $parameters);
+	}
+
+	public function registerSiteQuoteOriginal(int $documentId): array
+	{
+		$context = $this->getSiteQuoteContext($documentId);
+		if (!$context || !DEEC_Permission::isDocumentReadonly('sales', 'quote', $context['parent'])) {
+			throw new RuntimeException('Document archive access denied');
+		}
+
+		return $this->registerOriginalForDocument($context['parent'], $context['clientid'], 'sales', 'quote', 'pdf', null, [
+			'origin' => 'shop_inquiry',
+			'siteid' => $context['siteid'],
+		]);
+	}
+
+	private function registerOriginalForDocument(array $document, int $clientId, string $module, string $controller, string $format, ?string $filename, ?array $parameters): array
+	{
 		$filename = $filename ?? (string)($document['filename'] ?? '');
 		if (!DEEC_Emailattachment::validFilename($filename)) throw new RuntimeException('Invalid archive filename');
 		$archive = new DEEC_DocumentArchive(BASE_PATH);
-		$relative = $archive->relativePath((int)$context['clientid'], $module, $controller, (int)$document['id'], $format);
+		$relative = $archive->relativePath($clientId, $module, $controller, (int)$document['id'], $format);
 		$file = $archive->inspect(BASE_PATH . '/' . $relative, $format);
 		if ($file['status'] !== 'ok') throw new RuntimeException('Document archive file is unavailable or invalid');
 		$existing = $this->fetchAll($this->select()->where('documentid = ?', (int)$document['id'])->where('module = ?', $module)
-			->where('controller = ?', $controller)->where('clientid = ?', (int)$context['clientid'])->where('format = ?', strtolower($format))
+			->where('controller = ?', $controller)->where('clientid = ?', $clientId)->where('format = ?', strtolower($format))
 			->where('version = ?', 1))->toArray();
 		if (count($existing) > 1) throw new RuntimeException('Document archive metadata is ambiguous');
 		$expected = [
-			'documentid' => (int)$document['id'], 'module' => $module, 'controller' => $controller, 'clientid' => (int)$context['clientid'],
+			'documentid' => (int)$document['id'], 'module' => $module, 'controller' => $controller, 'clientid' => $clientId,
 			'filename' => $filename, 'format' => strtolower($format), 'path' => $relative, 'filesize' => (int)$file['size'], 'sha256' => $file['sha256'], 'version' => 1,
 		];
 		if ($existing) {
@@ -60,6 +91,18 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 		]);
 		$expected['id'] = (int)$this->getAdapter()->lastInsertId();
 		return $expected;
+	}
+
+	private function getSiteQuoteContext(int $documentId): ?array
+	{
+		if ($documentId <= 0 || !Zend_Registry::isRegistered('SiteContext')) return null;
+		$site = Zend_Registry::get('SiteContext');
+		if (!$site instanceof DEEC_Site_Context || (int)$site->getClientId() <= 0 || (int)$site->getSiteId() <= 0) return null;
+		$quote = (new Shops_Model_DbTable_Quote())->getById($documentId);
+		$inquiry = (new Shops_Model_DbTable_Inquirydata())->getByQuoteId($documentId);
+		if (!$quote || !$inquiry || (int)$quote['clientid'] !== (int)$site->getClientId()) return null;
+
+		return ['parent' => $quote, 'clientid' => (int)$site->getClientId(), 'siteid' => (int)$site->getSiteId()];
 	}
 
 	public function archiveBytes(array $document, string $module, string $controller, string $format, string $filename, string $bytes, array $parameters = []): array

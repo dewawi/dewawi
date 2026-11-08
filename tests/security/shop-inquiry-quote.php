@@ -56,6 +56,8 @@ function inquiryQuoteSchema(string $structure, string $table): string
 
 class ShopInquiryQuoteController extends Shops_InquiryController
 {
+	public bool $failOriginalPdf = false;
+
 	public function init() {}
 
 	public function setup(DEEC_Site_Context $context, array $formRow, array $suggestions): void
@@ -80,6 +82,12 @@ class ShopInquiryQuoteController extends Shops_InquiryController
 	{
 		return $this->restoreInquiryResult($inquiry);
 	}
+
+	protected function generateQuotePdf(int $quoteId, bool $createOriginal = false): array
+	{
+		if ($createOriginal && $this->failOriginalPdf) throw new RuntimeException('fixture PDF failure');
+		return parent::generateQuotePdf($quoteId, $createOriginal);
+	}
 }
 
 $socket = $argv[1];
@@ -91,7 +99,7 @@ $adapter = new Zend_Db_Adapter_Pdo_Mysql([
 	'dbname' => 'dewawi_shop_inquiry_quote_test', 'charset' => 'utf8mb4',
 ]);
 $structure = file_get_contents($root . '/install/config/structure.sql');
-foreach (['address', 'category', 'contact', 'currency', 'email', 'filename', 'footer', 'increment', 'item', 'language', 'pricerulepos', 'quote', 'quotepos', 'shopinquirydata', 'taxrate', 'template', 'uom'] as $table) {
+foreach (['address', 'category', 'contact', 'currency', 'documentarchive', 'email', 'filename', 'footer', 'increment', 'item', 'language', 'pricerulepos', 'quote', 'quotepos', 'shopinquirydata', 'taxrate', 'template', 'uom'] as $table) {
 	$adapter->query(inquiryQuoteSchema($structure, $table));
 }
 
@@ -186,7 +194,21 @@ checkInquiryQuote((int)$adapter->fetchOne('SELECT quoteid FROM increment WHERE c
 
 $pdf = $controller->createPdf($quoteId);
 checkInquiryQuote(is_file($pdf['path']) && str_starts_with((string)file_get_contents($pdf['path']), '%PDF-'), 'Real quote PDF was not rendered');
-checkInquiryQuote($pdf['url'] === '/files/contacts/1/0/100/5/0/500/Angebot-1000.pdf', 'Quote PDF URL is incorrect');
+$archive = $adapter->fetchRow('SELECT * FROM documentarchive WHERE documentid = ? AND module = ? AND controller = ?', [$quoteId, 'sales', 'quote']);
+checkInquiryQuote($archive && $archive['filename'] === 'Angebot-1000.pdf' && hash_equals($archive['sha256'], hash_file('sha256', $pdf['path'])), 'Inquiry quote was not registered as the canonical sales quote original');
+checkInquiryQuote($pdf['url'] === '/' . $archive['path'], 'Quote PDF URL is incorrect');
+$originalHash = hash_file('sha256', $pdf['path']);
+$samePdf = $controller->createPdf($quoteId);
+checkInquiryQuote(hash_equals($originalHash, hash_file('sha256', $samePdf['path'])), 'Repeated PDF access changed the archived inquiry quote');
+$foreignArchiveDenied = false;
+Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 220, 'clientid' => 200]));
+try {
+	$controller->createPdf($quoteId);
+} catch (Throwable $e) {
+	$foreignArchiveDenied = true;
+}
+Zend_Registry::set('SiteContext', $context);
+checkInquiryQuote($foreignArchiveDenied, 'Inquiry quote archive crossed the tenant boundary');
 $grant = $controller->restore($inquiry);
 checkInquiryQuote($grant['status'] === 'ready' && $grant['url'] === $pdf['url'], 'Safe replay did not restore the existing quote result');
 checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM quote') === 1 && (int)$adapter->fetchOne('SELECT quoteid FROM increment WHERE clientid = 100') === 1001, 'Safe replay created another quote or consumed a number');
@@ -239,9 +261,84 @@ checkInquiryQuote((int)$foreignQuote['taxfree'] === 0 && abs((float)$foreignQuot
 checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM contact WHERE clientid = 200 AND contactid = 700 AND taxfree = 1') === 1, 'Foreign contact was changed');
 checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM contact WHERE clientid = 100') === 5, 'Foreign-tenant email did not create exactly one local contact');
 
+$pdfFailureData = array_replace($inquiryData, ['email' => 'pdf-failure@example.test']);
+$adapter->insert('shopinquirydata', [
+	'id' => 5, 'formid' => 865, 'shopid' => 120, 'token' => str_repeat('e', 32), 'data' => json_encode($pdfFailureData),
+	'status' => 'new', 'clientid' => 100,
+]);
+$controller->failOriginalPdf = true;
+$pdfFailed = false;
+try {
+	$controller->createQuote($pdfFailureData, 5);
+} catch (Throwable $e) {
+	$pdfFailed = str_contains($e->getMessage(), 'fixture PDF failure');
+}
+$controller->failOriginalPdf = false;
+$pdfFailureInquiry = $adapter->fetchRow('SELECT * FROM shopinquirydata WHERE id = 5');
+$draftQuoteId = (int)$pdfFailureInquiry['quoteid'];
+$draftQuote = $adapter->fetchRow('SELECT * FROM quote WHERE id = ?', [$draftQuoteId]);
+checkInquiryQuote($pdfFailed && $draftQuoteId > 0 && empty($draftQuote['quoteid']) && empty($draftQuote['completed']), 'PDF failure did not preserve a retryable linked quote draft');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT quoteid FROM increment WHERE clientid = 100') === 1002, 'PDF failure consumed a quote number');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM documentarchive WHERE documentid = ?', [$draftQuoteId]) === 0, 'PDF failure registered an archive');
+$retriedQuoteId = $controller->createQuote($pdfFailureData, 5);
+$retriedQuote = $adapter->fetchRow('SELECT * FROM quote WHERE id = ?', [$retriedQuoteId]);
+checkInquiryQuote($retriedQuoteId === $draftQuoteId && (int)$retriedQuote['quoteid'] === 1002 && (int)$retriedQuote['completed'] === 1, 'PDF retry created another quote or did not finalize the original draft');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM contact WHERE clientid = 100 AND contactid = 502') === 1, 'PDF retry created another contact');
+
+$archiveFailureData = array_replace($inquiryData, ['email' => 'archive-failure@example.test']);
+$adapter->insert('shopinquirydata', [
+	'id' => 6, 'formid' => 865, 'shopid' => 120, 'token' => str_repeat('f', 32), 'data' => json_encode($archiveFailureData),
+	'status' => 'new', 'clientid' => 100,
+]);
+$adapter->query("CREATE TRIGGER reject_inquiry_archive BEFORE INSERT ON documentarchive FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fixture archive failure'");
+$archiveFailed = false;
+try {
+	$controller->createQuote($archiveFailureData, 6);
+} catch (Throwable $e) {
+	$archiveFailed = str_contains($e->getMessage(), 'fixture archive failure');
+}
+$archiveFailureInquiry = $adapter->fetchRow('SELECT * FROM shopinquirydata WHERE id = 6');
+$archiveDraftId = (int)$archiveFailureInquiry['quoteid'];
+$archiveDraft = $adapter->fetchRow('SELECT * FROM quote WHERE id = ?', [$archiveDraftId]);
+$archivePath = (new DEEC_DocumentArchive(BASE_PATH))->path(100, 'sales', 'quote', $archiveDraftId, 'pdf');
+checkInquiryQuote($archiveFailed && $archiveDraftId > 0 && empty($archiveDraft['quoteid']) && !is_file($archivePath), 'Archive registration failure left a finalized quote or unregistered PDF');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT quoteid FROM increment WHERE clientid = 100') === 1003, 'Archive registration failure consumed a quote number');
+$adapter->query('DROP TRIGGER reject_inquiry_archive');
+$archiveRetryId = $controller->createQuote($archiveFailureData, 6);
+checkInquiryQuote($archiveRetryId === $archiveDraftId && is_file($archivePath), 'Archive failure retry did not reuse and finalize the linked quote draft');
+
+$collisionData = array_replace($inquiryData, ['email' => 'archive-collision@example.test']);
+$adapter->insert('shopinquirydata', [
+	'id' => 7, 'formid' => 865, 'shopid' => 120, 'token' => str_repeat('7', 32), 'data' => json_encode($collisionData),
+	'status' => 'new', 'clientid' => 100,
+]);
+$controller->failOriginalPdf = true;
+try {
+	$controller->createQuote($collisionData, 7);
+} catch (Throwable $e) {
+}
+$controller->failOriginalPdf = false;
+$collisionInquiry = $adapter->fetchRow('SELECT * FROM shopinquirydata WHERE id = 7');
+$collisionDraftId = (int)$collisionInquiry['quoteid'];
+$collisionPath = (new DEEC_DocumentArchive(BASE_PATH))->path(100, 'sales', 'quote', $collisionDraftId, 'pdf');
+if (!is_dir(dirname($collisionPath)) && !mkdir(dirname($collisionPath), 0775, true) && !is_dir(dirname($collisionPath))) throw new RuntimeException('Could not create collision fixture directory');
+if (!copy($pdf['path'], $collisionPath)) throw new RuntimeException('Could not create archive collision fixture');
+$collisionHash = hash_file('sha256', $collisionPath);
+$collisionBlocked = false;
+try {
+	$controller->createQuote($collisionData, 7);
+} catch (Throwable $e) {
+	$collisionBlocked = str_contains($e->getMessage(), 'already occupied');
+}
+$collisionDraft = $adapter->fetchRow('SELECT * FROM quote WHERE id = ?', [$collisionDraftId]);
+checkInquiryQuote($collisionBlocked && empty($collisionDraft['quoteid']) && hash_equals($collisionHash, hash_file('sha256', $collisionPath)), 'Archive collision was overwritten or finalized');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT quoteid FROM increment WHERE clientid = 100') === 1004, 'Archive collision consumed a quote number');
+unlink($collisionPath);
+checkInquiryQuote($controller->createQuote($collisionData, 7) === $collisionDraftId, 'Collision recovery did not reuse the linked quote draft');
+
 $failedData = array_replace($inquiryData, ['email' => 'new-buyer@example.test']);
 $adapter->insert('shopinquirydata', [
-	'id' => 5, 'formid' => 865, 'shopid' => 120, 'token' => str_repeat('e', 32), 'data' => json_encode($failedData),
+	'id' => 8, 'formid' => 865, 'shopid' => 120, 'token' => str_repeat('8', 32), 'data' => json_encode($failedData),
 	'status' => 'new', 'clientid' => 100,
 ]);
 $beforeFailure = [
@@ -253,7 +350,7 @@ $beforeFailure = [
 $adapter->query("CREATE TRIGGER reject_inquiry_quote_position BEFORE INSERT ON quotepos FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fixture position failure'");
 $failed = false;
 try {
-	$controller->createQuote($failedData, 5);
+	$controller->createQuote($failedData, 8);
 } catch (Throwable $e) {
 	$failed = true;
 }
@@ -261,8 +358,8 @@ checkInquiryQuote($failed, 'Quote position failure did not reach the transaction
 checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM quote WHERE clientid = 100') === $beforeFailure['quotes'] && (int)$adapter->fetchOne('SELECT COUNT(*) FROM quotepos WHERE clientid = 100') === $beforeFailure['positions'], 'Failed quote left partial document data');
 checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM contact WHERE clientid = 100') === $beforeFailure['contacts'] && (int)$adapter->fetchOne('SELECT COUNT(*) FROM email WHERE clientid = 100') === $beforeFailure['emails'], 'Failed quote left a partial contact');
 $increments = $adapter->fetchRow('SELECT contactid, quoteid FROM increment WHERE clientid = 100');
-checkInquiryQuote((int)$increments['contactid'] === 502 && (int)$increments['quoteid'] === 1002, 'Failed quote consumed a contact or document number');
-$failedInquiry = $adapter->fetchRow('SELECT * FROM shopinquirydata WHERE id = 5');
+checkInquiryQuote((int)$increments['contactid'] === 505 && (int)$increments['quoteid'] === 1005, 'Failed quote consumed a contact or document number');
+$failedInquiry = $adapter->fetchRow('SELECT * FROM shopinquirydata WHERE id = 8');
 checkInquiryQuote($failedInquiry['quoteid'] === null && $failedInquiry['contactid'] === null, 'Failed quote partially linked the inquiry');
 
 echo "PASS: $checks guest quote transaction, calculation, privacy, PDF and replay cases\n";
