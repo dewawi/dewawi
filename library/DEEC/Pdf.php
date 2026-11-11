@@ -136,23 +136,118 @@ class DEEC_Pdf
 		$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller) . 'pos';
 		$positions = (new $class())->setClientId($context['clientid'])->getPositions($id);
 		if (!count($positions)) throw new RuntimeException('Stored document positions are missing');
-		foreach ($positions as $position) foreach (['price', 'quantity', 'taxrate', 'total'] as $field) if (!isset($position[$field]) || !is_numeric($position[$field])) throw new RuntimeException('Stored position amounts are incomplete');
-		$calculation = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->calculate($document, $positions, $module, $controller, $context['clientid']);
-		foreach (['subtotal', 'taxes', 'total'] as $field) {
-			$calculated = $field === 'taxes' ? $calculation['row']['taxes']['total'] : $calculation['row'][$field];
-			if (!isset($document[$field]) || !is_numeric($document[$field]) || abs((float)$document[$field] - $calculated) >= 0.005) throw new RuntimeException('Stored document amounts cannot be reproduced without recalculation');
-		}
-		foreach ($positions as $position) if (abs((float)$position['total'] - $calculation['row'][$position['id']]['gross']) >= 0.005) throw new RuntimeException('Stored position total differs from its saved price rules');
+		[$calculation, $validation] = $this->validateReconstructionAmounts($document, $positions, $module, $controller, $context['clientid']);
 		$payload = $this->buildDocumentPayload(['meta' => ['module' => $module, 'controller' => $controller, 'templateid' => null, 'historical_snapshot' => true], 'document' => $document]);
+		$validation['displayed'] = $this->assertReconstructionPayload($payload, $document, $positions, $calculation);
 		$this->bootstrapTcpdf();
 		$pdf = $this->initPdf($this->buildPdfTitle($payload), $payload['document'], $payload['template']);
 		$this->renderPayload($pdf, $payload);
-		return ['bytes' => $pdf->Output('', 'S'), 'dependencies' => [
+		return ['bytes' => $pdf->Output('', 'S'), 'validation' => $validation, 'dependencies' => [
 			'template' => $payload['template'], 'template_sha256' => hash('sha256', json_encode($payload['template'], JSON_THROW_ON_ERROR)),
 			'payload_sha256' => hash('sha256', serialize($payload)), 'renderer_sha256' => hash_file('sha256', __FILE__),
 			'locale' => (string)Zend_Registry::get('Zend_Locale'), 'historical_layout_guaranteed' => false,
 			'notice' => 'Saved document and position amounts; current stored template, master data, images, fonts and translations. Manual comparison required.',
 		]];
+	}
+
+	protected function validateReconstructionAmounts(array $document, $positions, string $module, string $controller, int $clientId): array
+	{
+		$lines = [];
+		$rules = [];
+		$priceRule = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
+		foreach ($positions as $position) {
+			foreach (['price', 'quantity', 'taxrate', 'total'] as $field) if (!isset($position[$field]) || !is_numeric($position[$field]) || !is_finite((float)$position[$field])) throw new RuntimeException('Stored position amounts are incomplete');
+			if ((float)$position['taxrate'] < 0 || (!empty($position['currency']) && $position['currency'] !== $document['currency'])) throw new RuntimeException('Stored position tax rate or currency is inconsistent');
+			$id = (int)$position['id'];
+			$lines[$id] = $position;
+			$rules[$id] = $priceRule->getPriceRulePositions($module, $controller . 'pos', $id, $clientId);
+			foreach ($rules[$id] as $rule) if (!is_numeric($rule['amount']) || !is_finite((float)$rule['amount']) || (!in_array($rule['action'], ['bypercent', 'byfixed', 'topercent', 'tofixed'], true) && !($rule['action'] === '' && (float)$rule['amount'] === 0.0))) throw new RuntimeException('Stored position price rule is invalid');
+		}
+		foreach ($lines as $id => $position) {
+			$masterId = (int)$position['masterid'];
+			if ($masterId && (!isset($lines[$masterId]) || $masterId === $id || !empty($lines[$masterId]['masterid']) || $rules[$id])) throw new RuntimeException('Stored position master or inherited price rules are inconsistent');
+		}
+		$calculation = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->calculate($document, $positions, $module, $controller, $clientId);
+		$validation = ['schema_version' => 1, 'currency' => $document['currency'], 'rounding_limit' => 0.10, 'header' => [], 'positions' => [], 'warnings' => [], 'original_comparison_required' => false];
+		$current = ['subtotal' => $calculation['row']['subtotal'], 'taxes' => $calculation['row']['taxes']['total'], 'total' => $calculation['row']['total']];
+		$rawNet = $rawTax = $lineTax = 0.0;
+		foreach ($lines as $id => $position) {
+			$amounts = $calculation['row'][$id];
+			$rate = empty($document['taxfree']) ? (float)$position['taxrate'] : 0.0;
+			$net = $amounts['price'] * (float)$position['quantity'];
+			$gross = $net * (1 + $rate / 100);
+			$rawNet += $net;
+			$rawTax += $net * $rate / 100;
+			$lineTax += round($amounts['total'] * $rate / 100, 2);
+			$stored = (float)$position['total'];
+			$deltaNet = round($stored - $amounts['total'], 8);
+			$deltaGross = round($stored - $amounts['gross'], 8);
+			$classification = 'historical_position_total_conflict';
+			$roundingBasis = null;
+			if (abs($deltaGross) < 0.000001) $classification = 'matches_gross';
+			elseif (abs($deltaNet) < 0.000001) $classification = 'matches_net';
+			else {
+				// A small difference alone is not evidence of historical rounding.
+				$variants = ['unrounded_net' => [$net, 'net', $deltaNet], 'unrounded_gross' => [$gross, 'gross', $deltaGross],
+					'rounded_gross' => [round($gross, 2), 'gross', $deltaGross], 'rounded_unit_price_net' => [round($amounts['price'], 2) * (float)$position['quantity'], 'net', $deltaNet]];
+				foreach ($variants as $name => [$value, $reference, $difference]) if (abs($stored - $value) < 0.000001 && abs($difference) <= 0.100000001) {
+					$classification = 'historical_rounding';
+					$roundingBasis = ['variant' => $name, 'value' => $value, 'reference' => $reference, 'difference' => $difference];
+					break;
+				}
+			}
+			$masterId = (int)$position['masterid'];
+			$ruleSource = $masterId && !empty($lines[$masterId]['pricerulemaster']) ? $masterId : ($masterId ? null : $id);
+			$validation['positions'][$id] = ['stored_price' => $position['price'], 'stored_quantity' => $position['quantity'], 'stored_taxrate' => $position['taxrate'], 'stored_total' => $position['total'],
+				'calculated_price' => $amounts['price'], 'calculated_net' => $amounts['total'], 'calculated_gross' => $amounts['gross'], 'effective_taxrate' => $rate,
+				'difference_to_net' => $deltaNet, 'difference_to_gross' => $deltaGross, 'classification' => $classification, 'rounding_basis' => $roundingBasis, 'price_rule_source' => $ruleSource, 'applicable_price_rules' => $ruleSource === null ? [] : $rules[$ruleSource]];
+			if ($classification !== 'matches_gross') $validation['warnings'][] = ['code' => $classification, 'positionid' => $id];
+		}
+		$variants = ['current' => $current, 'legacy_unrounded' => ['subtotal' => $rawNet, 'taxes' => $rawTax, 'total' => $rawNet + $rawTax],
+			'line_rounded_tax' => ['subtotal' => $current['subtotal'], 'taxes' => round($lineTax, 2), 'total' => round($current['subtotal'] + $lineTax, 2)]];
+		foreach ($current as $field => $value) {
+			if (!isset($document[$field]) || !is_numeric($document[$field]) || !is_finite((float)$document[$field]) || abs((float)$document[$field] - $value) > 0.100000001) throw new RuntimeException('Stored document amounts cannot be reproduced within the historical rounding limit');
+			$validation['header'][$field] = ['stored' => $document[$field], 'calculated' => $value, 'difference' => round((float)$document[$field] - $value, 8)];
+		}
+		if (abs((float)$document['subtotal'] + (float)$document['taxes'] - (float)$document['total']) >= 0.005) throw new RuntimeException('Stored document header is internally inconsistent');
+		$basis = null;
+		foreach ($variants as $name => $values) {
+			$matches = true;
+			foreach ($values as $field => $value) if (abs((float)$document[$field] - $value) >= 0.005) $matches = false;
+			if ($matches) { $basis = $name; break; }
+		}
+		if ($basis === null) throw new RuntimeException('Stored document amounts have no reproducible historical rounding basis');
+		$validation['header_basis'] = $basis;
+		$validation['header_reproduced'] = $variants[$basis];
+		if ($basis !== 'current') $validation['warnings'][] = ['code' => 'historical_header_rounding', 'basis' => $basis];
+		$validation['original_comparison_required'] = (bool)$validation['warnings'];
+		return [$calculation, $validation];
+	}
+
+	protected function assertReconstructionPayload(array $payload, array $document, $positions, array $calculation): array
+	{
+		$currency = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency')->getCurrency($document['currency'], 'USE_SYMBOL');
+		$displayed = ['header' => [], 'positions' => [], 'taxgroups' => $payload['document']['taxgroups'] ?? []];
+		foreach (['subtotal', 'taxes', 'total'] as $field) {
+			$expected = $currency->toCurrency($document[$field]);
+			if (($payload['document'][$field] ?? null) !== $expected) throw new RuntimeException('PDF header differs from the stored reconstruction basis');
+			$displayed['header'][$field] = $expected;
+		}
+		$expected = [];
+		foreach ($positions as $position) {
+			$precision = floor($position['quantity']) == $position['quantity'] ? 0 : (round($position['quantity'], 2) == $position['quantity'] ? 2 : 4);
+			$expected[(int)$position['id']] = $calculation['locale'][$position['id']] + ['quantity' => Zend_Locale_Format::toNumber($position['quantity'], ['precision' => $precision, 'locale' => Zend_Registry::get('Zend_Locale')]), 'masterid' => (int)$position['masterid']];
+		}
+		foreach ($payload['positions'] as $position) {
+			$id = (int)$position['id'];
+			if (!isset($expected[$id])) throw new RuntimeException('PDF position differs from the stored reconstruction basis');
+			foreach (['price', 'total', 'quantity'] as $field) if ((string)$position[$field] !== (string)$expected[$id][$field]) throw new RuntimeException('PDF position amount differs from the calculated reconstruction basis');
+			if ((int)$position['masterid'] !== $expected[$id]['masterid']) throw new RuntimeException('PDF position hierarchy differs from the stored reconstruction basis');
+			$displayed['positions'][$id] = $expected[$id];
+			unset($expected[$id]);
+		}
+		if ($expected) throw new RuntimeException('PDF omits stored positions');
+		return $displayed;
 	}
 
 	protected function bootstrapTcpdf(): void

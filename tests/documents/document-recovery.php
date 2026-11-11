@@ -144,9 +144,10 @@ function recoveryPrepare(Zend_Db_Adapter_Abstract $db, array $job, string $root,
 	foreach (glob($job['directory'] . '/reconstructions/*.json') as $path) {
 		$record = recoveryJsonFile($path);
 		if (($record['identity'] ?? null) !== $identity) throw new RuntimeException('Foreign reconstruction record');
-		if (($record['snapshot_sha256'] ?? '') !== $snapshot['sha256']) continue;
+		if (($record['snapshot_sha256'] ?? '') !== $snapshot['sha256'] || ($record['validation']['schema_version'] ?? 0) !== 1
+			|| ($record['dependencies']['renderer_sha256'] ?? '') !== hash_file('sha256', dirname(__DIR__, 2) . '/library/DEEC/Pdf.php')) continue;
 		$file = (new DEEC_DocumentArchive($root))->inspect($job['directory'] . '/candidates/' . $record['sha256'] . '.pdf', 'pdf');
-		if ($file['status'] === 'ok' && $file['sha256'] === $record['sha256']) return ['status' => 'already_prepared', 'sha256' => $file['sha256']];
+		if ($file['status'] === 'ok' && $file['sha256'] === $record['sha256']) return ['status' => 'already_prepared', 'sha256' => $file['sha256'], 'warnings' => $record['validation']['warnings'], 'original_comparison_required' => $record['validation']['original_comparison_required']];
 	}
 	$rendered = $renderer->reconstruct($identity['id'], $identity['module'], $identity['controller']);
 	if (recoverySnapshot($db, $identity)['sha256'] !== $snapshot['sha256']) throw new RuntimeException('Rendering changed stored business values');
@@ -158,9 +159,30 @@ function recoveryPrepare(Zend_Db_Adapter_Abstract $db, array $job, string $root,
 	if ($file['status'] !== 'ok' || $file['sha256'] !== $sha || $file['size'] !== strlen($rendered['bytes'])) throw new RuntimeException('Reconstructed PDF is incomplete');
 	reviewDirectory($job['directory'] . '/reconstructions');
 	$record = ['schema_version' => 1, 'identity' => $identity, 'generated_at' => gmdate('c'), 'generated_by' => (int)Zend_Registry::get('User')['id'], 'size' => $file['size'], 'sha256' => $sha,
-		'snapshot_sha256' => $snapshot['sha256'], 'dependencies' => $rendered['dependencies'], 'fiscal_correction' => false, 'manual_approval_required' => true];
+		'snapshot_sha256' => $snapshot['sha256'], 'dependencies' => $rendered['dependencies'], 'validation' => $rendered['validation'], 'fiscal_correction' => false, 'manual_approval_required' => true];
 	reviewWrite($job['directory'] . '/reconstructions/' . $sha . '.json', reviewJson($record));
-	return ['status' => 'prepared', 'sha256' => $sha, 'candidate_path' => 'candidates/' . $sha . '.pdf'];
+	return ['status' => 'prepared', 'sha256' => $sha, 'candidate_path' => 'candidates/' . $sha . '.pdf', 'warnings' => $rendered['validation']['warnings'], 'original_comparison_required' => $rendered['validation']['original_comparison_required']];
+}
+
+function recoveryReconstructionProof(array $job, array $selected, array $snapshot, DEEC_DocumentArchive $reviewArchive): ?string
+{
+	if ($selected['selection']['origin']['kind'] !== 'reconstructed') return null;
+	$recordPath = $job['directory'] . '/reconstructions/' . $selected['file']['sha256'] . '.json';
+	$record = recoveryJsonFile($recordPath);
+	if (($record['snapshot_sha256'] ?? '') !== $snapshot['sha256'] || ($record['validation']['schema_version'] ?? 0) !== 1 || !isset($record['validation']['displayed'])) throw new RuntimeException('Reconstruction requires a current amount validation; prepare and review again');
+	if (!empty($record['validation']['original_comparison_required'])) {
+		$comparison = $selected['selection']['original_comparison'] ?? [];
+		if (!in_array($comparison['kind'] ?? '', ['original_document', 'verified_dispatch_copy', 'paper_document'], true) || !is_string($comparison['reference'] ?? null) || trim($comparison['reference']) === ''
+			|| ($comparison['amounts_match'] ?? false) !== true || ($comparison['compared_by'] ?? 0) !== (int)$selected['selection']['reviewed_by'] || !is_string($comparison['compared_at'] ?? null) || !strtotime($comparison['compared_at'])) throw new RuntimeException('Reconstruction warnings require an explicit documented comparison with an original, verified dispatch copy or paper document');
+		if ($comparison['kind'] !== 'paper_document') {
+			if (!is_string($comparison['evidence_path'] ?? null) || !preg_match('~^external/[^/]+\.pdf$~D', $comparison['evidence_path'])) throw new RuntimeException('Original comparison requires a private external evidence PDF');
+			$path = recoveryPath($job['directory'], $comparison['evidence_path']);
+			reviewPrivateFile($path);
+			$file = $reviewArchive->inspect($path, 'pdf');
+			if ($file['status'] !== 'ok' || ($comparison['evidence_sha256'] ?? '') !== $file['sha256'] || $file['sha256'] === $selected['file']['sha256']) throw new RuntimeException('Original comparison evidence is missing, changed or is the reconstruction itself');
+		}
+	}
+	return hash_file('sha256', $recordPath);
 }
 
 function recoveryApprove(Zend_Db_Adapter_Abstract $db, array $job, DEEC_DocumentArchive $reviewArchive): array
@@ -169,17 +191,14 @@ function recoveryApprove(Zend_Db_Adapter_Abstract $db, array $job, DEEC_Document
 	$selected = recoverySelection($job, $reviewArchive);
 	$userId = (int)Zend_Registry::get('User')['id'];
 	if ((int)$selected['selection']['reviewed_by'] !== $userId) throw new RuntimeException('The acting reviewer must explicitly approve their selection');
-	if ($selected['selection']['origin']['kind'] === 'reconstructed') {
-		$record = recoveryJsonFile($job['directory'] . '/reconstructions/' . $selected['file']['sha256'] . '.json');
-		if ($record['snapshot_sha256'] !== $snapshot['sha256']) throw new RuntimeException('Reconstruction no longer matches stored data');
-	}
+	$proof = recoveryReconstructionProof($job, $selected, $snapshot, $reviewArchive);
 	$approval = ['schema_version' => 1, 'identity' => $job['identity'], 'selection_sha256' => $selected['selection_sha256'], 'sha256' => $selected['file']['sha256'], 'size' => $selected['file']['size'],
-		'snapshot_sha256' => $snapshot['sha256'], 'approved_by' => $userId, 'approved_at' => gmdate('c'), 'manual' => true];
+		'snapshot_sha256' => $snapshot['sha256'], 'reconstruction_sha256' => $proof, 'approved_by' => $userId, 'approved_at' => gmdate('c'), 'manual' => true];
 	reviewDirectory($job['directory'] . '/approvals');
 	$path = $job['directory'] . '/approvals/' . $selected['selection_sha256'] . '.json';
 	if (file_exists($path)) {
 		$existing = recoveryJsonFile($path);
-		if ($existing['snapshot_sha256'] !== $approval['snapshot_sha256'] || $existing['approved_by'] !== $userId) throw new RuntimeException('Previous approval is stale; create a new explicit selection');
+		if ($existing['snapshot_sha256'] !== $approval['snapshot_sha256'] || $existing['approved_by'] !== $userId || ($existing['reconstruction_sha256'] ?? null) !== $proof) throw new RuntimeException('Previous approval is stale; create a new explicit selection');
 		return ['status' => 'already_approved'];
 	}
 	reviewWrite($path, reviewJson($approval));
@@ -195,6 +214,8 @@ function recoveryImport(Zend_Db_Adapter_Abstract $db, array $job, DEEC_DocumentA
 	$userId = (int)Zend_Registry::get('User')['id'];
 	if (($approval['identity'] ?? null) !== $identity || ($approval['selection_sha256'] ?? '') !== $selected['selection_sha256'] || ($approval['snapshot_sha256'] ?? '') !== $snapshot['sha256'] || ($approval['approved_by'] ?? 0) !== $userId || ($approval['manual'] ?? false) !== true
 		|| ($approval['sha256'] ?? '') !== $selected['file']['sha256'] || ($approval['size'] ?? 0) !== $selected['file']['size']) throw new RuntimeException('Manual approval is missing, stale or belongs to another operator');
+	$proof = recoveryReconstructionProof($job, $selected, $snapshot, $reviewArchive);
+	if (($approval['reconstruction_sha256'] ?? null) !== $proof) throw new RuntimeException('Approved reconstruction validation has changed');
 	$archive = new DEEC_DocumentArchive(BASE_PATH);
 	$relative = $archive->relativePath($identity['clientid'], $identity['module'], $identity['controller'], $identity['id']);
 	$canonical = $archive->inspect(BASE_PATH . '/' . $relative, 'pdf');
@@ -260,7 +281,7 @@ function recoveryInspection(Zend_Db_Adapter_Abstract $db, array $job, DEEC_Docum
 	foreach (glob($job['directory'] . '/reconstructions/*.json') as $path) {
 		$record = recoveryJsonFile($path);
 		if (($record['identity'] ?? null) !== $job['identity']) throw new RuntimeException('Foreign reconstruction record');
-		$candidates[] = ['path' => 'candidates/' . $record['sha256'] . '.pdf', 'sha256' => $record['sha256'], 'size' => $record['size'], 'generated_at' => $record['generated_at'], 'origin' => 'reconstructed'];
+		$candidates[] = ['path' => 'candidates/' . $record['sha256'] . '.pdf', 'sha256' => $record['sha256'], 'size' => $record['size'], 'generated_at' => $record['generated_at'], 'origin' => 'reconstructed', 'validation' => $record['validation'] ?? null];
 	}
 	foreach ($candidates as &$candidate) $candidate['observed'] = $reviewArchive->inspect(recoveryPath($job['directory'], $candidate['path']), 'pdf');
 	unset($candidate);
@@ -296,6 +317,7 @@ function recoveryHtml(array $results, string $root): string
 			$url = '../' . implode('/', array_map('rawurlencode', explode('/', $relative)));
 			$links[] = $url;
 			$html .= '<p><a href="' . $escape($url) . '">' . $escape($candidate['sha256']) . '</a> — ' . $escape($candidate['size']) . ' Bytes, ' . $escape($candidate['origin'] ?? 'historische Fassung') . ' ' . $escape($candidate['generated_at'] ?? '') . '</p>';
+			if (!empty($candidate['validation']['warnings'])) $html .= '<p>Originalvergleich vor Freigabe erforderlich.</p><pre>' . $escape(reviewJson($candidate['validation'])) . '</pre>';
 		}
 		foreach (array_slice($links, 0, 2) as $link) $html .= '<iframe title="PDF-Kandidat" style="width:48%;height:70vh" src="' . $escape($link) . '"></iframe>';
 		$html .= '</section>';
