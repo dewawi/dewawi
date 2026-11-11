@@ -139,6 +139,10 @@ class DEEC_Pdf
 		[$calculation, $validation] = $this->validateReconstructionAmounts($document, $positions, $module, $controller, $context['clientid']);
 		$payload = $this->buildDocumentPayload(['meta' => ['module' => $module, 'controller' => $controller, 'templateid' => null, 'historical_snapshot' => true], 'document' => $document]);
 		$validation['displayed'] = $this->assertReconstructionPayload($payload, $document, $positions, $calculation);
+		if (!empty($payload['historical_recipient']['original_comparison_required'])) {
+			$validation['warnings'][] = ['code' => 'stored_recipient_snapshot', 'evidence' => $payload['historical_recipient']];
+			$validation['original_comparison_required'] = true;
+		}
 		$this->bootstrapTcpdf();
 		$pdf = $this->initPdf($this->buildPdfTitle($payload), $payload['document'], $payload['template']);
 		$this->renderPayload($pdf, $payload);
@@ -146,6 +150,7 @@ class DEEC_Pdf
 			'template' => $payload['template'], 'template_sha256' => hash('sha256', json_encode($payload['template'], JSON_THROW_ON_ERROR)),
 			'payload_sha256' => hash('sha256', serialize($payload)), 'renderer_sha256' => hash_file('sha256', __FILE__),
 			'locale' => (string)Zend_Registry::get('Zend_Locale'), 'historical_layout_guaranteed' => false,
+			'recipient' => $payload['historical_recipient'] ?? null,
 			'notice' => 'Saved document and position amounts; current stored template, master data, images, fonts and translations. Manual comparison required.',
 		]];
 	}
@@ -156,12 +161,13 @@ class DEEC_Pdf
 		$rules = [];
 		$priceRule = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
 		foreach ($positions as $position) {
-			foreach (['price', 'quantity', 'taxrate', 'total'] as $field) if (!isset($position[$field]) || !is_numeric($position[$field]) || !is_finite((float)$position[$field])) throw new RuntimeException('Stored position amounts are incomplete');
+			foreach (['price', 'quantity', 'taxrate'] as $field) if (!isset($position[$field]) || !is_numeric($position[$field]) || !is_finite((float)$position[$field])) throw new RuntimeException('Stored position amounts are incomplete');
+			if ($position['total'] !== null && $position['total'] !== '' && (!is_numeric($position['total']) || !is_finite((float)$position['total']))) throw new RuntimeException('Stored position total is invalid');
 			if ((float)$position['taxrate'] < 0 || (!empty($position['currency']) && $position['currency'] !== $document['currency'])) throw new RuntimeException('Stored position tax rate or currency is inconsistent');
 			$id = (int)$position['id'];
 			$lines[$id] = $position;
 			$rules[$id] = $priceRule->getPriceRulePositions($module, $controller . 'pos', $id, $clientId);
-			foreach ($rules[$id] as $rule) if (!is_numeric($rule['amount']) || !is_finite((float)$rule['amount']) || (!in_array($rule['action'], ['bypercent', 'byfixed', 'topercent', 'tofixed'], true) && !($rule['action'] === '' && (float)$rule['amount'] === 0.0))) throw new RuntimeException('Stored position price rule is invalid');
+			foreach ($rules[$id] as $rule) if (!is_numeric($rule['amount']) || !is_finite((float)$rule['amount']) || (!in_array($rule['action'], ['bypercent', 'byfixed', 'topercent', 'tofixed'], true) && !(in_array($rule['action'], ['', null], true) && (float)$rule['amount'] === 0.0))) throw new RuntimeException('Stored position price rule is invalid');
 		}
 		foreach ($lines as $id => $position) {
 			$masterId = (int)$position['masterid'];
@@ -179,12 +185,13 @@ class DEEC_Pdf
 			$rawNet += $net;
 			$rawTax += $net * $rate / 100;
 			$lineTax += round($amounts['total'] * $rate / 100, 2);
-			$stored = (float)$position['total'];
-			$deltaNet = round($stored - $amounts['total'], 8);
-			$deltaGross = round($stored - $amounts['gross'], 8);
+			$stored = $position['total'] !== null && $position['total'] !== '' ? (float)$position['total'] : null;
+			$deltaNet = $stored === null ? null : round($stored - $amounts['total'], 8);
+			$deltaGross = $stored === null ? null : round($stored - $amounts['gross'], 8);
 			$classification = 'historical_position_total_conflict';
 			$roundingBasis = null;
-			if (abs($deltaGross) < 0.000001) $classification = 'matches_gross';
+			if ($stored === null) $classification = 'stored_total_missing';
+			elseif (abs($deltaGross) < 0.000001) $classification = 'matches_gross';
 			elseif (abs($deltaNet) < 0.000001) $classification = 'matches_net';
 			else {
 				// A small difference alone is not evidence of historical rounding.
@@ -198,10 +205,11 @@ class DEEC_Pdf
 			}
 			$masterId = (int)$position['masterid'];
 			$ruleSource = $masterId && !empty($lines[$masterId]['pricerulemaster']) ? $masterId : ($masterId ? null : $id);
-			$validation['positions'][$id] = ['stored_price' => $position['price'], 'stored_quantity' => $position['quantity'], 'stored_taxrate' => $position['taxrate'], 'stored_total' => $position['total'],
+			$validation['positions'][$id] = ['stored_price' => $position['price'], 'stored_quantity' => $position['quantity'], 'stored_taxrate' => $position['taxrate'], 'stored_total' => $position['total'] ?? null,
 				'calculated_price' => $amounts['price'], 'calculated_net' => $amounts['total'], 'calculated_gross' => $amounts['gross'], 'effective_taxrate' => $rate,
 				'difference_to_net' => $deltaNet, 'difference_to_gross' => $deltaGross, 'classification' => $classification, 'rounding_basis' => $roundingBasis, 'price_rule_source' => $ruleSource, 'applicable_price_rules' => $ruleSource === null ? [] : $rules[$ruleSource]];
 			if ($classification !== 'matches_gross') $validation['warnings'][] = ['code' => $classification, 'positionid' => $id];
+			foreach ($rules[$id] as $rule) if (in_array($rule['action'], ['', null], true)) $validation['warnings'][] = ['code' => 'zero_amount_price_rule_without_action', 'positionid' => $id, 'rule' => $rule];
 		}
 		$variants = ['current' => $current, 'legacy_unrounded' => ['subtotal' => $rawNet, 'taxes' => $rawTax, 'total' => $rawNet + $rawTax],
 			'line_rounded_tax' => ['subtotal' => $current['subtotal'], 'taxes' => round($lineTax, 2), 'total' => round($current['subtotal'] + $lineTax, 2)]];
@@ -347,6 +355,7 @@ class DEEC_Pdf
 		return array_merge($payload, [
 			'document' => $resolvedDocument,
 			'contact' => (array)($data['contact'] ?? []),
+			'historical_recipient' => $data['historical_recipient'] ?? null,
 			'responsibleUser' => $responsibleUser,
 			'clientId' => (int)($resolvedDocument['clientid'] ?? 0),
 			'template' => (array)$template,

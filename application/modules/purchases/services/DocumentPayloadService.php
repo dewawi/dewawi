@@ -7,13 +7,9 @@ class Purchases_Service_DocumentPayloadService
 		$locale = Zend_Registry::get('Zend_Locale');
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
-		if (!empty($options['historical_snapshot'])) {
-			$client = Zend_Registry::get('Client');
-			$contactDb->setClientId((int)($client['modules']['contacts'] ?? $client['id']));
-			$matches = $contactDb->fetchAll($contactDb->select()->where('clientid = ?', $contactDb->getClientId())->where('contactid = ?', $document['contactid'])->where('deleted = ?', 0));
-			if (count($matches) !== 1) throw new RuntimeException('Historical contact mapping is missing or ambiguous');
-		}
-		$contact = $contactDb->getContactWithID($document['contactid']);
+		$recipient = null;
+		if (!empty($options['historical_snapshot'])) $recipient = $contactDb->getHistoricalDocumentRecipient($document);
+		$contact = $recipient !== null ? $recipient['contact'] : $contactDb->getContactWithID($document['contactid']);
 
 		$templateDb = new Application_Model_DbTable_Template();
 		$templateId = !empty($options['templateid'])
@@ -55,6 +51,7 @@ class Purchases_Service_DocumentPayloadService
 			'template' => $template,
 			'document' => $document,
 			'contact' => $contact,
+			'historical_recipient' => $recipient['evidence'] ?? null,
 			'items' => $itemData['items'],
 			'categories' => $itemData['categories'],
 			'media' => $itemData['media'],

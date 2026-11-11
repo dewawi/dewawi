@@ -95,7 +95,7 @@ function recoveryJobs(string $root, string $runFile, int $clientId): array
 		if ($key !== $row['key'] || isset($jobs[$key])) throw new RuntimeException('Review manifest identity differs');
 		$jobs[$key] = ['identity' => $identity, 'manifest' => $manifest, 'directory' => dirname($path)];
 	}
-	return ['binding' => $binding, 'jobs' => $jobs];
+	return ['binding' => $binding, 'jobs' => $jobs, 'reports' => $run['reports'] ?? []];
 }
 
 function recoverySelection(array $job, DEEC_DocumentArchive $reviewArchive, ?array $selection = null): array
@@ -144,8 +144,7 @@ function recoveryPrepare(Zend_Db_Adapter_Abstract $db, array $job, string $root,
 	foreach (glob($job['directory'] . '/reconstructions/*.json') as $path) {
 		$record = recoveryJsonFile($path);
 		if (($record['identity'] ?? null) !== $identity) throw new RuntimeException('Foreign reconstruction record');
-		if (($record['snapshot_sha256'] ?? '') !== $snapshot['sha256'] || ($record['validation']['schema_version'] ?? 0) !== 1
-			|| ($record['dependencies']['renderer_sha256'] ?? '') !== hash_file('sha256', dirname(__DIR__, 2) . '/library/DEEC/Pdf.php')) continue;
+		if (($record['snapshot_sha256'] ?? '') !== $snapshot['sha256'] || ($record['validation']['schema_version'] ?? 0) !== 1 || !isset($record['validation']['displayed'])) continue;
 		$file = (new DEEC_DocumentArchive($root))->inspect($job['directory'] . '/candidates/' . $record['sha256'] . '.pdf', 'pdf');
 		if ($file['status'] === 'ok' && $file['sha256'] === $record['sha256']) return ['status' => 'already_prepared', 'sha256' => $file['sha256'], 'warnings' => $record['validation']['warnings'], 'original_comparison_required' => $record['validation']['original_comparison_required']];
 	}
@@ -164,24 +163,34 @@ function recoveryPrepare(Zend_Db_Adapter_Abstract $db, array $job, string $root,
 	return ['status' => 'prepared', 'sha256' => $sha, 'candidate_path' => 'candidates/' . $sha . '.pdf', 'warnings' => $rendered['validation']['warnings'], 'original_comparison_required' => $rendered['validation']['original_comparison_required']];
 }
 
-function recoveryReconstructionProof(array $job, array $selected, array $snapshot, DEEC_DocumentArchive $reviewArchive): ?string
+function recoveryOriginalComparison(array $job, array $selected, DEEC_DocumentArchive $reviewArchive): void
+{
+	$comparison = $selected['selection']['original_comparison'] ?? [];
+	if (($comparison['kind'] ?? '') === 'previous_paper_match') {
+		if (($comparison['assertion_type'] ?? '') !== 'retrospective_operator_attestation' || ($comparison['identity'] ?? null) !== $job['identity'] || ($comparison['sha256'] ?? '') !== $selected['file']['sha256']
+			|| ($comparison['confirmed_by'] ?? 0) !== (int)$selected['selection']['reviewed_by'] || empty($comparison['confirmed_at']) || !strtotime($comparison['confirmed_at'])
+			|| !array_key_exists('comparison_performed_at', $comparison) || $comparison['comparison_performed_at'] !== null || !array_key_exists('paper_location', $comparison) || $comparison['paper_location'] !== null
+			|| ($comparison['reference'] ?? '') !== 'Paper document ' . $job['identity']['document_number'] || ($comparison['amounts_match'] ?? false) !== true) throw new RuntimeException('Invalid document-bound retrospective paper attestation');
+		return;
+	}
+	if (!in_array($comparison['kind'] ?? '', ['original_document', 'verified_dispatch_copy', 'paper_document'], true) || !is_string($comparison['reference'] ?? null) || trim($comparison['reference']) === ''
+		|| ($comparison['amounts_match'] ?? false) !== true || ($comparison['compared_by'] ?? 0) !== (int)$selected['selection']['reviewed_by'] || !is_string($comparison['compared_at'] ?? null) || !strtotime($comparison['compared_at'])) throw new RuntimeException('Reconstruction warnings require an explicit documented comparison with an original, verified dispatch copy or paper document');
+	if ($comparison['kind'] !== 'paper_document') {
+		if (!is_string($comparison['evidence_path'] ?? null) || !preg_match('~^external/[^/]+\.pdf$~D', $comparison['evidence_path'])) throw new RuntimeException('Original comparison requires a private external evidence PDF');
+		$path = recoveryPath($job['directory'], $comparison['evidence_path']);
+		reviewPrivateFile($path);
+		$file = $reviewArchive->inspect($path, 'pdf');
+		if ($file['status'] !== 'ok' || ($comparison['evidence_sha256'] ?? '') !== $file['sha256'] || $file['sha256'] === $selected['file']['sha256']) throw new RuntimeException('Original comparison evidence is missing, changed or is the reconstruction itself');
+	}
+}
+
+function recoveryReconstructionProof(array $job, array $selected, array $snapshot, DEEC_DocumentArchive $reviewArchive, bool $requireComparison = false): ?string
 {
 	if ($selected['selection']['origin']['kind'] !== 'reconstructed') return null;
 	$recordPath = $job['directory'] . '/reconstructions/' . $selected['file']['sha256'] . '.json';
 	$record = recoveryJsonFile($recordPath);
 	if (($record['snapshot_sha256'] ?? '') !== $snapshot['sha256'] || ($record['validation']['schema_version'] ?? 0) !== 1 || !isset($record['validation']['displayed'])) throw new RuntimeException('Reconstruction requires a current amount validation; prepare and review again');
-	if (!empty($record['validation']['original_comparison_required'])) {
-		$comparison = $selected['selection']['original_comparison'] ?? [];
-		if (!in_array($comparison['kind'] ?? '', ['original_document', 'verified_dispatch_copy', 'paper_document'], true) || !is_string($comparison['reference'] ?? null) || trim($comparison['reference']) === ''
-			|| ($comparison['amounts_match'] ?? false) !== true || ($comparison['compared_by'] ?? 0) !== (int)$selected['selection']['reviewed_by'] || !is_string($comparison['compared_at'] ?? null) || !strtotime($comparison['compared_at'])) throw new RuntimeException('Reconstruction warnings require an explicit documented comparison with an original, verified dispatch copy or paper document');
-		if ($comparison['kind'] !== 'paper_document') {
-			if (!is_string($comparison['evidence_path'] ?? null) || !preg_match('~^external/[^/]+\.pdf$~D', $comparison['evidence_path'])) throw new RuntimeException('Original comparison requires a private external evidence PDF');
-			$path = recoveryPath($job['directory'], $comparison['evidence_path']);
-			reviewPrivateFile($path);
-			$file = $reviewArchive->inspect($path, 'pdf');
-			if ($file['status'] !== 'ok' || ($comparison['evidence_sha256'] ?? '') !== $file['sha256'] || $file['sha256'] === $selected['file']['sha256']) throw new RuntimeException('Original comparison evidence is missing, changed or is the reconstruction itself');
-		}
-	}
+	if ($requireComparison || !empty($record['validation']['original_comparison_required']) || !empty($selected['selection']['authorization'])) recoveryOriginalComparison($job, $selected, $reviewArchive);
 	return hash_file('sha256', $recordPath);
 }
 
@@ -192,8 +201,11 @@ function recoveryApprove(Zend_Db_Adapter_Abstract $db, array $job, DEEC_Document
 	$userId = (int)Zend_Registry::get('User')['id'];
 	if ((int)$selected['selection']['reviewed_by'] !== $userId) throw new RuntimeException('The acting reviewer must explicitly approve their selection');
 	$proof = recoveryReconstructionProof($job, $selected, $snapshot, $reviewArchive);
+	recoveryReleaseEvidence($db, $job, $selected, $snapshot);
 	$approval = ['schema_version' => 1, 'identity' => $job['identity'], 'selection_sha256' => $selected['selection_sha256'], 'sha256' => $selected['file']['sha256'], 'size' => $selected['file']['size'],
-		'snapshot_sha256' => $snapshot['sha256'], 'reconstruction_sha256' => $proof, 'approved_by' => $userId, 'approved_at' => gmdate('c'), 'manual' => true];
+		'snapshot_sha256' => $snapshot['sha256'], 'reconstruction_sha256' => $proof, 'approved_by' => $userId, 'approved_at' => gmdate('c'), 'manual' => true,
+		'method' => $selected['selection']['authorization']['method'] ?? 'individual_selection', 'authorization' => $selected['selection']['authorization'] ?? null,
+		'individual_original_comparison_claimed' => isset($selected['selection']['original_comparison']) && ($selected['selection']['original_comparison']['kind'] ?? '') !== 'previous_paper_match'];
 	reviewDirectory($job['directory'] . '/approvals');
 	$path = $job['directory'] . '/approvals/' . $selected['selection_sha256'] . '.json';
 	if (file_exists($path)) {
@@ -205,7 +217,7 @@ function recoveryApprove(Zend_Db_Adapter_Abstract $db, array $job, DEEC_Document
 	return ['status' => 'approved', 'approval' => basename($path)];
 }
 
-function recoveryImport(Zend_Db_Adapter_Abstract $db, array $job, DEEC_DocumentArchive $reviewArchive): array
+function recoveryImport(Zend_Db_Adapter_Abstract $db, array $job, DEEC_DocumentArchive $reviewArchive, ?array $releaseReceipt = null): array
 {
 	$identity = $job['identity'];
 	$snapshot = recoverySnapshot($db, $identity, true);
@@ -216,6 +228,7 @@ function recoveryImport(Zend_Db_Adapter_Abstract $db, array $job, DEEC_DocumentA
 		|| ($approval['sha256'] ?? '') !== $selected['file']['sha256'] || ($approval['size'] ?? 0) !== $selected['file']['size']) throw new RuntimeException('Manual approval is missing, stale or belongs to another operator');
 	$proof = recoveryReconstructionProof($job, $selected, $snapshot, $reviewArchive);
 	if (($approval['reconstruction_sha256'] ?? null) !== $proof) throw new RuntimeException('Approved reconstruction validation has changed');
+	recoveryReleaseEvidence($db, $job, $selected, $snapshot);
 	$archive = new DEEC_DocumentArchive(BASE_PATH);
 	$relative = $archive->relativePath($identity['clientid'], $identity['module'], $identity['controller'], $identity['id']);
 	$canonical = $archive->inspect(BASE_PATH . '/' . $relative, 'pdf');
@@ -235,7 +248,7 @@ function recoveryImport(Zend_Db_Adapter_Abstract $db, array $job, DEEC_DocumentA
 	if (!DEEC_Emailattachment::validFilename($filename)) $filename = $identity['controller'] . '-' . $identity['id'] . '.pdf';
 	$reconstruction = $selected['selection']['origin']['kind'] === 'reconstructed' ? recoveryJsonFile($job['directory'] . '/reconstructions/' . $selected['file']['sha256'] . '.json') : null;
 	$recovery = ['approval' => $approval, 'selection' => $selected['selection'], 'reconstruction' => $reconstruction, 'review_directory' => $job['directory'], 'review_manifest_sha256' => hash('sha256', reviewJson($job['manifest'])), 'collection_observed_at' => $job['manifest']['observed_at'] ?? null,
-		'collected_sources' => $job['manifest']['sources'], 'archived_timezone' => date_default_timezone_get(), 'historical_conflicts' => $job['manifest']['selected']['reported_reasons'], 'fiscal_correction' => false];
+		'collected_sources' => $job['manifest']['sources'], 'archived_timezone' => date_default_timezone_get(), 'historical_conflicts' => $job['manifest']['selected']['reported_reasons'], 'fiscal_correction' => false, 'release_authorization' => $releaseReceipt];
 	if (!$existing) {
 		$db->insert('documentarchive', ['clientid' => $identity['clientid'], 'module' => $identity['module'], 'controller' => $identity['controller'], 'documentid' => $identity['id'], 'format' => 'pdf', 'version' => 1, 'correctionarchiveid' => null,
 			'filename' => $filename, 'path' => $relative, 'filesize' => $canonical['size'], 'sha256' => $canonical['sha256'], 'archived' => date('Y-m-d H:i:s'), 'archivedby' => $userId,
@@ -304,6 +317,216 @@ function recoveryInspection(Zend_Db_Adapter_Abstract $db, array $job, DEEC_Docum
 	return $result;
 }
 
+function recoveryDispatchEvidence(Zend_Db_Adapter_Abstract $db, array $job, string $sha, array $snapshot): ?array
+{
+	$id = $job['identity'];
+	$proofs = [];
+	foreach ($job['manifest']['sources'] as $source) {
+		if ($source['source'] !== 'emailmessageattachment' || ($source['status'] ?? '') !== 'ok' || ($source['sha256'] ?? '') !== $sha || ($source['metadata_integrity'] ?? '') !== 'matches') continue;
+		$row = $db->fetchRow('SELECT a.*, m.documentid, m.module, m.controller, m.messagesent, m.deliverystatus FROM emailmessageattachment a JOIN emailmessage m ON m.id = a.emailmessageid AND m.clientid = a.clientid WHERE a.id = ? AND a.clientid = ? AND m.documentid = ? AND m.module = ? AND m.controller = ?', [$source['evidence']['id'] ?? 0, $id['clientid'], $id['id'], $id['module'], $id['controller']]);
+		if (!$row || !$row['messagesent'] || !in_array($row['deliverystatus'], ['accepted', 'delivered'], true) || $row['sha256'] !== $sha || $row['filename'] !== ($snapshot['data']['document']['filename'] ?? '')) continue;
+		$client = (string)$id['clientid'];
+		$expected = 'files/attachments/emailmessage/' . $client[0] . '/' . ($client[1] ?? '0') . '/' . $client . '/' . intdiv((int)$row['emailmessageid'], 1000) . '/' . $row['emailmessageid'] . '/' . $row['ordering'] . '.pdf';
+		if ((int)$row['ordering'] < 1 || $row['path'] !== $expected) continue;
+		$reference = null;
+		foreach (['documentarchiveid' => 'documentarchive', 'emailattachmentid' => 'emailattachment'] as $field => $table) {
+			if (empty($row[$field])) continue;
+			$reference = $db->fetchRow("SELECT * FROM `$table` WHERE id = ? AND clientid = ? AND documentid = ? AND module = ? AND controller = ? AND filename = ?", [$row[$field], $id['clientid'], $id['id'], $id['module'], $id['controller'], $row['filename']]);
+			if ($reference && (int)$reference['filesize'] === (int)$row['filesize'] && ($table !== 'documentarchive' || ((int)$reference['version'] === 1 && $reference['sha256'] === $sha))) break;
+			$reference = null;
+		}
+		if (!$reference) continue;
+		$file = (new DEEC_DocumentArchive(BASE_PATH))->inspect(BASE_PATH . '/' . $expected, 'pdf');
+		if ($file['status'] === 'ok' && $file['sha256'] === $sha && $file['size'] === (int)$row['filesize']) $proofs[] = ['message_attachment' => $row, 'document_reference' => $reference];
+	}
+	return $proofs ? ['method' => 'verified_dispatch_original', 'sha256' => hash('sha256', reviewJson($proofs)), 'records' => $proofs] : null;
+}
+
+function recoveryReleaseEvidence(Zend_Db_Adapter_Abstract $db, array $job, array $selected, array $snapshot): void
+{
+	if ($selected['selection']['origin']['kind'] !== 'reconstructed' && isset($selected['selection']['original_comparison'])) recoveryOriginalComparison($job, $selected, new DEEC_DocumentArchive(dirname($job['directory'])));
+	$authorization = $selected['selection']['authorization'] ?? null;
+	if (!$authorization) return;
+	if (!in_array($authorization['method'] ?? '', ['batch_policy', 'operator_attestation'], true) || ($authorization['confirmed_by'] ?? 0) !== (int)$selected['selection']['reviewed_by'] || ($authorization['database_and_file_backup_confirmed'] ?? false) !== true) throw new RuntimeException('Release authorization is invalid');
+	if (($authorization['policy'] ?? '') !== ($authorization['method'] === 'batch_policy' ? 'verified-evidence-v1' : 'document_paper_attestation')) throw new RuntimeException('Release policy does not match its authorization method');
+	if (($authorization['method'] ?? '') === 'batch_policy' && ($selected['selection']['origin']['kind'] ?? '') === 'historical_pdf') {
+		$proof = recoveryDispatchEvidence($db, $job, $selected['file']['sha256'], $snapshot);
+		if (!$proof || ($selected['selection']['origin']['dispatch_evidence']['sha256'] ?? '') !== $proof['sha256']) throw new RuntimeException('Verified dispatch evidence is missing or changed');
+	}
+}
+
+function recoveryReleasePlan(Zend_Db_Adapter_Abstract $db, array $job, DEEC_DocumentArchive $reviewArchive, array $snapshot, array $options): array
+{
+	$id = $job['identity'];
+	$archive = new DEEC_DocumentArchive(BASE_PATH);
+	$rows = recoveryArchives($db, $id);
+	$canonical = $archive->inspect($archive->path($id['clientid'], $id['module'], $id['controller'], $id['id']), 'pdf');
+	if ($rows) {
+		if (count($rows) === 1 && (int)$rows[0]['version'] === 1) {
+			$original = (new Application_Model_DbTable_Documentarchive())->getForDocument($id['id'], $id['module'], $id['controller']);
+			if ($original) {
+				if (isset($options['attest-previous-paper-match']) && $options['attest-previous-paper-match'] !== $original['sha256']) throw new RuntimeException('Attested SHA-256 differs from the existing original');
+				return ['status' => 'already_archived', 'category' => 'already_archived', 'reason' => 'Verified existing original retained without writes', 'sha256' => $original['sha256'], 'next_action' => 'none'];
+			}
+		}
+		throw new RuntimeException('Existing archive versions or registered original are inconsistent');
+	}
+	if (!in_array($canonical['status'], ['ok', 'missing'], true)) throw new RuntimeException('Canonical archive path is occupied or invalid');
+	$decision = recoveryJsonFile($job['directory'] . '/selection.json');
+	$reuse = ($decision['decision'] ?? '') === 'selected';
+	$attest = $options['attest-previous-paper-match'] ?? null;
+	$historical = [];
+	foreach ($job['manifest']['candidates'] as $candidate) $historical[$candidate['sha256']] = $candidate;
+	$reconstructed = [];
+	foreach (glob($job['directory'] . '/reconstructions/*.json') as $path) {
+		$record = recoveryJsonFile($path);
+		if (($record['identity'] ?? null) !== $id) throw new RuntimeException('Foreign reconstruction record');
+		if (($record['snapshot_sha256'] ?? '') === $snapshot['sha256'] && ($record['validation']['schema_version'] ?? 0) === 1 && isset($record['validation']['displayed'])) $reconstructed[$record['sha256']] = ['path' => 'candidates/' . $record['sha256'] . '.pdf', 'sha256' => $record['sha256']];
+	}
+	$basis = $reuse ? ($decision['authorization']['method'] ?? 'existing_individual_selection') : null;
+	if ($attest !== null || !$reuse) {
+		$reuse = false;
+		$sha = $attest;
+		$kind = 'reconstructed';
+		if ($sha === null && count($historical) > 1) return ['status' => 'skipped', 'category' => 'historical_conflict', 'reason' => 'Different historical PDFs require individual selection', 'next_action' => 'compare historical versions'];
+		if ($sha === null && count($historical) === 1) { $sha = array_key_first($historical); $kind = 'historical_pdf'; }
+		if ($sha === null && count($reconstructed) === 1) $sha = array_key_first($reconstructed);
+		if ($sha !== null && isset($historical[$sha])) $kind = 'historical_pdf';
+		$candidate = ($kind === 'historical_pdf' ? $historical : $reconstructed)[$sha ?? ''] ?? null;
+		if (!$candidate && $attest !== null) throw new RuntimeException('Attested SHA-256 has no current candidate for this document');
+		if (!$candidate) {
+			$failure = $options['_preparation_failures'][reviewKey($id)] ?? null;
+			return ['status' => 'skipped', 'category' => $failure ? recoveryIssueCategory($failure['error']) : 'technical_failed', 'reason' => $failure['error'] ?? 'No unique current candidate', 'next_action' => 'review failed preparation or specify an exact candidate', 'source_report' => $failure['report'] ?? null];
+		}
+		$decision = ['schema_version' => 1, 'document' => $id, 'decision' => 'selected', 'candidate_path' => $candidate['path'], 'sha256' => $sha, 'reviewed_by' => (int)Zend_Registry::get('User')['id'], 'reviewed_at' => gmdate('c'),
+			'origin' => ['kind' => $kind, 'source_path' => $kind === 'reconstructed' ? 'stored business snapshot' : 'verified historical dispatch'], 'reason' => 'Release policy requires verified original evidence; numerical consistency alone is insufficient'];
+		if ($attest !== null) {
+			$decision['original_comparison'] = ['kind' => 'previous_paper_match', 'assertion_type' => 'retrospective_operator_attestation', 'identity' => $id, 'sha256' => $sha,
+				'confirmed_by' => $decision['reviewed_by'], 'confirmed_at' => gmdate('c'), 'comparison_performed_at' => null, 'paper_location' => null, 'reference' => 'Paper document ' . $id['document_number'], 'amounts_match' => true];
+			$decision['reason'] = 'Operator retrospectively confirms a previously completed full match with the identified paper document; original comparison date and paper location are unknown';
+			$basis = 'operator_attestation';
+		} elseif ($kind === 'historical_pdf') {
+			$basis = recoveryDispatchEvidence($db, $job, $sha, $snapshot);
+			if (!$basis) return ['status' => 'skipped', 'category' => 'candidate_evidence_missing', 'reason' => 'A single historical PDF is not proof of an original', 'sha256' => $sha, 'next_action' => 'document original provenance or perform an original comparison'];
+			$decision['origin']['dispatch_evidence'] = $basis;
+			$basis = 'batch_policy';
+		}
+	}
+	$selected = recoverySelection($job, $reviewArchive, $decision);
+	if ($canonical['status'] === 'ok' && ($canonical['sha256'] !== $selected['file']['sha256'] || $canonical['size'] !== $selected['file']['size'])) throw new RuntimeException('Canonical archive path is occupied by different bytes');
+	if ((int)$decision['reviewed_by'] !== (int)Zend_Registry::get('User')['id']) return ['status' => 'skipped', 'category' => 'candidate_evidence_missing', 'reason' => 'Existing selection belongs to another reviewer', 'sha256' => $selected['file']['sha256'], 'next_action' => 'original reviewer must release or document a new comparison'];
+	try {
+		$proof = recoveryReconstructionProof($job, $selected, $snapshot, $reviewArchive, true);
+		$approvalPath = $job['directory'] . '/approvals/' . $selected['selection_sha256'] . '.json';
+		$hasApproval = false;
+		if ($reuse && file_exists($approvalPath)) {
+			$approval = recoveryJsonFile($approvalPath);
+			if (($approval['identity'] ?? null) !== $id || ($approval['selection_sha256'] ?? '') !== $selected['selection_sha256'] || ($approval['snapshot_sha256'] ?? '') !== $snapshot['sha256'] || ($approval['approved_by'] ?? 0) !== (int)$decision['reviewed_by'] || ($approval['sha256'] ?? '') !== $selected['file']['sha256'] || ($approval['size'] ?? 0) !== $selected['file']['size'] || ($approval['manual'] ?? false) !== true || ($approval['reconstruction_sha256'] ?? null) !== $proof) throw new RuntimeException('Existing approval is stale or invalid');
+			$hasApproval = true;
+		}
+		if ($decision['origin']['kind'] !== 'reconstructed' && isset($decision['original_comparison'])) recoveryOriginalComparison($job, $selected, $reviewArchive);
+		if ($reuse && $decision['origin']['kind'] !== 'reconstructed' && !isset($decision['original_comparison']) && empty($decision['authorization']) && !$hasApproval) throw new RuntimeException('Existing historical selection has no valid manual approval');
+		recoveryReleaseEvidence($db, $job, $selected, $snapshot);
+	} catch (Throwable $error) { return ['status' => 'skipped', 'category' => 'original_comparison_required', 'reason' => $error->getMessage(), 'sha256' => $selected['file']['sha256'], 'next_action' => 'supply a valid document-bound original comparison']; }
+	return ['status' => 'eligible', 'category' => 'eligible', 'reason' => $decision['reason'], 'sha256' => $selected['file']['sha256'], 'next_action' => 'explicit release with confirmed database and file backup', 'decision' => $decision, 'reuse_selection' => $reuse, 'method' => $basis ?? 'existing_individual_selection'];
+}
+
+function recoveryRelease(Zend_Db_Adapter_Abstract $db, array $job, DEEC_DocumentArchive $reviewArchive, array $snapshot, array $options, array $authorization): array
+{
+	$plan = recoveryReleasePlan($db, $job, $reviewArchive, $snapshot, $options);
+	if ($plan['status'] !== 'eligible') return $plan;
+	if (!$plan['reuse_selection']) {
+		$decision = $plan['decision'];
+		$decision['authorization'] = $authorization + ['method' => $plan['method']];
+		recoverySelect($job, $decision, (int)Zend_Registry::get('User')['id'], $reviewArchive);
+	}
+	recoveryApprove($db, $job, $reviewArchive);
+	$result = recoveryImport($db, $job, $reviewArchive, $authorization + ['identity' => $job['identity'], 'sha256' => $plan['sha256'], 'selection_method' => $plan['method']]);
+	$original = (new Application_Model_DbTable_Documentarchive())->getForDocument($job['identity']['id'], $job['identity']['module'], $job['identity']['controller']);
+	if (!$original || $original['sha256'] !== $plan['sha256']) throw new RuntimeException('Post-import original verification failed');
+	return $result + ['category' => 'archived', 'reason' => $plan['reason'], 'next_action' => 'none'];
+}
+
+function recoveryIssueCategory(string $reason): string
+{
+	if (stripos($reason, 'contact') !== false || stripos($reason, 'recipient') !== false) return 'contact_unresolved';
+	if (stripos($reason, 'comparison') !== false || stripos($reason, 'attestation') !== false) return 'original_comparison_required';
+	if (preg_match('/incomplete|missing.*(?:number|date|currency|positions)|positions.*missing|number, date or currency/i', $reason)) return 'business_data_incomplete';
+	if (preg_match('/original|archive|canonical|versions/i', $reason)) return 'historical_conflict';
+	return 'technical_failed';
+}
+
+function recoveryReportRows(array $results, array $jobs): array
+{
+	$rows = [];
+	foreach ($results as $key => $result) {
+		$id = $jobs[$key]['identity'];
+		$date = $result['document_date'] ?? $jobs[$key]['manifest']['document']['document_date'] ?? $jobs[$key]['manifest']['selected']['reported_date'] ?? '';
+		$rows[] = ['clientid' => $id['clientid'], 'type' => $id['module'] . '/' . $id['controller'], 'id' => $id['id'], 'document_number' => $id['document_number'], 'year' => preg_match('/^[0-9]{4}-/', $date) ? substr($date, 0, 4) : 'unknown',
+			'status' => $result['category'] ?? ($result['status'] === 'failed' ? recoveryIssueCategory($result['error'] ?? '') : $result['status']), 'reason' => $result['reason'] ?? $result['error'] ?? '', 'candidate_sha256' => $result['sha256'] ?? '', 'next_action' => $result['next_action'] ?? 'review the protected document report'];
+	}
+	return $rows;
+}
+
+function recoveryPreparationFailures(string $root, int $clientId): array
+{
+	$failures = [];
+	$paths = glob($root . '/runs/recovery-*.json');
+	sort($paths, SORT_STRING);
+	foreach ($paths as $path) {
+		$report = recoveryJsonFile($path);
+		if (($report['action'] ?? '') !== 'prepare' || ($report['clientid'] ?? 0) !== $clientId) continue;
+		foreach ($report['results'] as $key => $row) {
+			if ($row['status'] !== 'failed') { unset($failures[$key]); continue; }
+			$worker = isset($row['output']) ? json_decode($row['output'], true) : null;
+			$failures[$key] = ['error' => $worker['results'][$key]['error'] ?? $row['error'] ?? 'Unknown preparation failure', 'report' => $path];
+		}
+	}
+	return $failures;
+}
+
+function recoveryInventoryRows(array $reports, int $clientId, ?string $explicit): array
+{
+	$rows = [];
+	if ($explicit !== null) $reports = [['path' => $explicit]];
+	foreach ($reports as $report) {
+		if ($explicit === null && !str_ends_with($report['path'], '.jsonl')) continue;
+		reviewSafePath($report['path']);
+		if (isset($report['sha256']) && hash_file('sha256', $report['path']) !== $report['sha256']) throw new RuntimeException('Baseline report hash differs');
+		$summary = null;
+		$stream = fopen($report['path'], 'rb');
+		if (!$stream) throw new RuntimeException('Baseline report is unavailable');
+		try { while (($line = fgets($stream)) !== false) {
+			if (trim($line) === '') continue;
+			if ($summary !== null) throw new RuntimeException('Records after baseline summary');
+			$entry = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+			if ($entry['kind'] === 'summary') $summary = $entry['summary'];
+			if (!in_array($entry['kind'], ['excluded_document', 'unassigned_file'], true)) continue;
+			$record = $entry['record'] ?? [];
+			if (isset($record['clientid']) && (int)$record['clientid'] !== $clientId) throw new RuntimeException('Foreign baseline inventory');
+			$rows[] = ['clientid' => $clientId, 'type' => isset($record['module']) ? $record['module'] . '/' . $record['controller'] : '', 'id' => $record['id'] ?? '', 'document_number' => $record['document_number'] ?? '', 'year' => substr($record['document_date'] ?? '', 0, 4) ?: 'unknown',
+				'status' => $entry['kind'] === 'excluded_document' ? (($record['exclusion_reason'] ?? '') === 'soft_deleted_issued' ? 'excluded_issued' : 'excluded_document') : 'unassigned_file', 'reason' => $record['exclusion_reason'] ?? $entry['classification'], 'candidate_sha256' => $entry['file']['sha256'] ?? '', 'next_action' => 'manual classification; no automatic import', 'source_path' => $entry['file']['path'] ?? ''];
+		}
+		} finally { fclose($stream); }
+		if (!$summary || (int)$summary['clientid'] !== $clientId || $summary['mode'] !== 'dry-run') throw new RuntimeException('A completed tenant baseline dry-run is required');
+	}
+	return $rows;
+}
+
+function recoveryWriteReports(string $report, array $data, array $rows): void
+{
+	$groups = ['type' => [], 'year' => [], 'cause' => []];
+	foreach ($rows as $row) foreach (['type' => $row['type'], 'year' => $row['year'], 'cause' => $row['status'] . ': ' . $row['reason']] as $group => $key) $groups[$group][$key] = ($groups[$group][$key] ?? 0) + 1;
+	reviewWrite($report, reviewJson($data + ['rows' => $rows, 'summary' => $groups]));
+	$stream = fopen('php://temp', 'w+');
+	$fields = ['clientid', 'type', 'id', 'document_number', 'year', 'status', 'reason', 'candidate_sha256', 'next_action', 'source_path'];
+	fputcsv($stream, $fields, ',', '"', '');
+	foreach ($rows as $row) fputcsv($stream, array_map(static function(string $field) use ($row): string { $value = (string)($row[$field] ?? ''); return preg_match('/^[=+@-]/', $value) ? "'" . $value : $value; }, $fields), ',', '"', '');
+	rewind($stream);
+	reviewWrite(substr($report, 0, -5) . '.csv', stream_get_contents($stream));
+	fclose($stream);
+}
+
 function recoveryHtml(array $results, string $root): string
 {
 	$escape = static fn($value): string => htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -328,19 +551,31 @@ function recoveryHtml(array $results, string $root): string
 if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') !== __FILE__) return;
 
 umask(0077);
-$options = getopt('', ['config:', 'environment:', 'review:', 'run:', 'client:', 'operator-user:', 'action:', 'only:', 'decisions:', 'confirm-client:', 'backup-verified']);
+$options = getopt('', ['config:', 'environment:', 'review:', 'run:', 'client:', 'operator-user:', 'action:', 'only:', 'decisions:', 'confirm-client:', 'backup-verified', 'authorize-batch:', 'attest-previous-paper-match:', 'baseline:', 'retry-failed-from:']);
 $db = null;
 try {
-	foreach (['config', 'review', 'run', 'client', 'operator-user', 'action'] as $field) if (!is_string($options[$field] ?? null)) throw new RuntimeException('Required: --config --review --run --client --operator-user --action=prepare|select|approve|import|inspect|retention-plan');
+	foreach (['config', 'review', 'run', 'client', 'operator-user', 'action'] as $field) if (!is_string($options[$field] ?? null)) throw new RuntimeException('Required: --config --review --run --client --operator-user --action=release-plan|release|prepare|select|approve|import|inspect|retention-plan');
 	$clientId = reviewId($options['client']);
 	$userId = reviewId($options['operator-user']);
 	$root = rtrim($options['review'], '/');
 	$context = recoveryJobs($root, $options['run'], $clientId);
 	$action = $options['action'];
-	if (!in_array($action, ['prepare', 'select', 'approve', 'import', 'inspect', 'retention-plan'], true)) throw new RuntimeException('Invalid recovery action');
-	if ($action === 'import' && ((string)($options['confirm-client'] ?? '') !== (string)$clientId || !array_key_exists('backup-verified', $options))) throw new RuntimeException('Import requires --confirm-client and --backup-verified');
+	if (!in_array($action, ['prepare', 'select', 'approve', 'import', 'inspect', 'retention-plan', 'release-plan', 'release'], true)) throw new RuntimeException('Invalid recovery action');
+	if (in_array($action, ['import', 'release'], true) && ((string)($options['confirm-client'] ?? '') !== (string)$clientId || !array_key_exists('backup-verified', $options))) throw new RuntimeException('Import requires --confirm-client and --backup-verified for both database and file backups');
 	$jobs = $context['jobs'];
 	if (isset($options['only'])) { if (!isset($jobs[$options['only']])) throw new RuntimeException('Unknown document key'); $jobs = [$options['only'] => $jobs[$options['only']]]; }
+	if (isset($options['attest-previous-paper-match']) && (!in_array($action, ['release', 'release-plan'], true) || !isset($options['only']) || count($jobs) !== 1 || !preg_match('/^[a-f0-9]{64}$/D', $options['attest-previous-paper-match']))) throw new RuntimeException('Paper attestation requires release/release-plan, exactly one --only document and its exact SHA-256');
+	if ($action === 'release' && !isset($options['attest-previous-paper-match']) && ($options['authorize-batch'] ?? '') !== 'verified-evidence-v1') throw new RuntimeException('Release requires explicit --authorize-batch=verified-evidence-v1');
+	if (isset($options['retry-failed-from'])) {
+		if ($action !== 'prepare' || !str_starts_with($options['retry-failed-from'], $root . '/runs/')) throw new RuntimeException('Retry requires a recovery preparation report in this review area');
+		$previous = recoveryJsonFile($options['retry-failed-from']);
+		if (($previous['action'] ?? '') !== 'prepare' || ($previous['clientid'] ?? 0) !== $clientId) throw new RuntimeException('Foreign retry report');
+		$jobs = array_intersect_key($jobs, array_filter($previous['results'], static fn(array $row): bool => $row['status'] === 'failed'));
+	}
+	$inventory = in_array($action, ['release-plan', 'release'], true) ? recoveryInventoryRows($context['reports'], $clientId, $options['baseline'] ?? null) : [];
+	if (in_array($action, ['release-plan', 'release'], true)) $options['_preparation_failures'] = recoveryPreparationFailures($root, $clientId);
+	$authorization = ['policy' => isset($options['attest-previous-paper-match']) ? 'document_paper_attestation' : ($options['authorize-batch'] ?? null), 'confirmed_by' => $userId, 'confirmed_at' => gmdate('c'),
+		'database_and_file_backup_confirmed' => array_key_exists('backup-verified', $options), 'scope_sha256' => hash('sha256', reviewJson(array_keys($jobs))), 'documents_in_scope' => count($jobs), 'run' => $options['run'], 'run_sha256' => hash_file('sha256', $options['run'])];
 	$decisions = [];
 	if ($action === 'select') {
 		reviewPrivateFile($options['decisions'] ?? '');
@@ -365,7 +600,8 @@ try {
 			$out = stream_get_contents($pipes[1]);
 			fclose($pipes[1]);
 			$code = proc_close($process);
-			$results[$key] = ['status' => $code === 0 ? 'prepared_or_retained' : 'failed', 'output' => $out, 'error_log' => $errorPath, 'error' => file_get_contents($errorPath)];
+			$worker = json_decode($out, true);
+			$results[$key] = ($worker['results'][$key] ?? ['status' => $code === 0 ? 'prepared_or_retained' : 'failed', 'error' => file_get_contents($errorPath)]) + ['error_log' => $errorPath];
 		}
 	} else {
 		$db = recoveryBoot(migrationConfig($options['config'], $options['environment'] ?? 'production'), $context['binding']['base'], $clientId, $userId);
@@ -376,7 +612,7 @@ try {
 		if (!flock($lock, LOCK_EX | LOCK_NB)) throw new RuntimeException('Review area is busy');
 		foreach ($jobs as $key => $job) {
 			try {
-				if ($action !== 'import') $db->query('SET TRANSACTION READ ONLY');
+				if (!in_array($action, ['import', 'release'], true)) $db->query('SET TRANSACTION READ ONLY');
 				$db->beginTransaction();
 				$snapshot = recoverySnapshot($db, $job['identity']);
 				if ($action === 'prepare') {
@@ -392,9 +628,13 @@ try {
 					$results[$key] = recoveryPrepare($db, $job, $root, new DEEC_Pdf());
 				} elseif ($action === 'approve') $results[$key] = recoveryApprove($db, $job, $reviewArchive);
 				elseif ($action === 'import') $results[$key] = recoveryImport($db, $job, $reviewArchive);
+				elseif ($action === 'release-plan') $results[$key] = recoveryReleasePlan($db, $job, $reviewArchive, $snapshot, $options);
+				elseif ($action === 'release') $results[$key] = recoveryRelease($db, $job, $reviewArchive, $snapshot, $options, $authorization);
 				elseif ($action === 'select') $results[$key] = recoverySelect($job, $decisions[$key], $userId, $reviewArchive);
 				else $results[$key] = recoveryInspection($db, $job, $reviewArchive, $action === 'retention-plan');
-				if ($action === 'import') $db->commit(); else $db->rollBack();
+				$results[$key]['document_date'] = (string)($snapshot['data']['document'][$job['identity']['controller'] . 'date'] ?? '');
+				unset($results[$key]['decision']);
+				if (in_array($action, ['import', 'release'], true)) $db->commit(); else $db->rollBack();
 			} catch (Throwable $exception) {
 				try { $db->rollBack(); } catch (Throwable $ignored) {}
 				$results[$key] = ['status' => 'failed', 'error' => $exception->getMessage()];
@@ -403,7 +643,7 @@ try {
 		flock($lock, LOCK_UN); fclose($lock);
 	}
 	$report = $root . '/runs/recovery-' . gmdate('Ymd\THis\Z') . '-' . bin2hex(random_bytes(6)) . '.json';
-	reviewWrite($report, reviewJson(['action' => $action, 'clientid' => $clientId, 'operator_user' => $userId, 'executed_at' => gmdate('c'), 'results' => $results]));
+	recoveryWriteReports($report, ['action' => $action, 'clientid' => $clientId, 'operator_user' => $userId, 'executed_at' => gmdate('c'), 'authorization' => $action === 'release' ? $authorization : null, 'results' => $results], array_merge(recoveryReportRows($results, $jobs), $inventory));
 	if ($action === 'inspect') reviewWrite(substr($report, 0, -5) . '.html', recoveryHtml($results, $root));
 	echo reviewJson(['report' => $report, 'results' => $results]);
 	$exit = count(array_filter($results, static fn(array $row): bool => $row['status'] === 'failed')) ? 1 : 0;

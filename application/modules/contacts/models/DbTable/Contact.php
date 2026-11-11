@@ -77,6 +77,24 @@ class Contacts_Model_DbTable_Contact extends DEEC_Model_DbTable_Entity
 		return $row->toArray();
 	}
 
+	public function getHistoricalDocumentRecipient(array $document): array
+	{
+		$client = Zend_Registry::get('Client');
+		if ((int)$document['clientid'] !== (int)$client['id']) throw new RuntimeException('Foreign historical recipient context');
+		$this->setClientId((int)($client['modules']['contacts'] ?? $client['id']));
+		$number = $document['contactid'] ?? null;
+		$matches = [];
+		if ((is_int($number) && $number > 0) || (is_string($number) && preg_match('/^[1-9][0-9]*$/D', $number))) {
+			$matches = $this->fetchAll($this->select()->where('clientid = ?', $this->getClientId())->where('contactid = ?', (int)$number)->where('deleted = ?', 0))->toArray();
+		}
+		$status = count($matches) === 1 ? 'unique' : ($matches ? 'ambiguous' : 'missing');
+		if ($status !== 'unique') foreach (['billingname1', 'billingstreet', 'billingcity', 'billingcountry'] as $field) {
+			if (trim((string)($document[$field] ?? '')) === '') throw new RuntimeException('Historical contact mapping is missing or ambiguous and document recipient snapshot is incomplete');
+		}
+		return ['contact' => count($matches) === 1 ? $matches[0] : [], 'evidence' => ['source' => 'stored_document_billing_fields', 'contact_mapping' => $status,
+			'contacts_clientid' => $this->getClientId(), 'replacement_contact_selected' => false, 'original_comparison_required' => $status !== 'unique']];
+	}
+
 	public function getActiveImportContacts(): array
 	{
 		$rows = $this->fetchAll(
