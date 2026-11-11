@@ -4,6 +4,12 @@ $this->headTitle($this->title);
 echo $this->Messages();
 ?>
 
+<?php if($this->importError): ?>
+<p role="alert"><?php echo $this->escape($this->importError); ?></p>
+<?php elseif($this->importResult): ?>
+<p><?php echo (int)$this->importResult['created']; ?> rows imported successfully.</p>
+<?php endif; ?>
+
 <p>
 	<a href="<?php echo $this->url(array('module'=>'items', 'controller'=>'item', 'action'=>'import')); ?>">
 		<?php echo $this->translate('ITEMS_IMPORT_ITEM'); ?>

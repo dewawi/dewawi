@@ -163,206 +163,40 @@ class Items_AttributeController extends DEEC_Controller_Action
 	public function importAction()
 	{
 		$request = $this->getRequest();
-
 		$form = new Items_Form_Import();
+		$form->file->setAttrib('multiple', null)->removeValidator('Count');
+		$form->file->addValidator('Count', false, 1)->removeValidator('Extension');
+		$form->file->addValidator('Extension', false, 'csv');
 
 		if($request->isPost()) {
 			$formData = $request->getPost();
 			if($form->isValid($formData)) {
-
-				$clientid = $this->view->client['id'];
-				$dir1 = substr($clientid, 0, 1);
-				if(strlen($clientid) > 1) $dir2 = substr($clientid, 1, 1);
-				else $dir2 = '0';
-
-				if(!file_exists(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/')) {
-					mkdir(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/', 0777, true);
-				}
-
-				/* Uploading Document File on Server */
-				$upload = new Zend_File_Transfer_Adapter_Http();
-				$upload->setDestination(BASE_PATH.'/files/import/'.$dir1.'/'.$dir2.'/'.$clientid.'/');
+				$data = false;
 				try {
-					// upload received file(s)
-					$upload->receive();
-				} catch (Zend_File_Transfer_Exception $e) {
-					$e->getMessage();
-				}
-				$file = $upload->getFileName();
-				$data = fopen($file, 'r');
+					$clientid = (string)$this->view->client['id'];
+					$dir = BASE_PATH.'/files/import/'.substr($clientid, 0, 1).'/'.(strlen($clientid) > 1 ? substr($clientid, 1, 1) : '0').'/'.$clientid.'/';
+					if(!is_dir($dir) && !mkdir($dir, 0777, true)) throw new RuntimeException('Import directory is unavailable');
+					$form->file->setDestination($dir);
+					if(!$form->file->receive()) throw new RuntimeException('CSV upload failed');
+					$file = $form->file->getFileName();
+					if(!is_string($file) || !is_file($file)) throw new InvalidArgumentException('Please upload one CSV file');
+					$data = fopen($file, 'r');
+					if($data === false) throw new RuntimeException('CSV file could not be opened');
 
-				//Get uoms
-				$uomsDb = new Application_Model_DbTable_Uom();
-				$uoms = $uomsDb->getUoms();
-
-				if($data && ($data !== FALSE)) {
-					$map = array();
-					$itemDb = new Items_Model_DbTable_Item();
-					$itemMedia = new Application_Model_DbTable_Media();
 					$itemAttribute = new Items_Model_DbTable_Itematr();
-					$itemAttributeInfo = $itemAttribute->getInfo();
-					$itemAttributeSet = new Items_Model_DbTable_Itematrset();
-
-					//Get
-					if($formData['separator'] == 'comma') $separator = ',';
-					if($formData['separator'] == 'semicolon') $separator = ';';
-					if($formData['delimiter'] == 'single') $delimeter = "'";
-					if($formData['delimiter'] == 'double') $delimeter = '"';
-
-					$row = 0;
-					$images = array();
-					$attributes = array();
-					$attributeSets = array();
-					$options = array();
-					$rowsUpdated = 0;
-					$rowsCreated = 0;
-					while(($datacsv = fgetcsv($data, 0, $separator, $delimeter)) !== FALSE) {
-						if($row == 0) {
-							foreach($datacsv as $pos => $attr) {
-								if($attr) {
-									$map[$attr] = $pos;
-								}
-							}
-						} elseif(isset($map['sku']) && isset($datacsv[$map['sku']]) && $datacsv[$map['sku']] && $datacsv[$map['title']]) {
-							//echo $datacsv[$map['sku']];
-							//print_r($map);
-							$attributeData = array();
-							foreach($map as $attr => $pos) {
-								if(isset($datacsv[$map[$attr]])) {
-									if(array_search($attr, $itemAttributeInfo)) {
-										if($attr == 'weight') {
-											if(is_numeric($datacsv[$map['weight']])) $attributeData['weight'] = $datacsv[$map['weight']];
-										} elseif($attr == 'price') {
-											if(isset($map['dewawidiscount']) && $datacsv[$map['dewawidiscount']]) {
-												$attributeData['price'] = $datacsv[$map['price']] * (100 - $datacsv[$map['dewawidiscount']])/100;
-											} elseif($datacsv[$map[$attr]]) {
-												if(is_numeric($datacsv[$map[$attr]])) {
-													$attributeData['price'] = $datacsv[$map[$attr]];
-												} else {
-													echo 'Price is not numeric for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
-												}
-											}
-										} elseif($attr == 'quantity') {
-											if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
-												$attributeData[$attr] = $datacsv[$map[$attr]];
-											}
-										} elseif($attr == 'currency') {
-											if($currencyid = array_search($datacsv[$map[$attr]], $currencies)) {
-												$attributeData[$attr] = $currencyid;
-											} else {
-												echo 'No currency option found for '.$datacsv[$map['sku']].': '.$datacsv[$map[$attr]]."<br>";
-											}
-										} elseif($attr == 'inventory') {
-											if($datacsv[$map[$attr]] && is_numeric($datacsv[$map[$attr]])) {
-												$attributeData[$attr] = $datacsv[$map[$attr]];
-											}
-										} else {
-											$attributeData[$attr] = $datacsv[$map[$attr]];
-											//var_dump($datacsv[$map[$attr]]);
-										}
-									} elseif($attr == 'set') {
-										$attributeData[$attr] = $datacsv[$map[$attr]];
-									}
-								}
-							}
-
-							//Create and update the attributes
-							if($item = $itemDb->getItemBySKU($attributeData['sku'])) {
-								//Get current item attributes and replace placeholders
-								$currentAttributes = $itemAttribute->getPositions($item['id'])->toArray();
-								foreach($currentAttributes as $currentAttribute) {
-									if($currentAttribute['title'] && $currentAttribute['description']) {
-										//Search and replace attributes in import data
-										foreach($attributeData as $key => $value) {
-											if(strpos($value, '#'.$currentAttribute['title'].'#') !== false) {
-												$attributeData[$key] = str_replace('#'.$currentAttribute['title'].'#', $currentAttribute['description'], $value);
-											}
-										}
-									}
-								}
-
-								//print_r($attributeData);
-								if(isset($attributeSets[$item['id']])) {
-									$attributeSetKey = array_search($attributeData['set'], $attributeSets[$item['id']]);
-									if($attributeSetKey !== false) {
-										//Key already exists
-									} else {
-										$attributeSets[$item['id']][] = $attributeData['set'];
-									}
-								} elseif(isset($attributeData['set'])) {
-									$attributeSets[$item['id']][] = $attributeData['set'];
-								}
-								$attributeData['atrsetid'] = 0;
-								$attributeData['parentid'] = $item['id'];
-								$attributeData['itemid'] = $item['id'];
-								$attributes[$item['id']][] = $attributeData;
-							} elseif($attributeData['sku'] == 'FORM_CALC') {
-								//Get current item attributes
-								$currentAttributes = $itemAttribute->getPositionsBySku($attributeData['sku'])->toArray();
-								$attributeData['atrsetid'] = 0;
-								$attributeData['parentid'] = 0;
-								$attributeData['itemid'] = 0;
-								$attributes[0][] = $attributeData;
-							}
-						}
-						$row++;
-
-					}
-					//print_r($attributes);
-					//print_r($attributeSets);
-
-					$attributeSetIds = array();
-					foreach($attributeSets as $itemid => $attributeSet) {
-						//Delete existing item attribute sets
-						$itemAttributeSet->deletePositionSetsByItemID($itemid);
-
-						//Create new item attribute sets
-						$ordering = 1;
-						foreach($attributeSet as $id => $title) {
-							$test = array();
-							$test['title'] = $title;
-							$test['parentid'] = $itemid;
-							$test['ordering'] = $ordering;
-							$attributeSetId = $itemAttributeSet->addPositionSet($test);
-							$attributeSetIds[$itemid][$attributeSetId] = $title;
-							++$ordering;
-						}
-					}
-					//print_r($attributeSetIds);
-
-					foreach($attributes as $itemid => $attributeSet) {
-						//Delete existing item attributes
-						$itemAttribute->deletePositionsByParentId(
-							(int)$itemid
-						);
-
-						//Create new item attributes
-						$ordering = 1;
-						foreach($attributeSet as $id => $attribute) {
-							if(isset($attribute['set'])) {
-								$attribute['atrsetid'] = array_search($attribute['set'], $attributeSetIds[$itemid]);
-								unset($attribute['set']);
-							} else {
-								$attribute['atrsetid'] = 0;
-							}
-							$attribute['ordering'] = $ordering;
-							$itemAttribute->addPosition($attribute);
-							++$ordering;
-							++$rowsCreated;
-						}
-					}
-
-					fclose($data);
-				} else {
-					//error_log(print_r($attributeData,true));
-					echo 'ERROR: No data recieved<br>';
+					$this->view->importResult = $itemAttribute->importCsv(
+						$data,
+						$formData['separator'] === 'semicolon' ? ';' : ',',
+						$formData['delimiter'] === 'single' ? "'" : '"'
+					);
+				} catch(InvalidArgumentException $e) {
+					$this->view->importError = $e->getMessage();
+				} catch(Throwable $e) {
+					error_log('Attribute import failed: '.$e->getMessage());
+					$this->view->importError = 'Attribute import failed. No changes were saved. Please check the server log.';
+				} finally {
+					if(is_resource($data)) fclose($data);
 				}
-
-				echo ($row-1).' rows are processed<br>';
-				echo $rowsUpdated.' existing rows are updated<br>';
-				echo $rowsCreated.' new rows are created<br>';
-
-				$this->view->data = $data;
 			} else {
 				$form->populate($formData);
 			}
