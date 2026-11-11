@@ -5,6 +5,8 @@ if (PHP_SAPI !== 'cli') {
 	exit;
 }
 
+if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') !== __FILE__) return;
+
 $root = dirname(__DIR__, 2);
 define('BASE_PATH', $root);
 require_once $root . '/library/DEEC/Emailattachment.php';
@@ -52,16 +54,24 @@ if (isset($options['type'])) {
 
 function migrationConfig(string $path, string $environment): array
 {
-	$config = parse_ini_file($path, true, INI_SCANNER_RAW);
+	$ini = @file_get_contents($path);
+	if ($ini === false || @parse_ini_string($ini, true, INI_SCANNER_NORMAL) === false) throw new RuntimeException('Database configuration could not be read');
+	// RAW preserves literal credentials, but only removes double-quote delimiters.
+	$ini = preg_replace_callback("/^([ \t]*[^=;\r\n]+=[ \t]*)'([^']*)'([ \t]*(?:;[^\r\n]*)?\r?)$/m", static function(array $match): string {
+		return $match[1] . '"' . $match[2] . '"' . $match[3];
+	}, $ini);
+	$config = @parse_ini_string($ini, true, INI_SCANNER_RAW);
 	if ($config === false) throw new RuntimeException('Database configuration could not be read');
 	if (isset($config[$environment]) && is_array($config[$environment])) $config = $config[$environment];
 	$keys = ['host' => 'resources.db.params.host', 'username' => 'resources.db.params.username', 'password' => 'resources.db.params.password', 'dbname' => 'resources.db.params.dbname'];
 	$result = [];
 	foreach ($keys as $name => $key) {
-		if (!array_key_exists($key, $config)) throw new RuntimeException('Database configuration is incomplete');
-		$result[$name] = (string)$config[$key];
+		if (!array_key_exists($key, $config) || !is_string($config[$key])) throw new RuntimeException('Database configuration is incomplete');
+		$result[$name] = $config[$key];
 	}
-	$result['port'] = (int)($config['resources.db.params.port'] ?? 3306);
+	$port = $config['resources.db.params.port'] ?? '3306';
+	if (!is_string($port) || !ctype_digit($port) || (int)$port < 1 || (int)$port > 65535) throw new RuntimeException('Database configuration port is invalid');
+	$result['port'] = (int)$port;
 	return $result;
 }
 
