@@ -14,6 +14,8 @@ Neue Belege werden beim erstmaligen Abschluss direkt im kanonischen Verzeichnis 
 
 ## Betreiberwerkzeug
 
+Für die reine Sammlung unterschiedlicher PDF-Fassungen ohne Registrierung oder Ersetzung steht zusätzlich der [geschützte manuelle Prüfbereich](document-review.md) zur Verfügung.
+
 `document-archive-migration.php` verbindet sich ausschließlich mit der explizit angegebenen Datenbankkonfiguration und arbeitet standardmäßig in einer read-only Transaktion. Der Bericht besteht aus JSON-Lines: eine Zeile pro Beleg und eine Zusammenfassung. Zugangsdaten und Dateiinhalte werden nicht ausgegeben.
 
 Beispiel für die vollständige Bestandsaufnahme eines Mandanten:
