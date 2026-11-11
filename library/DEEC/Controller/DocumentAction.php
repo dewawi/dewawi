@@ -348,6 +348,12 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 
 	protected function generatePdf(array $row, array $options, bool $createOriginal): array
 	{
+		if (!$createOriginal && DEEC_Permission::isDocumentReadonly($this->getRequest()->getModuleName(), $this->getRequest()->getControllerName(), $row)
+			&& (!DEEC_Emailattachment::validFilename((string)($row['filename'] ?? '')) || empty($row['contactid']))) {
+			$db = new Application_Model_DbTable_Documentarchive();
+			$archive = $db->getForDocument((int)$row['id'], $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName());
+			if ($archive) return ['path' => $db->getPath($archive), 'filename' => $archive['filename'], 'output' => $options['output'] ?? 'file', 'storage' => 'archive', 'exists' => true];
+		}
 		if (!$createOriginal && DEEC_Permission::isDocumentReadonly($this->getRequest()->getModuleName(), $this->getRequest()->getControllerName(), $row)) {
 			$this->assertPdfDocumentArchived($row);
 		}

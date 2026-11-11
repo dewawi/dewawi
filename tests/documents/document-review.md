@@ -2,6 +2,8 @@
 
 `document-review.php` kopiert vorhandene Kandidaten in einen geschützten Prüfbereich. Es registriert keine Originale, ersetzt keine Archivdateien und erzeugt keine PDFs. Die Datenbank wird mit einem SELECT-Konto in einer read-only Transaktion gelesen. Es gibt keine Apply- oder Importoption und keine SQL-Migration.
 
+Der vollständige Ablauf mit separater Rekonstruktion, manueller Freigabe und Archivübernahme ist in [document-recovery.md](document-recovery.md) dokumentiert. Er gilt für alle Mandanten, alle Daten und alle acht Belegarten. Der Sammler ist nicht auf einen bestimmten Prüfzeitraum oder eine feste Fallzahl begrenzt.
+
 ## Eingaben und Auswahl
 
 Die JSONL-Datei muss ein vollständiger Dry-Run des vorhandenen Migrationswerkzeugs sein, einschließlich abschließender Zusammenfassung mit `mode=dry-run`, `unassigned_scan=complete`, `clientid`, `contacts_clientid` und passender Dokumentanzahl. Doppelte Dokumentzeilen, fremde Belegmandanten, gefilterte oder abgebrochene Berichte werden abgewiesen. Dateipfade und Hashwerte aus dem alten Bericht werden nicht als Kopieranweisung verwendet.
@@ -12,17 +14,19 @@ Die bestehende Audit-TSV aus `mysql -N -B` wird **ohne Kopfzeile** gelesen. Jede
 sales/invoice	59296	112143	2019-05-03
 ```
 
-Die Spalten sind `type` (Modul/Controller), interne `id`, sichtbare `document_number` und `document_date` im Format YYYY-MM-DD. Keine zusätzliche Kopfzeile und keine Mandantenspalte hinzufügen. Der Belegmandant kommt ausschließlich aus `--client` und muss mit der JSONL übereinstimmen. Das Werkzeug lädt den ausgewählten Beleg anschließend erneut mit interner ID **und** Mandant aus der Datenbank. Die TSV enthält Ausgangsbelege aus 2019–2021; falsche Datumswerte oder widersprüchliche Nummern werden abgewiesen. Es werden keine beliebigen Kontaktdateien anhand von Dateinamen gesucht.
+Die Spalten sind `type` (Modul/Controller), interne `id`, sichtbare `document_number` und `document_date` im Format YYYY-MM-DD. Keine zusätzliche Kopfzeile und keine Mandantenspalte hinzufügen. Der Belegmandant kommt ausschließlich aus `--client` und muss mit der JSONL übereinstimmen. Das Werkzeug lädt den ausgewählten Beleg anschließend erneut mit interner ID **und** Mandant aus der Datenbank. Die bisherige TSV aus 2019–2021 bleibt unverändert nutzbar; andere Zeiträume und alle acht Belegarten sind ebenfalls zulässig. Falsche Datumswerte oder widersprüchliche Nummern werden abgewiesen. Es werden keine beliebigen Kontaktdateien anhand von Dateinamen gesucht.
 
 `--select` unterstützt:
 
 | Wert | Auswahl |
 | --- | --- |
+| `all-blocked` (Standard) | Alle blockierten PDF-Belege aller acht Arten aus dem vollständigen JSONL-Bericht, ohne Datumsfilter und ohne TSV. |
+| `all-unarchived` | Alle nicht vollständigen PDF-Belege, also zusätzlich eindeutige historische Fassungen mit `status=ready`, denen noch Dateiablage oder Registrierung fehlt. |
 | `audit` | Alle eindeutigen Dokumente aus der TSV; JSONL bleibt zur Mandanten- und Konfliktprüfung erforderlich. |
 | `blocked-invoices` | Jede PDF-Rechnung `sales/invoice` mit `status=blocked` in der vollständigen JSONL, unabhängig vom Konfliktgrund und Jahr. TSV wird nicht benötigt. |
-| `both` (Standard) | Vereinigungsmenge beider Auswahlen; ein Beleg wird nur einmal bearbeitet. |
+| `both` | Vereinigungsmenge der TSV-Auswahl und der blockierten Rechnungen; ein Beleg wird nur einmal bearbeitet. |
 
-Die erwarteten 49 Auditfälle (28 Rechnungen, 11 Angebote, 7 Aufträge, 3 Lieferscheine) und 151 blockierten Rechnungen sind Betreiberangaben. Das Werkzeug gibt die tatsächlich eingelesenen Anzahlen aus und erzwingt keine mandantenspezifischen festen Zahlen. `selected_unique` entspricht bei `both` 49 + 151 abzüglich der Überschneidung. Eine neue technische Freigabe im aktuellen Bestand entfernt einen zuvor ausgewählten Beleg nicht stillschweigend aus der Sammlung: berichteter und aktueller Grund bleiben im Manifest getrennt.
+Die früheren 49 Auditfälle und 151 blockierten Rechnungen waren eine Teilauswahl. Der Betreiber nennt inzwischen 43.325 vollständige und 1.418 blockierte Dokumente für Mandant 100. Diese Zahlen sind keine fest programmierten Grenzen und wurden lokal nicht gegen Produktion geprüft. Vor dem neuen Gesamtlauf den Dry-Run erneut erstellen, damit bislang fehlende Dateinamen und aktuelle Zustände enthalten sind. Eine neue technische Freigabe im aktuellen Bestand entfernt einen zuvor ausgewählten Beleg nicht stillschweigend aus der Sammlung: berichteter und aktueller Grund bleiben im Manifest getrennt.
 
 ## Betreiberaufruf
 
@@ -36,8 +40,7 @@ php tests/documents/document-review.php \
   --client=100 \
   --contacts-client=100 \
   --jsonl=/var/www/migration-safety/reports/client-100-full-dry-run.jsonl \
-  --audit-tsv=/var/www/migration-safety/reports/client-100-audit-2019-2021-missing.tsv \
-  --select=both \
+  --select=all-blocked \
   --output=/var/www/migration-safety/document-review/client-100
 ```
 
@@ -97,7 +100,7 @@ Pro Manifest werden Berichtsauswahl/-ursachen, aktuelle Dokument-/Kontaktzuordnu
 
 ## Format für die spätere manuelle Originalauswahl
 
-Rechnungen erhalten **niemals** eine automatische Kandidatenempfehlung. Alle Dokumente bleiben ausdrücklich auswählpflichtig. Bei anderen Belegarten kann das Manifest eine nicht verbindliche `suggestion` nach dem jüngsten Quell-`mtime` enthalten. Bei Gleichstand verschiedener Fassungen bleibt sie leer. Der Zeitstempel ist kein Nachweis der tatsächlich ausgegebenen Fassung und wird nicht in die Entscheidung übernommen.
+Alle Belegarten, auch Rechnungen, können eine unverbindliche `suggestion` nach dem jüngsten Quell-`mtime` erhalten. Bei Gleichstand verschiedener Fassungen bleibt sie leer. Alle Dokumente bleiben ausdrücklich manuell auswählpflichtig. Der Zeitstempel ist kein Nachweis der tatsächlich ausgegebenen Fassung; der Freigabe- und Importprozess übernimmt Vorschläge niemals automatisch.
 
 `selection.json` wird einmalig als leere Entscheidungsvorlage erstellt. Beispiel einer später manuell ausgefüllten Auswahl; Platzhalter für Prüfsumme und Begründung sind durch echte Nachweise zu ersetzen:
 
@@ -117,7 +120,7 @@ Rechnungen erhalten **niemals** eine automatische Kandidatenempfehlung. Alle Dok
 
 Vorgesehene Entscheidungen sind `pending`, `selected`, `unavailable` oder `deferred`. Bei `selected` sind relativer Kandidatenpfad unter `candidates/` oder `external/`, SHA-256, Herkunft (`historical_pdf`, `datev` oder `email`, mit ursprünglichem Pfad und Nachweis), nicht leere Begründung, positive Benutzer-ID und ISO-8601-Prüfzeitpunkt erforderlich. Bei den anderen Entscheidungen bleiben Kandidatenpfad/Prüfsumme leer; Begründung und Prüfer dokumentieren eine abgeschlossene Nichtauswahl. Externe Dateien separat mit 0600 ablegen. Symlinks und nachträglich veränderte Bytes wären für eine spätere Übernahme unzulässig.
 
-Dies ist ausschließlich ein Datenformat. Der Sammler liest oder verarbeitet keine manuelle Entscheidung. Eine spätere, gesondert zu beauftragende Übernahme müsste Auswahlberechtigung, Herkunft, Begründung, Benutzer, Dateiidentität und unveränderte Belegzuordnung erneut serverseitig prüfen und nachvollziehbar protokollieren. Vorhandene Originale dürften auch dann nicht stillschweigend ersetzt werden.
+Der Sammler liest oder verarbeitet keine manuelle Entscheidung. Das separate [Wiederherstellungswerkzeug](document-recovery.md) unterstützt inzwischen die kontrollierte Auswahl, ausdrückliche Freigabe und Übernahme. Es prüft Berechtigung, Herkunft, Begründung, Benutzer, Dateiidentität und unveränderte Belegzuordnung erneut; vorhandene Originale bleiben geschützt. `origin.kind` darf zusätzlich `reconstructed` sein, wenn ein passender Rekonstruktionsnachweis vorliegt.
 
 ## Lokale Regressionen
 

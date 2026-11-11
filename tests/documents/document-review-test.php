@@ -67,11 +67,26 @@ try {
 	reviewTestCheck(count(reviewInputs($work . '/unnumbered.jsonl', $tsv, 'both', 100)['documents']) === 3, 'Unselected unnumbered document broke full report selection');
 	reviewTestCheck(count(reviewInputs($json, $tsv, 'audit', 100)['documents']) === 2, 'Audit selection changed');
 	reviewTestCheck(count(reviewInputs($json, null, 'blocked-invoices', 100)['documents']) === 2, 'Blocked invoice selection changed');
+	$ready = array_replace($plans[1], ['id' => 98, 'status' => 'ready', 'reason' => '']);
+	$complete = array_replace($plans[1], ['id' => 97, 'status' => 'complete', 'reason' => '']);
+	file_put_contents($work . '/ready.jsonl', json_encode(['kind' => 'document', 'plan' => $ready]) . "\n" . json_encode(['kind' => 'document', 'plan' => $complete]) . "\n" . str_replace('"documents":3', '"documents":5', $reportBytes));
+	$unarchived = reviewInputs($work . '/ready.jsonl', null, 'all-unarchived', 100)['documents'];
+	reviewTestCheck(count($unarchived) === 4 && !in_array(97, array_column($unarchived, 'id'), true), 'Unarchived selection missed a ready original or included an archived original');
+	reviewTestCheck(count(reviewInputs($work . '/ready.jsonl', null, 'all-blocked', 100)['documents']) === 3, 'All-blocked selection included a ready or archived original');
+	$all = '';
+	$allId = 100;
+	foreach (DEEC_DocumentArchive::documents() as $module => $controllers) foreach ($controllers as $controller) {
+		$plan = array_replace($plans[0], ['module' => $module, 'controller' => $controller, 'id' => ++$allId]);
+		$all .= json_encode(['kind' => 'document', 'plan' => $plan]) . "\n";
+	}
+	$all .= json_encode(['kind' => 'summary', 'summary' => ['mode' => 'dry-run', 'clientid' => 100, 'contacts_clientid' => 100, 'documents' => 8, 'unassigned_scan' => 'complete']]) . "\n";
+	file_put_contents($work . '/all.jsonl', $all);
+	reviewTestCheck(count(reviewInputs($work . '/all.jsonl', null, 'all-blocked', 100)['documents']) === 8, 'All-blocked selection missed a document type');
 	foreach ([str_replace('"clientid":100', '"clientid":101', $reportBytes), substr($reportBytes, 0, strrpos(rtrim($reportBytes), "\n") + 1), $reportBytes . '{}', str_replace('"documents":3', '"documents":4', $reportBytes), str_replace('"unassigned_scan":"complete"', '"unassigned_scan":"skipped_for_filtered_run"', $reportBytes)] as $bad) {
 		file_put_contents($work . '/bad.jsonl', $bad);
 		reviewTestReject(static fn() => reviewInputs($work . '/bad.jsonl', $tsv, 'both', 100), 'Unsafe or incomplete report accepted');
 	}
-	foreach (["type\tid\tdocument_number\tdocument_date\n", "sales/invoice\t17\tother-number\t2019-01-01\n", "sales/invoice\t17\t20190017\t2022-01-01\n", "sales/invoice\t17\t20190017\t2019-02-30\n", "sales/../../invoice\t17\tx\t2019-01-01\n", "sales/invoice\t17\tx\t2019-01-01\textra\n"] as $bad) {
+	foreach (["type\tid\tdocument_number\tdocument_date\n", "sales/invoice\t17\tother-number\t2019-01-01\n", "sales/invoice\t17\t20190017\t2022-13-01\n", "sales/invoice\t17\t20190017\t2019-02-30\n", "sales/../../invoice\t17\tx\t2019-01-01\n", "sales/invoice\t17\tx\t2019-01-01\textra\n"] as $bad) {
 		file_put_contents($work . '/bad.tsv', $bad);
 		reviewTestReject(static fn() => reviewInputs($json, $work . '/bad.tsv', 'both', 100), 'Invalid headerless TSV accepted');
 	}
@@ -86,6 +101,7 @@ try {
 		foreach ($paths as $name => $path) $sources[] = ['source' => $name, 'path' => $path ?: null, 'status' => null, 'evidence' => []];
 		if ($selected['id'] === 17) {
 			foreach (['attachment', 'current', 'legacy'] as $name) reviewTestWrite($paths[$name], reviewTestPdf($name === 'legacy' ? 'different original' : 'same original'));
+			touch($paths['attachment'], 1500000000); touch($paths['current'], 1600000000); touch($paths['legacy'], 1700000000);
 		} elseif ($selected['id'] === 18) {
 			reviewTestWrite($paths['current'], reviewTestPdf('older quote'));
 			reviewTestWrite($paths['legacy'], reviewTestPdf('newer quote'));
@@ -102,7 +118,7 @@ try {
 	$missing = reviewTestManifest($run, $output, 1);
 	$quote = reviewTestManifest($run, $output, 2);
 	reviewTestCheck(count($invoice['candidates']) === 2 && count(array_filter($invoice['sources'], static fn($row) => $row['candidate_path'] !== null)) === 3, 'Different PDFs or deduplicated provenance lost');
-	reviewTestCheck($invoice['suggestion'] === null && $invoice['invoice_manual_selection'] && $invoice['manual_selection_required'], 'Invoice original was automatically suggested or chosen');
+	reviewTestCheck($invoice['suggestion']['sha256'] === hash('sha256', reviewTestPdf('different original')) && $invoice['invoice_manual_selection'] && $invoice['manual_selection_required'], 'Invoice timestamp hint bypassed explicit manual selection');
 	reviewTestCheck($missing['candidates'] === [] && $missing['current_reason'] === 'original_missing', 'Missing original did not receive an empty review manifest');
 	reviewTestCheck($quote['suggestion']['sha256'] === hash('sha256', reviewTestPdf('newer quote')) && !$quote['suggestion']['authoritative'], 'Non-invoice timestamp suggestion changed');
 	foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($output, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST) as $entry) reviewTestCheck(($entry->getPerms() & 0777) === ($entry->isDir() ? 0700 : 0600), 'Review access permissions are too broad');

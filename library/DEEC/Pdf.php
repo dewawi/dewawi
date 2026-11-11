@@ -123,6 +123,38 @@ class DEEC_Pdf
 		return $this->outputPdf($pdf, $payload);
 	}
 
+	public function reconstruct(int $id, string $module, string $controller): array
+	{
+		if (PHP_SAPI !== 'cli' || !DEEC_DocumentArchive::validDocumentType($module, $controller)) throw new RuntimeException('PDF reconstruction is CLI-only');
+		$permission = new DEEC_Permission((array)Zend_Registry::get('User'));
+		$context = $permission->getObjectContext($id, $module, $controller);
+		if (!$context || !$permission->hasPermission($module, $controller, 'view') || !$permission->hasPermission($module, $controller, 'edit')) throw new RuntimeException('PDF reconstruction access denied');
+		$document = $context['parent'];
+		if (empty($document[$controller . 'id']) || empty($document[$controller . 'date']) || empty($document['currency']) || !DEEC_Permission::isDocumentReadonly($module, $controller, $document)) throw new RuntimeException('Issued document number, date or currency is missing');
+		$date = (string)$document[$controller . 'date'];
+		if (!preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', $date) || !checkdate((int)substr($date, 5, 2), (int)substr($date, 8, 2), (int)substr($date, 0, 4))) throw new RuntimeException('Stored document date is invalid');
+		$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller) . 'pos';
+		$positions = (new $class())->setClientId($context['clientid'])->getPositions($id);
+		if (!count($positions)) throw new RuntimeException('Stored document positions are missing');
+		foreach ($positions as $position) foreach (['price', 'quantity', 'taxrate', 'total'] as $field) if (!isset($position[$field]) || !is_numeric($position[$field])) throw new RuntimeException('Stored position amounts are incomplete');
+		$calculation = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->calculate($document, $positions, $module, $controller, $context['clientid']);
+		foreach (['subtotal', 'taxes', 'total'] as $field) {
+			$calculated = $field === 'taxes' ? $calculation['row']['taxes']['total'] : $calculation['row'][$field];
+			if (!isset($document[$field]) || !is_numeric($document[$field]) || abs((float)$document[$field] - $calculated) >= 0.005) throw new RuntimeException('Stored document amounts cannot be reproduced without recalculation');
+		}
+		foreach ($positions as $position) if (abs((float)$position['total'] - $calculation['row'][$position['id']]['gross']) >= 0.005) throw new RuntimeException('Stored position total differs from its saved price rules');
+		$payload = $this->buildDocumentPayload(['meta' => ['module' => $module, 'controller' => $controller, 'templateid' => null, 'historical_snapshot' => true], 'document' => $document]);
+		$this->bootstrapTcpdf();
+		$pdf = $this->initPdf($this->buildPdfTitle($payload), $payload['document'], $payload['template']);
+		$this->renderPayload($pdf, $payload);
+		return ['bytes' => $pdf->Output('', 'S'), 'dependencies' => [
+			'template' => $payload['template'], 'template_sha256' => hash('sha256', json_encode($payload['template'], JSON_THROW_ON_ERROR)),
+			'payload_sha256' => hash('sha256', serialize($payload)), 'renderer_sha256' => hash_file('sha256', __FILE__),
+			'locale' => (string)Zend_Registry::get('Zend_Locale'), 'historical_layout_guaranteed' => false,
+			'notice' => 'Saved document and position amounts; current stored template, master data, images, fonts and translations. Manual comparison required.',
+		]];
+	}
+
 	protected function bootstrapTcpdf(): void
 	{
 		require_once BASE_PATH . '/library/Tcpdf/config/tcpdf_config.php';
@@ -196,9 +228,9 @@ class DEEC_Pdf
 		$controller = $payload['meta']['controller'];
 		$document = $payload['document'];
 
-		$data = $this->resolveDocumentPayloadData($module, $controller, $document, [
-			'templateid' => $payload['meta']['templateid'],
-		]);
+		$options = ['templateid' => $payload['meta']['templateid']];
+		if (!empty($payload['meta']['historical_snapshot'])) $options['historical_snapshot'] = true;
+		$data = $this->resolveDocumentPayloadData($module, $controller, $document, $options);
 
 		$template = $data['template'] ?? [];
 		$resolvedDocument = $data['document'] ?? $document;

@@ -28,7 +28,9 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 			->where('version = ?', 1)->limit(1));
 		if (!$row) return null;
 		$data = $row->toArray();
-		if (strtolower($format) === 'pdf' && !hash_equals((string)($document['filename'] ?? ''), (string)$data['filename'])) throw new RuntimeException('Document archive filename differs');
+		if (!DEEC_Emailattachment::validFilename((string)$data['filename'])) throw new RuntimeException('Invalid document archive filename');
+		if (strtolower($format) === 'pdf' && DEEC_Emailattachment::validFilename((string)($document['filename'] ?? ''))
+			&& !hash_equals((string)$document['filename'], (string)$data['filename'])) throw new RuntimeException('Document archive filename differs');
 		$this->assertStoredFile($data);
 		return $data;
 	}

@@ -236,6 +236,31 @@ check($adapter->writes === $writesBeforeDocumentFiles, 'Contact document file di
 check($byNumber['112153']['source'] === 'archive' && $byNumber['112153']['status'] === 'available' && $byNumber['112153']['attachmentId'] === 0, 'Canonical archive did not take precedence over the legacy original');
 check($byNumber['112279']['source'] === 'archive' && $byNumber['112468']['source'] === 'archive', 'Canonical archives did not take precedence over customer-number originals');
 check($byNumber['112500']['status'] === 'missing' && $byNumber['112500']['relative'] === '' && $byNumber['112500']['attachmentId'] === 0, 'Missing original was not reported explicitly');
+
+class RecoveryDownloadTestController extends DEEC_Controller_DocumentAction
+{
+	public function init() { $this->_user = Zend_Registry::get('User'); }
+	public function archived(array $row): array { return $this->generatePdf($row, ['output' => 'download'], false); }
+}
+$missingNameIndex = array_search(112153, array_column($adapter->rows['invoice'], 'invoiceid'));
+$savedFilename = $adapter->rows['invoice'][$missingNameIndex]['filename'];
+$adapter->rows['invoice'][$missingNameIndex]['filename'] = '';
+$missingNameRow = $adapter->rows['invoice'][$missingNameIndex];
+$archived = (new Application_Model_DbTable_Documentarchive())->getForDocument((int)$missingNameRow['id'], 'sales', 'invoice');
+check($archived['filename'] === $savedFilename, 'Registered original was hidden by a missing document filename');
+$request = new Zend_Controller_Request_Http();
+$request->setModuleName('sales')->setControllerName('invoice');
+Zend_Controller_Front::getInstance()->addControllerDirectory($root . '/application/modules/sales/controllers', 'sales');
+$download = (new RecoveryDownloadTestController($request, new Zend_Controller_Response_Http()))->archived($missingNameRow);
+check($download['filename'] === $savedFilename && $download['output'] === 'download' && hash_file('sha256', $download['path']) === $archived['sha256'], 'Normal download did not serve the immutable registered bytes');
+$missingNameFiles = array_column((new Contacts_Model_DbTable_Emailattachment())->getContactDocumentFiles(80560), null, 'number');
+check($missingNameFiles['112153']['filename'] === $savedFilename && $missingNameFiles['112153']['status'] === 'available', 'Contact files lost the registered filename');
+$composer = (new Contacts_Model_DbTable_Emailattachment())->syncDocument($missingNameRow, 'sales', 'invoice');
+check($composer['attachments'][0]['filename'] === $savedFilename && str_starts_with($composer['attachments'][0]['id'], 'archive:'), 'Mail composer lost the registered original');
+check(count(array_filter($composer['attachments'], static fn(array $attachment): bool => $attachment['filename'] === $savedFilename)) === 1, 'Mail composer offered duplicate active originals');
+$adapter->rows['invoice'][$missingNameIndex]['filename'] = $savedFilename;
+check($adapter->writes === $writesBeforeDocumentFiles, 'Recovery download or composer changed document data');
+
 foreach ($documentTypes as $controller => $module) {
     check(count(array_filter($documentFiles, static fn(array $file): bool => $file['controller'] === $controller && $file['status'] === 'available')) === 1,
         'Document file mapping missing for ' . $module . '/' . $controller);

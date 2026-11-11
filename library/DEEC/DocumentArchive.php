@@ -92,6 +92,35 @@ class DEEC_DocumentArchive
 		$result = ['module' => (string)($document['module'] ?? ''), 'controller' => (string)($document['controller'] ?? ''), 'id' => (int)($document['id'] ?? 0),
 			'clientid' => (int)($document['clientid'] ?? 0), 'document_number' => (string)($document['document_number'] ?? ''), 'filename' => (string)($document['filename'] ?? ''),
 			'format' => $format, 'status' => 'blocked', 'action' => 'none', 'reason' => '', 'source' => null, 'files' => [], 'metadata' => []];
+		if (count($metadata) === 1 && self::hasRecoveryApproval($metadata[0])) {
+			$row = $metadata[0];
+			$relative = $this->relativePath((int)$document['clientid'], $document['module'], $document['controller'], (int)$document['id'], $format);
+			$file = $this->inspect($this->base . '/' . $relative, $format);
+			$matches = ['clientid' => $document['clientid'], 'documentid' => $document['id'], 'module' => $document['module'], 'controller' => $document['controller'], 'format' => $format, 'path' => $relative];
+			$valid = $file['status'] === 'ok' && (int)$row['filesize'] === $file['size'] && hash_equals($row['sha256'], $file['sha256']);
+			foreach ($matches as $key => $value) if ((string)$row[$key] !== (string)$value) $valid = false;
+			if (DEEC_Emailattachment::validFilename((string)($document['filename'] ?? '')) && $row['filename'] !== $document['filename']) $valid = false;
+			if ($valid) {
+				$parameters = json_decode($row['parameters'], true);
+				$result['historical_conflicts'] = $parameters['recovery']['historical_conflicts'] ?? [];
+				$result['files']['canonical'] = $file;
+				if ((int)($document['contact_match_count'] ?? 1) > 1) $result['historical_conflicts'][] = 'contact_mapping_ambiguous';
+				else try {
+					$hashes = [];
+					foreach ($this->paths($document) as $name => $path) {
+						$found = $this->inspect($path, $format);
+						$result['files'][$name] = $found;
+						if ($name === 'canonical') continue;
+						if ($found['status'] === 'ok') $hashes[] = $found['sha256'];
+						elseif ($found['status'] !== 'missing') $result['historical_conflicts'][] = 'invalid_historical_source';
+					}
+					if (count(array_unique($hashes)) > 1) $result['historical_conflicts'][] = 'historical_versions_differ';
+					if (array_diff($hashes, [$file['sha256']])) $result['historical_conflicts'][] = 'canonical_version_differs';
+				} catch (InvalidArgumentException $ignored) { $result['historical_conflicts'][] = 'invalid_document_context'; }
+				$result['historical_conflicts'] = array_values(array_unique($result['historical_conflicts']));
+				return array_replace($result, ['status' => 'complete', 'source' => 'canonical', 'metadata' => ['active' => 1, 'deleted' => 0, 'foreign' => 0], 'manually_approved' => true]);
+			}
+		}
 		if ((int)($document['contact_match_count'] ?? 1) > 1) { $result['reason'] = 'contact_mapping_ambiguous'; return $result; }
 		try { $paths = $this->paths($document); } catch (Throwable $exception) { $result['reason'] = 'invalid_document_context'; return $result; }
 		foreach ($paths as $name => $path) $result['files'][$name] = $this->inspect($path, $format);
@@ -128,6 +157,16 @@ class DEEC_DocumentArchive
 		elseif (!$active) $result['action'] = 'register_metadata';
 		else { $result['status'] = 'complete'; $result['action'] = 'none'; }
 		return $result;
+	}
+
+	public static function hasRecoveryApproval(array $row): bool
+	{
+		$parameters = json_decode((string)($row['parameters'] ?? ''), true);
+		$approval = $parameters['recovery']['approval'] ?? [];
+		if ((int)($row['version'] ?? 0) !== 1 || ($row['format'] ?? '') !== 'pdf' || !DEEC_Emailattachment::validFilename((string)($row['filename'] ?? '')) || ($approval['manual'] ?? false) !== true
+			|| (int)($approval['approved_by'] ?? 0) <= 0 || empty($approval['approved_at']) || ($approval['sha256'] ?? '') !== ($row['sha256'] ?? null) || (int)($approval['size'] ?? -1) !== (int)($row['filesize'] ?? -2)) return false;
+		foreach (['clientid' => 'clientid', 'module' => 'module', 'controller' => 'controller', 'id' => 'documentid'] as $key => $field) if ((string)($approval['identity'][$key] ?? '') !== (string)($row[$field] ?? '')) return false;
+		return true;
 	}
 
 	public function copy(array $plan): array

@@ -81,7 +81,7 @@ function migrationRows(mysqli $db, string $module, string $controller, int $clie
 	$date = $controller . 'date';
 	$sql = "SELECT d.id, d.clientid, d.contactid, d.filename, CAST(d.`$number` AS CHAR) AS document_number, d.`$date` AS document_date, d.state, d.completed, d.cancelled, c.id AS contact_record_id, c.matches AS contact_match_count"
 		. " FROM `$controller` d LEFT JOIN (SELECT contactid, MIN(id) AS id, COUNT(*) AS matches FROM contact WHERE clientid = ? AND deleted = 0 GROUP BY contactid) c ON c.contactid = d.contactid"
-		. " WHERE d.clientid = ? AND d.deleted = 0 AND d.filename IS NOT NULL AND d.filename <> ''"
+		. " WHERE d.clientid = ? AND d.deleted = 0"
 		. " AND (d.`$number` IS NOT NULL OR d.completed <> 0 OR d.cancelled <> 0 OR d.state IN (105, 106))";
 	if ($contactFilter) $sql .= ' AND d.contactid = ?';
 	if ($documentFilter) $sql .= ' AND d.id = ?';
@@ -104,7 +104,7 @@ function migrationRows(mysqli $db, string $module, string $controller, int $clie
 
 function migrationMetadata(mysqli $db, array $document, string $path): array
 {
-	$sql = 'SELECT id, documentid, filename, format, path, filesize, sha256, module, controller, version, correctionarchiveid, clientid FROM documentarchive'
+	$sql = 'SELECT id, documentid, filename, format, path, filesize, sha256, module, controller, version, correctionarchiveid, clientid, parameters FROM documentarchive'
 		. ' WHERE (clientid = ? AND documentid = ? AND module = ? AND controller = ? AND format = ?) OR path = ? ORDER BY id';
 	$stmt = $db->prepare($sql);
 	$clientId = (int)$document['clientid'];
@@ -116,6 +116,20 @@ function migrationMetadata(mysqli $db, array $document, string $path): array
 	$stmt->execute();
 	$rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 	$stmt->close();
+	return $rows;
+}
+
+function migrationExcludedRows(mysqli $db, string $module, string $controller, int $clientId): array
+{
+	if (!DEEC_DocumentArchive::validDocumentType($module, $controller)) throw new InvalidArgumentException('Invalid inventory document type');
+	$issued = "(`{$controller}id` IS NOT NULL OR completed <> 0 OR cancelled <> 0 OR state IN (105, 106))";
+	$stmt = $db->prepare("SELECT id, clientid, CAST(`{$controller}id` AS CHAR) AS document_number, `{$controller}date` AS document_date, filename, deleted, CASE WHEN deleted <> 0 THEN 'soft_deleted_issued' ELSE 'file_without_issue_marker' END AS exclusion_reason FROM `$controller` WHERE clientid = ? AND ((deleted <> 0 AND $issued) OR (deleted = 0 AND filename IS NOT NULL AND filename <> '' AND NOT $issued)) ORDER BY id");
+	$stmt->bind_param('i', $clientId);
+	$stmt->execute();
+	$rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+	$stmt->close();
+	foreach ($rows as &$row) { $row['module'] = $module; $row['controller'] = $controller; }
+	unset($row);
 	return $rows;
 }
 
@@ -193,6 +207,8 @@ $summary = ['mode' => $apply ? 'apply' : 'dry-run', 'clientid' => (int)$clientId
 	'documents' => 0, 'complete' => 0, 'ready' => 0, 'blocked' => 0, 'applied' => 0, 'failed' => 0, 'unassigned' => 0];
 $summary['structured_originals'] = 0;
 $summary['structured_blocked'] = 0;
+$summary['missing_filenames'] = 0;
+$summary['excluded_documents'] = 0;
 $fullScan = !$contactFilter && !$documentFilter && $documentNumberFilter === null && !isset($options['type']);
 $summary['unassigned_scan'] = $fullScan ? 'complete' : 'skipped_for_filtered_run';
 $assignedPaths = [];
@@ -204,14 +220,24 @@ if (!$apply) {
 }
 try {
 	foreach ($types as [$module, $controller]) {
+		if ($fullScan) foreach (migrationExcludedRows($db, $module, $controller, $clientId) as $excluded) {
+			$summary['excluded_documents']++;
+			echo json_encode(['kind' => 'excluded_document', 'record' => $excluded], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n";
+		}
 		foreach (migrationRows($db, $module, $controller, $clientId, $contactsClientId, $contactFilter, $documentFilter, $documentNumberFilter) as $document) {
+			if (($document['filename'] ?? '') === '') $summary['missing_filenames']++;
 			$document['format'] = 'pdf';
 			$selectedDocuments[$module . '/' . $controller . '/' . (int)$document['id']] = true;
 			$summary['documents']++;
 			$paths = null;
 			try { $paths = $archive->paths($document); } catch (Throwable $ignored) {}
 			if ($paths) foreach ($paths as $path) if ($path !== '') $assignedPaths[$path] = true;
-			$metadata = $paths ? migrationMetadata($db, $document, substr($paths['canonical'], strlen($base) + 1)) : [];
+			$metadata = [];
+			try {
+				$canonicalRelative = $archive->relativePath((int)$document['clientid'], $module, $controller, (int)$document['id']);
+				$assignedPaths[$base . '/' . $canonicalRelative] = true;
+				$metadata = migrationMetadata($db, $document, $canonicalRelative);
+			} catch (InvalidArgumentException $ignored) {}
 			$plan = $archive->plan($document, $metadata);
 			$legacyMetadata = $paths ? migrationLegacyAttachmentMetadata($db, $document, dirname($paths['attachment'])) : [];
 			$activeLegacy = array_values(array_filter($legacyMetadata, static fn(array $row): bool => empty($row['deleted'])));
@@ -222,7 +248,8 @@ try {
 			}));
 			$plan['legacy_attachment_metadata'] = ['active' => count($activeLegacy), 'deleted' => count($legacyMetadata) - count($activeLegacy),
 				'conflicts' => count($legacyConflicts), 'ids' => array_map('intval', array_column($activeLegacy, 'id'))];
-			if ($legacyConflicts && $plan['status'] !== 'blocked') { $plan['status'] = 'blocked'; $plan['action'] = 'none'; $plan['reason'] = 'legacy_attachment_metadata_conflict'; }
+			if ($legacyConflicts && !empty($plan['manually_approved'])) $plan['historical_conflicts'][] = 'legacy_attachment_metadata_conflict';
+			elseif ($legacyConflicts && $plan['status'] !== 'blocked') { $plan['status'] = 'blocked'; $plan['action'] = 'none'; $plan['reason'] = 'legacy_attachment_metadata_conflict'; }
 			$summary[$plan['status']]++;
 			if ($apply && $plan['status'] === 'ready') {
 				try {

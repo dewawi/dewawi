@@ -149,4 +149,21 @@ archiveCheck($storedXml['status'] === 'ok' && file_get_contents($xmlPath) === $x
 try { $archive->store(str_replace('112143', 'changed', $xml), 100, 'sales', 'invoice', 59296, 'xml'); throw new RuntimeException('XML original was overwritten'); }
 catch (RuntimeException $expected) { archiveCheck($expected->getMessage() === 'Archive target collision', 'Unexpected XML collision result'); }
 
-echo 'PASS: ' . $checks . " document archive checks; all eight types covered, sources retained, conflicts blocked\n";
+foreach (DEEC_DocumentArchive::documents() as $module => $controllers) foreach ($controllers as $controller) {
+	$fixture = array_replace($base, ['module' => $module, 'controller' => $controller, 'id' => ++$base['id'], 'filename' => $controller . '-approved.pdf']);
+	$paths = $archive->paths($fixture);
+	archiveWrite($paths['canonical'], $bytes);
+	archiveWrite($paths['current'], archivePdf('older different version'));
+	archiveWrite($paths['legacy'], archivePdf('another historical version'));
+	$registered = ['id' => 99, 'documentid' => $fixture['id'], 'module' => $module, 'controller' => $controller, 'clientid' => 100, 'format' => 'pdf', 'version' => 1,
+		'filename' => $fixture['filename'], 'path' => $archive->relativePath(100, $module, $controller, $fixture['id']), 'filesize' => strlen($bytes), 'sha256' => hash('sha256', $bytes)];
+	archiveCheck($archive->plan($fixture, [$registered])['reason'] === 'historical_versions_differ', 'Unapproved conflict was suppressed');
+	$identity = ['clientid' => 100, 'module' => $module, 'controller' => $controller, 'id' => $fixture['id']];
+	$registered['parameters'] = json_encode(['recovery' => ['approval' => ['manual' => true, 'approved_by' => 42, 'approved_at' => '2026-11-11T12:00:00Z', 'identity' => $identity, 'sha256' => $registered['sha256'], 'size' => $registered['filesize']], 'historical_conflicts' => ['historical_versions_differ']]]);
+	$approvedPlan = $archive->plan($fixture, [$registered]);
+	archiveCheck($approvedPlan['status'] === 'complete' && in_array('historical_versions_differ', $approvedPlan['historical_conflicts'], true), 'Approved original lost its historical conflict evidence');
+	archiveCheck($archive->plan(array_replace($fixture, ['filename' => '']), [$registered])['status'] === 'complete', 'Approved original with missing document filename was lost');
+	archiveCheck($archive->plan($fixture, [array_replace($registered, ['clientid' => 101])])['status'] === 'blocked', 'Foreign approval was trusted');
+}
+
+echo 'PASS: ' . $checks . " document archive checks; all eight types covered, sources retained, conflicts blocked or explicitly approved\n";

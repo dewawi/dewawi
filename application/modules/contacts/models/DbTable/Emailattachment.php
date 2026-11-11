@@ -246,10 +246,10 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 			'date' => (string)($document[$controller . 'date'] ?? ''), 'filename' => $filename,
 			'status' => 'missing', 'source' => '', 'relative' => '', 'attachmentId' => 0, 'fallbackAttachmentId' => 0, 'documentUrl' => '',
 		];
-		if (!DEEC_Emailattachment::validFilename($filename)) return $result;
 		try {
 			$archive = (new Application_Model_DbTable_Documentarchive())->getForDocument((int)$document['id'], $module, $controller, 'pdf');
 			if ($archive) {
+				$result['filename'] = $archive['filename'];
 				$result['status'] = 'available';
 				$result['source'] = 'archive';
 				$result['documentUrl'] = '/' . $module . '/' . $controller . '/download/id/' . (int)$document['id'];
@@ -261,6 +261,7 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 			return $result;
 		}
 
+		if (!DEEC_Emailattachment::validFilename($filename)) return $result;
 		$directory = new DEEC_Directory();
 		$originals = [];
 		$invalid = false;
@@ -406,12 +407,14 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 			}));
 			try {
 				$original = (new Application_Model_DbTable_Documentarchive())->getForDocument((int)$document['id'], $module, $controller, 'pdf');
-				if ($original) array_unshift($attachments, [
-					'id' => 'archive:' . (int)$original['id'], 'selection' => 'archive:' . (int)$original['id'], 'archiveid' => (int)$original['id'],
-					'filename' => $original['filename'], 'filesize' => $original['filesize'], 'filetype' => 'application/pdf', 'deletable' => false,
-					'url' => '/' . $module . '/' . $controller . '/download/id/' . (int)$document['id'],
-				]);
-				else array_unshift($attachments, ['id' => 'archive-missing', 'filename' => (string)($document['filename'] ?? ''), 'filesize' => 0, 'deletable' => false, 'available' => false]);
+				if ($original) {
+					$attachments = array_values(array_filter($attachments, static fn(array $attachment): bool => (string)$attachment['filename'] !== (string)$original['filename']));
+					array_unshift($attachments, [
+						'id' => 'archive:' . (int)$original['id'], 'selection' => 'archive:' . (int)$original['id'], 'archiveid' => (int)$original['id'],
+						'filename' => $original['filename'], 'filesize' => $original['filesize'], 'filetype' => 'application/pdf', 'deletable' => false,
+						'url' => '/' . $module . '/' . $controller . '/download/id/' . (int)$document['id'],
+					]);
+				} else array_unshift($attachments, ['id' => 'archive-missing', 'filename' => (string)($document['filename'] ?? ''), 'filesize' => 0, 'deletable' => false, 'available' => false]);
 			} catch (RuntimeException $exception) {
 				error_log('Document archive unavailable for email composer: ' . $module . '/' . $controller . ' id=' . (int)$document['id'] . ' ' . $exception->getMessage());
 				array_unshift($attachments, ['id' => 'archive-invalid', 'filename' => (string)($document['filename'] ?? ''), 'filesize' => 0, 'deletable' => false, 'available' => false]);

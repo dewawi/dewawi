@@ -39,7 +39,7 @@ function reviewSafePath(string $path): void
 
 function reviewInputs(string $jsonl, ?string $tsv, string $selection, int $clientId): array
 {
-	if (!in_array($selection, ['audit', 'blocked-invoices', 'both'], true)) throw new RuntimeException('Invalid selection');
+	if (!in_array($selection, ['audit', 'blocked-invoices', 'both', 'all-blocked', 'all-unarchived'], true)) throw new RuntimeException('Invalid selection');
 	$reports = [];
 	$read = static function(string $path) use (&$reports): string {
 		reviewSafePath($path);
@@ -56,7 +56,7 @@ function reviewInputs(string $jsonl, ?string $tsv, string $selection, int $clien
 		$row = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
 		if (($row['kind'] ?? '') === 'summary') { $summary = $row['summary']; continue; }
 		if (($row['kind'] ?? '') !== 'document') {
-			if (!in_array($row['kind'] ?? '', ['structured_original', 'unassigned_file'], true)) throw new RuntimeException('Unknown JSONL record');
+			if (!in_array($row['kind'] ?? '', ['structured_original', 'unassigned_file', 'excluded_document'], true)) throw new RuntimeException('Unknown JSONL record');
 			continue;
 		}
 		$plan = $row['plan'];
@@ -71,14 +71,15 @@ function reviewInputs(string $jsonl, ?string $tsv, string $selection, int $clien
 	$documents = [];
 	$blocked = 0;
 	foreach ($plans as $key => $plan) {
+		if (($selection === 'all-blocked' && $plan['reported_status'] === 'blocked') || ($selection === 'all-unarchived' && $plan['reported_status'] !== 'complete')) { $plan['selections'][] = $selection; $documents[$key] = $plan; }
 		if ($plan['module'] !== 'sales' || $plan['controller'] !== 'invoice' || $plan['reported_status'] !== 'blocked') continue;
 		$blocked++;
-		if ($selection === 'audit') continue;
+		if (in_array($selection, ['audit', 'all-blocked', 'all-unarchived'], true)) continue;
 		$plan['selections'][] = 'blocked-invoices';
 		$documents[$key] = $plan;
 	}
 	$audit = [];
-	if ($selection !== 'blocked-invoices') {
+	if (in_array($selection, ['audit', 'both'], true)) {
 		if ($tsv === null) throw new RuntimeException('The audit selection requires the headerless TSV');
 		foreach (explode("\n", $read($tsv)) as $line) {
 			if ($line === '') continue;
@@ -89,7 +90,7 @@ function reviewInputs(string $jsonl, ?string $tsv, string $selection, int $clien
 			$parts = explode('/', $type);
 			if (count($parts) !== 2) throw new RuntimeException('Invalid TSV document type');
 			$identity = reviewIdentity(['module' => $parts[0], 'controller' => $parts[1], 'id' => $id, 'clientid' => $clientId, 'document_number' => $number], $clientId);
-			if ($identity['module'] !== 'sales' || !preg_match('/^20(?:19|20|21)-[0-9]{2}-[0-9]{2}$/D', $date) || !checkdate((int)substr($date, 5, 2), (int)substr($date, 8, 2), (int)substr($date, 0, 4))) throw new RuntimeException('Invalid audit period date');
+			if (!preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', $date) || !checkdate((int)substr($date, 5, 2), (int)substr($date, 8, 2), (int)substr($date, 0, 4))) throw new RuntimeException('Invalid audit date');
 			$key = reviewKey($identity);
 			$known = $plans[$key] ?? $identity + ['reported_reasons' => [], 'reported_date' => null, 'selections' => [], 'reported_status' => null];
 			if ($known['document_number'] !== $number || (isset($documents[$key]) && $documents[$key]['document_number'] !== $number) || (isset($audit[$key]) && $audit[$key] !== $date)) throw new RuntimeException('Conflicting report identities');
@@ -357,7 +358,7 @@ function reviewRun(array $inputs, string $base, string $output, int $clientId, i
 						}
 						$manifest['sources'][] = $entry;
 					}
-					if (!$manifest['invoice_manual_selection']) {
+					if ($manifest['candidates']) {
 						$latest = [];
 						foreach ($manifest['sources'] as $source) if ($source['status'] === 'ok' && $source['candidate_path'] !== null) $latest[$source['sha256']] = max($latest[$source['sha256']] ?? 0, $source['mtime']);
 						if ($latest) {
@@ -417,10 +418,10 @@ $options = getopt('', ['config:', 'environment:', 'base:', 'output:', 'client:',
 umask(0077);
 $db = null;
 try {
-	foreach (['config', 'base', 'output', 'client', 'jsonl'] as $required) if (!isset($options[$required]) || !is_string($options[$required]) || $options[$required] === '') throw new RuntimeException('Required: --config --base --output --client --jsonl [--audit-tsv] [--select=both|audit|blocked-invoices] [--contacts-client]');
+	foreach (['config', 'base', 'output', 'client', 'jsonl'] as $required) if (!isset($options[$required]) || !is_string($options[$required]) || $options[$required] === '') throw new RuntimeException('Required: --config --base --output --client --jsonl [--audit-tsv] [--select=all-unarchived|all-blocked|both|audit|blocked-invoices] [--contacts-client]');
 	$clientId = reviewId($options['client']);
 	$contactsClient = reviewId($options['contacts-client'] ?? $clientId);
-	$inputs = reviewInputs($options['jsonl'], $options['audit-tsv'] ?? null, $options['select'] ?? 'both', $clientId);
+	$inputs = reviewInputs($options['jsonl'], $options['audit-tsv'] ?? null, $options['select'] ?? 'all-blocked', $clientId);
 	if ($inputs['contacts_clientid'] !== $contactsClient) throw new RuntimeException('Contact tenant differs from dry-run report');
 	$settings = migrationConfig($options['config'], $options['environment'] ?? 'production');
 	mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);

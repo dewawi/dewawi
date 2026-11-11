@@ -39,7 +39,7 @@ foreach (DEEC_DocumentArchive::documents() as $controllers) foreach ($controller
 }
 $db->query('CREATE TABLE contact (id INT PRIMARY KEY, clientid INT, contactid INT, deleted INT DEFAULT 0)');
 $db->query('CREATE TABLE emailattachment (id INT PRIMARY KEY, clientid INT, documentid INT, module VARCHAR(64), controller VARCHAR(64), filename VARCHAR(255), location VARCHAR(512), filesize INT, deleted INT DEFAULT 0)');
-$db->query('CREATE TABLE documentarchive (id INT PRIMARY KEY, clientid INT, documentid INT, module VARCHAR(64), controller VARCHAR(64), filename VARCHAR(255), format VARCHAR(16), path VARCHAR(512), filesize INT, sha256 CHAR(64), version INT DEFAULT 1, correctionarchiveid INT DEFAULT NULL)');
+$db->query('CREATE TABLE documentarchive (id INT PRIMARY KEY, clientid INT, documentid INT, module VARCHAR(64), controller VARCHAR(64), filename VARCHAR(255), format VARCHAR(16), path VARCHAR(512), filesize INT, sha256 CHAR(64), version INT DEFAULT 1, correctionarchiveid INT DEFAULT NULL, parameters LONGTEXT)');
 $db->query('CREATE TABLE emailmessage (id INT PRIMARY KEY, clientid INT, documentid INT, module VARCHAR(64), controller VARCHAR(64), messagesent DATETIME, deliverystatus VARCHAR(32))');
 $db->query('CREATE TABLE emailmessageattachment (id INT PRIMARY KEY, clientid INT, emailmessageid INT, documentarchiveid INT, emailattachmentid INT, filename VARCHAR(255), path VARCHAR(512), filesize INT, sha256 CHAR(64), ordering INT)');
 foreach ([[800, 100, 500], [900, 100, 600], [901, 100, 600], [980, 101, 500], [990, 200, 700]] as [$id, $client, $number]) reviewDbInsert($db, 'contact', ['id' => $id, 'clientid' => $client, 'contactid' => $number]);
@@ -90,10 +90,24 @@ $db->query("GRANT SELECT ON review_fixture.* TO 'review_reader'@'localhost'");
 $reader = new mysqli('localhost', 'review_reader', 'fixture-only', 'review_fixture', 3306, $socket);
 $reader->query('SET TRANSACTION READ ONLY');
 $reader->begin_transaction();
+$inventory = migrationRows($reader, 'sales', 'invoice', 100, 100, null, null, null);
+reviewDbCheck(in_array(19, array_map('intval', array_column($inventory, 'id')), true), 'Issued inventory missed an existing invoice');
 $shared = reviewLoadDocument($reader, $archive, ['module' => 'sales', 'controller' => 'invoice', 'id' => 24, 'clientid' => 100], 200);
 reviewDbCheck($shared['document']['contact_record_id'] === 990 && (int)$shared['document']['clientid'] === 100, 'Explicit parent contact owner replaced document ownership');
 $reader->rollback();
 $reader->close();
+$db->query('UPDATE invoice SET filename = NULL WHERE id = 19');
+reviewDbInsert($db, 'invoice', ['id' => 991, 'clientid' => 100, 'contactid' => 500, 'filename' => 'deleted-issued.pdf', 'invoiceid' => 991, 'deleted' => 1]);
+reviewDbInsert($db, 'invoice', ['id' => 992, 'clientid' => 100, 'contactid' => 500, 'filename' => 'draft-file.pdf', 'state' => 100, 'completed' => 0]);
+$reader = new mysqli('localhost', 'review_reader', 'fixture-only', 'review_fixture', 3306, $socket);
+$reader->query('SET TRANSACTION READ ONLY');
+$reader->begin_transaction();
+$inventory = migrationRows($reader, 'sales', 'invoice', 100, 100, null, null, null);
+reviewDbCheck(in_array(19, array_map('intval', array_column($inventory, 'id')), true), 'Issued inventory dropped a missing filename');
+$excluded = migrationExcludedRows($reader, 'sales', 'invoice', 100);
+reviewDbCheck(array_column($excluded, 'exclusion_reason') === ['soft_deleted_issued', 'file_without_issue_marker'], 'Excluded historical records were not inventoried separately');
+$reader->rollback(); $reader->close();
+$before['invoice'] = $db->query('SELECT * FROM invoice ORDER BY id')->fetch_all(MYSQLI_ASSOC);
 $report = '';
 foreach ($plans as $plan) {
 	$plan['files']['current']['path'] = $foreignPath;

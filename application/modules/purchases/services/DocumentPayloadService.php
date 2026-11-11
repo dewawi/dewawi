@@ -7,6 +7,12 @@ class Purchases_Service_DocumentPayloadService
 		$locale = Zend_Registry::get('Zend_Locale');
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
+		if (!empty($options['historical_snapshot'])) {
+			$client = Zend_Registry::get('Client');
+			$contactDb->setClientId((int)($client['modules']['contacts'] ?? $client['id']));
+			$matches = $contactDb->fetchAll($contactDb->select()->where('clientid = ?', $contactDb->getClientId())->where('contactid = ?', $document['contactid'])->where('deleted = ?', 0));
+			if (count($matches) !== 1) throw new RuntimeException('Historical contact mapping is missing or ambiguous');
+		}
 		$contact = $contactDb->getContactWithID($document['contactid']);
 
 		$templateDb = new Application_Model_DbTable_Template();
@@ -14,7 +20,12 @@ class Purchases_Service_DocumentPayloadService
 			? (int)$options['templateid']
 			: (int)($document['templateid'] ?? 0);
 
-		try {
+		if (!empty($options['historical_snapshot'])) {
+			if ($templateId <= 0) throw new RuntimeException('Historical template ID is missing');
+			$row = $templateDb->fetchRow($templateDb->select()->where('id = ?', $templateId)->where('clientid = ?', $document['clientid']));
+			if (!$row) throw new RuntimeException('Historical template is unavailable');
+			$template = $row->toArray();
+		} else try {
 			if ($templateId > 0) {
 				$template = $templateDb->getTemplate($templateId);
 			} else {
