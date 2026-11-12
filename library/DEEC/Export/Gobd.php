@@ -99,6 +99,8 @@ class DEEC_Export_Gobd
 
 		foreach($profile as $exportName => $config) {
 			$columns = $this->filterExistingColumns($config['table'], $config['columns']);
+			$config['unavailableColumns'] = array_values(array_diff($config['columns'], $columns));
+			$config['columnSchema'] = array_intersect_key($this->db->describeTable($config['table']), array_flip($columns));
 			$config['columns'] = $columns;
 			$resolvedProfile[$exportName] = $config;
 
@@ -124,7 +126,12 @@ class DEEC_Export_Gobd
 			$summary = $this->writeDocuments($filePath, $resolvedProfile, $from, $to);
 			$files = array_merge($files, ['document_index.csv', 'document_manifest.csv', 'missing_documents.csv', 'excluded_documents.csv']);
 			$metadata = json_decode(file_get_contents($filePath . 'metadata.json'), true, 512, JSON_THROW_ON_ERROR);
-			$metadata['documents'] = ['enabled' => true, 'types' => DEEC_DocumentArchive::documents(), 'scope' => 'stored document date, inclusive; issued documents and excluded original references', 'summary' => $summary];
+			$metadata['documents'] = ['enabled' => true, 'types' => $this->documentTypes(), 'scope' => 'stored document date, inclusive; issued documents and excluded original references', 'summary' => $summary];
+			if (!$this->reviewExport) {
+				$metadata['export_kind'] = 'outgoing_documents';
+				$metadata['documents']['outside_scope_types'] = ['purchases' => DEEC_DocumentArchive::documents()['purchases']];
+				$metadata['documents']['scope'] .= '; outgoing sales documents only; purchases are outside this requested scope, not counted as delivered or missing';
+			}
 			if ($this->reviewExport) {
 				$metadata['export_kind'] = 'internal_document_review';
 				$metadata['exportType'] = 'Internal document review';
@@ -136,7 +143,7 @@ class DEEC_Export_Gobd
 				. "\n" . json_encode($summary, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)
 				. "\nOnly registered version-1 archive PDFs with verified size and SHA-256 are included; pdf_origin identifies approved reconstructed duplicates separately. No rendering or recovery staging files are used."
 				. "\nDocument dates determine the period; archival dates do not. Deleted issued documents remain identifiable in excluded_documents.csv. Drafts without original references do not require PDF originals."
-				. "\ndocument_index.csv identifies all eight document types and links existing fiscal CSV rows by file and id; other types use record_key in this index."
+				. "\ndocument_index.csv identifies the selected document types and links existing fiscal CSV rows by file and id; other types use record_key in this index."
 				. "\ndocument_manifest.csv records included originals and stored archive/recovery provenance. missing_documents.csv records missing, invalid or excluded images."
 				. "\nRecorded historical conflicts remain traceable. Approved restorations are not new fiscal corrections. Header/EOF and hash verification do not prove historical content equivalence."
 				. "\nchecksums.sha256 covers every ZIP entry except itself. Verify with sha256sum -c checksums.sha256 after extraction. Completeness refers only to this stored dated-document scope, not overall legal compliance.\n";
@@ -150,13 +157,14 @@ class DEEC_Export_Gobd
 				. "Availability: " . ($summary['complete'] ? 'COMPLETE for the stored dated-document scope' : 'INCOMPLETE') . "\n" . json_encode($summary, JSON_THROW_ON_ERROR)
 				. "\nVerify the extracted package with sha256sum -c checksums.sha256. Inspect all missing/invalid/excluded rows. Availability completeness does not mean original equivalence, fiscal completeness or legal compliance.\n";
 			if (file_put_contents($filePath . 'readme.txt', $bytes, $this->reviewExport ? 0 : FILE_APPEND) !== strlen($bytes)) throw new RuntimeException('Could not write export README');
+			$this->finalizeInventory($filePath, $files);
 			$lines = [];
 			foreach ($files as $file) $lines[] = hash_file('sha256', $filePath . $file) . '  ' . $file;
 			foreach ($this->documentFiles as $name => $entry) $lines[] = $entry['sha256'] . '  ' . $name;
 			$bytes = implode("\n", $lines) . "\n";
 			if (file_put_contents($filePath . 'checksums.sha256', $bytes) !== strlen($bytes)) throw new RuntimeException('Could not write export checksums');
 			$files[] = 'checksums.sha256';
-		}
+		} else $this->finalizeInventory($filePath, $files);
 
 		$zipFileName = $this->buildZipFileName($from, $to);
 		if ($includeDocuments) $zipFileName = str_replace('gobd-export-', 'gobd-documents-', substr($zipFileName, 0, -4)) . '-' . bin2hex(random_bytes(8)) . '.zip';
@@ -186,13 +194,15 @@ class DEEC_Export_Gobd
 				if ($size !== $expected[$file]['size'] || hash_final($hash) !== $expected[$file]['sha256']) throw new RuntimeException('Private inventory integrity differs');
 			}
 			$this->verifyDocumentManifest($audit, $expected);
+			$this->verifyCsvInventory($audit);
 		} finally { $audit->close(); }
-		$fields = ['record_key', 'module', 'controller', 'documentid', 'document_number', 'document_date', 'filename', 'deleted', 'issued', 'csv_file', 'csv_key_column', 'csv_key_value', 'pdf_path', 'pdf_supplied', 'pdf_origin', 'delivery_note'];
+		$fields = ['record_key', 'module', 'controller', 'documentid', 'document_number', 'document_date', 'filename', 'deleted', 'issued', 'csv_file', 'csv_key_column', 'csv_key_value', 'pdf_path', 'pdf_supplied', 'pdf_origin', 'delivery_note', 'missing_reason'];
 		$input = fopen($directory . 'document_index.csv', 'rb');
 		$output = fopen($directory . 'document_files.csv', 'xb');
 		if (!$input || !$output) throw new RuntimeException('Could not write document delivery overview');
 		try {
 			$columns = fgetcsv($input, 0, ';', '"', '');
+			$reasons = ['Document archive versions are ambiguous' => 'archive_versions_ambiguous', 'Invalid document archive filename' => 'archive_filename_invalid', 'Document archive filename differs' => 'archive_filename_differs', 'Document archive path differs' => 'archive_path_differs', 'Document archive integrity check failed' => 'archive_integrity_check_failed', 'Unapproved reconstruction cannot be supplied as an archive document' => 'reconstruction_origin_unconfirmed'];
 			if (fputcsv($output, $fields, ';', '"', '') === false) throw new RuntimeException('Could not write delivery columns');
 			while (($values = fgetcsv($input, 0, ';', '"', '')) !== false) {
 				$row = array_combine($columns, $values);
@@ -200,11 +210,13 @@ class DEEC_Export_Gobd
 				$row['pdf_origin'] = $row['status'] === 'included' ? $row['pdf_origin'] : 'not_supplied';
 				$row['pdf_path'] = $row['zip_path']; $row['pdf_supplied'] = $row['status'] === 'included' ? '1' : '0';
 				$row['delivery_note'] = ['included' => 'supplied', 'missing' => 'requested_pdf_not_supplied', 'excluded' => 'original_reference_not_supplied_issue_status_unconfirmed', 'not_issued' => 'draft_no_original_requested'][$row['status']];
+				$row['missing_reason'] = in_array($row['status'], ['missing', 'excluded'], true) ? (preg_match('/^[a-z_]+$/D', $row['reason']) ? $row['reason'] : ($reasons[$row['reason']] ?? 'archive_verification_failed_see_private_report')) : '';
 				if (fputcsv($output, array_map(static fn(string $field) => $row[$field], $fields), ';', '"', '') === false) throw new RuntimeException('Could not write delivery row');
 			}
 		} finally { fclose($input); fclose($output); }
 		$metadata = json_decode(file_get_contents($directory . 'metadata.json'), true, 512, JSON_THROW_ON_ERROR);
 		$metadata['documents']['overview'] = ['file' => 'document_files.csv', 'columns' => $fields, 'key' => 'record_key', 'pdf_path' => 'Exact ZIP entry; empty when not supplied', 'pdf_supplied' => '1 for a verified registered archive PDF, including approved reconstructed duplicates', 'pdf_origin' => 'issued_original; verified_recovered_original; reviewed_reconstruction_duplicate; registered_archive_origin_unconfirmed; reconstruction_origin_unconfirmed; not_supplied. Reconstructed duplicates are not unchanged historical original files.', 'csv_reference' => 'csv_file/csv_key_column/csv_key_value identify the fiscal CSV row; types without a separate fiscal dataset refer to this overview', 'delivery_note' => 'supplied; requested_pdf_not_supplied; original_reference_not_supplied_issue_status_unconfirmed; draft_no_original_requested'];
+		$metadata['documents']['overview']['missing_reason'] = 'Reason code for an undelivered requested PDF or unresolved original reference; detailed technical evidence remains in the private report';
 		$bytes = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 		if (file_put_contents($directory . 'metadata.json', $bytes) !== strlen($bytes)) throw new RuntimeException('Could not write delivery metadata');
 		$this->writeReadme($directory . 'readme.txt', $metadata['from'], $metadata['to']);
@@ -215,7 +227,9 @@ class DEEC_Export_Gobd
 			. "\nEmpty pdf_path with pdf_supplied=0 explicitly means no PDF was delivered. Inspect delivery_note; missing requested originals make this delivery incomplete. Drafts without an original reference do not request a PDF."
 			. "\nPDFs use visible document numbers under documents/<module>/<type>/. pdf_origin distinguishes issued originals, verified recovered originals, approved reconstructed duplicates and uncertain provenance. Delivery completeness describes available archive PDFs, not historical original-file equivalence. Archive integrity and the full technical inventory were verified and retained internally. Completeness of this delivery is not an assertion of overall legal compliance.\n";
 		if (file_put_contents($directory . 'readme.txt', $bytes, FILE_APPEND) !== strlen($bytes)) throw new RuntimeException('Could not write delivery scope');
-		return array_merge(array_values(array_diff($files, ['document_index.csv', 'document_manifest.csv', 'missing_documents.csv', 'excluded_documents.csv', 'checksums.sha256'])), ['document_files.csv']);
+		$files = array_merge(array_values(array_diff($files, ['document_index.csv', 'document_manifest.csv', 'missing_documents.csv', 'excluded_documents.csv', 'checksums.sha256'])), ['document_files.csv']);
+		$this->finalizeInventory($directory, $files);
+		return $files;
 	}
 
 	protected function verifyDelivery(ZipArchive $zip): void
@@ -230,11 +244,12 @@ class DEEC_Export_Gobd
 			while (($values = fgetcsv($stream, 0, ';', '"', '')) !== false) {
 				if (count($values) !== count($fields)) throw new RuntimeException('Incomplete delivery row');
 				$row = array_combine($fields, $values); $key = $this->clientId . '/' . $row['module'] . '/' . $row['controller'] . '/' . $row['documentid'];
-				if ($key !== $row['record_key'] || isset($keys[$key]) || !DEEC_DocumentArchive::validDocumentType($row['module'], $row['controller']) || $row['document_date'] < $metadata['from'] || $row['document_date'] > $metadata['to']) throw new RuntimeException('Delivery identity or date differs');
+				if ($key !== $row['record_key'] || isset($keys[$key]) || !in_array($row['controller'], $this->documentTypes()[$row['module']] ?? [], true) || $row['document_date'] < $metadata['from'] || $row['document_date'] > $metadata['to']) throw new RuntimeException('Delivery identity or date differs');
 				$keys[$key] = true;
 				if ($row['issued'] === '1') { $counts['issued']++; if ($row['deleted'] !== '0') $counts['deleted_issued']++; }
 				$status = array_search($row['delivery_note'], ['included' => 'supplied', 'missing' => 'requested_pdf_not_supplied', 'excluded' => 'original_reference_not_supplied_issue_status_unconfirmed', 'not_issued' => 'draft_no_original_requested'], true);
 				if ($status === false || $row['pdf_supplied'] !== ($status === 'included' ? '1' : '0')) throw new RuntimeException('Delivery statement differs');
+				if (in_array($status, ['missing', 'excluded'], true) !== ($row['missing_reason'] !== '')) throw new RuntimeException('Delivery gap reason differs');
 				if (isset($counts[$status])) $counts[$status]++;
 				if ($status === 'included') {
 					if (!$row['issued'] || !isset($this->documentFiles[$row['pdf_path']]) || isset($paths[$row['pdf_path']]) || !str_starts_with($row['pdf_path'], 'documents/' . $row['module'] . '/' . $row['controller'] . '/')) throw new RuntimeException('Delivered PDF assignment differs');
@@ -300,7 +315,7 @@ class DEEC_Export_Gobd
 		$archive = new DEEC_DocumentArchive(BASE_PATH);
 		$archiveDb = new Application_Model_DbTable_Documentarchive();
 		try {
-			foreach (DEEC_DocumentArchive::documents() as $module => $controllers) foreach ($controllers as $controller) {
+			foreach ($this->documentTypes() as $module => $controllers) foreach ($controllers as $controller) {
 				$dataset = null;
 				foreach ($profile as $name => $config) if ($config['table'] === $controller) $dataset = $name . '.csv';
 				$columns = ['id', 'clientid', 'contactid', 'filename', $controller . 'id', $controller . 'date', 'state', 'completed', 'cancelled', 'deleted'];
@@ -1091,6 +1106,95 @@ class DEEC_Export_Gobd
 		];
 	}
 
+	protected function documentTypes(): array
+	{
+		$types = DEEC_DocumentArchive::documents();
+		return $this->reviewExport ? $types : ['sales' => $types['sales']];
+	}
+
+	protected function countDocumentTypes($stream): array
+	{
+		$counts = [];
+		foreach ($this->documentTypes() as $module => $controllers) foreach ($controllers as $controller) $counts[$module . '/' . $controller] = ['total' => 0, 'issued' => 0, 'delivered_pdfs' => 0, 'missing_pdfs' => 0, 'deleted_issued_without_pdf' => 0, 'unresolved_original_references' => 0];
+		$fields = fgetcsv($stream, 0, ';', '"', '');
+		while (($values = fgetcsv($stream, 0, ';', '"', '')) !== false) {
+			if (count($values) !== count($fields)) throw new RuntimeException('Incomplete document overview');
+			$row = array_combine($fields, $values);
+			$type = $row['module'] . '/' . $row['controller'];
+			if (!isset($counts[$type])) throw new RuntimeException('Document overview type is outside export scope');
+			$count = &$counts[$type];
+			$count['total']++;
+			$delivered = isset($row['pdf_supplied']) ? $row['pdf_supplied'] === '1' : $row['zip_path'] !== '';
+			if ($delivered) $count['delivered_pdfs']++;
+			if ($row['issued'] === '1') {
+				$count['issued']++;
+				if (!$delivered) { $count['missing_pdfs']++; if ($row['deleted'] !== '0') $count['deleted_issued_without_pdf']++; }
+			} elseif (($row['status'] ?? '') === 'excluded' || ($row['delivery_note'] ?? '') === 'original_reference_not_supplied_issue_status_unconfirmed') $count['unresolved_original_references']++;
+			unset($count);
+		}
+		return $counts;
+	}
+
+	protected function finalizeInventory(string $directory, array $files): void
+	{
+		$metadata = json_decode(file_get_contents($directory . 'metadata.json'), true, 512, JSON_THROW_ON_ERROR);
+		$metadata['csv_files'] = [];
+		$text = "\n\nGelieferte CSV-Dateien (Datenzeilen ohne Kopfzeile):\n";
+		foreach ($files as $file) if (str_ends_with($file, '.csv')) {
+			$stream = fopen($directory . $file, 'rb');
+			try { $entry = $this->csvInventory($stream, $file); } finally { fclose($stream); }
+			$metadata['csv_files'][$file] = $entry;
+			$text .= $file . ': ' . $entry['rows'] . "\n";
+			$name = substr($file, 0, -4);
+			if (isset($metadata['tables'][$name])) $metadata['tables'][$name]['rowCount'] = $entry['rows'];
+		}
+		foreach ($metadata['tables'] as $table) if ($table['unavailableColumns']) $text .= 'Nicht vorhandene Profilspalten in ' . $table['file'] . ': ' . implode(', ', $table['unavailableColumns']) . "\n";
+		if (isset($metadata['documents'])) {
+			$file = in_array('document_files.csv', $files, true) ? 'document_files.csv' : 'document_index.csv';
+			$stream = fopen($directory . $file, 'rb');
+			try { $counts = $this->countDocumentTypes($stream); } finally { fclose($stream); }
+			$metadata['documents']['by_type'] = $counts;
+			$text .= "\nBelegübersicht je Art (je Beleg einmal; Gesamt enthält auch Entwürfe):\nArt; Gesamt; ausgestellt; PDF geliefert; ausgestellte ohne PDF; gelöschte ausgestellte ohne PDF; ungeklärte Originalbezüge\n";
+			foreach ($counts as $type => $count) $text .= $type . '; ' . implode('; ', $count) . "\n";
+			$text .= "Fehlstellen: $file, mit Belegart, Nummer, Datum und " . ($this->reviewExport ? 'reason' : 'missing_reason') . ".\n";
+			$text .= $this->reviewExport ? "Interner Umfang: alle acht Belegarten. PDF-Verfügbarkeit bestätigt keine Originalgleichheit.\n" : "Externer Umfang: ausschließlich sechs Verkaufsbelegarten (sales). purchases/quoterequest und purchases/purchaseorder sind ausdrücklich nicht angefordert; die interne vollständige Archivprüfung bleibt unverändert.\n";
+		}
+		$bytes = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+		if (file_put_contents($directory . 'metadata.json', $bytes) !== strlen($bytes) || file_put_contents($directory . 'readme.txt', $text, FILE_APPEND) !== strlen($text)) throw new RuntimeException('Could not write export inventory');
+	}
+
+	protected function csvInventory($stream, string $name): array
+	{
+		if (!$stream) throw new RuntimeException('CSV inventory entry is unavailable');
+		$escape = in_array($name, ['document_files.csv', 'document_index.csv', 'document_manifest.csv', 'missing_documents.csv', 'excluded_documents.csv'], true) ? '' : '\\';
+		$fields = fgetcsv($stream, 0, ';', '"', $escape);
+		if (!$fields || in_array(null, $fields, true) || count(array_unique($fields)) !== count($fields)) throw new RuntimeException('Invalid CSV inventory header');
+		$count = 0;
+		while (($values = fgetcsv($stream, 0, ';', '"', $escape)) !== false) {
+			if (count($values) !== count($fields)) throw new RuntimeException('CSV row structure differs: ' . $name);
+			$count++;
+		}
+		return ['rows' => $count, 'columns' => $fields];
+	}
+
+	protected function verifyCsvInventory(ZipArchive $zip): void
+	{
+		$metadata = json_decode($zip->getFromName('metadata.json'), true, 512, JSON_THROW_ON_ERROR);
+		$actual = [];
+		for ($i = 0; $i < $zip->numFiles; $i++) {
+			$name = $zip->getNameIndex($i);
+			if (!str_ends_with($name, '.csv')) continue;
+			$stream = $zip->getStream($name);
+			try { $actual[$name] = $this->csvInventory($stream, $name); } finally { if ($stream) fclose($stream); }
+		}
+		if ($actual !== $metadata['csv_files']) throw new RuntimeException('Delivered CSV inventory differs');
+		if (isset($metadata['documents'])) {
+			$stream = $zip->getStream(isset($metadata['documents']['overview']) ? 'document_files.csv' : 'document_index.csv');
+			try { $counts = $this->countDocumentTypes($stream); } finally { fclose($stream); }
+			if ($counts !== $metadata['documents']['by_type'] || $metadata['documents']['types'] !== $this->documentTypes()) throw new RuntimeException('Document type summary differs');
+		}
+	}
+
 	protected function filterExistingColumns(string $table, array $columns): array
 	{
 		$description = $this->db->describeTable($table);
@@ -1163,19 +1267,22 @@ class DEEC_Export_Gobd
 			'description',
 			'column',
 			'column_description',
+			'data_type', 'length', 'precision', 'scale', 'nullable', 'primary_key',
 		], ';') === false) throw new RuntimeException('Could not write data dictionary header');
 
 		foreach ($profile as $exportName => $config) {
 			$descriptions = $config['columnDescriptions'] ?? [];
 
 			foreach ($config['columns'] as $column) {
+				$schema = $config['columnSchema'][$column];
 				if (fputcsv($handle, [
 					$exportName . '.csv',
 					$config['table'],
 					$config['title'] ?? $exportName,
 					$config['description'] ?? '',
 					$column,
-					$descriptions[$column] ?? '',
+					$descriptions[$column] ?? 'Stored field ' . $config['table'] . '.' . $column,
+					$schema['DATA_TYPE'], $schema['LENGTH'], $schema['PRECISION'], $schema['SCALE'], (int)$schema['NULLABLE'], (int)$schema['PRIMARY'],
 				], ';') === false) throw new RuntimeException('Could not write data dictionary row');
 			}
 		}
@@ -1234,6 +1341,12 @@ class DEEC_Export_Gobd
 			'dateFormat' => 'YYYY-MM-DD',
 			'dateTimeFormat' => 'YYYY-MM-DD HH:MM:SS',
 			'nullValue' => 'empty field',
+			'historical_evidence' => [
+				'master_data' => 'current stored records; no complete field-level old/new change log is available in the inspected application schema',
+				'document_snapshots' => 'billing/shipping addresses and position descriptions stored on each document; not an independent change log or proof that the record was never modified',
+				'last_modified' => 'last modification only; no previous values',
+				'other_logs' => 'contact history lists documents; usertracking records access; ebayhistory/magentohistory map imported orders. These are not master-data change histories. External backups or audit evidence require separate examination.',
+			],
 			'tables' => [],
 		];
 
@@ -1250,6 +1363,8 @@ class DEEC_Export_Gobd
 				'conditions' => $config['conditions'] ?? [],
 				'columns' => $config['columns'],
 				'columnDescriptions' => $config['columnDescriptions'] ?? [],
+				'columnSchema' => $config['columnSchema'],
+				'unavailableColumns' => $config['unavailableColumns'],
 				'relations' => $config['relations'] ?? [],
 			];
 		}
@@ -1287,6 +1402,13 @@ class DEEC_Export_Gobd
 		$content[] = 'data_dictionary.csv describes the meaning of exported files and columns.';
 		$content[] = 'relationships.csv describes known relationships between exported datasets.';
 		$content[] = 'metadata.json describes export settings, datasets, filters and exported columns.';
+		$content[] = '';
+		$content[] = 'Software-/Exportbeschreibung: DEWAWI ist eine mandantenfähige Warenwirtschaft mit Verkaufsbelegen, Positionen und Stamm-/Referenzdaten. Der Export liest gespeicherte Werte; er berechnet keine historischen Beträge neu und verändert keine Geschäftsdaten oder Archivregistrierungen.';
+		$content[] = 'Belegnummern sind sichtbare Geschäftsnummern; id ist der interne Datensatzschlüssel. Beziehungen gelten zusammen mit clientid. Beziehungen zu zeitlich früheren Belegen können außerhalb des gewählten Zeitraums liegen; daraus wird kein Datensatz erfunden.';
+		$content[] = 'Stammdatenhistorie: Geliefert wird der aktuell gespeicherte Stand. Die geprüfte Anwendung speichert keine vollständigen Feldänderungsfolgen mit Alt-/Neuwerten. modified/modifiedby belegen nur die letzte Änderung. Kontakthistorie ist eine Belegliste, usertracking ein Zugriffsprotokoll, Shop-Historien sind Importzuordnungen; sie ersetzen kein Stammdatenänderungsjournal.';
+		$content[] = 'Gespeicherte Belegadressen und Positionsbeschreibungen sind Beleg-Snapshots, keine Änderungslogs und kein Nachweis unveränderter Ursprungswerte. Frühere Stammdatenänderungen müssen gegebenenfalls durch gesonderte Sicherungen oder externe Nachweise belegt werden; sie werden nicht rekonstruiert oder erfunden.';
+		$content[] = 'Datentypen, Längen, Präzision, Nachkommastellen, NULL-Zulässigkeit und Primärschlüssel stammen aus dem tatsächlichen Datenbankschema (data_dictionary.csv und metadata.json/columnSchema). Fehlende Profilspalten stehen unter unavailableColumns; CSV-Leerfelder unterscheiden NULL nicht von leeren Zeichenketten.';
+		$content[] = 'Zeitraumgrenze: Maßgeblich ist ausschließlich das gespeicherte Belegdatum (einschließlich beider Grenzen), kein Archivierungsdatum. Undatierte oder außerhalb liegende Belege sind nicht diesem Zeitraum zugeordnet; Vollständigkeit gilt ausschließlich für den genannten Umfang. Fehlende Dateinamen und Löschkennzeichen entfernen keine datierten Belege aus der Übersicht. Der vollständige mandantenweite Archivaudit bleibt für undatierte Fälle erforderlich.';
 
 		$bytes = implode("\n", $content);
 		if (file_put_contents($filename, $bytes) !== strlen($bytes)) throw new RuntimeException('Could not write export README');
@@ -1332,6 +1454,7 @@ class DEEC_Export_Gobd
 			}
 			if (isset($expected['document_manifest.csv'])) $this->verifyDocumentManifest($zip, $expected);
 			if (isset($expected['document_files.csv'])) $this->verifyDelivery($zip);
+			$this->verifyCsvInventory($zip);
 		} finally { $zip->close(); }
 	}
 

@@ -54,6 +54,7 @@ try {
   check(!new FormData(form).has('include_documents'), 'Default form sends PDF option');
   check(document.querySelectorAll('input[name="include_documents"]').length === 1, 'Other exports received the PDF option');
   check(!box.parentElement.textContent.includes('ADMIN_'), 'Checkbox translation is missing');
+  check(/sechs Verkaufsbelegarten|six sales document types/.test(form.textContent), 'External outgoing scope is not visible');
   check(form.querySelector('input[name="from"]').required && form.querySelector('input[name="to"]').required, 'Date fields lost validation');
   form.elements.from.value = '2019-01-01'; form.elements.to.value = '2021-12-31'; box.click();
   let data = new URLSearchParams(new FormData(form));

@@ -78,8 +78,10 @@ foreach (DEEC_DocumentArchive::documents() as $module => $controllers) foreach (
 	exportDocument($module, $controller, 12, [$controller . 'date' => '2022-01-01']);
 	exportSeed($controller . 'pos', ['id' => 11, 'parentid' => 11, 'clientid' => 7, 'price' => 100, 'quantity' => 1, 'taxrate' => 19, 'total' => 119]);
 }
-$pdo->exec("UPDATE invoice SET header = 'Stored quote and slash \\\\ item' WHERE id = 11");
+exportDocument('purchases', 'purchaseorder', 26, ['purchaseorderdate' => '2018-01-01', 'filename' => null], false);
+$pdo->exec("UPDATE invoice SET header = 'Stored multiline\nquote and slash \\\\ item' WHERE id = 11");
 exportDocument('sales', 'invoice', 13, ['filename' => null], false);
+exportDocument('sales', 'invoice', 25, ['filename' => null, 'deleted' => 1, 'invoicedate' => '2021-12-31'], false);
 exportDocument('sales', 'invoice', 90, ['clientid' => 8]);
 exportDocument('sales', 'invoice', 14, [], false);
 $archive->store("%PDF-1.4\nunregistered file must not be used\n%%EOF\n", 7, 'sales', 'invoice', 14, 'pdf');
@@ -129,7 +131,7 @@ exportCheck($verification['sha256'] === hash_file('sha256', $destination . $name
 exportCheck((fileperms($destination . '.gobd-reports') & 0777) === 0700 && (fileperms($destination . '.gobd-reports/' . $name . '.audit.zip') & 0777) === 0600, 'Internal verification is not private');
 foreach (['document_index.csv', 'document_manifest.csv', 'missing_documents.csv', 'excluded_documents.csv', 'checksums.sha256'] as $private) exportCheck($zip->locateName($private) === false && $technical->locateName($private) !== false, 'Technical inventory leaked or was lost: ' . $private);
 $delivery = exportCsv($zip, 'document_files.csv');
-exportCheck(array_column($delivery, 'record_key') === array_column(exportCsv($technical, 'document_index.csv'), 'record_key') && count(array_filter($delivery, static fn(array $row) => $row['pdf_supplied'] === '1')) === 10, 'Public delivery inventory lost supplied or missing documents');
+exportCheck(array_column($delivery, 'record_key') === array_column(exportCsv($technical, 'document_index.csv'), 'record_key') && count(array_filter($delivery, static fn(array $row) => $row['pdf_supplied'] === '1')) === 8, 'Public delivery inventory lost supplied or missing documents');
 exportCheck(!array_intersect(['archive_parameters', 'historical_conflicts', 'sha256', 'status', 'reason'], array_keys($delivery[0])), 'Internal recovery columns leaked');
 foreach ($delivery as $row) {
  $refs = exportCsv($zip, $row['csv_file']);
@@ -140,9 +142,9 @@ foreach ($verification['entries'] as $entry => $proof) exportCheck(hash('sha256'
 $manifest = exportCsv($technical, 'document_manifest.csv');
 $missing = exportCsv($technical, 'missing_documents.csv');
 $index = exportCsv($technical, 'document_index.csv');
-exportCheck(count($manifest) === 10 && count($missing) === 8, 'Included/missing image counts differ: ' . count($manifest) . '/' . count($missing));
+exportCheck(count($manifest) === 8 && count($missing) === 9, 'Included/missing image counts differ: ' . count($manifest) . '/' . count($missing));
 $types = array_unique(array_column($manifest, 'controller'));
-exportCheck(count($types) === 8, 'Optional images omitted a document type');
+exportCheck(count($types) === 6 && !array_intersect(['quoterequest', 'purchaseorder'], $types), 'External outgoing scope differs');
 foreach ($manifest as $row) {
 	exportCheck(basename($row['zip_path']) === $row['document_number'] . '.pdf', 'ZIP uses an internal ID instead of the saved visible number');
 	exportCheck($row['clientid'] === '7' && $row['document_date'] >= '2019-01-01' && $row['document_date'] <= '2021-12-31', 'Document period or tenant isolation failed');
@@ -151,18 +153,49 @@ foreach ($manifest as $row) {
 	exportCheck(in_array($row['csv_key_value'], array_column($references, $row['csv_key_column']), true), 'Document CSV reference is unresolved');
 }
 exportCheck(count(array_filter($manifest, static fn(array $row) => $row['controller'] === 'quote' && $row['deleted'] === '1')) === 1, 'Deleted issued original was omitted');
-exportCheck(count(exportCsv($technical, 'excluded_documents.csv')) === 2, 'Deleted or excluded document inventory is missing');
+exportCheck(count(exportCsv($technical, 'excluded_documents.csv')) === 3, 'Deleted or excluded document inventory is missing');
 exportCheck(in_array('historical_versions_differ', array_column($missing, 'reason'), true), 'Unapproved historical conflict was silently exported');
 $recovered = array_values(array_filter($manifest, static fn(array $row) => $row['controller'] === 'invoice' && $row['documentid'] === '21'))[0];
 $recoveredDelivery = array_values(array_filter($delivery, static fn(array $row) => $row['controller'] === 'invoice' && $row['documentid'] === '21'))[0];
 exportCheck($recoveredDelivery['pdf_origin'] === 'reviewed_reconstruction_duplicate' && str_contains($zip->getFromName('readme.txt'), 'not unchanged historical original files'), 'Legacy approved reconstruction was mislabeled as a historical original file');
 exportCheck(str_contains($recovered['archive_parameters'], 'generated_at') && str_contains($recovered['historical_conflicts'], 'historical_versions_differ'), 'Approved recovery provenance or conflict evidence was lost');
 $metadata = json_decode($zip->getFromName('metadata.json'), true);
+exportCheck($metadata['export_kind'] === 'outgoing_documents' && $metadata['documents']['types'] === ['sales' => DEEC_DocumentArchive::documents()['sales']] && $metadata['documents']['outside_scope_types'] === ['purchases' => ['quoterequest', 'purchaseorder']], 'External scope is not explicit');
+exportCheck(!in_array('purchases', array_column($delivery, 'module'), true) && count($metadata['documents']['by_type']) === 6, 'Purchase records leaked into outgoing delivery');
+foreach ($metadata['documents']['by_type'] as $type => $count) {
+ $rows = array_values(array_filter($delivery, static fn(array $row) => $row['module'] . '/' . $row['controller'] === $type));
+ exportCheck($count['total'] === count($rows) && $count['delivered_pdfs'] === count(array_filter($rows, static fn(array $row) => $row['pdf_supplied'] === '1')) && $count['missing_pdfs'] === count(array_filter($rows, static fn(array $row) => $row['issued'] === '1' && $row['pdf_supplied'] === '0')), 'Per-type completeness differs from delivery');
+}
+exportCheck($metadata['documents']['by_type']['sales/invoice']['deleted_issued_without_pdf'] === 1 && $metadata['documents']['by_type']['sales/quote']['deleted_issued_without_pdf'] === 0, 'Deleted issued gaps were confused with delivered deleted originals');
+$deletedGap = array_values(array_filter($delivery, static fn(array $row) => $row['controller'] === 'invoice' && $row['documentid'] === '25'))[0];
+exportCheck($deletedGap['document_date'] === '2021-12-31' && $deletedGap['document_number'] === '10025' && $deletedGap['missing_reason'] === 'archive_registration_missing', 'Deleted issued end-boundary gap without filename was hidden');
+foreach ([$zip, $technical, $legacy] as $package) {
+ $meta = json_decode($package->getFromName('metadata.json'), true, 512, JSON_THROW_ON_ERROR); $csvNames = [];
+ for ($i = 0; $i < $package->numFiles; $i++) if (str_ends_with($package->getNameIndex($i), '.csv')) $csvNames[] = $package->getNameIndex($i);
+ exportCheck($csvNames === array_keys($meta['csv_files']), 'CSV inventory does not describe all actual CSVs');
+ foreach ($meta['csv_files'] as $file => $entry) exportCheck(count(exportCsv($package, $file)) === $entry['rows'] && str_contains($package->getFromName('readme.txt'), $file . ': ' . $entry['rows'] . "\n"), 'CSV rows or README list differs: ' . $file);
+}
+foreach (exportCsv($zip, 'relationships.csv') as $relation) {
+ exportCheck(in_array($relation['source_column'], $metadata['csv_files'][$relation['source_file']]['columns'], true) && in_array($relation['target_column'], $metadata['csv_files'][$relation['target_file']]['columns'], true), 'Relationship refers to an absent file or column');
+}
+exportCheck(in_array('prepayment', $metadata['csv_files']['invoices.csv']['columns'], true) && isset($metadata['csv_files']['invoice_positions.csv'], $metadata['csv_files']['creditnotes.csv'], $metadata['csv_files']['creditnote_positions.csv'], $metadata['csv_files']['customers.csv']), 'Fiscal or reference datasets were removed');
+$dictionary = exportCsv($zip, 'data_dictionary.csv');
+$price = array_values(array_filter($dictionary, static fn(array $row) => $row['file'] === 'invoice_positions.csv' && $row['column'] === 'price'))[0];
+exportCheck($price['data_type'] === 'decimal' && $price['precision'] === '12' && $price['scale'] === '4', 'Dictionary lacks actual amount precision');
+$idColumn = array_values(array_filter($dictionary, static fn(array $row) => $row['file'] === 'invoices.csv' && $row['column'] === 'id'))[0];
+exportCheck($idColumn['primary_key'] === '1' && $metadata['tables']['invoices']['columnSchema']['id']['PRIMARY'] === true, 'Dictionary key differs from actual schema');
+exportCheck(isset($metadata['historical_evidence']['master_data']) && str_contains($zip->getFromName('readme.txt'), 'keine vollständigen Feldänderungsfolgen') && str_contains($zip->getFromName('readme.txt'), 'Beleg-Snapshots'), 'Historical evidence limitations or software description are missing');
 exportCheck($metadata['documents']['summary']['complete'] === false && str_contains($zip->getFromName('readme.txt'), 'INCOMPLETE'), 'Missing images were presented as complete');
 foreach (explode("\n", trim($technical->getFromName('checksums.sha256'))) as $line) { [$sha, $file] = explode('  ', $line, 2); exportCheck(hash('sha256', str_ends_with($file, '.pdf') ? $zip->getFromName($file) : $technical->getFromName($file)) === $sha, 'ZIP checksum manifest differs'); }
 $empty = $export->export($destination, '2040-01-01', '2040-12-31', true);
 $emptyZip = new ZipArchive(); $emptyZip->open($destination . $empty);
 exportCheck(exportCsv($emptyZip, 'document_files.csv') === [] && json_decode($emptyZip->getFromName('metadata.json'), true)['documents']['summary']['complete'], 'Empty dated-document scope is invalid'); $emptyZip->close();
+$purchaseOnly = $export->export($destination, '2018-01-01', '2018-12-31', true);
+$purchaseOnlyZip = new ZipArchive(); $purchaseOnlyZip->open($destination . $purchaseOnly);
+exportCheck(exportCsv($purchaseOnlyZip, 'document_files.csv') === [] && json_decode($purchaseOnlyZip->getFromName('metadata.json'), true)['documents']['summary']['complete'], 'Out-of-scope purchase gap changed outgoing completeness'); $purchaseOnlyZip->close();
+$purchaseReview = $export->export($destination, '2018-01-01', '2018-12-31', false, true);
+$purchaseReviewZip = new ZipArchive(); $purchaseReviewZip->open($destination . $purchaseReview);
+exportCheck(count(exportCsv($purchaseReviewZip, 'missing_documents.csv')) === 1 && !json_decode($purchaseReviewZip->getFromName('metadata.json'), true)['documents']['summary']['complete'], 'Internal review hid the out-of-scope purchase gap'); $purchaseReviewZip->close();
 foreach ([['2019-02-30', '2021-12-31'], ['2022-01-01', '2021-12-31'], ['2019-1-01', '2021-12-31'], [null, '2021-12-31']] as [$from, $to]) exportReject(static fn() => $export->export($destination, $from, $to, true), 'Invalid export dates were accepted');
 $user = Zend_Registry::get('User'); Zend_Registry::set('User', array_replace($user, ['admin' => 0]));
 exportReject(static fn() => $export->export($destination, '2019-01-01', '2021-12-31', true), 'Non-admin exported document images'); Zend_Registry::set('User', $user);
@@ -189,6 +222,28 @@ class BrokenGobdReference extends DEEC_Export_Gobd
 		parent::createZip($filePath, $files, $zipFileName);
 	}
 }
+class FalseGobdInventory extends DEEC_Export_Gobd
+{
+	protected function createZip(string $filePath, array $files, string $zipFileName): void
+	{
+		$metadata = json_decode(file_get_contents($filePath . 'metadata.json'), true, 512, JSON_THROW_ON_ERROR);
+		$metadata['csv_files']['invoices.csv']['rows']++;
+		file_put_contents($filePath . 'metadata.json', json_encode($metadata, JSON_THROW_ON_ERROR));
+		parent::createZip($filePath, $files, $zipFileName);
+	}
+}
+exportReject(static fn() => (new FalseGobdInventory(7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'False delivered CSV row count was accepted');
+class FalseGobdCompleteness extends DEEC_Export_Gobd
+{
+	protected function createZip(string $filePath, array $files, string $zipFileName): void
+	{
+		$metadata = json_decode(file_get_contents($filePath . 'metadata.json'), true, 512, JSON_THROW_ON_ERROR);
+		$metadata['documents']['by_type']['sales/invoice']['deleted_issued_without_pdf'] = 0;
+		file_put_contents($filePath . 'metadata.json', json_encode($metadata, JSON_THROW_ON_ERROR));
+		parent::createZip($filePath, $files, $zipFileName);
+	}
+}
+exportReject(static fn() => (new FalseGobdCompleteness(7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'False deleted issued gap count was accepted');
 class MislabelledGobdPackage extends DEEC_Export_Gobd
 {
 	protected function createZip(string $filePath, array $files, string $zipFileName): void
@@ -356,6 +411,12 @@ $reviewFileBefore = [];
 foreach ([$base . '/files/documents', $reviewRoot] as $directory) foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS)) as $file) $reviewFileBefore[$file->getPathname()] = [filesize($file->getPathname()), hash_file('sha256', $file->getPathname()), filemtime($file->getPathname())];
 $reviewName = $export->export($destination, '2019-01-01', '2021-12-31', false, true);
 $reviewZip = new ZipArchive(); exportCheck($reviewZip->open($destination . $reviewName, ZipArchive::CHECKCONS) === true && str_starts_with($reviewName, 'document-review-'), 'Review package was not published separately');
+$purchaseOnly = $export->export($destination, '2018-01-01', '2018-12-31', true);
+$purchaseOnlyZip = new ZipArchive(); $purchaseOnlyZip->open($destination . $purchaseOnly);
+exportCheck(exportCsv($purchaseOnlyZip, 'document_files.csv') === [] && json_decode($purchaseOnlyZip->getFromName('metadata.json'), true)['documents']['summary']['complete'], 'Out-of-scope purchase gap changed outgoing completeness'); $purchaseOnlyZip->close();
+$purchaseReview = $export->export($destination, '2018-01-01', '2018-12-31', false, true);
+$purchaseReviewZip = new ZipArchive(); $purchaseReviewZip->open($destination . $purchaseReview);
+exportCheck(count(exportCsv($purchaseReviewZip, 'missing_documents.csv')) === 1 && !json_decode($purchaseReviewZip->getFromName('metadata.json'), true)['documents']['summary']['complete'], 'Internal review hid the out-of-scope purchase gap'); $purchaseReviewZip->close();
 foreach ([['2019-02-30', '2021-12-31'], ['2022-01-01', '2021-12-31'], [null, '2021-12-31']] as [$from, $to]) exportReject(static fn() => $export->export($destination, $from, $to, false, true), 'Invalid review dates were accepted');
 exportReject(static fn() => (new DEEC_Export_Gobd($db, 8, 42))->export($destination, '2019-01-01', '2021-12-31', false, true), 'Foreign tenant exported private review PDFs');
 Zend_Registry::set('User', array_replace($user, ['admin' => 0]));
@@ -365,6 +426,7 @@ exportReject(static fn() => $export->export($destination, '2019-01-01', '2021-12
 $pdo->prepare('UPDATE permission SET purchases = ? WHERE userid = 42')->execute([$rights['purchases']]);
 $reviewRows = exportCsv($reviewZip, 'document_manifest.csv');
 $reviewMetadata = json_decode($reviewZip->getFromName('metadata.json'), true);
+exportCheck(count($reviewMetadata['documents']['by_type']) === 8 && isset($reviewMetadata['documents']['by_type']['purchases/quoterequest'], $reviewMetadata['documents']['by_type']['purchases/purchaseorder']), 'Internal review lost purchase completeness counts');
 exportCheck($reviewMetadata['exportType'] === 'Internal document review' && $reviewMetadata['export_kind'] === 'internal_document_review' && str_starts_with($reviewZip->getFromName('readme.txt'), 'INTERNAL DOCUMENT REVIEW ONLY'), 'Review package incorrectly claims a GoBD original export');
 exportCheck($reviewZip->locateName('invoices.csv') === false, 'Review export unexpectedly contains fiscal CSV datasets');
 foreach (['archived_original', DEEC_DocumentReview::STATUS, 'missing', 'invalid', 'excluded'] as $status) exportCheck(in_array($status, array_column($reviewRows, 'status'), true), 'Review manifest lost status ' . $status);

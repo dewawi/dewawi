@@ -19,14 +19,16 @@ Das Ergebnis erscheint erst nach vollständiger Erstellung und Prüfung in der b
 
 ## Inhalt und Referenzen
 
-Das bisherige steuerliche CSV-Profil bleibt unverändert: Angebote, Aufträge, Rechnungen und Gutschriften samt Positionen sowie bestehende Stamm-/Referenzdaten. Die optionale Erweiterung ergänzt alle acht Belegarten:
+Das bisherige steuerliche CSV-Profil bleibt unverändert: Angebote, Aufträge, Rechnungen und Gutschriften samt Positionen sowie bestehende Stamm-/Referenzdaten. Die externe PDF-Option ist ausdrücklich auf sechs Ausgangsbelegarten begrenzt (`metadata.export_kind=outgoing_documents`):
 
-`sales/quote`, `sales/salesorder`, `sales/invoice`, `sales/deliveryorder`, `sales/creditnote`, `sales/reminder`, `purchases/quoterequest`, `purchases/purchaseorder`.
+`sales/quote`, `sales/salesorder`, `sales/invoice`, `sales/deliveryorder`, `sales/creditnote`, `sales/reminder`.
+
+`purchases/quoterequest` und `purchases/purchaseorder` sind ausdrücklich außerhalb dieses externen Auftragsumfangs (`documents.outside_scope_types`), keine angeblich gelieferten oder fehlenden Ausgangsbelege. Der interne Prüfexport und der vollständige Archivaudit behalten alle acht Belegarten. Einkaufsbelege werden weder gelöscht noch umklassifiziert. Bestehende Pakete werden nicht umgeschrieben; für den geänderten Umfang ein neues Paket erstellen.
 
 | ZIP-Inhalt | Bedeutung |
 | --- | --- |
-| Vorhandene CSVs, `data_dictionary.csv`, `relationships.csv` | Bisherige steuerliche Stamm-/Bewegungsdaten und Beziehungen, einschließlich vorhandener Lösch-/Stornokennzeichen; durch die PDF-Option unverändert. |
-| `document_files.csv` | Kompakte maschinell lesbare Übersicht aller datierten Belege: Identität, Nummer, Datum, historischer Dateiname, Lösch-/Ausstellungsmerkmal, CSV-Verknüpfung, `pdf_path`, `pdf_supplied`, `pdf_origin` und `delivery_note`. |
+| Vorhandene CSVs, `data_dictionary.csv`, `relationships.csv` | Bisherige steuerliche Stamm-/Bewegungsdaten und Beziehungen, einschließlich vorhandener Lösch-/Stornokennzeichen; Geschäftswerte durch die PDF-Option unverändert. Das Datenwörterbuch ergänzt tatsächliche Schemaangaben. |
+| `document_files.csv` | Kompakte maschinell lesbare Übersicht aller datierten Belege: Identität, Nummer, Datum, historischer Dateiname, Lösch-/Ausstellungsmerkmal, CSV-Verknüpfung, `pdf_path`, `pdf_supplied`, `pdf_origin`, `delivery_note` und `missing_reason`. |
 | `documents/<Modul>/<Belegart>/<Belegnummer>.pdf` | Unveränderte Bytes verifizierter registrierter Archivfassungen, einschließlich ausdrücklich gekennzeichneter freigegebener Rekonstruktionsdoppel; bei Namenskollisionen eindeutige Zusätze. Keine Mandanten-ID-Zwischenordner. |
 | `metadata.json`, `readme.txt` | Exportparameter, Übersichtsspalten, Umfang und ausdrückliche Kennzeichnung fehlender angeforderter Belegbilder. |
 
@@ -42,7 +44,38 @@ Die Auswahl richtet sich nach dem tatsächlich gespeicherten jeweiligen Belegdat
 
 Ein eindeutig registriertes, verifiziertes Original eines logisch gelöschten ausgestellten Belegs kann mit exportiert werden; der Löschstatus bleibt in der externen Übersicht und zusätzlich im internen Ausschlussinventar sichtbar. Der normale Dokumentdownload und seine Behandlung gelöschter Belege bleiben unverändert. Entwürfe ohne Ausstellungsmerkmal und ohne Originalreferenz stehen mit `delivery_note=draft_no_original_requested` in der Übersicht und erfordern kein Original-PDF. Unklare Datei-/Nummern-/Archivbezüge werden separat als ausgeschlossen ausgewiesen und verhindern eine positive Vollständigkeitsmeldung.
 
-Mehrdeutige Archivversionen, abweichende Dateinamen/Pfade, Größen-/Hashfehler und nicht freigegebene historische Versionskonflikte erscheinen als nicht gelieferte angeforderte PDFs in der Übersicht, mit den genauen Ursachen im internen Fehlstelleninventar. Gültig freigegebene Wiederherstellungen bleiben exportierbar; ihre tatsächlichen Archivierungs-/Erzeugungsdaten und historischen Konflikte bleiben intern erhalten. Dadurch wird keine neue steuerliche Dokumentänderung behauptet.
+Mehrdeutige Archivversionen, abweichende Dateinamen/Pfade, Größen-/Hashfehler und nicht freigegebene historische Versionskonflikte erscheinen als nicht gelieferte angeforderte PDFs in der Übersicht, mit dem konkreten Grundcode in `missing_reason` (z. B. `archive_registration_missing`, `archive_integrity_check_failed`, `archive_path_differs`, `archive_versions_ambiguous`, `historical_versions_differ`). Technische Details bleiben im internen Fehlstelleninventar; private Dateipfade und Kommentare werden nicht extern offengelegt. Gültig freigegebene Wiederherstellungen bleiben exportierbar; ihre tatsächlichen Archivierungs-/Erzeugungsdaten und historischen Konflikte bleiben intern erhalten. Dadurch wird keine neue steuerliche Dokumentänderung behauptet.
+
+## Vollständigkeit, CSV-Struktur und Stammdatenhistorie
+
+`metadata.documents.by_type` und `readme.txt` enthalten für jede angeforderte Belegart eigene Zähler, auch bei null Datensätzen:
+
+| Feld | Zählweise |
+| --- | --- |
+| `total` | Alle datierten Belegdatensätze des ausgewählten Mandanten und Zeitraums, einschließlich Entwürfen und gelöschten Belegen. |
+| `issued` | Datensätze mit dem bestehenden Ausstellungsmerkmal. |
+| `delivered_pdfs` | Belege mit tatsächlich gelieferter PDF, je Beleg einmal. Im internen Prüfexport kann dies auch eine unbestätigte Fassung sein; mehrere Fassungen erhöhen den Belegzähler nicht. |
+| `missing_pdfs` | Ausgestellte Belege ohne gelieferte PDF; im internen Prüfexport reine Verfügbarkeit, keine Originalgleichheit. |
+| `deleted_issued_without_pdf` | Darin enthaltene gelöschte ausgestellte Belege ohne PDF. Ein geliefertes gelöschtes Original ist keine Fehlstelle. |
+| `unresolved_original_references` | Nicht ausgestellte Datensätze mit ungeklärten Originalbezügen; im internen Export separat ausgeschlossene, nicht ausgestellte Datensätze. |
+
+Der externe Gesamtstatus bleibt unvollständig bei fehlenden angeforderten PDFs **oder** ungeklärten Originalbezügen. Eine Einschränkung auf Einkäufe wird weder in den Nenner noch in die Lieferzähler der Ausgangsbelege eingerechnet. Alle datierten Verkaufsbelege bleiben unabhängig von `filename`, Löschflag und Archivstatus sichtbar. `document_files.csv` nennt Art, ID, sichtbare Nummer, Datum und Grundcode jeder Lieferlücke. Die PDF-Verknüpfung zu `invoices.csv` erfolgt über `csv_file=invoices.csv`, `csv_key_column=id`, `csv_key_value=<interne ID>`; Dateiname oder sichtbare Rechnungsnummer ersetzen diesen Schlüssel nicht. Alle PDF-/CSV-Verweise werden vor Veröffentlichung auf tatsächlich enthaltene Schlüssel geprüft.
+
+`metadata.csv_files` enthält **sämtliche tatsächlich gelieferten CSV-Dateien**, ihre Kopfspalten und Datenzeilenzahlen ohne Kopfzeile. Das README listet dieselben Dateien und Zahlen. Es wird mit einem CSV-Parser gezählt, sodass mehrzeilige Felder und leere Datensätze korrekt behandelt werden. ZIP-Inhalt, CSV-Zeilenstruktur und Zähler werden nach dem Packen erneut geprüft; falsche Zeilen- oder Belegartenzahlen verhindern die Veröffentlichung. Das private technische Paket hat seine eigene, zu dessen CSV-Umfang passende Inventarliste.
+
+`data_dictionary.csv` ergänzt `data_type`, `length`, `precision`, `scale`, `nullable` und `primary_key` aus dem tatsächlichen Datenbankschema; `metadata.tables[*].columnSchema` enthält zusätzlich Schlüsselpositionen und weitere Strukturinformationen. `unavailableColumns` meldet nicht vorhandene optionale Profilspalten ausdrücklich, auch im README. `relationships.csv` beschreibt logische Verknüpfungen, nicht garantierte physische Fremdschlüssel. Sichtbare Beleg-/Kundennummern und interne IDs bleiben getrennt. Mandant und gegebenenfalls konfigurierte Modulfreigaben sind bei der fachlichen Interpretation der Beziehungen zu berücksichtigen. Eine Referenz auf einen Vorgänger außerhalb des Zeitraums erzeugt keine erfundenen CSV-Zeilen. Steuerliche Datensätze, Positionen, Gutschriften, `invoices.prepayment` und bestehende Stamm-/Referenzdaten bleiben erhalten; keine Beträge werden neu berechnet.
+
+Die [kompakte deutsche Software-/Exportbeschreibung](gobd-software-description.md) erläutert Umfang und Nachweisgrenzen. Diese Erläuterungen werden auch jedem erzeugten README beigefügt; `metadata.historical_evidence` unterscheidet Stammdatenstand, Beleg-Snapshots, letzte Änderung und sonstige Protokolle. Die im Repository geprüften Quellen enthalten **kein vollständiges Stammdatenänderungsjournal mit Alt-/Neuwerten**. Deshalb wird kein fiktiver Änderungsdatensatz exportiert. Tatsächliche frühere Stammdatenänderungen bleiben gegebenenfalls durch zusätzliche Sicherungen oder externe Nachweise zu belegen. Der Export behauptet keine Unveränderlichkeit der gespeicherten Beleg-Snapshots.
+
+## Fehlende Verkaufsbelege gezielt nachbearbeiten
+
+Keine produktive Suche oder Rekonstruktion ist Teil der lokalen Implementierung. Betreiber sollten zuerst auf einem konsistenten Datenbank-/Dateisnapshot den vorhandenen [vollständigen read-only Archivaudit](document-archive-migration.md) einschließlich nicht zugeordneter Dateien ausführen. Keine Typ-/Datumsfilter für den vollständigen Basisscan setzen; die alten Kontaktdateien und Versandkopien erhalten. Insbesondere undatierte, gelöschte ausgestellte und dateinamenlose Datensätze separat auswerten. Undatierte Belege sind keinem Prüfzeitraum zugeordnet und dürfen nicht durch erfundene Datierungen in dessen Vollständigkeitszähler gelangen.
+
+Danach die konkret fehlenden `sales/...`-Identitäten aus `document_files.csv` mit dem [Review-Sammler](document-review.md) und dem vorhandenen vollständigen Auditbericht abgleichen. Historische Originale und Versandkopien zuerst suchen; nur eindeutige Mandanten-/Belegzuordnungen und geprüfte Dateihashes verwenden. Mehrere unterschiedliche Fassungen behalten, keine automatische Auswahl. Der vollständige Audit erfasst zusätzlich Fälle außerhalb des externen PDF-Umfangs; dessen Fehlstellen verschwinden durch diese Exportbegrenzung nicht.
+
+Nur wenn kein Original vorliegt, geeignete fehlende Belege über [DocumentRecovery](document-recovery.md) **gezielt mit `--only=module/controller/id --action=prepare`** im bestehenden Sammellauf vorbereiten. Bereits vorhandene PDFs nicht neu rendern. Für die Vorbereitung die bestehenden Parameter `--config`, `--review`, `--run`, `--client` und `--operator-user` verwenden. Unzureichende Daten und Diagnosen bleiben gesperrt bzw. intern gekennzeichnet. Fachlichen Inhaltsvergleich und tatsächliche Herkunft dokumentbezogen an PDF-SHA und aktuellen Datenfingerprint binden; Freigaben erfolgen ausschließlich über vorhandene Auswahl-/Freigabe-/Importfunktionen. Der [gemischte Rechnungsbatch](invoice-original-batch.md) trennt wiedergefundene Originale von geprüften Rekonstruktionsdoppeln. Keine Hauptmigration, keine pauschale Neuerzeugung, keine direkte SQL-Registrierung.
+
+Nach fachlicher Klärung ein neues Exportpaket erstellen und dessen tatsächliche Fehlstellen und Zähler erneut prüfen. Ein unverifiziertes Prüf-PDF wird dadurch nicht automatisch zum historischen Original. Offene Herkunfts-/Papiernachweise, fehlende PDFs und nicht verfügbare Stammdatenhistorie bleiben im Abschluss der Betriebsprüfung fachlich zu beurteilen.
 
 ## Getrennter interner Prüfexport
 
