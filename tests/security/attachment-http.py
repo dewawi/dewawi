@@ -13,6 +13,9 @@ import time
 import urllib.error
 import urllib.request
 import zipfile
+import importlib.util
+import hashlib
+import sys
 
 root = Path(__file__).resolve().parents[2]
 apache = shutil.which("apache2")
@@ -21,6 +24,8 @@ if not apache:
 
 front = r'''<?php
 $root = ROOT_PATH;
+ob_start(); ob_start();
+if (str_contains($_SERVER['REQUEST_URI'] ?? '', 'large-fixture.zip')) ini_set('memory_limit', '24M');
 define('BASE_PATH', __DIR__);
 set_include_path($root . '/library' . PATH_SEPARATOR . get_include_path());
 spl_autoload_register(static function ($class) use ($root): void {
@@ -91,8 +96,9 @@ $adapter->rows = [
     ],
 ];
 Zend_Session::setOptions(['save_path' => BASE_PATH . '/session', 'use_cookies' => false, 'cache_limiter' => '']);
-if (isset($_SERVER['HTTP_X_ATTACHMENT_TEST_USER'])) {
-    $mode = $_SERVER['HTTP_X_ATTACHMENT_TEST_USER'];
+if (isset($_SERVER['HTTP_X_ATTACHMENT_TEST_USER']) || isset($_COOKIE['attachment_fixture_user'])) {
+    $mode = $_SERVER['HTTP_X_ATTACHMENT_TEST_USER'] ?? $_COOKIE['attachment_fixture_user'];
+    if (isset($_SERVER['HTTP_X_ATTACHMENT_TEST_USER'])) setcookie('attachment_fixture_user', $mode, ['path' => '/', 'httponly' => true, 'samesite' => 'Strict']);
     $clientId = in_array($mode, ['foreign', 'foreign_admin', 'shared_admin'], true) ? 8 : 7;
     $admin = in_array($mode, ['admin', 'admin_no_documents', 'foreign_admin', 'shared_admin'], true);
     Zend_Registry::set('User', ['id' => 42, 'clientid' => $clientId, 'admin' => $admin]);
@@ -112,6 +118,18 @@ if (isset($_SERVER['HTTP_X_ATTACHMENT_TEST_USER'])) {
     ];
 }
 Zend_Db_Table::setDefaultAdapter($adapter);
+if (str_ends_with(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/download-list')) {
+    class HttpExportView extends Zend_View {
+        public function translate($key) { return $key; }
+        public function baseUrl($url = null) { $base = dirname($_SERVER['SCRIPT_NAME']); return ($base === '/' ? '' : $base) . (string)$url; }
+    }
+    $view = new HttpExportView(['scriptPath' => $root . '/application/views/scripts']);
+    $list = new Admin_Model_List_Exports(['view' => $view, 'items' => [['id' => 1, 'name' => 'gobd-documents-large-fixture.zip', 'url' => '7/0/7', 'size' => 'large', 'created_datetime' => 'fixture']]]);
+    echo '<!doctype html><meta charset="utf-8"><div id="content">' . $list->render() . '</div>';
+    echo '<script src="' . $view->baseUrl() . '/library/jQuery/jquery-1.12.4.min.js"></script><script src="' . $view->baseUrl() . '/library/jQuery/jquery.cookie.js"></script>';
+    echo '<script>var language="en",module="admin",controller="export",action="index",id=0,baseUrl="' . $view->baseUrl() . '",cookiePath=baseUrl; function autosize(){}; $.fn.datepicker=function(){return this;}; window.fixtureOpened=0; window.open=function(){fixtureOpened++;};</script><script src="' . $view->baseUrl() . '/js/global.js"></script>';
+    exit;
+}
 $site = (new DEEC_Site_Resolver())->resolveByHost($_SERVER['HTTP_HOST'] ?? '');
 if ($site) Zend_Registry::set('SiteContext', $site);
 header_register_callback(static function (): void {
@@ -163,6 +181,9 @@ with tempfile.TemporaryDirectory(prefix="dewawi-attachment-http-") as temp:
     document_original.parent.mkdir(parents=True)
     document_original.write_bytes(contents)
     (site / "session").mkdir()
+    (site / 'js').symlink_to(root / 'js', target_is_directory=True)
+    (site / 'library').mkdir()
+    (site / 'library/jQuery').symlink_to(root / 'library/jQuery', target_is_directory=True)
     export_dir = site / 'files/export/7/0/7'
     export_dir.mkdir(parents=True)
     with zipfile.ZipFile(export_dir / 'gobd-documents-fixture.zip', 'w') as package:
@@ -174,6 +195,11 @@ with tempfile.TemporaryDirectory(prefix="dewawi-attachment-http-") as temp:
         package.writestr('metadata.json', '{"clientId":7,"export_kind":"internal_document_review","documents":{"enabled":true}}')
         package.writestr('review/7/sales/invoice/110395--5fc58b2c1dbc.pdf', contents)
     private_review_bytes = (export_dir / 'document-review-fixture.zip').read_bytes()
+    with zipfile.ZipFile(export_dir / 'gobd-documents-large-fixture.zip', 'w', compression=zipfile.ZIP_STORED) as package:
+        package.writestr('metadata.json', '{"clientId":7,"documents":{"enabled":true}}')
+        with package.open('large.bin', 'w') as entry:
+            for _ in range(64):
+                entry.write(b'large protected export fixture\n' * 32768)
     (export_dir / 'renamed-review.zip').write_bytes(private_review_bytes)
     (export_dir / 'document-review-invalid.zip').write_bytes(b'Unfinished private review package')
     (export_dir / 'gobd-export-legacy.zip').write_bytes(b'Private export package')
@@ -341,6 +367,31 @@ DocumentRoot "{site}"
         assert fetch('/' + stored_files[1], 'denied')[0] == 404, 'Missing quote permission accepted'
         assert fetch('/' + stored_files[2], 'allowed')[0] == 404, 'Contact rights bypassed invoice permission'
         document_export = '/files/export/7/0/7/gobd-documents-fixture.zip'
+        status, large_bytes = fetch('/files/export/7/0/7/gobd-documents-large-fixture.zip', 'admin')
+        assert status == 200 and large_bytes == (export_dir / 'gobd-documents-large-fixture.zip').read_bytes(), 'First buffered large download failed or changed bytes under 24 MB limit'
+        assert int(last_headers['Content-Length']) == len(large_bytes) and 'Content-Encoding' not in last_headers
+        assert fetch('/files/export/7/0/7/gobd-documents-large-fixture.zip', 'admin', 'HEAD') == (200, b''), 'Large HEAD response failed'
+        sys.dont_write_bytecode = True
+        spec = importlib.util.spec_from_file_location('dewawi_download_browser', root / 'tests/site/accessibility-http.py')
+        browser_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(browser_module)
+        browser = browser_module.WebDriver()
+        try:
+            downloads = temp / 'browser-downloads'
+            downloads.mkdir()
+            browser.command('POST', '/goog/cdp/execute', {'cmd': 'Browser.setDownloadBehavior', 'params': {'behavior': 'allow', 'downloadPath': str(downloads)}})
+            browser.command('POST', '/goog/cdp/execute', {'cmd': 'Network.enable', 'params': {}})
+            browser.command('POST', '/goog/cdp/execute', {'cmd': 'Network.setExtraHTTPHeaders', 'params': {'headers': {'X-Attachment-Test-User': 'admin'}}})
+            browser.navigate(f'http://127.0.0.1:{port}/download-list')
+            browser.execute("document.querySelector('a[data-native-download]').click()")
+            received = downloads / 'gobd-documents-large-fixture.zip'
+            for _ in range(200):
+                if received.exists() and received.stat().st_size == len(large_bytes): break
+                time.sleep(0.05)
+            assert received.exists() and hashlib.sha256(received.read_bytes()).digest() == hashlib.sha256(large_bytes).digest(), 'First real browser click did not download the complete large ZIP: ' + str(list(downloads.iterdir())) + str(browser.execute('return {url: location.href, body: document.body.textContent.slice(0,500)}'))
+            assert len(browser.command('GET', '/window/handles')) == 1 and browser.execute('return fixtureOpened') == 0, 'Export download opened an unnecessary tab'
+        finally:
+            browser.close()
         for user in [None, 'allowed', 'admin_no_documents', 'foreign_admin', 'shared_admin']:
             status, body = fetch(document_export, user)
             assert status == 404 and b'Private export package' not in body, 'GoBD images bypassed tenant or document read permissions'

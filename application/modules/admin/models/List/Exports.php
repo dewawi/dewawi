@@ -22,10 +22,10 @@ class Admin_Model_List_Exports extends DEEC_List
 					$name = (string)$list->getFieldValue($item, 'name');
 					$url = (string)$list->getFieldValue($item, 'url');
 
-					return '<a href="/files/export/'
-						. $list->escapeAttr($url)
+					return '<a data-native-download href="' . $list->escapeAttr($list->getView()->baseUrl()) . '/files/export/'
+						. $list->escapeAttr(implode('/', array_map('rawurlencode', explode('/', $url))))
 						. '/'
-						. $list->escapeAttr($name)
+						. $list->escapeAttr(rawurlencode($name))
 						. '" download="'
 						. $list->escapeAttr($name)
 						. '">'

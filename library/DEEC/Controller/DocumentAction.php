@@ -327,9 +327,8 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 			$response->setHeader('Cache-Control', 'private, no-store', true);
 			$response->setHeader('Content-Security-Policy', "sandbox; default-src 'none'", true);
 			$response->setHeader('X-DEWAWI-Document-Status', $result['status'], true);
-			$response->sendHeaders();
-			if ($this->getRequest()->getMethod() !== 'HEAD') fpassthru($result['stream']);
-		} finally { fclose($result['stream']); }
+			DEEC_Emailattachment::streamResponse($result['stream'], $response, $this->getRequest()->getMethod());
+		} finally { if (is_resource($result['stream'])) fclose($result['stream']); }
 		exit;
 	}
 
@@ -483,9 +482,9 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		$response->setHeader('X-Content-Type-Options', 'nosniff', true);
 		$response->setHeader('Cache-Control', 'private, no-store', true);
 		$response->setHeader('Content-Security-Policy', "sandbox; default-src 'none'", true);
-		$response->sendHeaders();
-
-		if ($this->getRequest()->getMethod() !== 'HEAD') readfile($result['path']);
+		$stream = fopen($result['path'], 'rb');
+		if (!$stream) throw new RuntimeException('PDF file not readable');
+		DEEC_Emailattachment::streamResponse($stream, $response, $this->getRequest()->getMethod());
 		exit;
 	}
 

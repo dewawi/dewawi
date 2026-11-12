@@ -239,9 +239,7 @@ class Contacts_AttachmentController extends DEEC_Controller_Action
 
 	protected function sendAttachmentFile($stream): void
 	{
-		$this->getResponse()->sendHeaders();
-		if($this->getRequest()->getMethod() !== 'HEAD') fpassthru($stream);
-		fclose($stream);
+		DEEC_Emailattachment::streamResponse($stream, $this->getResponse(), $this->getRequest()->getMethod());
 		exit;
 	}
 

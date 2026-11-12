@@ -2,6 +2,25 @@
 
 class DEEC_Emailattachment {
 
+	public static function streamResponse($stream, Zend_Controller_Response_Http $response, string $method): void
+	{
+		try {
+			if (Zend_Session::isStarted()) Zend_Session::writeClose();
+			ini_set('zlib.output_compression', '0');
+			while (ob_get_level() > 0) if (!ob_end_clean()) throw new RuntimeException('Download output buffer cannot be disabled');
+			$response->clearHeader('Content-Encoding');
+			header_remove('Content-Encoding');
+			$response->sendHeaders();
+			if ($method === 'HEAD') return;
+			while (!feof($stream) && !connection_aborted()) {
+				$chunk = fread($stream, 65536);
+				if ($chunk === false) throw new RuntimeException('Download read failed');
+				echo $chunk;
+				flush();
+			}
+		} finally { fclose($stream); }
+	}
+
 	public static function validFilename(string $filename): bool
 	{
 		return $filename !== '' && strlen($filename) <= 255 && !in_array($filename, ['.', '..'], true)
