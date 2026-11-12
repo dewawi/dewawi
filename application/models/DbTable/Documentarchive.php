@@ -13,6 +13,23 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 		return $this->getOriginal($context['parent'], (int)$context['clientid'], $module, $controller, $format);
 	}
 
+	public function getForExport(int $documentId, string $module, string $controller): ?array
+	{
+		$user = Zend_Registry::get('User');
+		$client = Zend_Registry::get('Client');
+		if (empty($user['admin']) || (int)$user['clientid'] !== (int)$client['id'] || !DEEC_DocumentArchive::validDocumentType($module, $controller)
+			|| !(new DEEC_Permission($user))->hasPermission($module, $controller, 'view')) throw new RuntimeException('Document export access denied');
+		$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
+		$db = new $class();
+		$document = $db->fetchRow($db->select()->where('id = ?', $documentId)->where('clientid = ?', (int)$client['id']));
+		if (!$document || !DEEC_Permission::isDocumentReadonly($module, $controller, $document->toArray())) return null;
+		$rows = $this->fetchAll($this->select()->where('documentid = ?', $documentId)->where('module = ?', $module)->where('controller = ?', $controller)
+			->where('clientid = ?', (int)$client['id'])->where('format = ?', 'pdf'))->toArray();
+		if (!$rows) return null;
+		if (count($rows) !== 1 || (int)$rows[0]['version'] !== 1) throw new RuntimeException('Document archive versions are ambiguous');
+		return $this->getOriginal($document->toArray(), (int)$client['id'], $module, $controller, 'pdf');
+	}
+
 	public function getForSiteQuote(int $documentId): ?array
 	{
 		$context = $this->getSiteQuoteContext($documentId);

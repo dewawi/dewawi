@@ -5,6 +5,7 @@ class DEEC_Export_Gobd
 	protected $db;
 	protected $clientId;
 	protected $userId;
+	protected array $documentFiles = [];
 
 	public function __construct($db, int $clientId, ?int $userId = null)
 	{
@@ -13,7 +14,77 @@ class DEEC_Export_Gobd
 		$this->userId = $userId;
 	}
 
-	public function export(string $filePath, ?string $from, ?string $to): string
+	public static function validatePeriod(?string $from, ?string $to, bool $required = false): void
+	{
+		if (!$required && $from === null && $to === null) return;
+		foreach ([$from, $to] as $date) if (!is_string($date) || !preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', $date) || !checkdate((int)substr($date, 5, 2), (int)substr($date, 8, 2), (int)substr($date, 0, 4))) throw new InvalidArgumentException('Invalid GoBD export period');
+		if ($from > $to) throw new InvalidArgumentException('GoBD export period is reversed');
+	}
+
+	public static function assertDocumentAccess(int $clientId, ?int $userId = null): void
+	{
+		if (!Zend_Registry::isRegistered('User') || !Zend_Registry::isRegistered('Client')) throw new RuntimeException('Document export access denied');
+		$user = Zend_Registry::get('User');
+		$client = Zend_Registry::get('Client');
+		if (empty($user['id']) || empty($user['admin']) || (int)$user['clientid'] !== $clientId || (int)$client['id'] !== $clientId || ($userId !== null && (int)$user['id'] !== $userId)) throw new RuntimeException('Document export access denied');
+		$permission = new DEEC_Permission($user);
+		foreach (DEEC_DocumentArchive::documents() as $module => $controllers) foreach ($controllers as $controller) if (!$permission->hasPermission($module, $controller, 'view')) throw new RuntimeException('Document export permission denied: ' . $module . '/' . $controller);
+	}
+
+	public static function assertPackageAccess(string $path, int $clientId): void
+	{
+		$required = str_starts_with(basename($path), 'gobd-documents-');
+		$zip = new ZipArchive();
+		if ($zip->open($path, ZipArchive::RDONLY) !== true) {
+			if ($required) throw new RuntimeException('Document package is invalid');
+			return;
+		}
+		try {
+			$stat = $zip->statName('metadata.json');
+			if ($stat) {
+				if ($stat['size'] > 1048576) throw new RuntimeException('Export metadata is too large');
+				$metadata = json_decode($zip->getFromName('metadata.json'), true, 512, JSON_THROW_ON_ERROR);
+				if (!empty($metadata['documents']['enabled'])) {
+					if ((int)($metadata['clientId'] ?? 0) !== $clientId) throw new RuntimeException('Foreign document package');
+					self::assertDocumentAccess($clientId);
+					return;
+				}
+			}
+			if ($required) throw new RuntimeException('Document package metadata is missing');
+		} finally { $zip->close(); }
+	}
+
+	public function export(string $filePath, ?string $from, ?string $to, bool $includeDocuments = false): string
+	{
+		self::validatePeriod($from, $to, $includeDocuments);
+		if ($includeDocuments) self::assertDocumentAccess($this->clientId, $this->userId);
+		$destination = rtrim($filePath, '/') . '/';
+		DEEC_Emailattachment::checkPath(rtrim($destination, '/'));
+		if (!is_dir($destination) || !is_writable($destination)) throw new RuntimeException('Export directory is unavailable');
+		$stage = $destination . '.gobd-' . bin2hex(random_bytes(16)) . '/';
+		if (!@mkdir($stage, 0700)) throw new RuntimeException('Export staging is unavailable');
+		$transaction = false;
+		try {
+			if ($includeDocuments && !$this->db->getConnection()->inTransaction()) {
+				$this->db->query('SET TRANSACTION READ ONLY');
+				$this->db->beginTransaction();
+				$transaction = true;
+			}
+			$name = $this->buildPackage($stage, $from, $to, $includeDocuments);
+			if ($transaction) { $this->db->rollBack(); $transaction = false; }
+			if (!@chmod($stage . $name, 0600) || !@link($stage . $name, $destination . $name)) throw new RuntimeException('Export could not be published without overwriting another file');
+			return $name;
+		} finally {
+			try { if ($transaction) $this->db->rollBack(); }
+			finally {
+				foreach (new FilesystemIterator($stage) as $file) if (!$file->isDir() || $file->isLink()) unlink($file->getPathname());
+				rmdir($stage);
+				$this->documentFiles = [];
+			}
+		}
+	}
+
+	protected function buildPackage(string $filePath, ?string $from, ?string $to, bool $includeDocuments): string
 	{
 		$profile = $this->getProfile();
 		$resolvedProfile = [];
@@ -42,11 +113,103 @@ class DEEC_Export_Gobd
 
 		$this->writeReadme($filePath . 'readme.txt', $from, $to);
 		$files[] = 'readme.txt';
+		if ($includeDocuments) {
+			$summary = $this->writeDocuments($filePath, $resolvedProfile, $from, $to);
+			$files = array_merge($files, ['document_index.csv', 'document_manifest.csv', 'missing_documents.csv', 'excluded_documents.csv']);
+			$metadata = json_decode(file_get_contents($filePath . 'metadata.json'), true, 512, JSON_THROW_ON_ERROR);
+			$metadata['documents'] = ['enabled' => true, 'types' => DEEC_DocumentArchive::documents(), 'scope' => 'stored document date, inclusive; issued documents and excluded original references', 'summary' => $summary];
+			$bytes = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+			if (file_put_contents($filePath . 'metadata.json', $bytes) !== strlen($bytes)) throw new RuntimeException('Could not write export metadata');
+			$bytes = "\n\nArchived PDF document images: " . ($summary['complete'] ? 'COMPLETE for the stated scope' : 'INCOMPLETE')
+				. "\n" . json_encode($summary, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)
+				. "\nOnly registered version-1 Original PDFs with verified size and SHA-256 are included. No rendering or recovery staging files are used."
+				. "\nDocument dates determine the period; archival dates do not. Deleted issued documents remain identifiable in excluded_documents.csv. Drafts without original references do not require PDF originals."
+				. "\ndocument_index.csv identifies all eight document types and links existing fiscal CSV rows by file and id; other types use record_key in this index."
+				. "\ndocument_manifest.csv records included originals and stored archive/recovery provenance. missing_documents.csv records missing, invalid or excluded images."
+				. "\nRecorded historical conflicts remain traceable. Approved restorations are not new fiscal corrections. Header/EOF and hash verification do not prove historical content equivalence."
+				. "\nchecksums.sha256 covers every ZIP entry except itself. Verify with sha256sum -c checksums.sha256 after extraction. Completeness refers only to this stored dated-document scope, not overall legal compliance.\n";
+			if (file_put_contents($filePath . 'readme.txt', $bytes, FILE_APPEND) !== strlen($bytes)) throw new RuntimeException('Could not write export README');
+			$lines = [];
+			foreach ($files as $file) $lines[] = hash_file('sha256', $filePath . $file) . '  ' . $file;
+			foreach ($this->documentFiles as $name => $entry) $lines[] = $entry['sha256'] . '  ' . $name;
+			$bytes = implode("\n", $lines) . "\n";
+			if (file_put_contents($filePath . 'checksums.sha256', $bytes) !== strlen($bytes)) throw new RuntimeException('Could not write export checksums');
+			$files[] = 'checksums.sha256';
+		}
 
 		$zipFileName = $this->buildZipFileName($from, $to);
+		if ($includeDocuments) $zipFileName = str_replace('gobd-export-', 'gobd-documents-', substr($zipFileName, 0, -4)) . '-' . bin2hex(random_bytes(8)) . '.zip';
 		$this->createZip($filePath, $files, $zipFileName);
 
 		return $zipFileName;
+	}
+
+	protected function writeDocuments(string $directory, array $profile, string $from, string $to): array
+	{
+		$fields = ['record_key', 'clientid', 'module', 'controller', 'documentid', 'document_number', 'document_date', 'filename', 'deleted', 'issued', 'csv_file', 'csv_key_column', 'csv_key_value', 'status', 'reason', 'archive_version', 'zip_path', 'filesize', 'sha256', 'archived', 'archivedby', 'correctionarchiveid', 'archive_parameters', 'historical_conflicts'];
+		$handles = [];
+		foreach (['document_index', 'document_manifest', 'missing_documents', 'excluded_documents'] as $name) {
+			$handles[$name] = fopen($directory . $name . '.csv', 'xb');
+			if (!$handles[$name] || fputcsv($handles[$name], $fields, ';', '"', '') === false) throw new RuntimeException('Could not create document manifest');
+		}
+		$summary = ['dated_documents' => 0, 'issued' => 0, 'included' => 0, 'missing' => 0, 'excluded' => 0, 'deleted_issued' => 0, 'complete' => true];
+		$archive = new DEEC_DocumentArchive(BASE_PATH);
+		$archiveDb = new Application_Model_DbTable_Documentarchive();
+		try {
+			foreach (DEEC_DocumentArchive::documents() as $module => $controllers) foreach ($controllers as $controller) {
+				$dataset = null;
+				foreach ($profile as $name => $config) if ($config['table'] === $controller) $dataset = $name . '.csv';
+				$columns = ['id', 'clientid', 'contactid', 'filename', $controller . 'id', $controller . 'date', 'state', 'completed', 'cancelled', 'deleted'];
+				$query = $this->db->query('SELECT ' . implode(', ', array_map([$this, 'quoteIdentifier'], $columns)) . ' FROM ' . $this->quoteIdentifier($controller) . ' WHERE clientid = ? AND ' . $this->quoteIdentifier($controller . 'date') . ' >= ? AND ' . $this->quoteIdentifier($controller . 'date') . ' <= ? ORDER BY id', [$this->clientId, $from, $to]);
+				while ($document = $query->fetch(Zend_Db::FETCH_ASSOC)) {
+					$summary['dated_documents']++;
+					$issued = DEEC_Permission::isDocumentReadonly($module, $controller, $document);
+					$key = $this->clientId . '/' . $module . '/' . $controller . '/' . $document['id'];
+					$row = ['record_key' => $key, 'clientid' => $this->clientId, 'module' => $module, 'controller' => $controller, 'documentid' => $document['id'], 'document_number' => $document[$controller . 'id'], 'document_date' => $document[$controller . 'date'],
+						'filename' => $document['filename'], 'deleted' => $document['deleted'], 'issued' => $issued ? 1 : 0, 'csv_file' => $dataset ?? 'document_index.csv', 'csv_key_column' => $dataset ? 'id' : 'record_key', 'csv_key_value' => $dataset ? $document['id'] : $key, 'status' => 'not_issued', 'reason' => ''];
+					$excluded = $issued && !empty($document['deleted']);
+					if ($issued) {
+						$summary['issued']++;
+						if ($excluded) $summary['deleted_issued']++;
+						$row['status'] = 'missing';
+						try {
+							$original = $archiveDb->getForExport((int)$document['id'], $module, $controller);
+							if (!$original) $row['reason'] = 'archive_registration_missing';
+							else {
+								$client = Zend_Registry::get('Client');
+								$contacts = $this->db->fetchCol('SELECT id FROM contact WHERE clientid = ? AND contactid = ? AND deleted = 0 ORDER BY id', [(int)($client['modules']['contacts'] ?? $this->clientId), $document['contactid']]);
+								$plan = $archive->plan($document + ['module' => $module, 'controller' => $controller, 'document_number' => $document[$controller . 'id'], 'contact_match_count' => count($contacts), 'contact_record_id' => count($contacts) === 1 ? (int)$contacts[0] : 0], [$original]);
+								$conflicts = $plan['historical_conflicts'] ?? [];
+								if (!empty($plan['reason'])) $conflicts[] = $plan['reason'];
+								$row += ['archive_version' => $original['version'], 'archived' => $original['archived'], 'archivedby' => $original['archivedby'], 'correctionarchiveid' => $original['correctionarchiveid'], 'archive_parameters' => $original['parameters'], 'historical_conflicts' => json_encode(array_values(array_unique($conflicts)), JSON_THROW_ON_ERROR)];
+								if (in_array($plan['reason'], ['historical_versions_differ', 'canonical_version_differs', 'invalid_historical_source'], true)) $row['reason'] = $plan['reason'];
+								else {
+									$name = 'documents/' . $this->clientId . '/' . $module . '/' . $controller . '/' . $document['id'] . '.pdf';
+									$this->documentFiles[$name] = ['path' => BASE_PATH . '/' . $original['path'], 'size' => (int)$original['filesize'], 'sha256' => $original['sha256']];
+									$row += ['zip_path' => $name, 'filesize' => $original['filesize'], 'sha256' => $original['sha256']];
+									$row['filename'] = $original['filename'];
+									$row['status'] = 'included';
+									$summary['included']++;
+								}
+							}
+						} catch (RuntimeException | InvalidArgumentException $exception) { $row['reason'] = $exception->getMessage(); }
+						if ($row['status'] === 'missing') $summary['missing']++;
+					} elseif ($document[$controller . 'id'] !== null || !empty($document['filename']) || $this->db->fetchOne('SELECT COUNT(*) FROM documentarchive WHERE clientid = ? AND module = ? AND controller = ? AND documentid = ? AND format = ?', [$this->clientId, $module, $controller, $document['id'], 'pdf'])) {
+						$row['status'] = 'excluded';
+						$row['reason'] = 'no_issue_marker';
+						$excluded = true;
+						$summary['excluded']++;
+					}
+					$line = array_map(static fn(string $field) => $row[$field] ?? '', $fields);
+					if (fputcsv($handles['document_index'], $line, ';', '"', '') === false) throw new RuntimeException('Could not write document index');
+					if ($row['status'] === 'included' && fputcsv($handles['document_manifest'], $line, ';', '"', '') === false) throw new RuntimeException('Could not write document manifest');
+					if (in_array($row['status'], ['missing', 'excluded'], true) && fputcsv($handles['missing_documents'], $line, ';', '"', '') === false) throw new RuntimeException('Could not write missing document manifest');
+					if ($excluded && fputcsv($handles['excluded_documents'], $line, ';', '"', '') === false) throw new RuntimeException('Could not write excluded document manifest');
+				}
+			}
+		} finally { foreach ($handles as $handle) if ($handle) fclose($handle); }
+		$summary['complete'] = $summary['missing'] === 0 && $summary['excluded'] === 0;
+		return $summary;
 	}
 
 	protected function fetchData(array $config, array $columns, ?string $from, ?string $to): array
@@ -736,7 +899,7 @@ class DEEC_Export_Gobd
 			throw new RuntimeException('Could not create CSV file: ' . $filename);
 		}
 
-		fputcsv($handle, $columns, ';');
+		if (fputcsv($handle, $columns, ';') === false) throw new RuntimeException('Could not write export CSV header');
 
 		foreach ($rows as $row) {
 			$line = [];
@@ -745,9 +908,10 @@ class DEEC_Export_Gobd
 				$line[] = $this->normalizeValue($row[$column] ?? null);
 			}
 
-			fputcsv($handle, $line, ';');
+			if (fputcsv($handle, $line, ';') === false) throw new RuntimeException('Could not write export CSV row');
 		}
 
+		if (!fflush($handle)) throw new RuntimeException('Could not flush export CSV');
 		fclose($handle);
 	}
 
@@ -778,30 +942,31 @@ class DEEC_Export_Gobd
 			);
 		}
 
-		fputcsv($handle, [
+		if (fputcsv($handle, [
 			'file',
 			'table',
 			'title',
 			'description',
 			'column',
 			'column_description',
-		], ';');
+		], ';') === false) throw new RuntimeException('Could not write data dictionary header');
 
 		foreach ($profile as $exportName => $config) {
 			$descriptions = $config['columnDescriptions'] ?? [];
 
 			foreach ($config['columns'] as $column) {
-				fputcsv($handle, [
+				if (fputcsv($handle, [
 					$exportName . '.csv',
 					$config['table'],
 					$config['title'] ?? $exportName,
 					$config['description'] ?? '',
 					$column,
 					$descriptions[$column] ?? '',
-				], ';');
+				], ';') === false) throw new RuntimeException('Could not write data dictionary row');
 			}
 		}
 
+		if (!fflush($handle)) throw new RuntimeException('Could not flush data dictionary');
 		fclose($handle);
 	}
 
@@ -815,26 +980,27 @@ class DEEC_Export_Gobd
 			);
 		}
 
-		fputcsv($handle, [
+		if (fputcsv($handle, [
 			'source_file',
 			'source_column',
 			'target_file',
 			'target_column',
 			'description',
-		], ';');
+		], ';') === false) throw new RuntimeException('Could not write relationship header');
 
 		foreach ($profile as $exportName => $config) {
 			foreach ($config['relations'] ?? [] as $relation) {
-				fputcsv($handle, [
+				if (fputcsv($handle, [
 					$exportName . '.csv',
 					$relation['column'],
 					$relation['target'],
 					$relation['targetColumn'],
 					$relation['description'] ?? '',
-				], ';');
+				], ';') === false) throw new RuntimeException('Could not write relationship row');
 			}
 		}
 
+		if (!fflush($handle)) throw new RuntimeException('Could not flush relationships');
 		fclose($handle);
 	}
 
@@ -874,10 +1040,8 @@ class DEEC_Export_Gobd
 			];
 		}
 
-		file_put_contents(
-			$filename,
-			json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-		);
+		$bytes = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+		if (file_put_contents($filename, $bytes) !== strlen($bytes)) throw new RuntimeException('Could not write export metadata');
 	}
 
 	protected function writeReadme(string $filename, ?string $from, ?string $to): void
@@ -910,34 +1074,126 @@ class DEEC_Export_Gobd
 		$content[] = 'relationships.csv describes known relationships between exported datasets.';
 		$content[] = 'metadata.json describes export settings, datasets, filters and exported columns.';
 
-		file_put_contents($filename, implode("\n", $content));
+		$bytes = implode("\n", $content);
+		if (file_put_contents($filename, $bytes) !== strlen($bytes)) throw new RuntimeException('Could not write export README');
 	}
 
 	protected function createZip(string $filePath, array $files, string $zipFileName): void
 	{
 		$zip = new ZipArchive();
-
-		if ($zip->open($filePath . $zipFileName, ZipArchive::CREATE) !== true) {
+		$path = $filePath . $zipFileName;
+		if ($zip->open($path, ZipArchive::CREATE | ZipArchive::EXCL) !== true) {
 			throw new RuntimeException('Could not create ZIP archive.');
 		}
-
-		foreach ($files as $file) {
-			$fullPath = $filePath . $file;
-
-			if (file_exists($fullPath)) {
-				$zip->addFile($fullPath, $file);
+		$expected = $this->documentFiles;
+		try {
+			foreach ($files as $file) {
+				$source = $filePath . $file;
+				if (!is_file($source) || !is_readable($source) || is_link($source)) throw new RuntimeException('Export source is unavailable');
+				$expected[$file] = ['path' => $source, 'size' => filesize($source), 'sha256' => hash_file('sha256', $source)];
 			}
+			foreach ($expected as $name => $entry) if (!$zip->addFile($entry['path'], $name)) throw new RuntimeException('Could not add export entry');
+			if (!$zip->close()) throw new RuntimeException('Could not finish ZIP archive');
+		} catch (Throwable $exception) {
+			try { $zip->close(); } catch (Throwable $ignored) {}
+			throw $exception;
 		}
+		$this->verifyZip($path, $expected);
+		foreach ($this->documentFiles as $entry) if (filesize($entry['path']) !== $entry['size'] || hash_file('sha256', $entry['path']) !== $entry['sha256']) throw new RuntimeException('Archive original changed during export');
+	}
 
-		$zip->close();
-
-		foreach ($files as $file) {
-			$fullPath = $filePath . $file;
-
-			if (file_exists($fullPath)) {
-				unlink($fullPath);
+	protected function verifyZip(string $path, array $expected): void
+	{
+		$zip = new ZipArchive();
+		if ($zip->open($path, ZipArchive::CHECKCONS) !== true) throw new RuntimeException('ZIP integrity check failed');
+		try {
+			if ($zip->numFiles !== count($expected)) throw new RuntimeException('ZIP entries are incomplete');
+			foreach ($expected as $name => $entry) {
+				$stat = $zip->statName($name);
+				$stream = $zip->getStream($name);
+				if (!$stat || !$stream || $stat['size'] !== $entry['size']) throw new RuntimeException('ZIP entry size differs');
+				$hash = hash_init('sha256');
+				try { $size = hash_update_stream($hash, $stream); } finally { fclose($stream); }
+				if ($size !== $entry['size'] || hash_final($hash) !== $entry['sha256']) throw new RuntimeException('ZIP entry hash differs');
 			}
+			if (isset($expected['document_manifest.csv'])) $this->verifyDocumentManifest($zip, $expected);
+		} finally { $zip->close(); }
+	}
+
+	protected function verifyDocumentManifest(ZipArchive $zip, array $expected): void
+	{
+		$lookup = [];
+		$seen = [];
+		$stream = $zip->getStream('document_manifest.csv');
+		try {
+			$fields = fgetcsv($stream, 0, ';', '"', '');
+			while (($values = fgetcsv($stream, 0, ';', '"', '')) !== false) {
+				if (count($fields) !== count($values)) throw new RuntimeException('Invalid document manifest row');
+				$row = array_combine($fields, $values);
+				$entry = $expected[$row['zip_path']] ?? null;
+				if (!$entry || isset($seen[$row['zip_path']]) || (int)$row['filesize'] !== $entry['size'] || $row['sha256'] !== $entry['sha256'] || (int)$row['clientid'] !== $this->clientId) throw new RuntimeException('Document manifest differs from ZIP entries');
+				$seen[$row['zip_path']] = true;
+				$file = $row['csv_file'];
+				if (!isset($lookup[$file])) {
+					if (!isset($expected[$file])) throw new RuntimeException('Referenced CSV is missing');
+					$csv = $zip->getStream($file);
+					try {
+						$escape = $file === 'document_index.csv' ? '' : '\\';
+						$columns = fgetcsv($csv, 0, ';', '"', $escape);
+						$column = array_search($row['csv_key_column'], $columns, true);
+						if ($column === false) throw new RuntimeException('Referenced CSV key is missing');
+						$lookup[$file] = [];
+						while (($record = fgetcsv($csv, 0, ';', '"', $escape)) !== false) $lookup[$file][(string)$record[$column]] = true;
+					} finally { fclose($csv); }
+				}
+				if (!isset($lookup[$file][$row['csv_key_value']])) throw new RuntimeException('Referenced CSV row is missing');
+			}
+		} finally { fclose($stream); }
+		if (count($seen) !== count($this->documentFiles)) throw new RuntimeException('Document manifest is incomplete');
+		$this->verifyDocumentInventory($zip);
+		$stream = $zip->getStream('checksums.sha256');
+		$checksums = [];
+		try {
+			while (($line = fgets($stream)) !== false) {
+				[$sha, $name] = explode('  ', rtrim($line, "\r\n"), 2);
+				if (!isset($expected[$name]) || isset($checksums[$name]) || $name === 'checksums.sha256' || $expected[$name]['sha256'] !== $sha) throw new RuntimeException('Checksum manifest differs');
+				$checksums[$name] = true;
+			}
+		} finally { fclose($stream); }
+		if (count($checksums) !== count($expected) - 1) throw new RuntimeException('Checksum manifest is incomplete');
+	}
+
+	protected function verifyDocumentInventory(ZipArchive $zip): void
+	{
+		$metadata = json_decode($zip->getFromName('metadata.json'), true, 512, JSON_THROW_ON_ERROR);
+		$summary = $metadata['documents']['summary'];
+		$sets = [];
+		foreach (['document_index', 'document_manifest', 'missing_documents', 'excluded_documents'] as $file) {
+			$sets[$file] = [];
+			$stream = $zip->getStream($file . '.csv');
+			try {
+				$fields = fgetcsv($stream, 0, ';', '"', '');
+				while (($values = fgetcsv($stream, 0, ';', '"', '')) !== false) {
+					if (count($values) !== count($fields)) throw new RuntimeException('Incomplete document inventory row');
+					$row = array_combine($fields, $values);
+					$key = $row['clientid'] . '/' . $row['module'] . '/' . $row['controller'] . '/' . $row['documentid'];
+					if ($key !== $row['record_key'] || (int)$row['clientid'] !== $this->clientId || isset($sets[$file][$key]) || $row['document_date'] < $metadata['from'] || $row['document_date'] > $metadata['to']) throw new RuntimeException('Document inventory identity or period differs');
+					$sets[$file][$key] = ['status' => $row['status'], 'issued' => $row['issued'], 'deleted' => $row['deleted']];
+				}
+			} finally { fclose($stream); }
 		}
+		$counts = ['included' => 0, 'missing' => 0, 'excluded' => 0, 'issued' => 0, 'deleted_issued' => 0];
+		foreach ($sets['document_index'] as $key => $row) {
+			$included = $row['status'] === 'included';
+			$missing = in_array($row['status'], ['missing', 'excluded'], true);
+			$excluded = $row['status'] === 'excluded' || ($row['issued'] === '1' && $row['deleted'] !== '0');
+			foreach (['document_manifest' => $included, 'missing_documents' => $missing, 'excluded_documents' => $excluded] as $file => $required) if (isset($sets[$file][$key]) !== $required) throw new RuntimeException('Document inventory and manifests differ');
+			if (isset($counts[$row['status']])) $counts[$row['status']]++;
+			if ($row['issued'] === '1') { $counts['issued']++; if ($row['deleted'] !== '0') $counts['deleted_issued']++; }
+		}
+		foreach (['document_manifest', 'missing_documents', 'excluded_documents'] as $file) if (array_diff_key($sets[$file], $sets['document_index'])) throw new RuntimeException('Orphan document manifest row');
+		foreach ($counts as $name => $count) if ($summary[$name] !== $count) throw new RuntimeException('Document summary differs from inventory');
+		if ($summary['dated_documents'] !== count($sets['document_index']) || $summary['complete'] !== ($counts['missing'] === 0 && $counts['excluded'] === 0)) throw new RuntimeException('Document completeness statement differs');
 	}
 
 	protected function buildZipFileName(?string $from, ?string $to): string

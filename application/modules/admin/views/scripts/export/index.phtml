@@ -93,6 +93,16 @@ echo $this->Pagination();
 
 			</div>
 
+			<div class="dw-form__row">
+				<div class="dw-form__col">
+					<label class="dw-label">
+						<input type="checkbox" name="include_documents" value="1" />
+						<?php echo $this->translate('ADMIN_EXPORT_DOCUMENTS'); ?>
+					</label>
+					<div class="dw-form__hint"><?php echo $this->translate('ADMIN_EXPORT_DOCUMENTS_HINT'); ?></div>
+				</div>
+			</div>
+
 			<div class="dw-form__actions">
 				<button type="submit" class="dw-button dw-button--success">
 					<?php echo $this->translate('ADMIN_EXPORT_GOBD'); ?>

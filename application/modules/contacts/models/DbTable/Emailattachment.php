@@ -95,7 +95,11 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 		if (preg_match('~^files/(downloads|export)/[0-9]/[0-9]/([1-9][0-9]*)/(.+)$~D', $relative, $parts)) {
 			$owner = (int)$parts[2];
 			if (!str_starts_with($relative, 'files/' . $parts[1] . '/' . (new DEEC_Directory())->getShortUrl($owner) . '/')) return false;
-			if ($parts[1] === 'export') return !empty($user['admin']) && $owner === (int)$user['clientid'];
+			if ($parts[1] === 'export') {
+				if (empty($user['admin']) || $owner !== (int)$user['clientid']) return false;
+				try { DEEC_Export_Gobd::assertPackageAccess(DEEC_Directory::storedPath($relative), $owner); } catch (RuntimeException | JsonException | InvalidArgumentException $exception) { return false; }
+				return true;
+			}
 			if (!in_array($owner, $this->getStorageClients(), true) || str_contains($parts[3], '/') || !(new DEEC_Permission($user))->hasPermission('contacts', 'contact', 'view')) return false;
 			$db = (new Contacts_Model_DbTable_Download())->setClientId($owner);
 			$rows = $db->fetchAll($db->select()->where('clientid = ?', $owner)->where('filename = ?', $parts[3])->where('deleted = ?', 0));

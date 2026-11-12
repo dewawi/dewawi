@@ -12,6 +12,7 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+import zipfile
 
 root = Path(__file__).resolve().parents[2]
 apache = shutil.which("apache2")
@@ -92,12 +93,18 @@ $adapter->rows = [
 Zend_Session::setOptions(['save_path' => BASE_PATH . '/session', 'use_cookies' => false, 'cache_limiter' => '']);
 if (isset($_SERVER['HTTP_X_ATTACHMENT_TEST_USER'])) {
     $mode = $_SERVER['HTTP_X_ATTACHMENT_TEST_USER'];
-    $clientId = $mode === 'foreign' ? 8 : 7;
-    Zend_Registry::set('User', ['id' => 42, 'clientid' => $clientId]);
-    Zend_Registry::set('Client', ['id' => $clientId, 'parentid' => 0]);
+    $clientId = in_array($mode, ['foreign', 'foreign_admin', 'shared_admin'], true) ? 8 : 7;
+    $admin = in_array($mode, ['admin', 'admin_no_documents', 'foreign_admin', 'shared_admin'], true);
+    Zend_Registry::set('User', ['id' => 42, 'clientid' => $clientId, 'admin' => $admin]);
+    Zend_Registry::set('Client', ['id' => $clientId, 'parentid' => $mode === 'shared_admin' ? 7 : 0]);
     $rights = $mode === 'allowed' ? ['quote' => ['view']] : ($mode === 'upload' ? ['quote' => ['view', 'add']] : []);
+    $purchaseRights = [];
+    if ($admin && $mode !== 'admin_no_documents') {
+        $rights = array_fill_keys(['quote', 'salesorder', 'invoice', 'deliveryorder', 'creditnote', 'reminder'], ['view']);
+        $purchaseRights = array_fill_keys(['quoterequest', 'purchaseorder'], ['view']);
+    }
     $adapter->rows += [
-        'permission' => [['id' => 1, 'userid' => 42, 'deleted' => 0, 'sales' => json_encode($rights), 'contacts' => json_encode(['contact' => ['view']])]],
+        'permission' => [['id' => 1, 'userid' => 42, 'deleted' => 0, 'sales' => json_encode($rights), 'purchases' => json_encode($purchaseRights), 'contacts' => json_encode(['contact' => ['view']])]],
         'quote' => [['id' => 10, 'contactid' => 100, 'filename' => 'quote.pdf', 'clientid' => 7, 'deleted' => 0]],
         'invoice' => [['id' => 20, 'contactid' => 100, 'filename' => 'invoice.pdf', 'clientid' => 7, 'deleted' => 0]],
         'contact' => [['id' => 100, 'clientid' => 7, 'deleted' => 0]],
@@ -156,6 +163,18 @@ with tempfile.TemporaryDirectory(prefix="dewawi-attachment-http-") as temp:
     document_original.parent.mkdir(parents=True)
     document_original.write_bytes(contents)
     (site / "session").mkdir()
+    export_dir = site / 'files/export/7/0/7'
+    export_dir.mkdir(parents=True)
+    with zipfile.ZipFile(export_dir / 'gobd-documents-fixture.zip', 'w') as package:
+        package.writestr('metadata.json', '{"clientId":7,"documents":{"enabled":true}}')
+        package.writestr('documents/7/sales/invoice/1.pdf', contents)
+    private_export_bytes = (export_dir / 'gobd-documents-fixture.zip').read_bytes()
+    (export_dir / 'renamed-fixture.zip').write_bytes(private_export_bytes)
+    (export_dir / 'gobd-export-legacy.zip').write_bytes(b'Private export package')
+    for package in export_dir.iterdir():
+        package.chmod(0o600)
+    (export_dir / '.gobd-staging').mkdir(mode=0o700)
+    (export_dir / '.gobd-staging/document_manifest.csv').write_bytes(b'Private staging data')
     stored_files = ["files/contacts/7/0/7/1/0/100/notes.txt", "files/contacts/7/0/7/1/0/100/quote.pdf", "files/contacts/7/0/7/1/0/100/invoice.pdf", "cache/document/sales/quote/7/10/quote.pdf", "files/uploads/unmapped.pdf", "cache/item/501.pdf", "cache/internal.pdf", "cache/thumbs/files/unmapped.png"]
     for relative in stored_files:
         target = site / relative
@@ -315,6 +334,16 @@ DocumentRoot "{site}"
             assert fetch('/' + relative, 'allowed', 'POST')[0] == 405, 'File accepted a write request'
         assert fetch('/' + stored_files[1], 'denied')[0] == 404, 'Missing quote permission accepted'
         assert fetch('/' + stored_files[2], 'allowed')[0] == 404, 'Contact rights bypassed invoice permission'
+        document_export = '/files/export/7/0/7/gobd-documents-fixture.zip'
+        for user in [None, 'allowed', 'admin_no_documents', 'foreign_admin', 'shared_admin']:
+            status, body = fetch(document_export, user)
+            assert status == 404 and b'Private export package' not in body, 'GoBD images bypassed tenant or document read permissions'
+        assert fetch(document_export, 'admin') == (200, private_export_bytes), 'Authorized private GoBD download failed'
+        assert last_headers['Cache-Control'] == 'private, no-store' and last_headers['X-Content-Type-Options'] == 'nosniff'
+        assert fetch(document_export, 'admin', 'HEAD') == (200, b''), 'GoBD HEAD returned private bytes'
+        assert fetch('/files/export/7/0/7/renamed-fixture.zip', 'admin_no_documents')[0] == 404, 'Renamed image ZIP bypassed document permissions'
+        assert fetch('/files/export/7/0/7/gobd-export-legacy.zip', 'admin_no_documents') == (200, b'Private export package'), 'Legacy CSV export download permissions changed'
+        assert fetch('/files/export/7/0/7/.gobd-staging/document_manifest.csv', 'admin')[0] in (403, 404), 'Private staging became downloadable'
         for requested in ['files/contacts/7/0/7/1/0/100/linked.pdf', 'files/contacts/7/0/7/1/0/100/%2e%2e/100/quote.pdf', 'files/contacts/7/0/7/1/0/100/%252e%252e/quote.pdf', 'files/contacts/7/0/7/1/0/100/quote.pdf%00']:
             assert fetch('/' + requested, 'denied')[0] in (400, 403, 404), f'Traversal or symlink accepted: {requested}'
         for requested in ['/media/images/product.png', '/media/7/0/7/images/product.png']:
@@ -330,6 +359,8 @@ DocumentRoot "{site}"
             assert fetch('/dewawi/' + relative, 'allowed') == (200, contents), 'Subdirectory authorized download failed'
             assert fetch('/dewawi/' + relative, 'foreign')[0] == 404, 'Subdirectory tenant bypass'
         assert fetch('/dewawi/media/images/product.png') == (200, b'Public media fixture'), 'Subdirectory publication failed'
+        assert fetch('/dewawi' + document_export, 'admin') == (200, private_export_bytes), 'Subdirectory GoBD download failed'
+        assert fetch('/dewawi' + document_export, 'admin_no_documents')[0] == 404, 'Subdirectory GoBD permission bypass'
         for prefix in ['', '/dewawi']:
             for relative in media_files:
                 for path in ['/media/' + relative, '/media/1/0/100/' + relative]:

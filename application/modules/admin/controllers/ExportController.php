@@ -68,6 +68,26 @@ class Admin_ExportController extends DEEC_Controller_AdminAction
 		$target = (string)$this->_getParam('target', '');
 		$from = $this->_getParam('from', null);
 		$to = $this->_getParam('to', null);
+		$includeDocuments = false;
+		if ($type === 'gobd') {
+			$value = $this->_getParam('include_documents', '0');
+			try {
+				if (!is_string($from) || !is_string($to) || !in_array($value, ['0', '1', 0, 1], true)) throw new InvalidArgumentException('Invalid GoBD options');
+				DEEC_Export_Gobd::validatePeriod($from, $to, true);
+				$includeDocuments = (string)$value === '1';
+			} catch (InvalidArgumentException $exception) {
+				$this->_flashMessenger->addMessage('ADMIN_EXPORT_INVALID_PERIOD');
+				return $this->_helper->redirector->gotoSimple('index');
+			}
+			if ($includeDocuments) {
+				try { DEEC_Export_Gobd::assertDocumentAccess((int)$this->_user['clientid'], (int)$this->_user['id']); }
+				catch (RuntimeException $exception) {
+					$this->getResponse()->setHttpResponseCode(403);
+					$this->getResponse()->setBody($this->view->translate('ADMIN_EXPORT_DOCUMENTS_DENIED'));
+					return;
+				}
+			}
+		}
 
 		require_once(BASE_PATH.'/library/DEEC/Directory.php');
 
@@ -93,7 +113,12 @@ class Admin_ExportController extends DEEC_Controller_AdminAction
 				$userId
 			);
 
-			$export->export($filePath, $from, $to);
+			try { $export->export($filePath, $from, $to, $includeDocuments); }
+			catch (Throwable $exception) {
+				error_log('GoBD export failed: ' . $exception->getMessage());
+				$this->_flashMessenger->addMessage('ADMIN_EXPORT_FAILED');
+				return $this->_helper->redirector->gotoSimple('index');
+			}
 		} elseif ($type === 'csv' || $type === 'sql') {
 			$this->exportDatabase($filePath, $type);
 		} else {
@@ -441,6 +466,7 @@ class Admin_ExportController extends DEEC_Controller_AdminAction
 			foreach ($files as $file) {
 				// Get the full path of the file
 				$filePath = $exportDir . $file;
+				if ($file[0] === '.' || !is_file($filePath) || is_link($filePath)) continue;
 
 				// Get the file size in bytes
 				$fileSize = filesize($filePath);

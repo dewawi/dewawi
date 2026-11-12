@@ -40,4 +40,9 @@ try {
 	unlink($readme);
 }
 
-echo "PASS: GoBD export gap verified; CSV metadata has no original files, manifest or checksums\n";
+foreach ([['2019-01-01', '2021-12-31'], ['2034-02-28', '2034-02-28'], ['2024-02-29', '2024-03-01']] as [$from, $to]) DEEC_Export_Gobd::validatePeriod($from, $to, true);
+foreach ([['2019-02-29', '2020-01-01'], ['2026-11-13', '2026-11-12'], ['2026-1-01', '2026-12-31'], [null, null]] as [$from, $to]) {
+	try { DEEC_Export_Gobd::validatePeriod($from, $to, true); throw new RuntimeException('Invalid GoBD dates were accepted'); }
+	catch (InvalidArgumentException $expected) {}
+}
+echo "PASS: legacy GoBD profile, default README and free-period validation preserved\n";
