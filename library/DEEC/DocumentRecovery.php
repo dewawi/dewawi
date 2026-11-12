@@ -134,7 +134,7 @@ function recoveryOriginalComparison(array $job, array $selected, DEEC_DocumentAr
 	if (($comparison['kind'] ?? '') === 'customer_archive_attestation') {
 		if (($comparison['assertion_type'] ?? '') !== 'retrospective_customer_archive_attestation' || ($comparison['identity'] ?? null) !== $job['identity'] || ($comparison['sha256'] ?? '') !== $selected['file']['sha256']
 			|| ($comparison['confirmed_by'] ?? 0) !== (int)$selected['selection']['reviewed_by'] || !is_string($comparison['confirmed_at'] ?? null) || !strtotime($comparison['confirmed_at']) || strtotime($comparison['confirmed_at']) > time()
-			|| !preg_match('/^[a-f0-9]{64}$/D', $comparison['plan_sha256'] ?? '') || !preg_match('/^[a-f0-9]{64}$/D', $comparison['declaration_sha256'] ?? '') || $selected['selection']['origin']['kind'] !== 'historical_pdf') throw new RuntimeException('Customer archive attestation is invalid');
+			|| !preg_match('/^[a-f0-9]{64}$/D', $comparison['plan_sha256'] ?? '') || !preg_match('/^[a-f0-9]{64}$/D', $comparison['declaration_sha256'] ?? '') || ($selected['selection']['origin']['kind'] ?? '') !== (($comparison['statement']['release_type'] ?? 'verified_recovered_original') === 'reviewed_reconstruction_duplicate' ? 'reconstructed' : 'historical_pdf')) throw new RuntimeException('Customer archive attestation is invalid');
 		DEEC_DocumentRecovery::customerArchiveAttestation($comparison['statement'] ?? [], $job['identity'], $comparison['snapshot_sha256'] ?? '', $selected['file']['sha256']);
 		return;
 	}
@@ -170,6 +170,13 @@ function recoveryReconstructionProof(array $job, array $selected, array $snapsho
 	if (($record['snapshot_sha256'] ?? '') !== $snapshot['sha256'] || ($record['validation']['schema_version'] ?? 0) !== 1 || !isset($record['validation']['displayed'])) throw new RuntimeException('Reconstruction requires a current amount validation; prepare and review again');
 	$publication = DEEC_DocumentReview::publicationDirectory(dirname($job['directory']), $job['identity']) . '/' . $selected['file']['sha256'] . '.json';
 	if (file_exists($publication) || is_link($publication)) $requireComparison = true;
+	if (($selected['selection']['original_comparison']['kind'] ?? '') === 'customer_archive_attestation') {
+		$candidate = DEEC_DocumentReview::candidate(dirname($job['directory']), $job['directory'], $job['identity'], $snapshot, $selected['file']['sha256']);
+		$receipt = DEEC_DocumentReview::read($publication);
+		DEEC_DocumentReview::receipt($receipt, $job['identity'], $candidate, $snapshot);
+		$comparison = $selected['selection']['original_comparison'];
+		if (($receipt['directory'] ?? '') !== basename($job['directory']) || ($comparison['proof_sha256'] ?? '') !== $candidate['proof_sha256'] || ($comparison['publication_sha256'] ?? '') !== hash_file('sha256', $publication)) throw new RuntimeException('Approved reconstruction proof or current publication changed');
+	}
 	if ($requireComparison || !empty($record['validation']['original_comparison_required']) || !empty($selected['selection']['authorization'])) recoveryOriginalComparison($job, $selected, $reviewArchive);
 	return hash_file('sha256', $recordPath);
 }
@@ -186,7 +193,7 @@ function recoveryApprove(Zend_Db_Adapter_Abstract $db, array $job, DEEC_Document
 		'snapshot_sha256' => $snapshot['sha256'], 'reconstruction_sha256' => $proof, 'approved_by' => $userId, 'approved_at' => gmdate('c'), 'manual' => true,
 		'method' => $selected['selection']['authorization']['method'] ?? 'individual_selection', 'authorization' => $selected['selection']['authorization'] ?? null,
 		'individual_original_comparison_claimed' => in_array($selected['selection']['original_comparison']['kind'] ?? '', ['paper_document', 'original_document', 'verified_dispatch_copy'], true),
-		'original_provenance_verified' => in_array($selected['selection']['original_comparison']['kind'] ?? '', ['verified_historical_origin', 'customer_archive_attestation'], true)];
+		'original_provenance_verified' => in_array($selected['selection']['original_comparison']['kind'] ?? '', ['verified_historical_origin', 'customer_archive_attestation'], true) && $selected['selection']['origin']['kind'] !== 'reconstructed'];
 	if (($selected['selection']['original_comparison']['kind'] ?? '') === 'customer_archive_attestation') $approval['retrospective_customer_archive_comparison_attested'] = true;
 	reviewDirectory($job['directory'] . '/approvals');
 	$path = $job['directory'] . '/approvals/' . $selected['selection_sha256'] . '.json';
@@ -288,9 +295,14 @@ class DEEC_DocumentRecovery
 	{
 		if (($identity['module'] ?? '') !== 'sales' || ($identity['controller'] ?? '') !== 'invoice') throw new RuntimeException('Customer archive invoice attestation requires sales/invoice');
 		if (($statement['document'] ?? null) !== $identity || ($statement['sha256'] ?? '') !== $sha || ($statement['snapshot_sha256'] ?? '') !== $snapshot) throw new RuntimeException('Document-bound declaration identity, SHA or data fingerprint differs');
-		foreach (['original_provenance_verified', 'identity_verified', 'customer_archive_compared', 'business_values_compared', 'positions_taxes_totals_match'] as $field) if (($statement[$field] ?? false) !== true) throw new RuntimeException('Explicit original provenance and archive/business-value comparison are required');
+		$type = $statement['release_type'] ?? 'verified_recovered_original';
+		if (!in_array($type, ['verified_recovered_original', 'reviewed_reconstruction_duplicate'], true)) throw new RuntimeException('Unsupported release type');
+		if ($type === 'reviewed_reconstruction_duplicate') {
+			if (($statement['original_provenance_verified'] ?? null) !== false || ($statement['provenance'] ?? null) !== '' || ($statement['historical_content_match'] ?? false) !== true) throw new RuntimeException('Reconstruction requires an explicit historical content comparison without original-file provenance');
+		} elseif (($statement['original_provenance_verified'] ?? false) !== true) throw new RuntimeException('Explicit original-file provenance is required');
+		foreach (['identity_verified', 'customer_archive_compared', 'business_values_compared', 'positions_taxes_totals_match'] as $field) if (($statement[$field] ?? false) !== true) throw new RuntimeException('Explicit archive and saved business-value comparisons are required');
 		if (($statement['unresolved_differences'] ?? null) !== false || ($statement['differences'] ?? null) !== []) throw new RuntimeException('Unresolved PDF/business-data differences require manual clarification');
-		foreach (['provenance', 'comparison_reference'] as $field) if (!is_string($statement[$field] ?? null) || trim($statement[$field]) === '' || strlen($statement[$field]) > 4000) throw new RuntimeException('Concrete original provenance and comparison reference are required');
+		foreach ($type === 'verified_recovered_original' ? ['provenance', 'comparison_reference'] : ['comparison_reference'] as $field) if (!is_string($statement[$field] ?? null) || trim($statement[$field]) === '' || strlen($statement[$field]) > 4000) throw new RuntimeException('Concrete provenance/comparison references are required');
 		$time = $statement['comparison_performed_at'] ?? null;
 		if (!array_key_exists('comparison_performed_at', $statement)) throw new RuntimeException('Comparison time must explicitly be known or null');
 		if ($time !== null) {

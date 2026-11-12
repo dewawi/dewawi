@@ -164,6 +164,22 @@ foreach (DEEC_DocumentArchive::documents() as $module => $controllers) foreach (
 	archiveCheck($approvedPlan['status'] === 'complete' && in_array('historical_versions_differ', $approvedPlan['historical_conflicts'], true), 'Approved original lost its historical conflict evidence');
 	archiveCheck($archive->plan(array_replace($fixture, ['filename' => '']), [$registered])['status'] === 'complete', 'Approved original with missing document filename was lost');
 	archiveCheck($archive->plan($fixture, [array_replace($registered, ['clientid' => 101])])['status'] === 'blocked', 'Foreign approval was trusted');
+	$parameters = json_decode($registered['parameters'], true);
+	$parameters['recovery']['selection']['origin'] = ['kind' => 'historical_pdf', 'category' => 'verified_recovered_original'];
+	$provenance = array_replace($registered, ['parameters' => json_encode($parameters)]);
+	archiveCheck(DEEC_DocumentArchive::pdfProvenance($provenance) === 'verified_recovered_original', 'Recovered original provenance was lost');
+	$parameters['recovery']['selection']['origin']['kind'] = 'reconstructed';
+	$provenance['parameters'] = json_encode($parameters);
+	archiveCheck(DEEC_DocumentArchive::pdfProvenance($provenance) === 'reviewed_reconstruction_duplicate', 'Original category overrode the actual reconstructed origin');
+	unset($parameters['recovery']['selection']); $parameters['recovery']['reconstruction'] = ['generated_at' => '2026-11-11T12:00:00Z'];
+	$provenance['parameters'] = json_encode($parameters);
+	archiveCheck(DEEC_DocumentArchive::pdfProvenance($provenance) === 'reviewed_reconstruction_duplicate', 'Legacy reconstruction without a category was mislabeled');
+	$parameters['recovery']['approval']['manual'] = false; $provenance['parameters'] = json_encode($parameters);
+	archiveCheck(DEEC_DocumentArchive::pdfProvenance($provenance) === 'reconstruction_origin_unconfirmed', 'Unapproved reconstruction was called reviewed');
+	archiveCheck(DEEC_DocumentArchive::pdfProvenance(array_replace($registered, ['parameters' => '{}'])) === 'issued_original', 'Regular issued original was reclassified');
+	archiveCheck(DEEC_DocumentArchive::pdfProvenance(array_replace($registered, ['parameters' => 'invalid'])) === 'registered_archive_origin_unconfirmed', 'Unknown archive provenance was asserted as historical original');
+	archiveCheck(DEEC_DocumentArchive::pdfProvenance(array_replace($registered, ['parameters' => '{"recovery":"invalid"}'])) === 'registered_archive_origin_unconfirmed', 'Malformed recovery metadata was called an issued original');
+
 }
 
 echo 'PASS: ' . $checks . " document archive checks; all eight types covered, sources retained, conflicts blocked or explicitly approved\n";

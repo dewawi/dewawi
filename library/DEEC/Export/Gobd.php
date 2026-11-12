@@ -134,7 +134,7 @@ class DEEC_Export_Gobd
 			if (file_put_contents($filePath . 'metadata.json', $bytes) !== strlen($bytes)) throw new RuntimeException('Could not write export metadata');
 			$bytes = "\n\nArchived PDF document images: " . ($summary['complete'] ? 'COMPLETE for the stated scope' : 'INCOMPLETE')
 				. "\n" . json_encode($summary, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)
-				. "\nOnly registered version-1 Original PDFs with verified size and SHA-256 are included. No rendering or recovery staging files are used."
+				. "\nOnly registered version-1 archive PDFs with verified size and SHA-256 are included; pdf_origin identifies approved reconstructed duplicates separately. No rendering or recovery staging files are used."
 				. "\nDocument dates determine the period; archival dates do not. Deleted issued documents remain identifiable in excluded_documents.csv. Drafts without original references do not require PDF originals."
 				. "\ndocument_index.csv identifies all eight document types and links existing fiscal CSV rows by file and id; other types use record_key in this index."
 				. "\ndocument_manifest.csv records included originals and stored archive/recovery provenance. missing_documents.csv records missing, invalid or excluded images."
@@ -142,7 +142,7 @@ class DEEC_Export_Gobd
 				. "\nchecksums.sha256 covers every ZIP entry except itself. Verify with sha256sum -c checksums.sha256 after extraction. Completeness refers only to this stored dated-document scope, not overall legal compliance.\n";
 			if ($this->reviewExport) $bytes = "INTERNAL DOCUMENT REVIEW ONLY\nNot a GoBD original-document export. No original equivalence or completed paper comparison is asserted.\n"
 				. "Period (inclusive stored document dates): $from to $to\nTenant: " . $this->clientId . "\n"
-				. "originals/ contains verified registered originals; candidates/ contains unreviewed historical PDFs; review/ contains only currently valid published reconstructions. The latter require an original comparison before final archive approval.\n"
+				. "originals/ contains verified registered archive versions, including approved reconstructed duplicates explicitly identified by pdf_origin; candidates/ contains unreviewed historical PDFs; review/ contains only currently valid published reconstructions. The latter require an original comparison before final archive approval.\n"
 				. "diagnostics/ contains visibly marked diagnostic documents with incomplete or contradictory data. They are not validated reconstructions and cannot be approved as originals. Undated diagnostic publications are included additionally with date_scope=undated_diagnostic_not_assigned_to_period; no historical date or period is inferred.\n"
 				. "Every dated document is identified in document_index.csv. document_manifest.csv lists every included version and all missing, invalid or excluded cases. missing_documents.csv lists unresolved cases. Deleted issued originals retain their deleted flag and are also listed in excluded_documents.csv; no document is reactivated.\n"
 				. "Visible numbers name PDFs. Unsafe or missing numbers and collisions receive --id-<internal ID> (and a counter if necessary); review versions also carry their SHA-256 prefix. Original filenames and internal IDs remain in the manifests.\n"
@@ -187,7 +187,7 @@ class DEEC_Export_Gobd
 			}
 			$this->verifyDocumentManifest($audit, $expected);
 		} finally { $audit->close(); }
-		$fields = ['record_key', 'module', 'controller', 'documentid', 'document_number', 'document_date', 'filename', 'deleted', 'issued', 'csv_file', 'csv_key_column', 'csv_key_value', 'pdf_path', 'pdf_supplied', 'delivery_note'];
+		$fields = ['record_key', 'module', 'controller', 'documentid', 'document_number', 'document_date', 'filename', 'deleted', 'issued', 'csv_file', 'csv_key_column', 'csv_key_value', 'pdf_path', 'pdf_supplied', 'pdf_origin', 'delivery_note'];
 		$input = fopen($directory . 'document_index.csv', 'rb');
 		$output = fopen($directory . 'document_files.csv', 'xb');
 		if (!$input || !$output) throw new RuntimeException('Could not write document delivery overview');
@@ -197,22 +197,23 @@ class DEEC_Export_Gobd
 			while (($values = fgetcsv($input, 0, ';', '"', '')) !== false) {
 				$row = array_combine($columns, $values);
 				if ($row['csv_file'] === 'document_index.csv') $row['csv_file'] = 'document_files.csv';
+				$row['pdf_origin'] = $row['status'] === 'included' ? $row['pdf_origin'] : 'not_supplied';
 				$row['pdf_path'] = $row['zip_path']; $row['pdf_supplied'] = $row['status'] === 'included' ? '1' : '0';
 				$row['delivery_note'] = ['included' => 'supplied', 'missing' => 'requested_pdf_not_supplied', 'excluded' => 'original_reference_not_supplied_issue_status_unconfirmed', 'not_issued' => 'draft_no_original_requested'][$row['status']];
 				if (fputcsv($output, array_map(static fn(string $field) => $row[$field], $fields), ';', '"', '') === false) throw new RuntimeException('Could not write delivery row');
 			}
 		} finally { fclose($input); fclose($output); }
 		$metadata = json_decode(file_get_contents($directory . 'metadata.json'), true, 512, JSON_THROW_ON_ERROR);
-		$metadata['documents']['overview'] = ['file' => 'document_files.csv', 'columns' => $fields, 'key' => 'record_key', 'pdf_path' => 'Exact ZIP entry; empty when not supplied', 'pdf_supplied' => '1 only for a verified registered original', 'csv_reference' => 'csv_file/csv_key_column/csv_key_value identify the fiscal CSV row; types without a separate fiscal dataset refer to this overview', 'delivery_note' => 'supplied; requested_pdf_not_supplied; original_reference_not_supplied_issue_status_unconfirmed; draft_no_original_requested'];
+		$metadata['documents']['overview'] = ['file' => 'document_files.csv', 'columns' => $fields, 'key' => 'record_key', 'pdf_path' => 'Exact ZIP entry; empty when not supplied', 'pdf_supplied' => '1 for a verified registered archive PDF, including approved reconstructed duplicates', 'pdf_origin' => 'issued_original; verified_recovered_original; reviewed_reconstruction_duplicate; registered_archive_origin_unconfirmed; reconstruction_origin_unconfirmed; not_supplied. Reconstructed duplicates are not unchanged historical original files.', 'csv_reference' => 'csv_file/csv_key_column/csv_key_value identify the fiscal CSV row; types without a separate fiscal dataset refer to this overview', 'delivery_note' => 'supplied; requested_pdf_not_supplied; original_reference_not_supplied_issue_status_unconfirmed; draft_no_original_requested'];
 		$bytes = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 		if (file_put_contents($directory . 'metadata.json', $bytes) !== strlen($bytes)) throw new RuntimeException('Could not write delivery metadata');
 		$this->writeReadme($directory . 'readme.txt', $metadata['from'], $metadata['to']);
 		$bytes = "\n\nRequested PDF delivery: " . ($metadata['documents']['summary']['complete'] ? 'COMPLETE for the stated stored dated-document scope' : 'INCOMPLETE')
 			. "\n" . json_encode($metadata['documents']['summary'], JSON_THROW_ON_ERROR)
-			. "\nOnly verified registered original PDFs are supplied. No unreviewed reconstructions or diagnostic PDFs are included."
+			. "\nOnly verified registered archive PDFs are supplied. Approved reconstructed duplicates are identified by pdf_origin=reviewed_reconstruction_duplicate and are not unchanged historical original files. No unreviewed reconstructions or diagnostic PDFs are included."
 			. "\ndocument_files.csv lists every document in the requested stored-date scope, its fiscal CSV reference, supplied PDF path and any delivery gap. Deleted issued documents retain their flags and are included when a verified original exists."
 			. "\nEmpty pdf_path with pdf_supplied=0 explicitly means no PDF was delivered. Inspect delivery_note; missing requested originals make this delivery incomplete. Drafts without an original reference do not request a PDF."
-			. "\nPDFs use visible document numbers under documents/<module>/<type>/. Archive integrity and the full technical inventory were verified and retained internally. Completeness of this delivery is not an assertion of overall legal compliance.\n";
+			. "\nPDFs use visible document numbers under documents/<module>/<type>/. pdf_origin distinguishes issued originals, verified recovered originals, approved reconstructed duplicates and uncertain provenance. Delivery completeness describes available archive PDFs, not historical original-file equivalence. Archive integrity and the full technical inventory were verified and retained internally. Completeness of this delivery is not an assertion of overall legal compliance.\n";
 		if (file_put_contents($directory . 'readme.txt', $bytes, FILE_APPEND) !== strlen($bytes)) throw new RuntimeException('Could not write delivery scope');
 		return array_merge(array_values(array_diff($files, ['document_index.csv', 'document_manifest.csv', 'missing_documents.csv', 'excluded_documents.csv', 'checksums.sha256'])), ['document_files.csv']);
 	}
@@ -237,8 +238,9 @@ class DEEC_Export_Gobd
 				if (isset($counts[$status])) $counts[$status]++;
 				if ($status === 'included') {
 					if (!$row['issued'] || !isset($this->documentFiles[$row['pdf_path']]) || isset($paths[$row['pdf_path']]) || !str_starts_with($row['pdf_path'], 'documents/' . $row['module'] . '/' . $row['controller'] . '/')) throw new RuntimeException('Delivered PDF assignment differs');
+					if ($row['pdf_origin'] !== ($this->documentFiles[$row['pdf_path']]['pdf_origin'] ?? '') || !in_array($row['pdf_origin'], ['issued_original', 'verified_recovered_original', 'reviewed_reconstruction_duplicate', 'registered_archive_origin_unconfirmed', 'reconstruction_origin_unconfirmed'], true)) throw new RuntimeException('Delivered PDF provenance differs');
 					$paths[$row['pdf_path']] = true;
-				} elseif ($row['pdf_path'] !== '') throw new RuntimeException('Undelivered document contains a PDF');
+				} elseif ($row['pdf_path'] !== '' || $row['pdf_origin'] !== 'not_supplied') throw new RuntimeException('Undelivered document contains a PDF or provenance assertion');
 				$references[] = [$row['csv_file'], $row['csv_key_column'], $row['csv_key_value']];
 			}
 		} finally { fclose($stream); }
@@ -285,7 +287,7 @@ class DEEC_Export_Gobd
 
 	protected function writeDocuments(string $directory, array $profile, string $from, string $to): array
 	{
-		$fields = ['record_key', 'clientid', 'module', 'controller', 'documentid', 'document_number', 'document_date', 'filename', 'deleted', 'issued', 'csv_file', 'csv_key_column', 'csv_key_value', 'status', 'reason', 'archive_version', 'zip_path', 'filesize', 'sha256', 'archived', 'archivedby', 'correctionarchiveid', 'archive_parameters', 'historical_conflicts'];
+		$fields = ['record_key', 'clientid', 'module', 'controller', 'documentid', 'document_number', 'document_date', 'filename', 'deleted', 'issued', 'csv_file', 'csv_key_column', 'csv_key_value', 'status', 'reason', 'archive_version', 'zip_path', 'filesize', 'sha256', 'archived', 'archivedby', 'correctionarchiveid', 'archive_parameters', 'historical_conflicts', 'pdf_origin'];
 		if ($this->reviewExport) $fields = array_merge($fields, ['evidence_status', 'proof_sha256', 'snapshot_sha256', 'generated_at', 'database_confirmation', 'diagnostic_issues', 'date_scope']);
 		$handles = [];
 		foreach (['document_index', 'document_manifest', 'missing_documents', 'excluded_documents'] as $name) {
@@ -338,9 +340,11 @@ class DEEC_Export_Gobd
 								$row += ['archive_version' => $original['version'], 'archived' => $original['archived'], 'archivedby' => $original['archivedby'], 'correctionarchiveid' => $original['correctionarchiveid'], 'archive_parameters' => $original['parameters'], 'historical_conflicts' => json_encode(array_values(array_unique($conflicts)), JSON_THROW_ON_ERROR)];
 								if (in_array($plan['reason'], ['historical_versions_differ', 'canonical_version_differs', 'invalid_historical_source'], true)) $row['reason'] = $plan['reason'];
 								else {
+									$pdfOrigin = DEEC_DocumentArchive::pdfProvenance($original);
+									if ($pdfOrigin === 'reconstruction_origin_unconfirmed') throw new RuntimeException('Unapproved reconstruction cannot be supplied as an archive document');
 									$name = $this->documentZipPath($this->reviewExport ? 'originals' : 'documents', $module, $controller, $document);
-									$this->documentFiles[$name] = ['path' => BASE_PATH . '/' . $original['path'], 'size' => (int)$original['filesize'], 'sha256' => $original['sha256']];
-									$row += ['zip_path' => $name, 'filesize' => $original['filesize'], 'sha256' => $original['sha256']];
+									$this->documentFiles[$name] = ['path' => BASE_PATH . '/' . $original['path'], 'size' => (int)$original['filesize'], 'sha256' => $original['sha256'], 'pdf_origin' => $pdfOrigin];
+									$row += ['zip_path' => $name, 'filesize' => $original['filesize'], 'sha256' => $original['sha256'], 'pdf_origin' => $pdfOrigin];
 									$row['filename'] = $original['filename'];
 									$row['status'] = 'included';
 									$summary['included']++;

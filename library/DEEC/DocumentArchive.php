@@ -159,6 +159,18 @@ class DEEC_DocumentArchive
 		return $result;
 	}
 
+	public static function pdfProvenance(array $registration): string
+	{
+		$parameters = json_decode((string)($registration['parameters'] ?? ''), true);
+		if (!is_array($parameters)) return 'registered_archive_origin_unconfirmed';
+		$recovery = $parameters['recovery'] ?? null;
+		if (!is_array($recovery)) return array_key_exists('recovery', $parameters) ? 'registered_archive_origin_unconfirmed' : 'issued_original';
+		$origin = $recovery['selection']['origin'] ?? [];
+		$approved = self::hasRecoveryApproval($registration);
+		if (($origin['kind'] ?? '') === 'reconstructed' || ($origin['category'] ?? '') === 'reviewed_reconstruction_duplicate' || !empty($recovery['reconstruction']) || !empty($recovery['approval']['reconstruction_sha256'])) return $approved ? 'reviewed_reconstruction_duplicate' : 'reconstruction_origin_unconfirmed';
+		return $approved && ($origin['category'] ?? '') === 'verified_recovered_original' ? 'verified_recovered_original' : 'registered_archive_origin_unconfirmed';
+	}
+
 	public static function hasRecoveryApproval(array $row): bool
 	{
 		$parameters = json_decode((string)($row['parameters'] ?? ''), true);

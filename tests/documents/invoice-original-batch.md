@@ -1,6 +1,6 @@
-# Kontrollierte Sammelübernahme historischer Rechnungsoriginale
+# Kontrollierte Sammelfreigabe historischer Rechnungs-PDFs
 
-`invoice-original-batch.php` ergänzt den bestehenden Recovery-Ablauf um `plan` und `apply` für ZIPs der Form `correct/<Rechnungsnummer>.pdf`. Mandant und Operator sind immer explizit. Die Implementierung ist nicht auf Mandant 100 oder 27 Dateien festgelegt. Keine SQL-Migration, keine Neuberechnung, kein PDF-Rendering und keine Änderung von Geschäftsdaten. Auswahl, Freigabe, Archivpfad, Kopie, Registrierung und Auswahlhistorie verwenden die vorhandenen Recovery-/Archivkomponenten.
+`invoice-original-batch.php` ergänzt den bestehenden Recovery-Ablauf um `plan` und `apply` für ZIPs der Form `correct/<Rechnungsnummer>.pdf`. Mandant und Operator sind immer explizit. Die Implementierung unterstützt gemischte Freigaben für wiedergefundene Originaldateien und bestehende, geprüfte Rekonstruktionsdoppel; sie ist nicht auf Mandant 100 oder eine feste Dateianzahl begrenzt. Keine SQL-Migration, keine Neuberechnung, kein PDF-Rendering und keine Änderung von Geschäftsdaten. Auswahl, Freigabe, Archivpfad, Kopie, Registrierung und Auswahlhistorie verwenden die vorhandenen Recovery-/Archivkomponenten.
 
 ## Voraussetzungen und Grenzen
 
@@ -10,7 +10,7 @@
 - ZIP und Erklärung müssen reguläre, private Dateien mit 0600 sein. Prüfbereich, Unterverzeichnisse und temporäre Dateien bleiben außerhalb von Installations-/Webroots mit 0700/0600. Konfiguration und Prüfbereich müssen für den ausführenden Betriebssystembenutzer zugänglich sein. Keine rekursiven Rechteänderungen an Originalen.
 - Höchstens 100 PDFs und optional `correct/`; je PDF höchstens 20 MiB, ZIP und gesamte entpackte Daten höchstens 200 MiB, Expansionsverhältnis höchstens 200. Nur STORE/DEFLATE, höchstens 1 MiB Zentralverzeichnis; kein ZIP64/Mehrvolumeformat, keine Verschlüsselung, Symlinks, doppelten Namen oder fremden Dateitypen. Rechnungsnummern sind positive Dezimalzahlen ohne führende Nullen im bestehenden INT-Bereich. Kein rekursives Entpacken. Nicht passende ZIP-Strukturen brechen den gesamten Lauf ab.
 
-Eine SHA-/Größen-/PDF-Strukturprüfung beweist keine inhaltliche Originalgleichheit. Das Werkzeug liest PDF-Beträge nicht automatisch aus und führt keinen OCR- oder Layoutvergleich durch. Es verlangt stattdessen eine ausdrücklich dokumentbezogene Betreibererklärung zum tatsächlichen Originalursprung, Vergleich mit dem Kundenarchiv **und** Vergleich von Identität, Positionen, Steuern und Summen mit der im Plan ausgegebenen gespeicherten Geschäftsgrundlage. Ungeklärte Unterschiede bleiben gesperrt; es werden keine Werte angepasst. Bekannte Rekonstruktionen/Diagnosen können nicht als historische Originaldateien umetikettiert werden. Bestehende Diagnosekonflikte desselben Belegs erfordern zuerst fachliche Klärung; dafür gibt es keinen Batch-Override.
+Eine SHA-/Größen-/PDF-Strukturprüfung beweist keine inhaltliche Originalgleichheit. Das Werkzeug liest PDF-Beträge nicht automatisch aus und führt keinen OCR- oder Layoutvergleich durch. Es verlangt stattdessen eine ausdrücklich dokumentbezogene Betreibererklärung zur jeweiligen Freigabeart, Vergleich mit dem Kundenarchiv **und** Vergleich von Identität, Positionen, Steuern und Summen mit der im Plan ausgegebenen gespeicherten Geschäftsgrundlage. Ungeklärte Unterschiede bleiben gesperrt; es werden keine Werte angepasst. Bekannte Rekonstruktionen können ausschließlich als geprüfte Rekonstruktionsdoppel freigegeben werden. Diagnose-PDFs bleiben gesperrt. Es findet keine Neuerzeugung vorhandener PDFs statt. Bestehende Diagnosekonflikte desselben Belegs erfordern zuerst fachliche Klärung; dafür gibt es keinen Batch-Override.
 
 ## Betreiberbefehle für Mandant 100
 
@@ -34,11 +34,28 @@ Der erste Lauf schreibt ausschließlich private JSON-/CSV-Berichte und eine Erkl
 
 Die erzeugte Erklärungsvorlage unter einem eigenen privaten Dateinamen übernehmen und fachlich vervollständigen. Identitäten, ZIP-Einträge, Datei-SHAs und `snapshot_sha256` unverändert übernehmen. Jeder Eintrag hat:
 
-- `provenance`: tatsächliche Herkunft genau dieser historischen Originaldatei;
+- `release_type`: `verified_recovered_original` für tatsächlich wiedergefundene Originaldateien oder `reviewed_reconstruction_duplicate` für vorhandene Rekonstruktionen; der Wert muss zur technisch ermittelten Herkunft passen.
+- `provenance`: nur bei wiedergefundenen Originaldateien deren tatsächliche Herkunft; bei Rekonstruktionen zwingend leer (`""`), ohne Originaldatei-Herkunftsbehauptung;
 - `comparison_reference`: konkrete Referenz des tatsächlich durchgeführten Kundenarchiv-/Geschäftsdatenvergleichs;
-- `original_provenance_verified`, `identity_verified`, `customer_archive_compared`, `business_values_compared`, `positions_taxes_totals_match`: nur tatsächlich bestätigte Prüfungen auf `true` setzen;
+- `identity_verified`, `customer_archive_compared`, `business_values_compared`, `positions_taxes_totals_match`: nur tatsächlich bestätigte Prüfungen auf `true` setzen. Bei Originaldateien zusätzlich `original_provenance_verified=true`. Bei Rekonstruktionen muss dieses Feld `false` bleiben; stattdessen ist `historical_content_match=true` als separate ausdrückliche Bestätigung des historischen Inhaltsvergleichs erforderlich;
 - `unresolved_differences=false` und `differences=[]` ausschließlich bei geklärten Übereinstimmungen; sonst die offenen Unterschiede dokumentieren und den Eintrag gesperrt lassen;
 - `comparison_performed_at=null`, falls kein tatsächlicher Vergleichszeitpunkt bekannt ist. Ein bekannter Zeitpunkt kann als ISO-Zeitstempel mit Zeitzone eingetragen werden. Keine erfundenen Zeitpunkte, Papierablagen oder Versandnachweise ergänzen.
+
+Für eine Rekonstruktion werden neben Identität, Datei-SHA und Datenfingerprint etwa diese **fachlich tatsächlich bestätigten** Angaben benötigt:
+
+```json
+{
+  "release_type": "reviewed_reconstruction_duplicate",
+  "provenance": "",
+  "original_provenance_verified": false,
+  "historical_content_match": true,
+  "comparison_reference": "konkrete tatsächlich verwendete Vergleichsgrundlage im Kundenarchiv"
+}
+```
+
+Dies ist nur ein Ausschnitt der Erklärung, kein ausführbarer vollständiger Freigabenachweis. Die übrigen Bestätigungen und Bindungsfelder der erzeugten Vorlage bleiben erforderlich. Bestehende Original-Erklärungen ohne `release_type` bleiben für eigenständige Originaldateien kompatibel; damit kann keine bekannte Rekonstruktion freigegeben werden.
+
+Rekonstruktionen müssen als bestehende `candidates/<SHA>.pdf` mit vollständigem aktuellem Rekonstruktions-/Betragsnachweis und gültiger Veröffentlichung im gewählten Recovery-Bereich vorhanden sein. Plan und Apply prüfen dieselben bestehenden `DEEC_DocumentReview::candidate`-/`receipt`-Regeln; der Plan bindet außerdem SHA-256 des Nachweises und der Veröffentlichung. Fehlende/veraltete/manipulierte Nachweise, geänderte Geschäftsgrundlagen, entfernte Veröffentlichungen, fremde Dokumentkontexte und fehlende Recovery-PDFs sperren die Freigabe. Auch Approve/Import prüfen die an die Erklärung gebundene Veröffentlichung erneut. Das ZIP dient der Identifikation; archiviert wird bei Rekonstruktionen die unveränderte **bereits vorhandene Recovery-PDF**. Kein Rückgriff auf ZIP-Bytes als Ersatz für eine verschwundene Recovery-PDF.
 
 Die Erklärung benennt außerdem den tatsächlichen `operator_user`, `clientid` und ZIP-SHA. Eine Sammelerklärung gilt nur für die darin enthaltenen benannten Dateien mit ihren exakten SHAs und Datenfingerprints. Fehlende Erklärungen sperren die betreffenden neuen Registrierungen; zusätzliche, doppelte oder abweichende Dateien werden abgewiesen. Bestehende Originale erhalten durch das reine Überspringen keine neue Prüfbestätigung.
 
@@ -47,7 +64,7 @@ DECLARATION="$REVIEW/runs/tatsaechlich-bestaetigte-originalerklaerung.json"
 "${batch[@]}" --action=plan --declaration="$DECLARATION"
 ```
 
-Den **neuen** JSON-/CSV-Plan und die PDFs mit der ausgewiesenen Geschäftsgrundlage prüfen. Erwartbar sind bei den beschriebenen 27 Dateien `already_archived=1` und `register=26`; diese Anzahl wird nicht erzwungen und nicht als Ergebnis vorweggenommen. Rechnung 109860 ist nur bei exakt passender SHA, Größe, kanonischem Pfad und gültiger Einzelregistrierung `already_archived`. Abweichungen sind `CONFLICT`, keine Ersetzungsaufforderung.
+Den **neuen** JSON-/CSV-Plan und die PDFs mit der ausgewiesenen Geschäftsgrundlage prüfen. Für die nun beschriebenen 28 Dateien werden 17 gültige Rekonstruktionsdoppel und neun eigenständige Originaldateien unterschieden. Nach den tatsächlich ausgefüllten Erklärungen sind höchstens 26 neue Registrierungen zu erwarten; die Rechnungsnummern 109856 und 109954 bleiben ohne eindeutige eigene Datenbankzuordnung gesperrt. Diese Zahlen werden nicht erzwungen oder als Produktivergebnis vorweggenommen. Rechnung 109860 ist nicht mehr im ZIP und wird daher nicht Teil dieses neuen Plans. Allgemein werden bereits registrierte Dateien ausschließlich bei exakt passender SHA, Größe, kanonischem Pfad und gültiger Einzelregistrierung als `already_archived` übersprungen. Abweichungen bleiben `CONFLICT`, keine Ersetzungsaufforderung.
 
 Den exakten Hash des geprüften Plans anschließend gesondert bestätigen. Die folgenden Variablen bewusst aus dem tatsächlich geprüften Plan/Sicherungsnachweis setzen; keine automatische Pipeline von Planerstellung zu Freigabe verwenden:
 
@@ -67,11 +84,15 @@ BACKUP_REFERENCE='tatsaechliche Referenz der aktuell verifizierten Datenbank- un
 
 ## Apply, Teilfehler und Wiederholung
 
-Vor jeder Übernahme werden Dateiintegrität, exakte numerische Zuordnung, Mandant, Berechtigungen, aktueller Geschäftsdatenfingerprint, Recovery-Manifest-/Auswahlzustand, Diagnosekonflikte und Archivregistrierungen erneut geprüft. Der gemeinsame Sammler-Lock verhindert konkurrierende Recovery-Schreibläufe. Pro Rechnung wird eine eigene Datenbanktransaktion verwendet. Die unveränderte externe Prüfkopie gelangt ausschließlich über `recoverySelect`, `recoveryApprove` und `recoveryImport` in das Archiv. Anschließend werden Registrierung, kanonischer Pfad, Größe und SHA erneut geprüft.
+Nach einem Codewechsel beziehungsweise einer geänderten Erklärung zuerst einen **neuen Plan** erzeugen, prüfen und dessen neuen Hash bestätigen. Alte gesperrte Pläne werden nicht automatisch freigeschaltet.
 
-Die Freigabe enthält die konkrete Datei-SHA, Erklärung, Plan- und ZIP-SHA, Datenfingerprint sowie tatsächliche Freigabedaten. Die vorherige `selection.json` bleibt in `selections/` erhalten. Bestätigte Originalherkunft und rückblickend bestätigter Kundenarchivvergleich werden ausdrücklich von einer neu ausgeführten Einzel-/Papierprüfung unterschieden.
+Vor jeder Übernahme werden Dateiintegrität, exakte numerische Zuordnung, Mandant, Berechtigungen, aktueller Geschäftsdatenfingerprint, Recovery-Manifest-/Auswahlzustand, Diagnosekonflikte und Archivregistrierungen erneut geprüft. Der gemeinsame Sammler-Lock verhindert konkurrierende Recovery-Schreibläufe. Pro Rechnung wird eine eigene Datenbanktransaktion verwendet. Die unveränderte Original-Prüfkopie beziehungsweise die bestehende Recovery-Rekonstruktion gelangt ausschließlich über `recoverySelect`, `recoveryApprove` und `recoveryImport` in das Archiv. Anschließend werden Registrierung, kanonischer Pfad, Größe und SHA erneut geprüft.
 
-Erfolgreiche Registrierungen bleiben bei Fehlern anderer Rechnungen bestehen. Der Ergebnisbericht führt `registered`, `already_archived`, `blocked`, `CONFLICT` und `failed` getrennt. Bei gesperrten/fehlgeschlagenen Fällen ist der Exitcode 1; ein erfolgreich gespeicherter Bericht bedeutet nicht, dass alle Belege übernommen wurden. Unsichere globale Eingaben brechen vor der Übernahme ab und werden auf STDERR gemeldet.
+Die Freigabe enthält die konkrete Datei-SHA, Erklärung, Plan- und ZIP-SHA, Datenfingerprint sowie tatsächliche Freigabedaten. Die vorherige `selection.json` bleibt in `selections/` erhalten. Nur wiedergefundene Originaldateien erhalten bestätigte Originalherkunft (`origin.kind=historical_pdf`, `category=verified_recovered_original`). Rekonstruktionsdoppel behalten `origin.kind=reconstructed`, `category=reviewed_reconstruction_duplicate`, den vollständigen ursprünglichen Rekonstruktionsnachweis und `original_provenance_verified=false`. Ihr rückblickend bestätigter Kundenarchiv-Inhaltsvergleich bleibt als solcher erkennbar; es wird keine neu ausgeführte Einzel-/Papierprüfung behauptet.
+
+Der externe GoBD-PDF-Export kennzeichnet diese Archivfassungen in `document_files.csv` über `pdf_origin=reviewed_reconstruction_duplicate`. Wiedergefundene Originaldateien tragen `verified_recovered_original`, regulär ausgestellte Originale `issued_original`; ungeklärte historische Herkunft wird ausdrücklich als solche ausgewiesen. Auch ältere, bereits freigegebene Rekonstruktionen ohne neues Kategorienfeld werden über ihre vorhandenen Rekonstruktionsnachweise erkannt. `pdf_supplied=1` bezeichnet eine gelieferte verifizierte Archivfassung und behauptet keine unveränderte historische Originaldatei. Die Steuer-CSV-Daten und Beziehungen bleiben unverändert.
+
+Erfolgreiche Registrierungen bleiben bei Fehlern anderer Rechnungen bestehen. Der Ergebnisbericht führt `registered`, `already_archived`, `blocked`, `CONFLICT` und `failed` getrennt. Verbleiben 109856 und 109954 im ZIP, kann der Lauf 26 erfolgreiche Freigaben und zwei gesperrte Nummern melden. Auch dann ist der Exitcode 1; die erfolgreichen Freigaben bleiben erhalten. Bei gesperrten/fehlgeschlagenen Fällen ist der Exitcode 1; ein erfolgreich gespeicherter Bericht bedeutet nicht, dass alle Belege übernommen wurden. Unsichere globale Eingaben brechen vor der Übernahme ab und werden auf STDERR gemeldet.
 
 Nach Abbruch denselben bestätigten Plan mit unveränderten Eingaben und erneuter aktueller Sicherungsbestätigung wiederholen. Bereits vorhandene passende Originale werden nur geprüft; ihre Metadaten bleiben unverändert. Eine nach einem fehlgeschlagenen INSERT verbliebene kanonische Datei wird nur bei passender SHA/Größe und dokumentiertem Importversuch desselben Plans weiterverwendet. Fremde oder abweichende kanonische Dateien bleiben gesperrt. Bei geändertem Datenfingerprint, Manifest, ZIP, Erklärung oder anderer Auswahl einen neuen Plan erstellen und ausdrücklich prüfen/bestätigen. Keine Originaldateien, Nachweise oder Konflikte zur Umgehung einer Sperre löschen.
 
@@ -88,4 +109,8 @@ php tests/documents/pdf.php
 php tests/security/permissions.php
 ```
 
-Die neue Fixture `invoice-original-batch-fixtures.php` läuft innerhalb der vorhandenen kurzlebigen, netzwerklosen Recovery-Testdatenbank. Sie bildet Mandant 100 mit 27 synthetischen Rechnungs-PDFs ab, einschließlich bereits registrierter 109860 und 26 neuer Registrierungen. Produktivkonfiguration und Kundendaten werden nicht verwendet. Der vollständige Ergebnisbericht dieses Entwicklungsauftrags steht in `invoice-original-batch-test-report.md`.
+Die Fixture `invoice-original-batch-fixtures.php` läuft innerhalb der vorhandenen kurzlebigen, netzwerklosen Recovery-Testdatenbank. Sie bildet Mandant 100 mit 27 synthetischen Rechnungs-PDFs ab, einschließlich bereits registrierter 109860 und 26 neuer Registrierungen. Produktivkonfiguration und Kundendaten werden nicht verwendet. Der vollständige Ergebnisbericht dieses Entwicklungsauftrags steht in `invoice-original-batch-test-report.md`.
+
+`invoice-mixed-batch-fixtures.php` ergänzt 28 Dateien mit 17 zuvor real erzeugten/veröffentlichten Recovery-Fixtures, neun wiedergefundenen Original-Fixtures und zwei gesperrten Nummern. Der Batch selbst rendert keine PDFs. Sie prüft beide Erklärungsarten, Herkunftsverwechslungen, fehlende/geänderte Nachweise und Veröffentlichungen, unveränderte Recovery-Dateien, Diagnose-/Fingerprint-Sperren, Wiederholung und die korrekte externe GoBD-Herkunftskennzeichnung.
+
+Der aktuelle Testbericht zur gemischten Freigabe steht in [invoice-mixed-batch-test-report.md](invoice-mixed-batch-test-report.md); der vorherige Original-Batch-Testbericht bleibt als historischer Nachweis erhalten.

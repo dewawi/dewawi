@@ -109,13 +109,29 @@ function invoiceBatchState(Zend_Db_Adapter_Abstract $db, array $identity, array 
 
 function invoiceBatchDiagnostics(array $job, string $root, string $sha): void
 {
-	if (glob($root . '/*/diagnostics/' . $sha . '.json') || glob($root . '/*/reconstructions/' . $sha . '.json')) throw new RuntimeException('Known diagnostic/reconstructed PDF cannot be relabeled as an historical original');
+	if (glob($root . '/*/diagnostics/' . $sha . '.json') || glob($root . '/published-diagnostics/*/' . $sha . '.json')) throw new RuntimeException('Known diagnostic PDF cannot be approved');
 	foreach (glob($root . '/*/diagnostics/*.json') as $path) {
 		$proof = recoveryJsonFile($path);
 		$identity = reviewIdentity($proof['identity'] ?? [], $job['identity']['clientid']);
 		if (reviewKey($identity) === reviewKey($job['identity'])) throw new RuntimeException('Existing diagnostic issues require manual clarification before original import');
 	}
 	foreach (glob(DEEC_DocumentReview::publicationDirectory($root, $job['identity'], true) . '/*.json') as $path) { recoveryJsonFile($path); throw new RuntimeException('Diagnostic publication requires manual clarification'); }
+}
+
+function invoiceBatchCandidate(array $job, string $root, array $snapshot, array $file): array
+{
+	$sha = $file['sha256'];
+	$proofs = glob($root . '/*/reconstructions/' . $sha . '.json');
+	$publications = glob($root . '/published/*/' . $sha . '.json');
+	if (!$proofs && !$publications) return ['release_type' => 'verified_recovered_original'];
+	if ($proofs !== [$job['directory'] . '/reconstructions/' . $sha . '.json']) throw new RuntimeException('Reconstruction belongs to a different or ambiguous document context');
+	$candidate = DEEC_DocumentReview::candidate($root, $job['directory'], $job['identity'], $snapshot, $sha);
+	$path = DEEC_DocumentReview::publicationDirectory($root, $job['identity']) . '/' . $sha . '.json';
+	$receipt = recoveryJsonFile($path);
+	if (($receipt['directory'] ?? '') !== basename($job['directory'])) throw new RuntimeException('Reconstruction publication directory differs');
+	DEEC_DocumentReview::receipt($receipt, $job['identity'], $candidate, $snapshot);
+	if ($candidate['file']['size'] !== $file['size']) throw new RuntimeException('ZIP and existing reconstruction size differ');
+	return ['release_type' => 'reviewed_reconstruction_duplicate', 'proof_sha256' => $candidate['proof_sha256'], 'publication_sha256' => hash_file('sha256', $path)];
 }
 
 function invoiceBatchInvoice(Zend_Db_Adapter_Abstract $db, int $client, string $number, bool $lock = false): array
@@ -127,7 +143,7 @@ function invoiceBatchInvoice(Zend_Db_Adapter_Abstract $db, int $client, string $
 
 function invoiceBatchRow(Zend_Db_Adapter_Abstract $db, string $entry, array $file, array $jobs, array $statements, string $root): array
 {
-	$row = ['entry' => $entry, 'document_number' => $file['document_number'], 'sha256' => $file['sha256'], 'size' => $file['size'], 'identity' => null, 'document_date' => null, 'archive_state' => null, 'candidate_status' => $file['status'], 'proposed_action' => 'blocked', 'reason' => '', 'attestation' => $statements[$entry] ?? null];
+	$row = ['entry' => $entry, 'document_number' => $file['document_number'], 'sha256' => $file['sha256'], 'size' => $file['size'], 'identity' => null, 'document_date' => null, 'archive_state' => null, 'candidate_status' => $file['status'], 'proposed_action' => 'blocked', 'reason' => '', 'release_type' => null, 'attestation' => $statements[$entry] ?? null];
 	try {
 		if ($file['status'] !== 'ok') throw new RuntimeException('Invalid PDF structure or MIME type');
 		$document = invoiceBatchInvoice($db, (int)Zend_Registry::get('Client')['id'], $file['document_number']);
@@ -136,16 +152,24 @@ function invoiceBatchRow(Zend_Db_Adapter_Abstract $db, string $entry, array $fil
 		$snapshot = recoverySnapshot($db, $identity); $row['snapshot_sha256'] = $snapshot['sha256']; $row['business_basis'] = $snapshot['data'];
 		$row['archive_state'] = invoiceBatchState($db, $identity, $file);
 		if ($row['archive_state']['status'] === 'CONFLICT') { $row['candidate_status'] = 'CONFLICT'; throw new RuntimeException('Existing archive registration or canonical file differs; no replacement'); }
-		if ($row['archive_state']['status'] === 'already_archived') { $row['candidate_status'] = 'verified_existing_original'; $row['proposed_action'] = 'already_archived'; return $row; }
+		if ($row['archive_state']['status'] === 'already_archived') {
+			$origin = DEEC_DocumentArchive::pdfProvenance($row['archive_state']['registrations'][0]);
+			if (in_array($origin, ['verified_recovered_original', 'reviewed_reconstruction_duplicate'], true)) $row['release_type'] = $origin;
+			$row['candidate_status'] = 'verified_existing_archive_pdf'; $row['proposed_action'] = 'already_archived'; return $row;
+		}
 		$job = $jobs[reviewKey($identity)] ?? null;
 		if (!$job || $job['identity'] !== $identity) throw new RuntimeException('Invoice is not bound to the selected recovery run');
 		$row['manifest_sha256'] = [];
 		foreach (glob($job['directory'] . '/manifest*.json') as $path) { $manifest = recoveryJsonFile($path); if (reviewIdentity($manifest['selected'], $identity['clientid']) !== $identity) throw new RuntimeException('Review manifest identity differs'); $row['manifest_sha256'][basename($path)] = hash_file('sha256', $path); }
 		recoveryJsonFile($job['directory'] . '/selection.json'); $row['selection_sha256'] = hash_file('sha256', $job['directory'] . '/selection.json');
 		invoiceBatchDiagnostics($job, $root, $file['sha256']);
+		$known = (bool)glob($root . '/*/reconstructions/' . $file['sha256'] . '.json') || (bool)glob($root . '/published/*/' . $file['sha256'] . '.json');
+		$row['release_type'] = $known ? 'reviewed_reconstruction_duplicate' : 'verified_recovered_original';
+		$row += invoiceBatchCandidate($job, $root, $snapshot, $file);
 		$row['candidate_status'] = 'attestation_required';
 		DEEC_DocumentRecovery::customerArchiveAttestation($row['attestation'] ?? [], $identity, $snapshot['sha256'], $file['sha256']);
-		$row['candidate_status'] = 'verified_customer_archive_original'; $row['proposed_action'] = 'register';
+		if (($row['attestation']['release_type'] ?? 'verified_recovered_original') !== $row['release_type']) throw new RuntimeException('Declaration release type does not match the PDF provenance');
+		$row['candidate_status'] = $row['release_type']; $row['proposed_action'] = 'register';
 	} catch (RuntimeException | InvalidArgumentException | JsonException $error) { $row['reason'] = $error->getMessage(); }
 	return $row;
 }
@@ -155,7 +179,7 @@ function invoiceBatchReport(string $path, array $record): void
 	$record['summary'] = array_count_values(array_column($record['rows'], isset($record['plan_sha256']) ? 'status' : 'proposed_action'));
 	reviewWrite($path, reviewJson($record));
 	$stream = fopen('php://temp', 'w+b');
-	$fields = ['entry', 'document_number', 'documentid', 'document_date', 'sha256', 'size', 'snapshot_sha256', 'archive_status', 'candidate_status', 'proposed_action', 'status', 'reason'];
+	$fields = ['entry', 'document_number', 'documentid', 'document_date', 'sha256', 'size', 'snapshot_sha256', 'archive_status', 'release_type', 'candidate_status', 'proposed_action', 'status', 'reason'];
 	fputcsv($stream, $fields, ';', '"', '');
 	foreach ($record['rows'] as $row) {
 		$row['documentid'] = $row['identity']['id'] ?? ''; $row['archive_status'] = $row['archive_state']['status'] ?? '';
@@ -167,11 +191,15 @@ function invoiceBatchReport(string $path, array $record): void
 function invoiceBatchApplyRow(Zend_Db_Adapter_Abstract $db, array $row, array $file, array $job, array $authorization, string $root): array
 {
 	$id = $row['identity']; $sha = $file['sha256']; $archive = new DEEC_DocumentArchive($root);
-	if (recoverySnapshot($db, $id, true)['sha256'] !== $row['snapshot_sha256']) throw new RuntimeException('Stale business-data fingerprint; create and confirm a new plan');
+	$snapshot = recoverySnapshot($db, $id, true);
+	if ($snapshot['sha256'] !== $row['snapshot_sha256']) throw new RuntimeException('Stale business-data fingerprint; create and confirm a new plan');
 	if ((int)invoiceBatchInvoice($db, $id['clientid'], $id['document_number'], true)['id'] !== $id['id']) throw new RuntimeException('Invoice number mapping changed');
 	$state = invoiceBatchState($db, $id, $file, true);
 	if ($state['status'] === 'already_archived') return ['status' => 'already_archived'];
 	invoiceBatchDiagnostics($job, $root, $sha);
+	$candidate = invoiceBatchCandidate($job, $root, $snapshot, $file);
+	foreach (['release_type', 'proof_sha256', 'publication_sha256'] as $field) if (($candidate[$field] ?? null) !== ($row[$field] ?? ($field === 'release_type' ? 'verified_recovered_original' : null))) throw new RuntimeException('Planned reconstruction proof/publication or release type changed');
+	$reconstructed = $candidate['release_type'] === 'reviewed_reconstruction_duplicate';
 	$manifestHashes = [];
 	foreach (glob($job['directory'] . '/manifest*.json') as $path) { recoveryJsonFile($path); $manifestHashes[basename($path)] = hash_file('sha256', $path); }
 	if ($manifestHashes !== $row['manifest_sha256']) throw new RuntimeException('Review manifests changed after planning');
@@ -184,15 +212,17 @@ function invoiceBatchApplyRow(Zend_Db_Adapter_Abstract $db, array $row, array $f
 	$ours = ($selection['origin']['batch_plan_sha256'] ?? '') === $authorization['plan_sha256'];
 	if (!$ours && hash_file('sha256', $job['directory'] . '/selection.json') !== $row['selection_sha256']) throw new RuntimeException('Another manual selection replaced the planned review state');
 	$statement = $row['attestation']; DEEC_DocumentRecovery::customerArchiveAttestation($statement, $id, $row['snapshot_sha256'], $sha);
-	$target = $job['directory'] . '/external/batch-original-' . $sha . '.pdf'; reviewDirectory(dirname($target));
-	if (!file_exists($target)) $archive->storeEvidence($file['path'], $target);
+	if (($statement['release_type'] ?? 'verified_recovered_original') !== $candidate['release_type']) throw new RuntimeException('Declared release type differs');
+	$relative = $reconstructed ? 'candidates/' . $sha . '.pdf' : 'external/batch-original-' . $sha . '.pdf';
+	$target = $job['directory'] . '/' . $relative; reviewDirectory(dirname($target));
+	if (!$reconstructed && !file_exists($target)) $archive->storeEvidence($file['path'], $target);
 	reviewPrivateFile($target); $copied = $archive->inspect($target, 'pdf');
 	if ($copied['status'] !== 'ok' || $copied['sha256'] !== $sha || $copied['size'] !== $file['size']) throw new RuntimeException('Staged original size/SHA differs');
 	reviewDirectory(dirname($attemptPath));
 	if (!file_exists($attemptPath)) reviewWrite($attemptPath, reviewJson(['identity' => $id, 'sha256' => $sha, 'snapshot_sha256' => $row['snapshot_sha256'], 'authorization' => $authorization]));
 	if (!$ours) {
-		$comparison = ['kind' => 'customer_archive_attestation', 'assertion_type' => 'retrospective_customer_archive_attestation', 'identity' => $id, 'sha256' => $sha, 'snapshot_sha256' => $row['snapshot_sha256'], 'confirmed_by' => $authorization['confirmed_by'], 'confirmed_at' => $authorization['confirmed_at'], 'plan_sha256' => $authorization['plan_sha256'], 'declaration_sha256' => $authorization['declaration_sha256'], 'statement' => $statement];
-		recoverySelect($job, ['document' => $id, 'decision' => 'selected', 'candidate_path' => 'external/' . basename($target), 'sha256' => $sha, 'reason' => $statement['comparison_reference'], 'origin' => ['kind' => 'historical_pdf', 'source_path' => $statement['provenance'], 'category' => 'verified_recovered_original', 'batch_plan_sha256' => $authorization['plan_sha256'], 'zip_entry' => $row['entry'], 'zip_sha256' => $authorization['zip_sha256']], 'original_comparison' => $comparison], $authorization['confirmed_by'], $archive);
+		$comparison = ['kind' => 'customer_archive_attestation', 'assertion_type' => 'retrospective_customer_archive_attestation', 'identity' => $id, 'sha256' => $sha, 'snapshot_sha256' => $row['snapshot_sha256'], 'confirmed_by' => $authorization['confirmed_by'], 'confirmed_at' => $authorization['confirmed_at'], 'plan_sha256' => $authorization['plan_sha256'], 'declaration_sha256' => $authorization['declaration_sha256'], 'proof_sha256' => $candidate['proof_sha256'] ?? null, 'publication_sha256' => $candidate['publication_sha256'] ?? null, 'statement' => $statement];
+		recoverySelect($job, ['document' => $id, 'decision' => 'selected', 'candidate_path' => $relative, 'sha256' => $sha, 'reason' => $statement['comparison_reference'], 'origin' => ['kind' => $reconstructed ? 'reconstructed' : 'historical_pdf', 'source_path' => $reconstructed ? $target : $statement['provenance'], 'category' => $candidate['release_type'], 'batch_plan_sha256' => $authorization['plan_sha256'], 'zip_entry' => $row['entry'], 'zip_sha256' => $authorization['zip_sha256']], 'original_comparison' => $comparison], $authorization['confirmed_by'], $archive);
 	} elseif (($selection['sha256'] ?? '') !== $sha || ($selection['original_comparison']['statement'] ?? null) !== $statement) throw new RuntimeException('Prior batch selection differs');
 	recoveryApprove($db, $job, $archive);
 	$result = recoveryImport($db, $job, $archive, $authorization);
@@ -264,7 +294,7 @@ function invoiceBatchMain(array $options): array
 		$template = null;
 		if ($action === 'plan' && !isset($options['declaration'])) {
 			$template = substr($report, 0, -5) . '.declaration.json'; $entries = [];
-			foreach ($rows as $row) $entries[] = ['entry' => $row['entry'], 'document' => $row['identity'], 'sha256' => $row['sha256'], 'snapshot_sha256' => $row['snapshot_sha256'] ?? null, 'provenance' => '', 'comparison_reference' => '', 'comparison_performed_at' => null, 'original_provenance_verified' => false, 'identity_verified' => false, 'customer_archive_compared' => false, 'business_values_compared' => false, 'positions_taxes_totals_match' => false, 'unresolved_differences' => true, 'differences' => []];
+			foreach ($rows as $row) $entries[] = ['entry' => $row['entry'], 'document' => $row['identity'], 'sha256' => $row['sha256'], 'snapshot_sha256' => $row['snapshot_sha256'] ?? null, 'release_type' => $row['release_type'] ?? null, 'historical_content_match' => false, 'provenance' => '', 'comparison_reference' => '', 'comparison_performed_at' => null, 'original_provenance_verified' => false, 'identity_verified' => false, 'customer_archive_compared' => false, 'business_values_compared' => false, 'positions_taxes_totals_match' => false, 'unresolved_differences' => true, 'differences' => []];
 			reviewWrite($template, reviewJson(['schema_version' => 1, 'clientid' => $client, 'operator_user' => $user, 'zip_sha256' => $zip['sha256'], 'documents' => $entries]));
 		}
 		return ['report' => $report, 'report_sha256' => hash_file('sha256', $report), 'declaration_template' => $template, 'summary' => array_count_values(array_column($rows, $action === 'plan' ? 'proposed_action' : 'status')), 'exit' => $action === 'apply' && count(array_filter($rows, static fn(array $row): bool => in_array($row['status'], ['failed', 'blocked', 'CONFLICT'], true))) ? 1 : 0];

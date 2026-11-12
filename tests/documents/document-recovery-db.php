@@ -598,4 +598,5 @@ foreach ($batchBefore as $table => $rows) recoveryTestCheck($pdo->query('SELECT 
 require __DIR__ . '/document-diagnostic-fixtures.php';
 require __DIR__ . '/document-original-review-fixtures.php';
 require __DIR__ . '/invoice-original-batch-fixtures.php';
+require __DIR__ . '/invoice-mixed-batch-fixtures.php';
 echo 'PASS: ' . $checks . " isolated recovery checks; eight types, retrospective attestations, policy releases, private reports, diagnostic PDFs and unchanged business rows\n";

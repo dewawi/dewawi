@@ -75,7 +75,7 @@
 	'ADMIN_EXPORT_DOCUMENTS' => 'PDF-Belegbilder mit exportieren',
 	'ADMIN_EXPORT_REVIEW' => 'Dokumente zur internen Prüfung exportieren',
 	'ADMIN_EXPORT_REVIEW_HINT' => 'Der separate Prüfexport enthält Archivoriginale und veröffentlichte Prüf-PDFs. Eine Originalprüfung wird dadurch nicht bestätigt.',
-	'ADMIN_EXPORT_DOCUMENTS_HINT' => 'Nur verifizierte Archivoriginale werden übernommen. Fehlende Belegbilder werden im Export ausgewiesen.',
+	'ADMIN_EXPORT_DOCUMENTS_HINT' => 'Verifizierte Archivfassungen werden übernommen. Geprüfte Rekonstruktionsdoppel und fehlende Belegbilder sind im Lieferverzeichnis gekennzeichnet.',
 	'ADMIN_EXPORT_INVALID_PERIOD' => 'Bitte gültige Datumsgrenzen im Format JJJJ-MM-TT angeben. Von darf nicht nach Bis liegen.',
 	'ADMIN_EXPORT_DOCUMENTS_DENIED' => 'Für diesen Export werden Administratorzugriff und Leserechte für alle acht Belegarten benötigt.',
 	'ADMIN_EXPORT_FAILED' => 'Der Export konnte nicht vollständig erstellt und geprüft werden. Es wurde kein neues Paket veröffentlicht.',

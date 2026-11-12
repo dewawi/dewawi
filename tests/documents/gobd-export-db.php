@@ -154,6 +154,8 @@ exportCheck(count(array_filter($manifest, static fn(array $row) => $row['control
 exportCheck(count(exportCsv($technical, 'excluded_documents.csv')) === 2, 'Deleted or excluded document inventory is missing');
 exportCheck(in_array('historical_versions_differ', array_column($missing, 'reason'), true), 'Unapproved historical conflict was silently exported');
 $recovered = array_values(array_filter($manifest, static fn(array $row) => $row['controller'] === 'invoice' && $row['documentid'] === '21'))[0];
+$recoveredDelivery = array_values(array_filter($delivery, static fn(array $row) => $row['controller'] === 'invoice' && $row['documentid'] === '21'))[0];
+exportCheck($recoveredDelivery['pdf_origin'] === 'reviewed_reconstruction_duplicate' && str_contains($zip->getFromName('readme.txt'), 'not unchanged historical original files'), 'Legacy approved reconstruction was mislabeled as a historical original file');
 exportCheck(str_contains($recovered['archive_parameters'], 'generated_at') && str_contains($recovered['historical_conflicts'], 'historical_versions_differ'), 'Approved recovery provenance or conflict evidence was lost');
 $metadata = json_decode($zip->getFromName('metadata.json'), true);
 exportCheck($metadata['documents']['summary']['complete'] === false && str_contains($zip->getFromName('readme.txt'), 'INCOMPLETE'), 'Missing images were presented as complete');
@@ -187,6 +189,21 @@ class BrokenGobdReference extends DEEC_Export_Gobd
 		parent::createZip($filePath, $files, $zipFileName);
 	}
 }
+class MislabelledGobdPackage extends DEEC_Export_Gobd
+{
+	protected function createZip(string $filePath, array $files, string $zipFileName): void
+	{
+		$path = $filePath . 'document_files.csv'; $stream = fopen($path, 'rb'); $fields = fgetcsv($stream, 0, ';', '"', ''); $rows = [];
+		while (($values = fgetcsv($stream, 0, ';', '"', '')) !== false) {
+			$row = array_combine($fields, $values);
+			if ($row['pdf_supplied'] === '1') $row['pdf_origin'] = 'issued_original';
+			$rows[] = $row;
+		}
+		fclose($stream); $stream = fopen($path, 'wb'); fputcsv($stream, $fields, ';', '"', '');
+		foreach ($rows as $row) fputcsv($stream, array_map(static fn($field) => $row[$field], $fields), ';', '"', ''); fclose($stream);
+		parent::createZip($filePath, $files, $zipFileName);
+	}
+}
 class GobdRollbackFixture
 {
 	public function __construct(private $db) {}
@@ -200,6 +217,7 @@ class GobdRollbackFixture
 	}
 }
 $published = glob($destination . '*.zip');
+exportReject(static fn() => (new MislabelledGobdPackage($db, 7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'Misleading reconstructed-file provenance was published');
 exportReject(static fn() => (new BrokenGobdPackage($db, 7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'Incomplete ZIP was published');
 exportReject(static fn() => (new BrokenGobdReference($db, 7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'Unresolved CSV reference was published');
 exportReject(static fn() => (new DEEC_Export_Gobd(new GobdRollbackFixture($db), 7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'Rollback failure published a package');
