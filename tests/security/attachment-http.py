@@ -207,6 +207,8 @@ with tempfile.TemporaryDirectory(prefix="dewawi-attachment-http-") as temp:
         package.chmod(0o600)
     (export_dir / '.gobd-staging').mkdir(mode=0o700)
     (export_dir / '.gobd-staging/document_manifest.csv').write_bytes(b'Private staging data')
+    (export_dir / '.gobd-reports').mkdir(mode=0o700)
+    (export_dir / '.gobd-reports/fixture.audit.zip').write_bytes(b'Private technical verification')
     stored_files = ["files/contacts/7/0/7/1/0/100/notes.txt", "files/contacts/7/0/7/1/0/100/quote.pdf", "files/contacts/7/0/7/1/0/100/invoice.pdf", "cache/document/sales/quote/7/10/quote.pdf", "files/uploads/unmapped.pdf", "cache/item/501.pdf", "cache/internal.pdf", "cache/thumbs/files/unmapped.png"]
     for relative in stored_files:
         target = site / relative
@@ -408,6 +410,7 @@ DocumentRoot "{site}"
         assert fetch('/files/export/7/0/7/document-review-invalid.zip', 'admin')[0] == 404, 'Unfinished review ZIP was downloadable'
         assert fetch('/files/export/7/0/7/gobd-export-legacy.zip', 'admin_no_documents') == (200, b'Private export package'), 'Legacy CSV export download permissions changed'
         assert fetch('/files/export/7/0/7/.gobd-staging/document_manifest.csv', 'admin')[0] in (403, 404), 'Private staging became downloadable'
+        assert fetch('/files/export/7/0/7/.gobd-reports/fixture.audit.zip', 'admin')[0] in (403, 404), 'Private verification became downloadable'
         for requested in ['files/contacts/7/0/7/1/0/100/linked.pdf', 'files/contacts/7/0/7/1/0/100/%2e%2e/100/quote.pdf', 'files/contacts/7/0/7/1/0/100/%252e%252e/quote.pdf', 'files/contacts/7/0/7/1/0/100/quote.pdf%00']:
             assert fetch('/' + requested, 'denied')[0] in (400, 403, 404), f'Traversal or symlink accepted: {requested}'
         for requested in ['/media/images/product.png', '/media/7/0/7/images/product.png']:
@@ -424,6 +427,7 @@ DocumentRoot "{site}"
             assert fetch('/dewawi/' + relative, 'foreign')[0] == 404, 'Subdirectory tenant bypass'
         assert fetch('/dewawi/media/images/product.png') == (200, b'Public media fixture'), 'Subdirectory publication failed'
         assert fetch('/dewawi' + document_export, 'admin') == (200, private_export_bytes), 'Subdirectory GoBD download failed'
+        assert b'href="/dewawi/files/export/7/0/7/gobd-documents-large-fixture.zip"' in fetch('/dewawi/download-list', 'admin')[1], 'Export list lost its installation base URL'
         assert fetch('/dewawi' + document_export, 'admin_no_documents')[0] == 404, 'Subdirectory GoBD permission bypass'
         for prefix in ['', '/dewawi']:
             for relative in media_files:

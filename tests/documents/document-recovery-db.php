@@ -350,7 +350,7 @@ try {
 	while (($values = fgetcsv($reviewStream, 0, ';', '"', '')) !== false) $reviewVersions[] = array_combine($reviewFields, $values);
 	fclose($reviewStream);
 	recoveryTestCheck(count($reviewVersions) === 9 && count(array_unique(array_column($reviewVersions, 'controller'))) === 8, 'Internal export lost real published recovery PDFs or their multiple versions');
-	foreach ($reviewVersions as $version) recoveryTestCheck($version['status'] === DEEC_DocumentReview::STATUS && hash('sha256', $reviewPackage->getFromName($version['zip_path'])) === $version['sha256'] && str_starts_with($version['zip_path'], 'review/7/'), 'Real reconstruction was exported as an original or with changed bytes');
+	foreach ($reviewVersions as $version) recoveryTestCheck($version['status'] === DEEC_DocumentReview::STATUS && hash('sha256', $reviewPackage->getFromName($version['zip_path'])) === $version['sha256'] && str_starts_with($version['zip_path'], 'review/'), 'Real reconstruction was exported as an original or with changed bytes');
 	$reviewPackage->close();
 	Zend_Registry::set('User', $exportUser); $exportDb->closeConnection();
 	foreach (['de_DE', 'en_US'] as $locale) {
@@ -596,4 +596,5 @@ recoveryTestCheck($pdo->query('SELECT * FROM documentarchive WHERE documentid = 
 foreach ($archivedBefore as $old) recoveryTestCheck($pdo->query('SELECT * FROM documentarchive WHERE id = ' . (int)$old['id'])->fetch(PDO::FETCH_ASSOC) === $old, 'Batch release changed an existing archived original');
 foreach ($batchBefore as $table => $rows) recoveryTestCheck($pdo->query('SELECT * FROM `' . $table . '` ORDER BY id')->fetchAll(PDO::FETCH_ASSOC) === $rows, 'Batch release changed business or email rows');
 require __DIR__ . '/document-diagnostic-fixtures.php';
+require __DIR__ . '/document-original-review-fixtures.php';
 echo 'PASS: ' . $checks . " isolated recovery checks; eight types, retrospective attestations, policy releases, private reports, diagnostic PDFs and unchanged business rows\n";

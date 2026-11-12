@@ -5,37 +5,7 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 require_once __DIR__ . '/document-archive-migration.php';
 require_once dirname(__DIR__, 2) . '/library/DEEC/Emailattachment.php';
 require_once dirname(__DIR__, 2) . '/library/DEEC/DocumentArchive.php';
-
-function reviewId($value): int
-{
-	$id = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-	if (!$id) throw new RuntimeException('Invalid document or tenant ID');
-	return $id;
-}
-
-function reviewIdentity(array $row, int $clientId): array
-{
-	if (reviewId($row['clientid'] ?? null) !== $clientId) throw new RuntimeException('Foreign tenant in input');
-	$module = $row['module'] ?? '';
-	$controller = $row['controller'] ?? '';
-	if (!is_string($module) || !is_string($controller) || !DEEC_DocumentArchive::validDocumentType($module, $controller)) throw new RuntimeException('Invalid document type');
-	$number = $row['document_number'] ?? '';
-	if ((!is_string($number) && !is_int($number)) || ((string)$number !== '' && !DEEC_Emailattachment::validFilename(str_replace('/', '-', (string)$number)))) throw new RuntimeException('Invalid visible document number');
-	return ['module' => $module, 'controller' => $controller, 'id' => reviewId($row['id'] ?? null), 'clientid' => $clientId, 'document_number' => (string)$number];
-}
-
-function reviewKey(array $row): string { return $row['module'] . '/' . $row['controller'] . '/' . $row['id']; }
-
-function reviewSafePath(string $path): void
-{
-	if ($path === '' || $path[0] !== '/' || str_contains($path, '\\') || preg_match('~[\x00-\x1f\x7f]|/(?:\.{1,2})(?:/|$)|//~', $path)) throw new RuntimeException('Unsafe filesystem path');
-	$current = '';
-	foreach (explode('/', substr($path, 1)) as $part) {
-		$current .= '/' . $part;
-		clearstatcache(true, $current);
-		if (is_link($current)) throw new RuntimeException('Symlink in filesystem path');
-	}
-}
+require_once dirname(__DIR__, 2) . '/library/DEEC/DocumentRecovery.php';
 
 function reviewInputs(string $jsonl, ?string $tsv, string $selection, int $clientId): array
 {
@@ -188,40 +158,6 @@ function reviewLoadDocument(mysqli $db, DEEC_DocumentArchive $archive, array $se
 	$metadata = migrationMetadata($db, $document, $archive->relativePath((int)$document['clientid'], $document['module'], $table, (int)$document['id']));
 	return ['document' => $document, 'sources' => $sources, 'current_plan' => $archive->plan($document, $metadata)];
 }
-
-function reviewDirectory(string $path): void
-{
-	reviewSafePath($path);
-	if (!file_exists($path)) {
-		if (!is_dir(dirname($path))) reviewDirectory(dirname($path));
-		if (!mkdir($path, 0700)) throw new RuntimeException('Review directory could not be created');
-	}
-	clearstatcache(true, $path);
-	if (!is_dir($path) || (fileperms($path) & 0777) !== 0700) throw new RuntimeException('Review directories require mode 0700');
-}
-
-function reviewPrivateFile(string $path): void
-{
-	reviewSafePath($path);
-	$stat = lstat($path);
-	if (!$stat || ($stat['mode'] & 0170000) !== 0100000 || ($stat['mode'] & 0777) !== 0600 || $stat['nlink'] !== 1) throw new RuntimeException('Unsafe existing review file');
-}
-
-function reviewWrite(string $path, string $bytes): void
-{
-	reviewSafePath($path);
-	$temp = dirname($path) . '/.write-' . bin2hex(random_bytes(12));
-	$handle = @fopen($temp, 'x+b');
-	if (!$handle) throw new RuntimeException('Review output could not be staged');
-	try {
-		try {
-			if (!chmod($temp, 0600) || fwrite($handle, $bytes) !== strlen($bytes) || !fflush($handle) || (function_exists('fsync') && !fsync($handle))) throw new RuntimeException('Review output write failed');
-		} finally { fclose($handle); }
-		if (!@link($temp, $path)) throw new RuntimeException('Review output is already occupied');
-	} finally { unlink($temp); }
-}
-
-function reviewJson(array $value): string { return json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n"; }
 
 function reviewCopy(DEEC_DocumentArchive $sourceArchive, DEEC_DocumentArchive $targetArchive, array $before, string $target): void
 {

@@ -76,6 +76,7 @@ class DEEC_Export_Gobd
 			}
 			$name = $this->buildPackage($stage, $from, $to, $includeDocuments);
 			if ($transaction) { $this->db->rollBack(); $transaction = false; }
+			if ($includeDocuments && !$reviewExport) $this->publishVerification($stage, $destination, $name);
 			if (!@chmod($stage . $name, 0600) || !@link($stage . $name, $destination . $name)) throw new RuntimeException('Export could not be published without overwriting another file');
 			return $name;
 		} finally {
@@ -141,7 +142,7 @@ class DEEC_Export_Gobd
 				. "\nchecksums.sha256 covers every ZIP entry except itself. Verify with sha256sum -c checksums.sha256 after extraction. Completeness refers only to this stored dated-document scope, not overall legal compliance.\n";
 			if ($this->reviewExport) $bytes = "INTERNAL DOCUMENT REVIEW ONLY\nNot a GoBD original-document export. No original equivalence or completed paper comparison is asserted.\n"
 				. "Period (inclusive stored document dates): $from to $to\nTenant: " . $this->clientId . "\n"
-				. "originals/ contains verified registered originals; review/ contains only currently valid published reconstructions. The latter require an original comparison before final archive approval.\n"
+				. "originals/ contains verified registered originals; candidates/ contains unreviewed historical PDFs; review/ contains only currently valid published reconstructions. The latter require an original comparison before final archive approval.\n"
 				. "diagnostics/ contains visibly marked diagnostic documents with incomplete or contradictory data. They are not validated reconstructions and cannot be approved as originals. Undated diagnostic publications are included additionally with date_scope=undated_diagnostic_not_assigned_to_period; no historical date or period is inferred.\n"
 				. "Every dated document is identified in document_index.csv. document_manifest.csv lists every included version and all missing, invalid or excluded cases. missing_documents.csv lists unresolved cases. Deleted issued originals retain their deleted flag and are also listed in excluded_documents.csv; no document is reactivated.\n"
 				. "Visible numbers name PDFs. Unsafe or missing numbers and collisions receive --id-<internal ID> (and a counter if necessary); review versions also carry their SHA-256 prefix. Original filenames and internal IDs remain in the manifests.\n"
@@ -160,9 +161,126 @@ class DEEC_Export_Gobd
 		$zipFileName = $this->buildZipFileName($from, $to);
 		if ($includeDocuments) $zipFileName = str_replace('gobd-export-', 'gobd-documents-', substr($zipFileName, 0, -4)) . '-' . bin2hex(random_bytes(8)) . '.zip';
 		if ($this->reviewExport) $zipFileName = str_replace('gobd-documents-', 'document-review-', $zipFileName);
+		if ($includeDocuments && !$this->reviewExport) $files = $this->prepareExternalDelivery($filePath, $files);
 		$this->createZip($filePath, $files, $zipFileName);
 
 		return $zipFileName;
+	}
+
+	protected function prepareExternalDelivery(string $directory, array $files): array
+	{
+		// Validate the complete technical inventory privately before reducing the delivery view.
+		$audit = new ZipArchive();
+		if ($audit->open($directory . 'internal-verification.zip', ZipArchive::CREATE | ZipArchive::EXCL) !== true) throw new RuntimeException('Could not create private export verification');
+		$expected = $this->documentFiles;
+		foreach ($files as $file) {
+			$expected[$file] = ['size' => filesize($directory . $file), 'sha256' => hash_file('sha256', $directory . $file)];
+			if (!$audit->addFile($directory . $file, $file)) throw new RuntimeException('Could not retain private export inventory');
+		}
+		if (!$audit->close() || $audit->open($directory . 'internal-verification.zip', ZipArchive::CHECKCONS) !== true) throw new RuntimeException('Private export verification is invalid');
+		try {
+			foreach ($files as $file) {
+				$stream = $audit->getStream($file); $hash = hash_init('sha256');
+				if (!$stream) throw new RuntimeException('Private inventory entry is missing');
+				try { $size = hash_update_stream($hash, $stream); } finally { fclose($stream); }
+				if ($size !== $expected[$file]['size'] || hash_final($hash) !== $expected[$file]['sha256']) throw new RuntimeException('Private inventory integrity differs');
+			}
+			$this->verifyDocumentManifest($audit, $expected);
+		} finally { $audit->close(); }
+		$fields = ['record_key', 'module', 'controller', 'documentid', 'document_number', 'document_date', 'filename', 'deleted', 'issued', 'csv_file', 'csv_key_column', 'csv_key_value', 'pdf_path', 'pdf_supplied', 'delivery_note'];
+		$input = fopen($directory . 'document_index.csv', 'rb');
+		$output = fopen($directory . 'document_files.csv', 'xb');
+		if (!$input || !$output) throw new RuntimeException('Could not write document delivery overview');
+		try {
+			$columns = fgetcsv($input, 0, ';', '"', '');
+			if (fputcsv($output, $fields, ';', '"', '') === false) throw new RuntimeException('Could not write delivery columns');
+			while (($values = fgetcsv($input, 0, ';', '"', '')) !== false) {
+				$row = array_combine($columns, $values);
+				if ($row['csv_file'] === 'document_index.csv') $row['csv_file'] = 'document_files.csv';
+				$row['pdf_path'] = $row['zip_path']; $row['pdf_supplied'] = $row['status'] === 'included' ? '1' : '0';
+				$row['delivery_note'] = ['included' => 'supplied', 'missing' => 'requested_pdf_not_supplied', 'excluded' => 'original_reference_not_supplied_issue_status_unconfirmed', 'not_issued' => 'draft_no_original_requested'][$row['status']];
+				if (fputcsv($output, array_map(static fn(string $field) => $row[$field], $fields), ';', '"', '') === false) throw new RuntimeException('Could not write delivery row');
+			}
+		} finally { fclose($input); fclose($output); }
+		$metadata = json_decode(file_get_contents($directory . 'metadata.json'), true, 512, JSON_THROW_ON_ERROR);
+		$metadata['documents']['overview'] = ['file' => 'document_files.csv', 'columns' => $fields, 'key' => 'record_key', 'pdf_path' => 'Exact ZIP entry; empty when not supplied', 'pdf_supplied' => '1 only for a verified registered original', 'csv_reference' => 'csv_file/csv_key_column/csv_key_value identify the fiscal CSV row; types without a separate fiscal dataset refer to this overview', 'delivery_note' => 'supplied; requested_pdf_not_supplied; original_reference_not_supplied_issue_status_unconfirmed; draft_no_original_requested'];
+		$bytes = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+		if (file_put_contents($directory . 'metadata.json', $bytes) !== strlen($bytes)) throw new RuntimeException('Could not write delivery metadata');
+		$this->writeReadme($directory . 'readme.txt', $metadata['from'], $metadata['to']);
+		$bytes = "\n\nRequested PDF delivery: " . ($metadata['documents']['summary']['complete'] ? 'COMPLETE for the stated stored dated-document scope' : 'INCOMPLETE')
+			. "\n" . json_encode($metadata['documents']['summary'], JSON_THROW_ON_ERROR)
+			. "\nOnly verified registered original PDFs are supplied. No unreviewed reconstructions or diagnostic PDFs are included."
+			. "\ndocument_files.csv lists every document in the requested stored-date scope, its fiscal CSV reference, supplied PDF path and any delivery gap. Deleted issued documents retain their flags and are included when a verified original exists."
+			. "\nEmpty pdf_path with pdf_supplied=0 explicitly means no PDF was delivered. Inspect delivery_note; missing requested originals make this delivery incomplete. Drafts without an original reference do not request a PDF."
+			. "\nPDFs use visible document numbers under documents/<module>/<type>/. Archive integrity and the full technical inventory were verified and retained internally. Completeness of this delivery is not an assertion of overall legal compliance.\n";
+		if (file_put_contents($directory . 'readme.txt', $bytes, FILE_APPEND) !== strlen($bytes)) throw new RuntimeException('Could not write delivery scope');
+		return array_merge(array_values(array_diff($files, ['document_index.csv', 'document_manifest.csv', 'missing_documents.csv', 'excluded_documents.csv', 'checksums.sha256'])), ['document_files.csv']);
+	}
+
+	protected function verifyDelivery(ZipArchive $zip): void
+	{
+		$metadata = json_decode($zip->getFromName('metadata.json'), true, 512, JSON_THROW_ON_ERROR);
+		$summary = $metadata['documents']['summary']; $keys = []; $paths = []; $references = [];
+		$counts = ['included' => 0, 'missing' => 0, 'excluded' => 0, 'issued' => 0, 'deleted_issued' => 0];
+		$stream = $zip->getStream('document_files.csv');
+		try {
+			$fields = fgetcsv($stream, 0, ';', '"', '');
+			if ($fields !== $metadata['documents']['overview']['columns']) throw new RuntimeException('Delivery columns differ');
+			while (($values = fgetcsv($stream, 0, ';', '"', '')) !== false) {
+				if (count($values) !== count($fields)) throw new RuntimeException('Incomplete delivery row');
+				$row = array_combine($fields, $values); $key = $this->clientId . '/' . $row['module'] . '/' . $row['controller'] . '/' . $row['documentid'];
+				if ($key !== $row['record_key'] || isset($keys[$key]) || !DEEC_DocumentArchive::validDocumentType($row['module'], $row['controller']) || $row['document_date'] < $metadata['from'] || $row['document_date'] > $metadata['to']) throw new RuntimeException('Delivery identity or date differs');
+				$keys[$key] = true;
+				if ($row['issued'] === '1') { $counts['issued']++; if ($row['deleted'] !== '0') $counts['deleted_issued']++; }
+				$status = array_search($row['delivery_note'], ['included' => 'supplied', 'missing' => 'requested_pdf_not_supplied', 'excluded' => 'original_reference_not_supplied_issue_status_unconfirmed', 'not_issued' => 'draft_no_original_requested'], true);
+				if ($status === false || $row['pdf_supplied'] !== ($status === 'included' ? '1' : '0')) throw new RuntimeException('Delivery statement differs');
+				if (isset($counts[$status])) $counts[$status]++;
+				if ($status === 'included') {
+					if (!$row['issued'] || !isset($this->documentFiles[$row['pdf_path']]) || isset($paths[$row['pdf_path']]) || !str_starts_with($row['pdf_path'], 'documents/' . $row['module'] . '/' . $row['controller'] . '/')) throw new RuntimeException('Delivered PDF assignment differs');
+					$paths[$row['pdf_path']] = true;
+				} elseif ($row['pdf_path'] !== '') throw new RuntimeException('Undelivered document contains a PDF');
+				$references[] = [$row['csv_file'], $row['csv_key_column'], $row['csv_key_value']];
+			}
+		} finally { fclose($stream); }
+		$lookup = [];
+		foreach ($references as [$file, $column, $value]) {
+			if (!isset($lookup[$file][$column])) {
+				$csv = $zip->getStream($file);
+				if (!$csv) throw new RuntimeException('Delivery reference file is missing');
+				try {
+					$escape = $file === 'document_files.csv' ? '' : '\\';
+					$columns = fgetcsv($csv, 0, ';', '"', $escape); $offset = array_search($column, $columns, true);
+					if ($offset === false) throw new RuntimeException('Delivery reference column is missing');
+					$lookup[$file][$column] = [];
+					while (($values = fgetcsv($csv, 0, ';', '"', $escape)) !== false) $lookup[$file][$column][(string)$values[$offset]] = true;
+				} finally { fclose($csv); }
+			}
+			if (!isset($lookup[$file][$column][$value])) throw new RuntimeException('Delivery reference row is missing');
+		}
+		foreach ($counts as $key => $value) if ($summary[$key] !== $value) throw new RuntimeException('Delivery summary differs');
+		if ($summary['dated_documents'] !== count($keys) || count($paths) !== count($this->documentFiles) || $summary['complete'] !== ($counts['missing'] === 0 && $counts['excluded'] === 0)) throw new RuntimeException('Delivery completeness differs');
+	}
+
+	protected function publishVerification(string $stage, string $destination, string $name): void
+	{
+		$directory = $destination . '.gobd-reports';
+		DEEC_Emailattachment::checkPath($directory);
+		if (!file_exists($directory) && !mkdir($directory, 0700)) throw new RuntimeException('Private verification directory is unavailable');
+		if (!is_dir($directory) || (fileperms($directory) & 0777) !== 0700) throw new RuntimeException('Private verification directory requires mode 0700');
+		$zip = new ZipArchive();
+		if ($zip->open($stage . $name, ZipArchive::RDONLY) !== true) throw new RuntimeException('Verified delivery is unavailable');
+		$entries = [];
+		try {
+			for ($i = 0; $i < $zip->numFiles; $i++) {
+				$stat = $zip->statIndex($i); $stream = $zip->getStream($stat['name']); $hash = hash_init('sha256');
+				if (!$stream) throw new RuntimeException('Verified delivery entry is unavailable');
+				try { $size = hash_update_stream($hash, $stream); } finally { fclose($stream); }
+				$entries[$stat['name']] = ['size' => $size, 'sha256' => hash_final($hash)];
+			}
+		} finally { $zip->close(); }
+		$bytes = json_encode(['schema_version' => 1, 'clientid' => $this->clientId, 'verified_by' => $this->userId, 'verified_at' => gmdate('c'), 'delivery' => $name, 'size' => filesize($stage . $name), 'sha256' => hash_file('sha256', $stage . $name), 'technical_inventory_sha256' => hash_file('sha256', $stage . 'internal-verification.zip'), 'entries' => $entries], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+		if (file_put_contents($stage . 'delivery-verification.json', $bytes) !== strlen($bytes)) throw new RuntimeException('Could not write delivery verification');
+		foreach (['internal-verification.zip' => '.audit.zip', 'delivery-verification.json' => '.verification.json'] as $source => $suffix) if (!chmod($stage . $source, 0600) || !@link($stage . $source, $directory . '/' . $name . $suffix)) throw new RuntimeException('Could not retain private delivery verification without overwrite');
 	}
 
 	protected function writeDocuments(string $directory, array $profile, string $from, string $to): array
@@ -175,7 +293,7 @@ class DEEC_Export_Gobd
 			if (!$handles[$name] || fputcsv($handles[$name], $fields, ';', '"', '') === false) throw new RuntimeException('Could not create document manifest');
 		}
 		$summary = ['dated_documents' => 0, 'issued' => 0, 'included' => 0, 'missing' => 0, 'excluded' => 0, 'deleted_issued' => 0, 'complete' => true];
-		$reviewCounts = ['archived_original' => 0, DEEC_DocumentReview::STATUS => 0, DEEC_DocumentReview::DIAGNOSTIC_STATUS => 0, 'missing' => 0, 'invalid' => 0, 'excluded' => 0];
+		$reviewCounts = ['archived_original' => 0, DEEC_DocumentReview::STATUS => 0, DEEC_DocumentReview::DIAGNOSTIC_STATUS => 0, DEEC_DocumentReview::UNREVIEWED_STATUS => 0, 'missing' => 0, 'invalid' => 0, 'excluded' => 0];
 		$undatedCount = 0;
 		$archive = new DEEC_DocumentArchive(BASE_PATH);
 		$archiveDb = new Application_Model_DbTable_Documentarchive();
@@ -269,7 +387,7 @@ class DEEC_Export_Gobd
 		$safe = $stem !== '' && $stem === $number && !preg_match('/^(?:CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(?:\.|$)/i', $stem);
 		if (!$safe) $stem = ($stem ?: 'document') . '--id-' . $document['id'];
 		if ($sha !== null) $stem .= '--' . substr($sha, 0, 12);
-		$directory = $prefix . '/' . $this->clientId . '/' . $module . '/' . $controller . '/';
+		$directory = $prefix . '/' . $module . '/' . $controller . '/';
 		$name = $directory . $stem . '.pdf';
 		if (isset($this->documentNames[strtolower($name)])) {
 			$stem .= '--id-' . $document['id'];
@@ -291,9 +409,10 @@ class DEEC_Export_Gobd
 			$rows = [];
 			foreach ($inspection['candidates'] as $sha => $candidate) {
 				$diagnostic = $candidate['status'] === DEEC_DocumentReview::DIAGNOSTIC_STATUS;
-				$name = $this->documentZipPath($diagnostic ? 'diagnostics' : 'review', $module, $controller, $document, $sha);
+				$unreviewed = $candidate['status'] === DEEC_DocumentReview::UNREVIEWED_STATUS;
+				$name = $this->documentZipPath($diagnostic ? 'diagnostics' : ($unreviewed ? 'candidates' : 'review'), $module, $controller, $document, $sha);
 				$this->documentFiles[$name] = ['path' => $candidate['file']['path'], 'size' => $candidate['file']['size'], 'sha256' => $sha];
-				$rows[] = array_replace($row, ['status' => $candidate['status'], 'reason' => $diagnostic ? 'diagnostic_only_not_an_approved_basis' : 'original_comparison_pending', 'evidence_status' => $diagnostic ? 'diagnostic_only_not_validated' : 'current_published_reconstruction',
+				$rows[] = array_replace($row, ['status' => $candidate['status'], 'reason' => $diagnostic ? 'diagnostic_only_not_an_approved_basis' : ($unreviewed ? 'unreviewed_historical_candidate' : 'original_comparison_pending'), 'evidence_status' => $diagnostic ? 'diagnostic_only_not_validated' : ($unreviewed ? 'unreviewed_historical_candidate' : 'current_published_reconstruction'),
 					'zip_path' => $name, 'filesize' => $candidate['file']['size'], 'sha256' => $sha, 'proof_sha256' => $candidate['proof_sha256'], 'snapshot_sha256' => $candidate['proof']['snapshot_sha256'],
 					'generated_at' => $candidate['proof']['generated_at'], 'database_confirmation' => json_encode($candidate['receipt']['database_confirmation'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
 					'diagnostic_issues' => $diagnostic ? json_encode($candidate['proof']['diagnosis']['issues'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) : '']);
@@ -1208,6 +1327,7 @@ class DEEC_Export_Gobd
 				if ($size !== $entry['size'] || hash_final($hash) !== $entry['sha256']) throw new RuntimeException('ZIP entry hash differs');
 			}
 			if (isset($expected['document_manifest.csv'])) $this->verifyDocumentManifest($zip, $expected);
+			if (isset($expected['document_files.csv'])) $this->verifyDelivery($zip);
 		} finally { $zip->close(); }
 	}
 
@@ -1298,7 +1418,7 @@ class DEEC_Export_Gobd
 		if (($metadata['export_kind'] ?? '') !== 'internal_document_review') throw new RuntimeException('Review export kind is missing');
 		$sets = []; $index = []; $documents = []; $expectedReports = ['missing_documents' => [], 'excluded_documents' => []];
 		$issued = 0; $deleted = 0; $undated = 0;
-		$counts = ['archived_original' => 0, DEEC_DocumentReview::STATUS => 0, DEEC_DocumentReview::DIAGNOSTIC_STATUS => 0, 'missing' => 0, 'invalid' => 0, 'excluded' => 0];
+		$counts = ['archived_original' => 0, DEEC_DocumentReview::STATUS => 0, DEEC_DocumentReview::DIAGNOSTIC_STATUS => 0, DEEC_DocumentReview::UNREVIEWED_STATUS => 0, 'missing' => 0, 'invalid' => 0, 'excluded' => 0];
 		foreach (['document_index', 'document_manifest', 'missing_documents', 'excluded_documents'] as $file) {
 			$sets[$file] = [];
 			$stream = $zip->getStream($file . '.csv');
@@ -1321,9 +1441,9 @@ class DEEC_Export_Gobd
 					}
 					if (($index[$key] ?? null) !== $identity) throw new RuntimeException('Review manifest and document index differ');
 					if ($row['csv_file'] !== 'document_index.csv' || $row['csv_key_column'] !== 'record_key' || $row['csv_key_value'] !== $key) throw new RuntimeException('Review index reference differs');
-					$pdf = in_array($row['status'], ['archived_original', DEEC_DocumentReview::STATUS, DEEC_DocumentReview::DIAGNOSTIC_STATUS], true);
+					$pdf = in_array($row['status'], ['archived_original', DEEC_DocumentReview::STATUS, DEEC_DocumentReview::DIAGNOSTIC_STATUS, DEEC_DocumentReview::UNREVIEWED_STATUS], true);
 					if ($pdf) {
-						$prefix = ($row['status'] === 'archived_original' ? 'originals' : ($row['status'] === DEEC_DocumentReview::DIAGNOSTIC_STATUS ? 'diagnostics' : 'review')) . '/' . $this->clientId . '/' . $row['module'] . '/' . $row['controller'] . '/';
+						$prefix = ($row['status'] === 'archived_original' ? 'originals' : ($row['status'] === DEEC_DocumentReview::DIAGNOSTIC_STATUS ? 'diagnostics' : ($row['status'] === DEEC_DocumentReview::UNREVIEWED_STATUS ? 'candidates' : 'review'))) . '/' . $row['module'] . '/' . $row['controller'] . '/';
 						if (!str_starts_with($row['zip_path'], $prefix) || !$row['issued'] || ($row['status'] !== 'archived_original' && $row['deleted'])) throw new RuntimeException('Original and review PDF separation differs');
 						if ($row['status'] === DEEC_DocumentReview::STATUS && ($row['evidence_status'] !== 'current_published_reconstruction' || !preg_match('/^[a-f0-9]{64}$/D', $row['proof_sha256']) || !preg_match('/^[a-f0-9]{64}$/D', $row['snapshot_sha256']))) throw new RuntimeException('Review evidence is incomplete');
 						if ($row['status'] === DEEC_DocumentReview::DIAGNOSTIC_STATUS && ($row['evidence_status'] !== 'diagnostic_only_not_validated' || json_decode($row['database_confirmation'], true, 512, JSON_THROW_ON_ERROR)['database_values_verified'] !== false || $row['diagnostic_issues'] === '')) throw new RuntimeException('Diagnostic status or evidence differs');

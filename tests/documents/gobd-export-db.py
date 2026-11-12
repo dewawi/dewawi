@@ -15,10 +15,11 @@ try:
     )
     if init.returncode:
         raise RuntimeError(init.stdout)
+    (work / 'tmp').mkdir(mode=0o700)
     socket = str(work / 'mysql.sock')
     server = subprocess.Popen(
         ['mariadbd', '--no-defaults', '--datadir=' + str(work / 'data'), '--socket=' + socket,
-         '--skip-networking', '--pid-file=' + str(work / 'server.pid'), '--log-error=' + str(work / 'server.log'),
+         '--skip-networking', '--tmpdir=' + str(work / 'tmp'), '--pid-file=' + str(work / 'server.pid'), '--log-error=' + str(work / 'server.log'),
          '--innodb-buffer-pool-size=32M', '--innodb-log-file-size=8M'],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )

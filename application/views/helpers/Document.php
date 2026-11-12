@@ -23,7 +23,7 @@ class Zend_View_Helper_Document extends Zend_View_Helper_Abstract
 		$groups = [];
 		foreach ($candidates as $sha => $candidate) $groups[$candidate['status']][$sha] = $candidate;
 		foreach ($groups as $status => $versions) {
-			$title = $status === DEEC_DocumentReview::DIAGNOSTIC_STATUS ? 'DOCUMENTS_DIAGNOSTIC_RECONSTRUCTION' : 'DOCUMENTS_RECONSTRUCTION_PENDING';
+			$title = $status === DEEC_DocumentReview::DIAGNOSTIC_STATUS ? 'DOCUMENTS_DIAGNOSTIC_RECONSTRUCTION' : ($status === DEEC_DocumentReview::UNREVIEWED_STATUS ? 'DOCUMENTS_UNREVIEWED_CANDIDATE' : 'DOCUMENTS_RECONSTRUCTION_PENDING');
 			$html .= '<section class="dw-alert dw-alert--warning" role="status" data-document-status="' . $status . '"><div><p><strong>' . $this->view->escape($this->view->translate($title)) . '</strong></p>';
 			$html .= '<p>' . $this->view->escape($this->view->translate('DOCUMENTS_RECONSTRUCTION_INTERNAL_ONLY')) . '</p><ul>';
 			foreach ($versions as $sha => $candidate) {
@@ -33,6 +33,24 @@ class Zend_View_Helper_Document extends Zend_View_Helper_Abstract
 				$html .= '<small>' . $this->view->escape($candidate['proof']['generated_at']) . ' · SHA-256: ' . $sha . '</small></li>';
 			}
 			$html .= '</ul></div></section>';
+		}
+		$permission = new DEEC_Permission((array)Zend_Registry::get('User'));
+		if (DEEC_Permission::isDocumentReadonly($module, $controller, (array)$document) && is_file(DEEC_DocumentReview::locatorPath((int)Zend_Registry::get('Client')['id']))) {
+			try {
+				$recovery = new DEEC_DocumentRecovery();
+				$job = $recovery->job((int)$document['id'], $module, $controller);
+				$db = Zend_Db_Table::getDefaultAdapter();
+				$registered = recoveryArchives($db, $job['identity']);
+				if (!$registered && $permission->hasPermission($module, $controller, 'edit')) {
+					$snapshot = recoverySnapshot($db, $job['identity']);
+					$this->view->addScriptPath(dirname(__DIR__) . '/scripts');
+					$html .= $this->view->partial('partials/document-original-review.phtml', ['identity' => $job['identity'], 'snapshot' => $snapshot, 'candidates' => $candidates, 'csrf' => DEEC_DocumentRecovery::token($job['identity']), 'canUpload' => $permission->hasPermission($module, $controller, 'add')]);
+				} elseif ($registered) {
+					$provenance = json_decode($registered[0]['parameters'], true)['recovery'] ?? [];
+					$category = $provenance['selection']['origin']['category'] ?? '';
+					if (in_array($category, ['verified_recovered_original', 'reviewed_reconstruction_duplicate'], true)) $html .= '<p>' . $this->view->escape($this->view->translate('DOCUMENTS_' . strtoupper($category))) . ' · ' . $this->view->escape($provenance['approval']['approved_at']) . '</p>';
+				}
+			} catch (RuntimeException | InvalidArgumentException | JsonException $error) { error_log('Document original review unavailable: ' . $error->getMessage()); }
 		}
 		$html .= '<p>';
 		$html .= '<a href="' . $url . '" target="_blank">';

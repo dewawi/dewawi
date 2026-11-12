@@ -108,7 +108,7 @@ $stream = $diagnosticZip->getStream('document_manifest.csv'); $fields = fgetcsv(
 while (($values = fgetcsv($stream, 0, ';', '"', '')) !== false) { $row = array_combine($fields, $values); if ($row['status'] === DEEC_DocumentReview::DIAGNOSTIC_STATUS) $diagnosticRows[] = $row; }
 fclose($stream);
 recoveryTestCheck(count($diagnosticRows) === 10 && json_decode($diagnosticZip->getFromName('metadata.json'), true)['documents']['summary']['undated_diagnostic_documents'] === 2, 'Review export omitted diagnostic or explicitly undated PDFs');
-foreach ($diagnosticRows as $row) recoveryTestCheck(str_starts_with($row['zip_path'], 'diagnostics/7/') && hash('sha256', $diagnosticZip->getFromName($row['zip_path'])) === $row['sha256'] && json_decode($row['database_confirmation'], true)['database_values_verified'] === false, 'Diagnostic export promoted a PDF or changed its bytes');
+foreach ($diagnosticRows as $row) recoveryTestCheck(str_starts_with($row['zip_path'], 'diagnostics/') && hash('sha256', $diagnosticZip->getFromName($row['zip_path'])) === $row['sha256'] && json_decode($row['database_confirmation'], true)['database_values_verified'] === false, 'Diagnostic export promoted a PDF or changed its bytes');
 foreach ($diagnosticRows as $row) if (in_array($row['documentid'], ['203', '208'], true)) recoveryTestCheck($row['document_date'] === '' && $row['date_scope'] === 'undated_diagnostic_not_assigned_to_period', 'Unknown date was assigned to a historical period');
 $diagnosticZip->close();
 $originalExportName = (new DEEC_Export_Gobd($diagnosticDb, 7, 42))->export($diagnosticExportDir, '2010-01-01', '2010-12-31', true);

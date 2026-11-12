@@ -106,11 +106,11 @@ class GobdFilenameFixture extends DEEC_Export_Gobd
 	public function name($number, int $id): string { return $this->documentZipPath('documents', 'sales', 'invoice', ['id' => $id, 'invoiceid' => $number]); }
 }
 $filenames = new GobdFilenameFixture($db, 7, 42);
-exportCheck($filenames->name('110395', 55893) === 'documents/7/sales/invoice/110395.pdf', 'Visible invoice number was replaced with its internal ID');
-exportCheck($filenames->name('110395', 55894) === 'documents/7/sales/invoice/110395--id-55894.pdf', 'Duplicate visible number overwrote an entry');
+exportCheck($filenames->name('110395', 55893) === 'documents/sales/invoice/110395.pdf', 'Visible invoice number was replaced with its internal ID');
+exportCheck($filenames->name('110395', 55894) === 'documents/sales/invoice/110395--id-55894.pdf', 'Duplicate visible number overwrote an entry');
 foreach ([null, '', '../110395', 'a/b', 'a\\b', "x\n.pdf", 'CON', '..', str_repeat('a', 200), 'Ä/23'] as $i => $number) {
 	$path = $filenames->name($number, 100 + $i);
-	exportCheck(dirname($path) === 'documents/7/sales/invoice' && preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]*\.pdf$/D', basename($path)) && str_contains($path, '--id-' . (100 + $i)), 'Unsafe or missing number did not receive a safe ID suffix');
+	exportCheck(dirname($path) === 'documents/sales/invoice' && preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]*\.pdf$/D', basename($path)) && str_contains($path, '--id-' . (100 + $i)), 'Unsafe or missing number did not receive a safe ID suffix');
 }
 exportCheck(strtolower($filenames->name('invoice', 201)) !== strtolower($filenames->name('INVOICE', 202)), 'Case-insensitive extraction collided');
 $legacyName = $export->export($destination, '2019-01-01', '2021-12-31');
@@ -122,9 +122,24 @@ for ($i = 0; $i < $legacy->numFiles; $i++) {
 	$file = $legacy->getNameIndex($i);
 	if (str_ends_with($file, '.csv')) exportCheck($legacy->getFromName($file) === $zip->getFromName($file), 'Optional images changed an existing CSV dataset: ' . $file);
 }
-$manifest = exportCsv($zip, 'document_manifest.csv');
-$missing = exportCsv($zip, 'missing_documents.csv');
-$index = exportCsv($zip, 'document_index.csv');
+$technical = new ZipArchive();
+exportCheck($technical->open($destination . '.gobd-reports/' . $name . '.audit.zip', ZipArchive::CHECKCONS) === true, 'Private technical inventory is missing');
+$verification = json_decode(file_get_contents($destination . '.gobd-reports/' . $name . '.verification.json'), true, 512, JSON_THROW_ON_ERROR);
+exportCheck($verification['sha256'] === hash_file('sha256', $destination . $name) && $verification['technical_inventory_sha256'] === hash_file('sha256', $destination . '.gobd-reports/' . $name . '.audit.zip') && $verification['verified_by'] === 42 && strtotime($verification['verified_at']) > 0, 'Internal delivery verification is invalid');
+exportCheck((fileperms($destination . '.gobd-reports') & 0777) === 0700 && (fileperms($destination . '.gobd-reports/' . $name . '.audit.zip') & 0777) === 0600, 'Internal verification is not private');
+foreach (['document_index.csv', 'document_manifest.csv', 'missing_documents.csv', 'excluded_documents.csv', 'checksums.sha256'] as $private) exportCheck($zip->locateName($private) === false && $technical->locateName($private) !== false, 'Technical inventory leaked or was lost: ' . $private);
+$delivery = exportCsv($zip, 'document_files.csv');
+exportCheck(array_column($delivery, 'record_key') === array_column(exportCsv($technical, 'document_index.csv'), 'record_key') && count(array_filter($delivery, static fn(array $row) => $row['pdf_supplied'] === '1')) === 10, 'Public delivery inventory lost supplied or missing documents');
+exportCheck(!array_intersect(['archive_parameters', 'historical_conflicts', 'sha256', 'status', 'reason'], array_keys($delivery[0])), 'Internal recovery columns leaked');
+foreach ($delivery as $row) {
+ $refs = exportCsv($zip, $row['csv_file']);
+ exportCheck(in_array($row['csv_key_value'], array_column($refs, $row['csv_key_column']), true), 'Public delivery reference is unresolved');
+ exportCheck($row['pdf_supplied'] === '1' ? $zip->locateName($row['pdf_path']) !== false : $row['pdf_path'] === '', 'Public delivery statement differs');
+}
+foreach ($verification['entries'] as $entry => $proof) exportCheck(hash('sha256', $zip->getFromName($entry)) === $proof['sha256'] && strlen($zip->getFromName($entry)) === $proof['size'], 'Private delivery entry verification differs');
+$manifest = exportCsv($technical, 'document_manifest.csv');
+$missing = exportCsv($technical, 'missing_documents.csv');
+$index = exportCsv($technical, 'document_index.csv');
 exportCheck(count($manifest) === 10 && count($missing) === 8, 'Included/missing image counts differ: ' . count($manifest) . '/' . count($missing));
 $types = array_unique(array_column($manifest, 'controller'));
 exportCheck(count($types) === 8, 'Optional images omitted a document type');
@@ -132,20 +147,20 @@ foreach ($manifest as $row) {
 	exportCheck(basename($row['zip_path']) === $row['document_number'] . '.pdf', 'ZIP uses an internal ID instead of the saved visible number');
 	exportCheck($row['clientid'] === '7' && $row['document_date'] >= '2019-01-01' && $row['document_date'] <= '2021-12-31', 'Document period or tenant isolation failed');
 	exportCheck(hash('sha256', $zip->getFromName($row['zip_path'])) === $row['sha256'] && strlen($zip->getFromName($row['zip_path'])) === (int)$row['filesize'], 'ZIP bytes differ from archive manifest');
-	$references = exportCsv($zip, $row['csv_file']);
+	$references = exportCsv($technical, $row['csv_file']);
 	exportCheck(in_array($row['csv_key_value'], array_column($references, $row['csv_key_column']), true), 'Document CSV reference is unresolved');
 }
 exportCheck(count(array_filter($manifest, static fn(array $row) => $row['controller'] === 'quote' && $row['deleted'] === '1')) === 1, 'Deleted issued original was omitted');
-exportCheck(count(exportCsv($zip, 'excluded_documents.csv')) === 2, 'Deleted or excluded document inventory is missing');
+exportCheck(count(exportCsv($technical, 'excluded_documents.csv')) === 2, 'Deleted or excluded document inventory is missing');
 exportCheck(in_array('historical_versions_differ', array_column($missing, 'reason'), true), 'Unapproved historical conflict was silently exported');
 $recovered = array_values(array_filter($manifest, static fn(array $row) => $row['controller'] === 'invoice' && $row['documentid'] === '21'))[0];
 exportCheck(str_contains($recovered['archive_parameters'], 'generated_at') && str_contains($recovered['historical_conflicts'], 'historical_versions_differ'), 'Approved recovery provenance or conflict evidence was lost');
 $metadata = json_decode($zip->getFromName('metadata.json'), true);
 exportCheck($metadata['documents']['summary']['complete'] === false && str_contains($zip->getFromName('readme.txt'), 'INCOMPLETE'), 'Missing images were presented as complete');
-foreach (explode("\n", trim($zip->getFromName('checksums.sha256'))) as $line) { [$sha, $file] = explode('  ', $line, 2); exportCheck(hash('sha256', $zip->getFromName($file)) === $sha, 'ZIP checksum manifest differs'); }
+foreach (explode("\n", trim($technical->getFromName('checksums.sha256'))) as $line) { [$sha, $file] = explode('  ', $line, 2); exportCheck(hash('sha256', str_ends_with($file, '.pdf') ? $zip->getFromName($file) : $technical->getFromName($file)) === $sha, 'ZIP checksum manifest differs'); }
 $empty = $export->export($destination, '2040-01-01', '2040-12-31', true);
 $emptyZip = new ZipArchive(); $emptyZip->open($destination . $empty);
-exportCheck(exportCsv($emptyZip, 'document_manifest.csv') === [] && json_decode($emptyZip->getFromName('metadata.json'), true)['documents']['summary']['complete'], 'Empty dated-document scope is invalid'); $emptyZip->close();
+exportCheck(exportCsv($emptyZip, 'document_files.csv') === [] && json_decode($emptyZip->getFromName('metadata.json'), true)['documents']['summary']['complete'], 'Empty dated-document scope is invalid'); $emptyZip->close();
 foreach ([['2019-02-30', '2021-12-31'], ['2022-01-01', '2021-12-31'], ['2019-1-01', '2021-12-31'], [null, '2021-12-31']] as [$from, $to]) exportReject(static fn() => $export->export($destination, $from, $to, true), 'Invalid export dates were accepted');
 $user = Zend_Registry::get('User'); Zend_Registry::set('User', array_replace($user, ['admin' => 0]));
 exportReject(static fn() => $export->export($destination, '2019-01-01', '2021-12-31', true), 'Non-admin exported document images'); Zend_Registry::set('User', $user);
@@ -161,11 +176,12 @@ class BrokenGobdReference extends DEEC_Export_Gobd
 {
 	protected function createZip(string $filePath, array $files, string $zipFileName): void
 	{
-		$stream = fopen($filePath . 'document_manifest.csv', 'r'); $rows = [];
+		$file = $this->reviewExport ? 'document_manifest.csv' : 'document_files.csv';
+		$stream = fopen($filePath . $file, 'r'); $rows = [];
 		while (($row = fgetcsv($stream, 0, ';', '"', '')) !== false) $rows[] = $row;
 		fclose($stream);
 		$rows[1][array_search('csv_key_value', $rows[0], true)] = 'missing-csv-key';
-		$stream = fopen($filePath . 'document_manifest.csv', 'w');
+		$stream = fopen($filePath . $file, 'w');
 		foreach ($rows as $row) fputcsv($stream, $row, ';', '"', '');
 		fclose($stream);
 		parent::createZip($filePath, $files, $zipFileName);
@@ -187,7 +203,7 @@ $published = glob($destination . '*.zip');
 exportReject(static fn() => (new BrokenGobdPackage($db, 7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'Incomplete ZIP was published');
 exportReject(static fn() => (new BrokenGobdReference($db, 7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'Unresolved CSV reference was published');
 exportReject(static fn() => (new DEEC_Export_Gobd(new GobdRollbackFixture($db), 7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'Rollback failure published a package');
-exportCheck(glob($destination . '*.zip') === $published && glob($destination . '.gobd-*') === [], 'Failed export left public partial files or staging');
+exportCheck(glob($destination . '*.zip') === $published && array_values(array_diff(glob($destination . '.gobd-*'), [$destination . '.gobd-reports'])) === [], 'Failed export left public partial files or staging');
 require $root . '/application/modules/admin/controllers/ExportController.php';
 symlink($root . '/library', $base . '/library');
 class GobdFlashFixture extends Zend_Controller_Action_Helper_Abstract
@@ -247,7 +263,7 @@ $request = new Zend_Controller_Request_Http(); $request->setParams(['type' => 'g
 try {
 	exportCheck((new GobdControllerFixture($request, new Zend_Controller_Response_Http()))->exportAction() === 'index' && $flash->messages === ['ADMIN_EXPORT_FAILED'], 'Failed GoBD export lost its error/redirect or reported success');
 } finally { Zend_Db_Table::setDefaultAdapter($db); }
-exportCheck(glob($destination . '*.zip') === $published && glob($destination . '.gobd-*') === [], 'Controller export failure left a partial package or staging files');
+exportCheck(glob($destination . '*.zip') === $published && array_values(array_diff(glob($destination . '.gobd-*'), [$destination . '.gobd-reports'])) === [], 'Controller export failure left a partial package or staging files');
 $published = glob($destination . '*.zip');
 foreach ([['from' => '2020-02-30', 'to' => '2021-01-01'], ['from' => '2022-01-01', 'to' => '2021-01-01'], ['from' => ['bad'], 'to' => '2021-01-01'], ['from' => '2020-01-01', 'to' => '2021-01-01', 'include_documents' => ['bad']], ['from' => '2020-01-01', 'to' => '2021-01-01', 'review_export' => ['bad']], ['from' => '2020-01-01', 'to' => '2021-01-01', 'review_export' => '2']] as $parameters) {
 	$request = new Zend_Controller_Request_Http(); $request->setParams($parameters + ['type' => 'gobd']);
@@ -338,15 +354,15 @@ $pending = array_values(array_filter($reviewRows, static fn(array $row): bool =>
 exportCheck(count($pending) === 10 && count(array_unique(array_column($pending, 'controller'))) === 8, 'Published review PDFs, multiple versions or duplicate numbers were omitted');
 foreach ($reviewRows as $row) {
 	exportCheck($row['clientid'] === '7' && $row['document_date'] >= '2019-01-01' && $row['document_date'] <= '2021-12-31', 'Review export crossed tenant or date scope');
-	if ($row['zip_path'] !== '') exportCheck(hash('sha256', $reviewZip->getFromName($row['zip_path'])) === $row['sha256'] && strlen($reviewZip->getFromName($row['zip_path'])) === (int)$row['filesize'] && str_starts_with($row['zip_path'], ($row['status'] === 'archived_original' ? 'originals' : 'review') . '/7/'), 'Review PDF role, SHA or size differs');
+	if ($row['zip_path'] !== '') exportCheck(hash('sha256', $reviewZip->getFromName($row['zip_path'])) === $row['sha256'] && strlen($reviewZip->getFromName($row['zip_path'])) === (int)$row['filesize'] && str_starts_with($row['zip_path'], ($row['status'] === 'archived_original' ? 'originals' : 'review') . '/'), 'Review PDF role, SHA or size differs');
 }
 foreach ([33 => 'missing', 34 => 'invalid', 35 => 'invalid', 36 => 'missing', 37 => 'excluded'] as $id => $status) exportCheck(count(array_filter($reviewRows, static fn(array $row): bool => $row['controller'] === 'invoice' && $row['documentid'] === (string)$id && $row['status'] === $status && $row['zip_path'] === '')) === 1, 'Unpublished, stale, corrupt, missing or deleted PDF was included');
-foreach (['originals/7/sales/invoice/10011.pdf', 'originals/7/sales/invoice/10011--id-38.pdf', 'originals/7/sales/invoice/document--id-39.pdf'] as $path) exportCheck($reviewZip->locateName($path) !== false, 'Duplicate or missing number strategy lost an original');
+foreach (['originals/sales/invoice/10011.pdf', 'originals/sales/invoice/10011--id-38.pdf', 'originals/sales/invoice/document--id-39.pdf'] as $path) exportCheck($reviewZip->locateName($path) !== false, 'Duplicate or missing number strategy lost an original');
 $pendingPaths = array_column($pending, 'zip_path');
 exportCheck(count($pendingPaths) === count(array_unique($pendingPaths)) && count(array_filter($pendingPaths, static fn(string $path): bool => str_contains($path, '110395--'))) === 10, 'Review version names do not prefer visible numbers or collide');
 $afterGobd = $export->export($destination, '2019-01-01', '2021-12-31', true);
 $afterZip = new ZipArchive(); $afterZip->open($destination . $afterGobd);
-foreach (exportCsv($afterZip, 'document_manifest.csv') as $row) exportCheck(!in_array($row['documentid'], ['31', '32', '33', '34', '35', '36', '37'], true), 'Pending reviews entered the GoBD original population');
+foreach (exportCsv($afterZip, 'document_files.csv') as $row) exportCheck($row['pdf_supplied'] === '0' || !in_array($row['documentid'], ['31', '32', '33', '34', '35', '36', '37'], true), 'Pending reviews entered the GoBD original population');
 $afterZip->close();
 foreach (explode("\n", trim($reviewZip->getFromName('checksums.sha256'))) as $line) { [$sha, $file] = explode('  ', $line, 2); exportCheck(hash('sha256', $reviewZip->getFromName($file)) === $sha, 'Review checksum manifest differs'); }
 $emptyReview = $export->export($destination, '2040-01-01', '2040-12-31', false, true);
@@ -355,7 +371,7 @@ exportCheck(exportCsv($emptyReviewZip, 'document_manifest.csv') === [] && json_d
 $publishedBeforeFailure = glob($destination . '*.zip');
 exportReject(static fn() => (new BrokenGobdPackage($db, 7, 42))->export($destination, '2019-01-01', '2021-12-31', false, true), 'Broken review ZIP was published');
 exportReject(static fn() => (new BrokenGobdReference($db, 7, 42))->export($destination, '2019-01-01', '2021-12-31', false, true), 'Broken review CSV reference was published');
-exportCheck(glob($destination . '*.zip') === $publishedBeforeFailure && glob($destination . '.gobd-*') === [], 'Review failure left a public partial package');
+exportCheck(glob($destination . '*.zip') === $publishedBeforeFailure && array_values(array_diff(glob($destination . '.gobd-*'), [$destination . '.gobd-reports'])) === [], 'Review failure left a public partial package');
 foreach ($reviewBefore as $table => $rows) exportCheck($pdo->query('SELECT * FROM `' . $table . '` ORDER BY id')->fetchAll(PDO::FETCH_ASSOC) === $rows, 'Review export changed business/archive rows: ' . $table);
 foreach ($reviewFileBefore as $path => $state) exportCheck([filesize($path), hash_file('sha256', $path), filemtime($path)] === $state, 'Review export changed original, candidate or evidence bytes');
 $reviewZip->close();

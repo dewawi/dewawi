@@ -1,0 +1,44 @@
+<?php
+$identity = $this->identity;
+$document = $this->snapshot['data']['document'];
+$action = $this->url(['module' => $identity['module'], 'controller' => $identity['controller'], 'action' => 'originalreview', 'id' => $identity['id']]);
+$hidden = ['csrf_token' => $this->csrf, 'expected_number' => $identity['document_number'], 'snapshot_sha256' => $this->snapshot['sha256']];
+$diagnosticOpen = (bool)array_filter($this->candidates, static fn(array $candidate): bool => $candidate['status'] === DEEC_DocumentReview::DIAGNOSTIC_STATUS);
+$eligible = $diagnosticOpen ? [] : $this->candidates;
+?>
+<section class="document-original-review" style="overflow-wrap:anywhere">
+<h3><?= $this->escape($this->translate('DOCUMENTS_ORIGINAL_REVIEW')) ?></h3>
+<p><?= $this->escape($this->translate('DOCUMENTS_ORIGINAL_REVIEW_SCOPE')) ?></p>
+<dl>
+<?php foreach (['document_number' => $identity['document_number'], 'document_date' => $document[$identity['controller'] . 'date'] ?? '', 'subtotal' => $document['subtotal'] ?? '', 'taxes' => $document['taxes'] ?? '', 'total' => $document['total'] ?? '', 'currency' => $document['currency'] ?? ''] as $key => $value): ?>
+<dt><?= $this->escape($this->translate('DOCUMENTS_REVIEW_' . strtoupper($key))) ?></dt><dd><?= $this->escape($value) ?></dd>
+<?php endforeach ?>
+</dl>
+<?php if ($this->canUpload): ?>
+<form method="post" enctype="multipart/form-data" action="<?= $this->escape($action) ?>" data-autosave="false">
+<?php foreach ($hidden + ['operation' => 'upload'] as $name => $value): ?><input type="hidden" name="<?= $name ?>" value="<?= $this->escape($value) ?>"><?php endforeach ?>
+<p><label><?= $this->escape($this->translate('DOCUMENTS_ORIGINAL_UPLOAD')) ?><br><input type="file" name="original_pdf" accept="application/pdf,.pdf" required></label></p>
+<p><label><?= $this->escape($this->translate('DOCUMENTS_REVIEW_REFERENCE')) ?><br><textarea name="reference" maxlength="2000" required></textarea></label></p>
+<button type="submit"><?= $this->escape($this->translate('DOCUMENTS_ORIGINAL_UPLOAD_ONLY')) ?></button>
+</form>
+<?php endif ?>
+<?php if ($eligible): ?>
+<form method="post" action="<?= $this->escape($action) ?>" data-autosave="false">
+<?php foreach ($hidden + ['operation' => 'approve'] as $name => $value): ?><input type="hidden" name="<?= $name ?>" value="<?= $this->escape($value) ?>"><?php endforeach ?>
+<p><label><?= $this->escape($this->translate('DOCUMENTS_REVIEW_CANDIDATE')) ?><br><select name="candidate_sha256" required style="max-width:100%"><option value=""><?= $this->escape($this->translate('DOCUMENTS_REVIEW_SELECT')) ?></option>
+<?php foreach ($eligible as $sha => $candidate): ?><option value="<?= $sha ?>"><?= $this->escape($this->translate($candidate['status'] === DEEC_DocumentReview::STATUS ? 'DOCUMENTS_RECONSTRUCTION_PENDING' : 'DOCUMENTS_UNREVIEWED_CANDIDATE') . ' · ' . $sha) ?></option><?php endforeach ?>
+</select></label></p>
+<p><label><?= $this->escape($this->translate('DOCUMENTS_REVIEW_BASIS')) ?><br><select name="comparison_kind" required style="max-width:100%"><option value=""><?= $this->escape($this->translate('DOCUMENTS_REVIEW_SELECT')) ?></option>
+<?php foreach (['paper_document', 'original_document', 'verified_dispatch_copy', 'verified_historical_origin'] as $kind): ?><option value="<?= $kind ?>"><?= $this->escape($this->translate('DOCUMENTS_REVIEW_' . strtoupper($kind))) ?></option><?php endforeach ?>
+</select></label></p>
+<p><label><?= $this->escape($this->translate('DOCUMENTS_REVIEW_EVIDENCE')) ?><br><select name="evidence_sha256" style="max-width:100%"><option value="">—</option>
+<?php foreach ($eligible as $sha => $candidate): if ($candidate['status'] !== DEEC_DocumentReview::UNREVIEWED_STATUS) continue; ?><option value="<?= $sha ?>"><?= $sha ?></option><?php endforeach ?>
+</select></label></p>
+<p><label><?= $this->escape($this->translate('DOCUMENTS_REVIEW_REFERENCE')) ?><br><textarea name="reference" maxlength="2000" required></textarea></label></p>
+<p><label><?= $this->escape($this->translate('DOCUMENTS_REVIEW_REASON')) ?><br><textarea name="reason" maxlength="2000" required></textarea></label></p>
+<p><label><input type="checkbox" name="identity_match" value="1" required> <?= $this->escape($this->translate('DOCUMENTS_REVIEW_CONFIRM_IDENTITY')) ?></label></p>
+<p><label><input type="checkbox" name="content_match" value="1" required> <?= $this->escape($this->translate('DOCUMENTS_REVIEW_CONFIRM_CONTENT')) ?></label></p>
+<button type="submit"><?= $this->escape($this->translate('DOCUMENTS_REVIEW_ARCHIVE')) ?></button>
+</form>
+<?php endif ?>
+</section>

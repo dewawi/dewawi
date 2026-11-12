@@ -4,6 +4,7 @@ class DEEC_DocumentReview
 {
 	public const STATUS = 'historical_reconstruction_pending_original_comparison';
 	public const DIAGNOSTIC_STATUS = 'historical_diagnostic_reconstruction';
+	public const UNREVIEWED_STATUS = 'historical_unreviewed_candidate';
 
 	public static function json(array $value): string
 	{
@@ -136,6 +137,10 @@ class DEEC_DocumentReview
 				error_log('Historical review candidate unavailable: ' . $error->getMessage());
 			}
 		}
+		try {
+			$recovery = new DEEC_DocumentRecovery();
+			foreach ($recovery->unreviewed($recovery->job($id, $module, $controller), $snapshot) as $sha => $candidate) if (!isset($results['candidates'][$sha])) $results['candidates'][$sha] = $candidate;
+		} catch (RuntimeException | InvalidArgumentException | JsonException $error) { $results['invalid']['review_context'] = $error->getMessage(); }
 		return $results;
 	}
 

@@ -43,6 +43,7 @@ class DEEC_Permission
 		],
 		'edit' => [
 			'edit',
+			'originalreview',
 			'import',
 			'lock',
 			'unlock',

@@ -196,6 +196,26 @@ class DEEC_DocumentArchive
 		} finally { if (is_file($temp)) unlink($temp); }
 	}
 
+	public function storeEvidence(string $source, string $target): array
+	{
+		$file = $this->inspect($source, 'pdf');
+		if ($file['status'] !== 'ok') throw new RuntimeException('Invalid PDF evidence');
+		$this->copyVerified($source, $target, $file, 'pdf');
+		if (!chmod($target, 0600)) throw new RuntimeException('PDF evidence permissions failed');
+		$result = $this->inspect($target, 'pdf');
+		if ($result['status'] !== 'ok' || $result['size'] !== $file['size'] || $result['sha256'] !== $file['sha256']) throw new RuntimeException('PDF evidence copy differs');
+		return $result;
+	}
+
+	public function storeFile(string $source, int $clientId, string $module, string $controller, int $documentId, string $format, string $sha): array
+	{
+		$before = (new self(dirname($source)))->inspect($source, $format);
+		if ($before['status'] !== 'ok' || !hash_equals($sha, $before['sha256'])) throw new RuntimeException('Archive source integrity differs');
+		$target = $this->path($clientId, $module, $controller, $documentId, $format);
+		$this->copyVerified($source, $target, $before, $format);
+		return $this->inspect($target, $format);
+	}
+
 	private function copyVerified(string $source, string $target, array $before, string $format): void
 	{
 		$this->ensureDirectory(dirname($target));

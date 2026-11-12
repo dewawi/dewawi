@@ -294,6 +294,36 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		return $this->sendPdfResponse($result);
 	}
 
+	public function originalreviewAction()
+	{
+		$this->disableView();
+		$request = $this->getRequest();
+		$response = $this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
+		if (!$request->isPost()) { $response->setHttpResponseCode(405)->setHeader('Allow', 'POST', true); return; }
+		try {
+			$id = filter_var($this->_getParam('id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+			if (!$id) throw new RuntimeException('Invalid document identity');
+			$service = new DEEC_DocumentRecovery();
+			$job = $service->job($id, $request->getModuleName(), $request->getControllerName());
+			$post = (array)$request->getPost();
+			if (($post['operation'] ?? '') === 'upload') {
+				$upload = new Zend_File_Transfer_Adapter_Http();
+				$upload->addValidator('Count', false, 1);
+				$upload->addValidator('Size', false, ['min' => 1, 'max' => 10240000]);
+				$upload->addValidator('Extension', false, 'pdf');
+				$files = $upload->getFileInfo();
+				if (count($files) !== 1 || !isset($files['original_pdf']) || !$upload->isUploaded('original_pdf') || !$upload->isValid('original_pdf')) throw new RuntimeException('Invalid PDF upload');
+				$file = $files['original_pdf'];
+				$service->upload($job, $post, $file['tmp_name'], $file['name']);
+			} elseif (($post['operation'] ?? '') === 'approve') $service->approve($job, $post);
+			else throw new RuntimeException('Invalid original review operation');
+			$this->_helper->redirector('view', $request->getControllerName(), $request->getModuleName(), ['id' => $id]);
+		} catch (RuntimeException | InvalidArgumentException | JsonException $error) {
+			error_log('Document original review refused: ' . $error->getMessage());
+			$response->setHttpResponseCode(409)->setBody($this->view->escape($this->view->translate('DOCUMENTS_ORIGINAL_REVIEW_FAILED')));
+		}
+	}
+
 	public function reviewdownloadAction()
 	{
 		$this->disableView();

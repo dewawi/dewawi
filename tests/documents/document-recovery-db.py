@@ -17,10 +17,11 @@ try:
     )
     if init.returncode:
         raise RuntimeError(init.stdout)
+    (work / 'tmp').mkdir(mode=0o700)
     socket = str(work / 'mysql.sock')
     server = subprocess.Popen(
         ['mariadbd', '--no-defaults', '--datadir=' + str(work / 'data'), '--socket=' + socket,
-         '--skip-networking', '--pid-file=' + str(work / 'server.pid'), '--log-error=' + str(work / 'server.log'),
+         '--skip-networking', '--tmpdir=' + str(work / 'tmp'), '--pid-file=' + str(work / 'server.pid'), '--log-error=' + str(work / 'server.log'),
          '--innodb-buffer-pool-size=32M', '--innodb-log-file-size=8M'],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
@@ -53,6 +54,13 @@ try:
                     panel = browser.execute("return {overflow: document.documentElement.scrollWidth > innerWidth, status: document.querySelector('[role=status]').dataset.documentStatus, links: document.querySelectorAll('a').length, text: document.body.textContent}")
                     assert not panel['overflow'] and panel['status'] == 'historical_diagnostic_reconstruction' and panel['links'] == 2 and 'DOCUMENTS_' not in panel['text'], panel
                     print('PASS: diagnostic panel ' + locale + '/' + str(width) + '; separate diagnostic status and no overflow')
+                    browser.navigate((work / ('original-review-panel-' + locale + '.html')).as_uri())
+                    panel = browser.execute("return {overflow: document.documentElement.scrollWidth > innerWidth, forms: document.forms.length, blanks: document.querySelector('[name=candidate_sha256]').value === '', confirmation: [...document.querySelectorAll('input[type=checkbox]')].every(e => e.required && !e.checked), text: document.body.textContent}")
+                    assert not panel['overflow'] and panel['forms'] == 2 and panel['blanks'] and panel['confirmation'] and 'DOCUMENTS_' not in panel['text'], panel
+                    behavior = browser.execute("let calls=0; $.ajax=function(){calls++; return $.Deferred().resolve({}).promise();}; $('.document-original-review textarea').val('explicit review fixture').trigger('change'); $('.document-original-review input[type=checkbox]').prop('checked',true).trigger('change'); return {calls: calls, dirty: Dewawi.isDirty, errors: fixtureErrors, native: [...document.forms].every(e => !jQuery._data(e,'events') || !jQuery._data(e,'events').submit)}")
+                    assert behavior['calls'] == 0 and not behavior['dirty'] and not behavior['errors'] and behavior['native'], behavior
+                    print('PASS: original review form ' + locale + '/' + str(width) + '; explicit selection, mandatory confirmations, no autosave or overflow')
+
         finally:
             browser.close()
     raise SystemExit(result.returncode)
