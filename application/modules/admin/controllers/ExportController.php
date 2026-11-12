@@ -122,11 +122,11 @@ class Admin_ExportController extends DEEC_Controller_AdminAction
 		} elseif ($type === 'csv' || $type === 'sql') {
 			$this->exportDatabase($filePath, $type);
 		} else {
-			$this->_flashMessenger->addMessage('Invalid export type.');
+			$this->_flashMessenger->addMessage('ADMIN_EXPORT_INVALID_TYPE');
 			return $this->_helper->redirector->gotoSimple('index');
 		}
 
-		$this->_flashMessenger->addMessage('Export created successfully.');
+		$this->_flashMessenger->addMessage(['type' => 'success', 'message' => 'ADMIN_EXPORT_CREATED']);
 		return $this->_helper->redirector->gotoSimple('index');
 	}
 
@@ -235,14 +235,14 @@ class Admin_ExportController extends DEEC_Controller_AdminAction
 				// Attempt to delete the file
 				if (unlink($filePath.$exportedFiles[$id]['name'])) {
 					// If deletion is successful, add a success message
-					$this->_flashMessenger->addMessage('File successfully deleted.');
+					$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
 				} else {
 					// If deletion fails, add an error message
-					$this->_flashMessenger->addMessage('Failed to delete the file.');
+					$this->_flashMessenger->addMessage('MESSAGES_CANNOT_BE_DELETED');
 				}
 			} else {
 				// If the file does not exist, add an error message
-				$this->_flashMessenger->addMessage('File not found.');
+				$this->_flashMessenger->addMessage('ADMIN_EXPORT_FILE_NOT_FOUND');
 			}
 		}
 	}

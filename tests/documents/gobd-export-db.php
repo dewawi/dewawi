@@ -176,6 +176,7 @@ exportReject(static fn() => (new BrokenGobdReference($db, 7, 42))->export($desti
 exportReject(static fn() => (new DEEC_Export_Gobd(new GobdRollbackFixture($db), 7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'Rollback failure published a package');
 exportCheck(glob($destination . '*.zip') === $published && glob($destination . '.gobd-*') === [], 'Failed export left public partial files or staging');
 require $root . '/application/modules/admin/controllers/ExportController.php';
+symlink($root . '/library', $base . '/library');
 class GobdFlashFixture extends Zend_Controller_Action_Helper_Abstract
 {
 	public array $messages = [];
@@ -205,11 +206,42 @@ class GobdControllerFixture extends Admin_ExportController
 $controller = new GobdControllerFixture(new Zend_Controller_Request_Http(), new Zend_Controller_Response_Http());
 $controller->database($destination, 'csv'); $controller->database($destination, 'sql');
 exportCheck(count(glob($destination . 'export-*-csv.zip')) === 1 && count(glob($destination . 'export-*-sql.zip')) === 1, 'Legacy CSV/SQL exports regressed');
+$flash = Zend_Controller_Action_HelperBroker::getStaticHelper('FlashMessenger');
+$translator = new DEEC_Translate('de_DE');
+$translator->loadDir('default', $root . '/languages/de_DE/default');
+Zend_Registry::set('DEEC_Translate', $translator);
+foreach ([['type' => 'csv'], ['type' => 'sql'], ['type' => 'list', 'target' => 'contacts'], ['type' => 'list', 'target' => 'items'], ['type' => 'list', 'target' => 'stocks'], ['type' => 'gobd', 'from' => '2019-01-01', 'to' => '2021-12-31'], ['type' => 'gobd', 'from' => '2019-01-01', 'to' => '2021-12-31', 'include_documents' => '1']] as $parameters) {
+	$flash->messages = [];
+	$request = new Zend_Controller_Request_Http(); $request->setParams($parameters);
+	$request->setModuleName('admin')->setControllerName('export')->setActionName('export');
+	Zend_Controller_Front::getInstance()->setRequest($request);
+	$successful = new GobdControllerFixture($request, new Zend_Controller_Response_Http());
+	exportCheck($successful->exportAction() === 'index', 'Export success lost the index redirect: ' . json_encode($parameters));
+	exportCheck($flash->messages === [['type' => 'success', 'message' => 'ADMIN_EXPORT_CREATED']], 'Export success is untyped or untranslated: ' . json_encode($parameters));
+}
+foreach (['contacts-companies-*.csv', 'items-*.csv', 'stock-*.csv'] as $pattern) exportCheck(count(array_filter(glob($destination . $pattern), static fn($path) => filesize($path) > 0)) > 0, 'List export did not create its CSV: ' . $pattern);
+$flash->messages = [];
+$request = new Zend_Controller_Request_Http(); $request->setParam('type', 'unknown');
+exportCheck((new GobdControllerFixture($request, new Zend_Controller_Response_Http()))->exportAction() === 'index' && $flash->messages === ['ADMIN_EXPORT_INVALID_TYPE'], 'Invalid export type lost its localized error/redirect');
+class GobdFailedExportAdapter extends Zend_Db_Adapter_Pdo_Mysql
+{
+	protected function _connect() { throw new RuntimeException('Fixture export read failure'); }
+}
+$flash->messages = [];
+$published = glob($destination . '*.zip');
+Zend_Db_Table::setDefaultAdapter(new GobdFailedExportAdapter(['host' => 'unused', 'username' => 'unused', 'password' => 'unused', 'dbname' => 'unused']));
+$request = new Zend_Controller_Request_Http(); $request->setParams(['type' => 'gobd', 'from' => '2019-01-01', 'to' => '2021-12-31']);
+try {
+	exportCheck((new GobdControllerFixture($request, new Zend_Controller_Response_Http()))->exportAction() === 'index' && $flash->messages === ['ADMIN_EXPORT_FAILED'], 'Failed GoBD export lost its error/redirect or reported success');
+} finally { Zend_Db_Table::setDefaultAdapter($db); }
+exportCheck(glob($destination . '*.zip') === $published && glob($destination . '.gobd-*') === [], 'Controller export failure left a partial package or staging files');
 $published = glob($destination . '*.zip');
 foreach ([['from' => '2020-02-30', 'to' => '2021-01-01'], ['from' => '2022-01-01', 'to' => '2021-01-01'], ['from' => ['bad'], 'to' => '2021-01-01'], ['from' => '2020-01-01', 'to' => '2021-01-01', 'include_documents' => ['bad']]] as $parameters) {
 	$request = new Zend_Controller_Request_Http(); $request->setParams($parameters + ['type' => 'gobd']);
 	$invalid = new GobdControllerFixture($request, new Zend_Controller_Response_Http());
+	$flash->messages = [];
 	exportCheck($invalid->exportAction() === 'index' && glob($destination . '*.zip') === $published, 'Controller accepted invalid dates or checkbox values');
+	exportCheck($flash->messages === ['ADMIN_EXPORT_INVALID_PERIOD'], 'Invalid GoBD input lost its localized error or reported success');
 }
 $pdo->exec("UPDATE permission SET purchases = '{}' WHERE userid = 42");
 $request = new Zend_Controller_Request_Http(); $request->setParams(['type' => 'gobd', 'from' => '2019-01-01', 'to' => '2021-12-31', 'include_documents' => '1']);

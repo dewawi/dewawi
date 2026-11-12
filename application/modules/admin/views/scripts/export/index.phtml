@@ -3,6 +3,7 @@ $this->title = $this->translate('ADMIN_MODULES');
 $this->headTitle($this->title);
 echo $this->Messages();
 echo $this->Pagination();
+$exportFilterKey = 'dewawi.exportFilters:' . $this->baseUrl() . ':' . (int)$this->user['clientid'] . ':' . (int)$this->user['id'];
 ?>
 
 <div class="dw-toolbar">
@@ -54,7 +55,7 @@ echo $this->Pagination();
 
 		<hr class="dw-divider"/>
 
-		<form class="dw-form"
+		<form class="dw-form" data-export-filter-key="<?php echo $this->escape($exportFilterKey . ':gobd'); ?>"
 				method="get"
 				action="<?php echo $this->url([
 					'module' => 'admin',
@@ -75,6 +76,7 @@ echo $this->Pagination();
 					<input class="dw-input"
 							type="date"
 							name="from"
+							data-export-filter
 							value="<?php echo date('Y-01-01'); ?>"
 							required />
 				</div>
@@ -87,6 +89,7 @@ echo $this->Pagination();
 					<input class="dw-input"
 							type="date"
 							name="to"
+							data-export-filter
 							value="<?php echo date('Y-12-31'); ?>"
 							required />
 				</div>
@@ -96,7 +99,7 @@ echo $this->Pagination();
 			<div class="dw-form__row">
 				<div class="dw-form__col">
 					<label class="dw-label">
-						<input type="checkbox" name="include_documents" value="1" />
+						<input type="checkbox" name="include_documents" value="1" data-export-filter />
 						<?php echo $this->translate('ADMIN_EXPORT_DOCUMENTS'); ?>
 					</label>
 					<div class="dw-form__hint"><?php echo $this->translate('ADMIN_EXPORT_DOCUMENTS_HINT'); ?></div>
@@ -107,6 +110,9 @@ echo $this->Pagination();
 				<button type="submit" class="dw-button dw-button--success">
 					<?php echo $this->translate('ADMIN_EXPORT_GOBD'); ?>
 				</button>
+				<button type="reset" class="dw-btn">
+					<?php echo $this->translate('ADMIN_EXPORT_RESET_FILTERS'); ?>
+				</button>
 			</div>
 
 			<div class="dw-form__hint">
@@ -116,7 +122,7 @@ echo $this->Pagination();
 
 		<hr class="dw-divider"/>
 
-		<form class="dw-form"
+		<form class="dw-form" data-export-filter-key="<?php echo $this->escape($exportFilterKey . ':list'); ?>"
 			method="get"
 			action="<?php echo $this->url([
 				'module' => 'admin',
@@ -133,7 +139,7 @@ echo $this->Pagination();
 						<?php echo $this->translate('ADMIN_EXPORT_LIST_TYPE'); ?>
 					</label>
 
-					<select class="dw-select" name="target" required>
+					<select class="dw-select" name="target" data-export-filter required>
 						<option value="contacts">
 							<?php echo $this->translate('CONTACTS'); ?>
 						</option>
@@ -150,6 +156,9 @@ echo $this->Pagination();
 			<div class="dw-form__actions">
 				<button type="submit" class="dw-button dw-button--primary">
 					<?php echo $this->translate('ADMIN_EXPORT_LIST'); ?>
+				</button>
+				<button type="reset" class="dw-btn">
+					<?php echo $this->translate('ADMIN_EXPORT_RESET_FILTERS'); ?>
 				</button>
 			</div>
 

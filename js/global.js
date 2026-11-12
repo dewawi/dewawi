@@ -1280,6 +1280,7 @@ function search(onSuccess, onError) {
 				}
 				DewawiToolbar.refresh(response.toolbar);
 				initDwTabs('#content');
+				initExportFilters('#content');
 				if (typeof onSuccess === 'function') onSuccess(response);
 			},
 			error: function (xhr, status) {
@@ -1299,6 +1300,40 @@ function search(onSuccess, onError) {
 		if (!completed && Dewawi.searchRequestId === requestId) Dewawi.searchRequest = request;
 	}, 300);
 }
+
+function initExportFilters(scope) {
+	$(scope).find('form[data-export-filter-key]').each(function () {
+		var $form = $(this);
+		if ($form.data('dw-export-filters')) return;
+		$form.data('dw-export-filters', true);
+		var key = $form.attr('data-export-filter-key');
+		var $fields = $form.find('[data-export-filter]');
+		try {
+			var values = JSON.parse(window.sessionStorage.getItem(key));
+			if (values && typeof values === 'object') {
+				$fields.each(function () {
+					var value = values[this.name];
+					if (this.type === 'checkbox') {
+						if (typeof value === 'boolean') this.checked = value;
+					} else if (typeof value === 'string') {
+						if (this.tagName !== 'SELECT' || $(this).find('option').filter(function () { return this.value === value; }).length) this.value = value;
+					}
+				});
+			}
+		} catch (error) {}
+
+		function save() {
+			var values = {};
+			$fields.each(function () { values[this.name] = this.type === 'checkbox' ? this.checked : this.value; });
+			try { window.sessionStorage.setItem(key, JSON.stringify(values)); } catch (error) {}
+		}
+		$form.on('input change', '[data-export-filter]', save).on('submit', save).on('reset', function () {
+			try { window.sessionStorage.removeItem(key); } catch (error) {}
+		});
+	});
+}
+
+$(function () { initExportFilters(document); });
 
 function collectToolbarData() {
 	var data = {};
