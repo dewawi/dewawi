@@ -241,6 +241,119 @@ $reused = recoveryTestCli(['action' => 'prepare', 'only' => 'sales/quote/1']);
 recoveryTestCheck($reused['json']['results']['sales/quote/1']['status'] === 'already_prepared' && count(glob($review . '/sales-quote-1-7001/reconstructions/*.json')) === 1, 'A renderer source change invalidated an otherwise valid prepared PDF');
 $candidateHashes = [];
 foreach (glob($review . '/*/candidates/*.pdf') as $path) $candidateHashes[$path] = [hash_file('sha256', $path), filemtime($path)];
+$publishOptions = ['action' => 'publish-reviewable', 'confirm-client' => 7, 'database-values-verified' => true, 'backup-verified' => true];
+recoveryTestCli(['action' => 'publish-reviewable', 'confirm-client' => 7], false);
+recoveryTestCli(array_replace($publishOptions, ['confirm-client' => 8]), false);
+recoveryTestCli($publishOptions + ['operator-user' => 43], false);
+$published = recoveryTestCli($publishOptions);
+$childPublished = recoveryTestCli(array_replace($childOptions, $publishOptions, ['action' => 'publish-reviewable', 'confirm-client' => 9]));
+$publicationReport = recoveryJsonFile($published['json']['report']);
+recoveryTestCheck($publicationReport['publication_summary'][DEEC_DocumentReview::STATUS] === 8 && $publicationReport['publication_summary']['available_candidates'] === 8, 'Publication did not cover all prepared document types');
+recoveryTestCheck($publicationReport['authorization']['confirmed_by'] === 42 && $publicationReport['authorization']['database_values_verified'] && !$publicationReport['authorization']['original_comparison_performed'] && count($publicationReport['authorization']['scope']) === 8 && strtotime($publicationReport['authorization']['confirmed_at']) > 0, 'Database verification invented an original comparison or lost its user, time or scope');
+recoveryTestCheck((int)$pdo->query('SELECT COUNT(*) FROM documentarchive')->fetchColumn() === 0 && recoveryJsonFile($review . '/sales-quote-1-7001/selection.json')['decision'] === 'pending', 'Review publication selected or registered an original');
+$receiptsBefore = [];
+foreach (glob($review . '/published/*/*.json') as $path) $receiptsBefore[$path] = [file_get_contents($path), filemtime($path)];
+recoveryTestCli($publishOptions);
+foreach ($receiptsBefore as $path => $state) recoveryTestCheck([file_get_contents($path), filemtime($path)] === $state, 'Repeated publication changed an existing confirmation');
+$collectorLock = fopen($review . '/.collector.lock', 'r+b'); flock($collectorLock, LOCK_EX);
+recoveryTestCli($publishOptions, false);
+flock($collectorLock, LOCK_UN); fclose($collectorLock);
+$lostReceipt = array_key_first($receiptsBefore); unlink($lostReceipt);
+recoveryTestCli($publishOptions);
+recoveryTestCheck(is_file($lostReceipt), 'Interrupted publication could not resume');
+$portSocket = stream_socket_server('tcp://127.0.0.1:0', $socketError, $socketMessage);
+$httpAddress = stream_socket_get_name($portSocket, false); fclose($portSocket);
+$httpLog = fopen($work . '/review-http.log', 'wb');
+$httpServer = proc_open([PHP_BINARY, '-d', 'error_reporting=8191', '-S', $httpAddress, __DIR__ . '/document-recovery-download-fixture.php'], [0 => ['pipe', 'r'], 1 => $httpLog, 2 => $httpLog], $httpPipes, null, array_replace(getenv(), ['DEWAWI_REVIEW_TEST_SOCKET' => $socket]));
+fclose($httpPipes[0]);
+function recoveryTestDownload(array $query, ?int $user = 42, string $method = 'GET'): array
+{
+	global $httpAddress;
+	$headers = $user === null ? [] : ['X-Review-Test-User: ' . $user];
+	$context = stream_context_create(['http' => ['method' => $method, 'header' => implode("\r\n", $headers), 'ignore_errors' => true, 'timeout' => 10]]);
+	$bytes = file_get_contents('http://' . $httpAddress . '/?' . http_build_query($query), false, $context);
+	return ['headers' => implode("\n", $http_response_header), 'bytes' => $bytes, 'code' => (int)explode(' ', $http_response_header[0])[1]];
+}
+try {
+	for ($attempt = 0; $attempt < 100; $attempt++) { $ready = @stream_socket_client('tcp://' . $httpAddress); if ($ready) { fclose($ready); break; } usleep(50000); }
+	$childSha = array_key_first($childPublished['json']['results']['sales/quote/9']['candidates']);
+	$childQuery = ['module' => 'sales', 'controller' => 'quote', 'id' => 9, 'sha256' => $childSha];
+	recoveryTestCheck(recoveryTestDownload($childQuery, 44)['code'] === 200 && recoveryTestDownload($childQuery, 42)['code'] === 404, 'Authorized parent contact sharing leaked child document ownership or blocked its owner');
+	foreach ($identities as $key => $identity) {
+		$entry = $published['json']['results'][$key];
+		$sha = array_key_first($entry['candidates']);
+		$query = ['module' => $identity['module'], 'controller' => $identity['controller'], 'id' => $identity['id'], 'sha256' => $sha];
+		$download = recoveryTestDownload($query);
+		recoveryTestCheck($download['code'] === 200 && hash('sha256', $download['bytes']) === $sha && str_contains($download['headers'], 'attachment;') && str_contains($download['headers'], DEEC_DocumentReview::STATUS) && str_contains($download['headers'], 'private, no-store') && str_contains($download['headers'], 'nosniff'), 'Private review download failed for ' . $key . ': ' . $download['headers'] . $download['bytes']);
+		$head = recoveryTestDownload($query, 42, 'HEAD');
+		recoveryTestCheck($head['code'] === 200 && $head['bytes'] === '' && str_contains($head['headers'], 'Content-Length: ' . strlen($download['bytes'])), 'Review HEAD response leaked bytes or lost its size');
+		$inline = recoveryTestDownload($query + ['mode' => 'inline']);
+		recoveryTestCheck($inline['code'] === 200 && $inline['bytes'] === $download['bytes'] && str_contains($inline['headers'], 'inline;'), 'Inline view changed PDF bytes');
+		foreach ([null, 43, 44] as $user) recoveryTestCheck(recoveryTestDownload($query, $user)['code'] !== 200, 'Anonymous, foreign or child user accessed a parent review PDF');
+		$view = recoveryTestDownload($query + ['view' => 1]);
+		recoveryTestCheck($view['code'] === 200 && str_contains($view['bytes'], 'Historische Rekonstruktion – Papierprüfung ausstehend') && str_contains($view['bytes'], $sha) && str_contains($view['bytes'], 'action=download') && str_contains($view['bytes'], 'action=reviewdownload'), 'Document view omitted the review status or changed original links');
+	}
+	$quoteSha = array_key_first($published['json']['results']['sales/quote/1']['candidates']);
+	$quoteQuery = ['module' => 'sales', 'controller' => 'quote', 'id' => 1, 'sha256' => $quoteSha];
+	recoveryTestCheck(recoveryTestDownload($quoteQuery, 42, 'POST')['code'] === 405 && recoveryTestDownload(array_replace($quoteQuery, ['sha256' => '../../etc/passwd']))['code'] === 404, 'Review endpoint accepted writes or arbitrary paths');
+	$pdo->exec("UPDATE permission SET sales = '{\"quote\":[\"edit\"]}' WHERE userid = 42");
+	recoveryTestCheck(recoveryTestDownload($quoteQuery)['code'] === 404, 'Edit permission replaced required view permission');
+	recoveryTestCli($publishOptions + ['only' => 'sales/quote/1'], false);
+	$stmt = $pdo->prepare('UPDATE permission SET sales = ? WHERE userid = 42'); $stmt->execute([$permissions['sales']]);
+	$pdo->exec("UPDATE permission SET sales = '{\"quote\":[\"view\"]}' WHERE userid = 42");
+	recoveryTestCheck(recoveryTestDownload($quoteQuery)['code'] === 200, 'Read-only users could not review a published reconstruction');
+	$stmt->execute([$permissions['sales']]);
+	$proofPath = $review . '/sales-quote-1-7001/reconstructions/' . $quoteSha . '.json';
+	$proofBytes = file_get_contents($proofPath);
+	$changedProof = json_decode($proofBytes, true); $changedProof['validation']['warnings'] = [];
+	file_put_contents($proofPath, reviewJson($changedProof));
+	recoveryTestCheck(recoveryTestDownload($quoteQuery)['code'] === 404, 'Changed reconstruction warning proof remained downloadable');
+	recoveryTestCli($publishOptions + ['only' => 'sales/quote/1'], false);
+	file_put_contents($proofPath, $proofBytes);
+	$pdfPath = $review . '/sales-quote-1-7001/candidates/' . $quoteSha . '.pdf';
+	$pdfBytes = file_get_contents($pdfPath);
+	foreach ([str_replace('PDF-', 'BAD-', $pdfBytes), substr_replace($pdfBytes, 'X', 12, 1), $pdfBytes . "\n"] as $corruptBytes) {
+		file_put_contents($pdfPath, $corruptBytes);
+		recoveryTestCheck(recoveryTestDownload($quoteQuery)['code'] === 404, 'Invalid structure, SHA-256 or size remained downloadable');
+		recoveryTestCli($publishOptions + ['only' => 'sales/quote/1'], false);
+	}
+	file_put_contents($pdfPath, $pdfBytes); touch($pdfPath, $candidateHashes[$pdfPath][1]);
+	$locatorPath = DEEC_DocumentReview::locatorPath(7); $locatorBytes = file_get_contents($locatorPath);
+	$foreignLocator = json_decode($locatorBytes, true); $foreignLocator['clientid'] = 8;
+	file_put_contents($locatorPath, reviewJson($foreignLocator));
+	recoveryTestCheck(recoveryTestDownload($quoteQuery)['code'] === 404, 'Foreign review locator was accepted');
+	file_put_contents($locatorPath, $locatorBytes);
+	rename($pdfPath, $pdfPath . '.saved'); symlink($pdfPath . '.saved', $pdfPath);
+	recoveryTestCheck(recoveryTestDownload($quoteQuery)['code'] === 404, 'Symlink candidate was served');
+	recoveryTestCli($publishOptions + ['only' => 'sales/quote/1'], false);
+	unlink($pdfPath); rename($pdfPath . '.saved', $pdfPath);
+	$pdo->exec('UPDATE quotepos SET total = 999 WHERE parentid = 1');
+	recoveryTestCheck(recoveryTestDownload($quoteQuery)['code'] === 404, 'Changed business fingerprint remained downloadable');
+	recoveryTestCli($publishOptions + ['only' => 'sales/quote/1'], false);
+	$pdo->exec('UPDATE quotepos SET total = 363 WHERE parentid = 1');
+	$secondBytes = substr($pdfBytes, 0, strrpos($pdfBytes, '%%EOF')) . "% Separate historical layout fixture\n%%EOF\n";
+	$secondSha = hash('sha256', $secondBytes);
+	reviewWrite(dirname($pdfPath) . '/' . $secondSha . '.pdf', $secondBytes);
+	$secondProof = json_decode($proofBytes, true); $secondProof['sha256'] = $secondSha; $secondProof['size'] = strlen($secondBytes);
+	reviewWrite(dirname($proofPath) . '/' . $secondSha . '.json', reviewJson($secondProof));
+	recoveryTestCli($publishOptions + ['only' => 'sales/quote/1']);
+	$view = recoveryTestDownload($quoteQuery + ['view' => 1]);
+	recoveryTestCheck(str_contains($view['bytes'], $quoteSha) && str_contains($view['bytes'], $secondSha) && recoveryTestDownload(array_replace($quoteQuery, ['sha256' => $secondSha]))['bytes'] === $secondBytes, 'Different reconstructions were automatically selected or hidden');
+	foreach (['de_DE', 'en_US'] as $locale) {
+		$panel = recoveryTestDownload($quoteQuery + ['view' => 1, 'locale' => $locale]);
+		preg_match('~<section.*?</section>~s', $panel['bytes'], $match);
+		reviewWrite($work . '/review-panel-' . $locale . '.html', '<!doctype html><html lang="' . substr($locale, 0, 2) . '"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="file://' . $root . '/css/ui.css"><body>' . $match[0] . '</body></html>');
+	}
+	$proofDirectory = dirname($proofPath); rename($proofDirectory, $proofDirectory . '-saved');
+	$failureReport = $review . '/runs/recovery-9999-fixture.json';
+	reviewWrite($failureReport, reviewJson(['action' => 'prepare', 'clientid' => 7, 'results' => ['sales/quote/1' => ['status' => 'failed', 'error' => 'Fixture failed historical reconstruction']]]));
+	$noProof = recoveryTestCli($publishOptions);
+	$noProofReport = recoveryJsonFile($noProof['json']['report']);
+	recoveryTestCheck($noProofReport['publication_summary']['reconstruction_failed'] === 1 && $noProofReport['publication_summary']['available_candidates'] === 7 && $noProofReport['results']['sales/quote/1']['reason'] === 'Fixture failed historical reconstruction', 'Failed reconstructions were not reported separately or blocked other PDFs');
+	rename($proofDirectory . '-saved', $proofDirectory); unlink($failureReport);
+	$publication = DEEC_DocumentReview::publicationDirectory($review, $identities['sales/quote/1']) . '/' . $secondSha . '.json';
+	unlink($publication); unlink(dirname($proofPath) . '/' . $secondSha . '.json'); unlink(dirname($pdfPath) . '/' . $secondSha . '.pdf');
+} finally { proc_terminate($httpServer); proc_close($httpServer); fclose($httpLog); }
 $plan = recoveryTestCli(['action' => 'release-plan']);
 recoveryTestCheck(count(array_filter($plan['json']['results'], static fn(array $row): bool => $row['category'] === 'original_comparison_required')) === 8, 'Batch policy waived required original comparisons');
 recoveryTestCheck((int)$pdo->query('SELECT COUNT(*) FROM documentarchive')->fetchColumn() === 0 && recoveryJsonFile($review . '/sales-quote-1-7001/selection.json')['decision'] === 'pending', 'Release plan changed an archive or selection');
@@ -277,6 +390,13 @@ unlink($linked);
 reviewWrite($work . '/decisions.jsonl', implode("\n", array_map('json_encode', $decisions)) . "\n");
 recoveryTestCli(['action' => 'select', 'decisions' => $work . '/decisions.jsonl']);
 recoveryTestCli(['action' => 'approve'], false);
+$publishedProofPath = glob($review . '/sales-quote-1-7001/reconstructions/*.json')[0];
+$publishedProofBytes = file_get_contents($publishedProofPath);
+$withoutWarnings = json_decode($publishedProofBytes, true); $withoutWarnings['validation']['original_comparison_required'] = false; $withoutWarnings['validation']['warnings'] = [];
+file_put_contents($publishedProofPath, reviewJson($withoutWarnings));
+$uncompared = recoveryTestCli(['action' => 'approve', 'only' => 'sales/quote/1'], false);
+recoveryTestCheck(str_contains($uncompared['json']['results']['sales/quote/1']['error'], 'explicit documented comparison'), 'Review publication allowed final approval without an original comparison');
+file_put_contents($publishedProofPath, $publishedProofBytes);
 $comparisonDenied = recoveryTestCli(['action' => 'approve', 'only' => 'sales/quote/1'], false);
 recoveryTestCheck(str_contains($comparisonDenied['json']['results']['sales/quote/1']['error'], 'explicit documented comparison'), 'A generic selection reason bypassed the original-comparison gate');
 $digital = $decisions[0];
@@ -383,6 +503,12 @@ foreach ($pdo->query('SELECT * FROM documentarchive')->fetchAll(PDO::FETCH_ASSOC
 	$file = (new DEEC_DocumentArchive($base))->inspect($base . '/' . $row['path'], 'pdf');
 	recoveryTestCheck($file['sha256'] === $row['sha256'] && $file['size'] === (int)$row['filesize'] && DEEC_DocumentArchive::hasRecoveryApproval($row), 'Archive bytes or approval provenance differ');
 }
+$originalRows = $pdo->query('SELECT * FROM documentarchive ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+$registeredSkip = recoveryTestCli($publishOptions);
+recoveryTestCheck(count(array_filter($registeredSkip['json']['results'], static fn(array $row): bool => $row['status'] === 'already_registered')) === 8 && $pdo->query('SELECT * FROM documentarchive ORDER BY id')->fetchAll(PDO::FETCH_ASSOC) === $originalRows, 'Review publication changed or republished registered originals');
+$runtimeDb = recoveryBoot(migrationConfig($work . '/database.ini', 'production') + ['unix_socket' => $socket], $base, 7, 42);
+foreach ($identities as $identity) recoveryTestCheck((new DEEC_DocumentReview())->candidates($identity['id'], $identity['module'], $identity['controller']) === [], 'Finally archived document still advertises an unreviewed candidate');
+$runtimeDb->closeConnection();
 $batchRoot = $work . '/batch-review';
 reviewDirectory($batchRoot . '/runs/initial');
 reviewWrite($batchRoot . '/.collector.lock', '');

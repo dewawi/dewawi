@@ -1,4 +1,8 @@
 <?php return array(
+	'DOCUMENTS_RECONSTRUCTION_PENDING' => 'Historische Rekonstruktion – Papierprüfung ausstehend',
+	'DOCUMENTS_RECONSTRUCTION_INTERNAL_ONLY' => 'Nur zur internen Prüfung. Vor endgültiger Archivfreigabe mit dem Original oder einer verifizierten Versandkopie vergleichen.',
+	'DOCUMENTS_RECONSTRUCTION_VIEW' => 'Prüf-PDF ansehen',
+	'DOCUMENTS_RECONSTRUCTION_DOWNLOAD' => 'Prüf-PDF herunterladen',
 	'DOCUMENTS_PREVIEW_RUNNING' => 'PDF-Vorschau wird erstellt …',
 	'DOCUMENTS_PREVIEW_FAILED' => 'PDF-Vorschau konnte nicht erstellt werden.',
 	'DOCUMENTS_FINALIZING' => 'Dokument wird abgeschlossen …',

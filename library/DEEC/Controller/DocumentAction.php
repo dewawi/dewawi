@@ -294,6 +294,45 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		return $this->sendPdfResponse($result);
 	}
 
+	public function reviewdownloadAction()
+	{
+		$this->disableView();
+		$request = $this->getRequest();
+		if (!in_array($request->getMethod(), ['GET', 'HEAD'], true)) {
+			$this->getResponse()->setHttpResponseCode(405)->setHeader('Allow', 'GET, HEAD', true);
+			return;
+		}
+		$id = filter_var($this->_getParam('id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+		$sha = $this->_getParam('sha256', '');
+		$mode = $this->_getParam('mode', 'download');
+		try {
+			if (!$id || !is_string($sha) || !is_string($mode) || !in_array($mode, ['download', 'inline'], true)) throw new RuntimeException('Invalid review download');
+			$result = (new DEEC_DocumentReview())->open($id, $request->getModuleName(), $request->getControllerName(), $sha);
+		} catch (RuntimeException | InvalidArgumentException | JsonException $error) {
+			$this->getResponse()->setHttpResponseCode(404)->setHeader('Cache-Control', 'private, no-store', true);
+			return;
+		}
+		return $this->sendReviewPdfResponse($result, $mode);
+	}
+
+	protected function sendReviewPdfResponse(array $result, string $mode)
+	{
+		try {
+			$response = $this->getResponse();
+			$response->clearHeaders();
+			$response->setHeader('Content-Type', 'application/pdf', true);
+			$response->setHeader('Content-Disposition', ($mode === 'inline' ? 'inline' : 'attachment') . '; filename="' . $result['filename'] . '"', true);
+			$response->setHeader('Content-Length', (string)$result['size'], true);
+			$response->setHeader('X-Content-Type-Options', 'nosniff', true);
+			$response->setHeader('Cache-Control', 'private, no-store', true);
+			$response->setHeader('Content-Security-Policy', "sandbox; default-src 'none'", true);
+			$response->setHeader('X-DEWAWI-Document-Status', $result['status'], true);
+			$response->sendHeaders();
+			if ($this->getRequest()->getMethod() !== 'HEAD') fpassthru($result['stream']);
+		} finally { fclose($result['stream']); }
+		exit;
+	}
+
 	protected function generatePdfDocument(int $id, array $options = []): array
 	{
 		$row = $this->loadRow($id);

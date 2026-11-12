@@ -4,7 +4,38 @@ Der Ablauf verwendet die vorhandenen DEEC-Komponenten, Version 1 von `documentar
 
 Keine Nummernvergabe, Fertigstellung oder Änderung von Geschäftsdaten. Es gibt keine neue Archivarchitektur, keine SQL-Migration und keine erneute Hauptmigration. Vorhandene registrierte Originale werden im Sammelablauf geprüft und unverändert übersprungen. Historische Dateien bleiben erhalten; eine spätere Auslagerung wird nur durch `retention-plan` vorbereitet, niemals ausgeführt.
 
-## Bestehender Bestand und lokale Nachweisgrenze
+## Vorbereitete PDFs gesammelt intern zugänglich machen
+
+`publish-reviewable` macht vorhandene Rekonstruktionen im Register **Dokument** der acht bestehenden Belegansichten sichtbar. Jede unterschiedliche SHA-256 erhält eigene Links **Prüf-PDF ansehen** und **Prüf-PDF herunterladen**. Es wird keine Fassung ausgewählt und keine PDF erzeugt, kopiert oder als Original registriert. Status: `historical_reconstruction_pending_original_comparison` / **Historische Rekonstruktion – Papierprüfung ausstehend**. Die Betreiberbestätigung bezieht sich ausschließlich auf die geprüften Datenbankwerte; sie behauptet keinen Papiervergleich.
+
+Aktuelle Betreiberangaben: 43.327 registrierte Originale, 1.418 offene Dokumente, davon 1.356 vorbereitete und noch nicht archivierte PDFs sowie 62 fehlgeschlagene Rekonstruktionen. Diese Zahlen werden nicht fest codiert oder lokal als produktiv verifiziert ausgegeben. Der Lauf ermittelt seine tatsächlichen Ergebnisse anhand des bestehenden Sammellaufs und aller darin enthaltenen Belege ohne Datumsbegrenzung.
+
+Für den bereits dokumentierten Prüfbereich, Sammellauf und Betreiberbenutzer 100 genügt dieser eine Aufruf für die gesamte Menge; kein `--only` und keine Neuerzeugung:
+
+```bash
+sudo -u www-data php /var/www/dewawi/tests/documents/document-recovery.php \
+  --config=/var/www/dewawi/configs/database.ini \
+  --review=/var/www/dewawi-recovery-100/client-100 \
+  --run=/var/www/dewawi-recovery-100/client-100/runs/20261111T201533Z-f315b7900048/run.json \
+  --client=100 --operator-user=100 --action=publish-reviewable \
+  --confirm-client=100 --database-values-verified --backup-verified
+```
+
+Dieser Befehl ist zur Ausführung durch den Betreiber bestimmt und wurde nicht produktiv ausgeführt. Die Option `--database-values-verified` protokolliert die ausdrücklich bestätigte Geschäftsdatenprüfung, `--backup-verified` die bereits bestätigte Datenbank-/Dateisicherung. Benutzer 100 muss ein aktives, für Mandant 100 und die betroffenen Belege berechtigtes Betreiberkonto sein. Andere Mandanten verwenden ihre eigenen vorhandenen Prüfbereiche, Läufe und Benutzer. Der CLI-Benutzer benötigt die bestehenden View-/Edit-Rechte; interne Leser benötigen ausschließlich die normalen View-Rechte des jeweiligen Belegs. Administratorstatus ersetzt keine Belegrechte. Berechtigte Parent-Kontakte bleiben nutzbar, Parent-/Child-Belege werden nicht gegenseitig freigegeben.
+
+Der Lauf arbeitet mit SELECT-only-Datenbankrechten. Er prüft pro Kandidat Identität und Mandant, Rekonstruktionsnachweis mit tatsächlich dargestellten Beträgen, aktuellen vollständigen Geschäftsdatenfingerprint, PDF-Struktur, Größe und SHA-256. Die gespeicherten Betragsnachweise werden geprüft und unverändert gebunden; es erfolgt keine erneute Belegberechnung. Veraltete Nachweise und ungültige Dateien werden einzeln abgewiesen; weitere gültige Fassungen und Belege werden trotzdem verfügbar gemacht. Dokumente mit bestehender PDF-Archivregistrierung werden unabhängig von deren Integritätszustand unverändert übersprungen; eine fehlerhafte Registrierung bleibt Aufgabe der vorhandenen Archivprüfung.
+
+Prüf-PDFs, Rekonstruktionsnachweise und Veröffentlichungsbelege bleiben außerhalb des Webroots, mit 0700 für Verzeichnisse und 0600 für Dateien. Unter `files/documents/.review-roots/<Mandant>.json` entsteht ausschließlich ein privater Locator auf genau diesen Prüfbereich. Die bestehenden Apache-Sperren für `files/documents` und versteckte Pfade schützen ihn; andere Webserver müssen dieselben bereits erforderlichen Sperren durchsetzen. Keine öffentlichen Aliase auf den Prüfbereich. Der Webserver muss unter derselben Dateiidentität wie der Betreiberlauf lesen können. Es sind keine manuellen Konfigurations- oder SQL-Änderungen nötig.
+
+Die unveränderlichen Belege unter `<Prüfbereich>/published/<Modul>-<Controller>-<ID>/<SHA>.json` binden Identität, PDF-Größe/SHA, Geschäftsdatenfingerprint, vollständigen Rekonstruktionsnachweis per SHA und die Betreiberbestätigung mit echtem UTC-Zeitpunkt, Benutzer, Laufprüfsumme und Umfangsprüfsumme. Der geschützte JSON-Laufbericht enthält den vollständigen bestätigten Umfang. Wiederholung behält bestehende Bestätigungen unverändert bei und ergänzt fehlende Veröffentlichungen. Ein bereits mit einem anderen Prüfbereich belegter Mandanten-Locator wird nicht ersetzt.
+
+Die gewohnten JSON-/CSV-Ergebnisberichte stehen unter `runs/recovery-<Zeit>-<Zufall>.*`; der Pfad wird ausgegeben. `publication_summary.available_candidates` zählt die verfügbaren Fassungen, `invalid_candidates` die abgewiesenen Kandidaten. `reconstruction_failed` führt Belege ohne vorbereiteten Nachweis mit dem letzten Vorbereitungsfehler separat auf, also auch die vom Betreiber genannten 62 Fälle, soweit sie weiterhin ohne Kandidaten im Sammellauf stehen. Eine feste Erfolgszahl wird nicht vorausgesetzt. Exitcode 1 meldet technische oder Kandidatenfehler; bereits erfolgreich veröffentlichte Prüf-PDFs bleiben nutzbar. Fehlende Rekonstruktionen werden ausdrücklich gemeldet und niemals neu erzeugt.
+
+Download und Ansicht prüfen erneut Dokument-/Mandantenrechte, Geschäftsdatenfingerprint, Nachweis-SHA und PDF-Integrität. Der Download nimmt ausschließlich Belegidentität und SHA entgegen, niemals einen Dateipfad. Er streamt die geprüften Bytes mit `private, no-store`, `nosniff`, einem Prüfdateinamen und dem Statusheader `X-DEWAWI-Document-Status`; HEAD liefert keine PDF-Bytes. Normale Originaldownloads und E-Mail-Anhänge erhalten keinen Fallback auf Prüf-PDFs. Ohne reguläre Originalregistrierung gelangen diese Kandidaten auch nicht in den Originalbeleg-Export. Die gesonderte GoBD-Erweiterung wird durch diese Änderung nicht angepasst.
+
+Nach dem Vergleich durch die Buchhaltung die vorhandene dokumentbezogene `selection.json` samt tatsächlichem `original_comparison` und die Aktionen `select`/`approve`/`import` beziehungsweise `release` verwenden. Für veröffentlichte Prüf-PDFs ist der Originalvergleich vor Archivierung immer Pflicht, auch bei warnungsfreien Betragsnachweisen. Eine Datenbankprüfung ersetzt ihn nicht. Nach endgültiger Archivierung blendet die Ansicht die Prüfdownloads aus; interne Nachweise bleiben erhalten.
+
+## Früherer Bestand und lokale Nachweisgrenze
 
 Betreiberangaben vom 12.11.2026: 44.745 Dokumente, davon 43.326 vollständig archiviert und 1.419 offen; 1.318 vorbereitete PDFs, 101 fehlgeschlagene Rekonstruktionen und 1.208 Kandidaten mit `original_comparison_required`. Diese Zahlen sind keine Auswahlgrenzen. Die produktiven Prüfverzeichnisse, die Baseline und Fehlerlogs waren im Entwicklungsworkspace nicht vorhanden. Es wurden keine Produktivdatenbanken für Analyse oder Tests geöffnet. Eine tatsächliche Lösungszahl für die 101 Belege lässt sich lokal deshalb nicht angeben.
 
@@ -106,3 +137,5 @@ Ausführung standardmäßig als `www-data`. Prüfbereich außerhalb des Webroots
 ## Lokale Tests
 
 `python3 tests/documents/document-recovery-db.py` startet eine kurzlebige, netzwerklose MariaDB ausschließlich unter `/tmp/dewawi-document-recovery-db-*` mit bestehendem Installationsschema. Die Regression benutzt echte PDFs aller acht Arten und `pdftotext`, prüft Beträge und Warnungen, NULL-Kontakte, gespeicherte Empfänger, Parent-Child-Rechte, nachträgliche Papierbestätigung, falsche SHA, Sammelpolicy, fehlende Nachweise, widersprüchliche Fassungen, private JSON/CSV-Berichte, unveränderte Kandidaten/Archive, Auswahl-/Freigabewiederverwendung und Wiederanlauf nach Insertfehler. Geschäfts-, Positionsgruppen-, Preisregel-, Kontakt- und E-Mail-Zeilen werden vor/nach dem Ablauf verglichen. Die bestehenden Archiv-, Review-, Migrations-Dry-Run-, Download-, Berechtigungs- und Berechnungstests ergänzen diese Prüfung.
+
+Dieselbe Regression prüft `publish-reviewable` und echte lokale HTTP-Downloads aller acht Arten unter SELECT-only-Rechten, GET/HEAD/Inline, Status- und Cacheheader, fehlende Berechtigungen, Fremd-/Parent-Child-Zugriffe, geänderte Nachweise und Datenfingerprints, falsche Größe/SHA/PDF-Struktur, Symlinks, mehrere Fassungen, unveränderte Bestätigungen bei Wiederholung, Teilwiederanlauf und getrennte Rekonstruktionsfehler. Chromium prüft den real gerenderten Prüfbereich mit zwei Fassungen auf Deutsch/Englisch bei 375/1440 Pixeln. Der HTTP-Router `document-recovery-download-fixture.php` funktioniert ausschließlich im lokalen PHP-Testserver mit dem temporären Testsockel; keine produktive Authentifizierung wird ersetzt.

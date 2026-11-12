@@ -1,4 +1,8 @@
 <?php return array(
+	'DOCUMENTS_RECONSTRUCTION_PENDING' => 'Historical reconstruction – original comparison pending',
+	'DOCUMENTS_RECONSTRUCTION_INTERNAL_ONLY' => 'Internal review only. Compare with the original or a verified dispatch copy before final archive approval.',
+	'DOCUMENTS_RECONSTRUCTION_VIEW' => 'View review PDF',
+	'DOCUMENTS_RECONSTRUCTION_DOWNLOAD' => 'Download review PDF',
 	'DOCUMENTS_PREVIEW_RUNNING' => 'Creating PDF preview …',
 	'DOCUMENTS_PREVIEW_FAILED' => 'PDF preview could not be created.',
 	'DOCUMENTS_FINALIZING' => 'Finalizing document …',

@@ -69,6 +69,7 @@ class DEEC_Permission
 			'export',
 			'preview',
 			'download',
+			'reviewdownload',
 			'xrechnung',
 		],
 		'delete' => [
