@@ -595,4 +595,5 @@ recoveryTestCli($batchOptions + $batchRelease);
 recoveryTestCheck($pdo->query('SELECT * FROM documentarchive WHERE documentid = 50')->fetch(PDO::FETCH_ASSOC) === $batchOriginal && file_get_contents($batchCanonical) === $batchBytes, 'Repeated batch release changed original bytes or metadata');
 foreach ($archivedBefore as $old) recoveryTestCheck($pdo->query('SELECT * FROM documentarchive WHERE id = ' . (int)$old['id'])->fetch(PDO::FETCH_ASSOC) === $old, 'Batch release changed an existing archived original');
 foreach ($batchBefore as $table => $rows) recoveryTestCheck($pdo->query('SELECT * FROM `' . $table . '` ORDER BY id')->fetchAll(PDO::FETCH_ASSOC) === $rows, 'Batch release changed business or email rows');
-echo 'PASS: ' . $checks . " isolated recovery checks; eight types, retrospective attestations, policy releases, private reports and unchanged business rows\n";
+require __DIR__ . '/document-diagnostic-fixtures.php';
+echo 'PASS: ' . $checks . " isolated recovery checks; eight types, retrospective attestations, policy releases, private reports, diagnostic PDFs and unchanged business rows\n";

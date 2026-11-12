@@ -3,6 +3,7 @@
 class DEEC_DocumentReview
 {
 	public const STATUS = 'historical_reconstruction_pending_original_comparison';
+	public const DIAGNOSTIC_STATUS = 'historical_diagnostic_reconstruction';
 
 	public static function json(array $value): string
 	{
@@ -65,33 +66,36 @@ class DEEC_DocumentReview
 		return $binding;
 	}
 
-	public static function publicationDirectory(string $root, array $identity): string
+	public static function publicationDirectory(string $root, array $identity, bool $diagnostic = false): string
 	{
 		if (!DEEC_DocumentArchive::validDocumentType($identity['module'], $identity['controller']) || (int)$identity['id'] <= 0) throw new RuntimeException('Invalid review document');
-		return $root . '/published/' . $identity['module'] . '-' . $identity['controller'] . '-' . $identity['id'];
+		return $root . ($diagnostic ? '/published-diagnostics/' : '/published/') . $identity['module'] . '-' . $identity['controller'] . '-' . $identity['id'];
 	}
 
-	public static function candidate(string $root, string $directory, array $identity, array $snapshot, string $sha): array
+	public static function candidate(string $root, string $directory, array $identity, array $snapshot, string $sha, bool $diagnostic = false): array
 	{
 		if (!preg_match('/^[a-f0-9]{64}$/D', $sha) || dirname($directory) !== $root || !preg_match('/^[a-zA-Z0-9_.%~-]+$/D', basename($directory))) throw new RuntimeException('Invalid review candidate');
-		$proofPath = $directory . '/reconstructions/' . $sha . '.json';
+		$proofPath = $directory . ($diagnostic ? '/diagnostics/' : '/reconstructions/') . $sha . '.json';
 		$proof = self::read($proofPath);
 		if (($proof['schema_version'] ?? 0) !== 1 || ($proof['identity'] ?? null) !== $identity || ($proof['sha256'] ?? '') !== $sha || ($proof['snapshot_sha256'] ?? '') !== $snapshot['sha256']
-			|| ($proof['validation']['schema_version'] ?? 0) !== 1 || empty($proof['validation']['displayed']['header']) || empty($proof['validation']['displayed']['positions'])
 			|| ($proof['fiscal_correction'] ?? null) !== false || ($proof['manual_approval_required'] ?? null) !== true || empty($proof['generated_by']) || empty($proof['generated_at']) || !strtotime($proof['generated_at'])) throw new RuntimeException('Reconstruction proof is invalid or stale');
-		$path = $directory . '/candidates/' . $sha . '.pdf';
+		if ($diagnostic) {
+			if (($proof['status'] ?? '') !== self::DIAGNOSTIC_STATUS || ($proof['archive_approval_allowed'] ?? null) !== false || ($proof['diagnosis']['schema_version'] ?? 0) !== 1 || ($proof['diagnosis']['accounting_basis_verified'] ?? null) !== false || !is_array($proof['diagnosis']['issues'] ?? null) || !is_bool($proof['diagnosis']['incomplete'] ?? null)) throw new RuntimeException('Diagnostic proof is invalid');
+		} elseif (($proof['validation']['schema_version'] ?? 0) !== 1 || empty($proof['validation']['displayed']['header']) || empty($proof['validation']['displayed']['positions']) || isset($proof['diagnosis'])) throw new RuntimeException('Validated reconstruction proof is missing');
+		$path = $directory . ($diagnostic ? '/diagnostic-candidates/' : '/candidates/') . $sha . '.pdf';
 		self::privateFile($path);
 		$file = (new DEEC_DocumentArchive($root))->inspect($path, 'pdf');
 		if ($file['status'] !== 'ok' || $file['sha256'] !== $sha || $file['size'] !== ($proof['size'] ?? null)) throw new RuntimeException('Review PDF structure, size or SHA-256 differs');
-		return ['file' => $file, 'proof' => $proof, 'proof_sha256' => hash_file('sha256', $proofPath)];
+		return ['file' => $file, 'proof' => $proof, 'proof_sha256' => hash_file('sha256', $proofPath), 'status' => $diagnostic ? self::DIAGNOSTIC_STATUS : self::STATUS];
 	}
 
 	public static function receipt(array $receipt, array $identity, array $candidate, array $snapshot): void
 	{
 		$confirmation = $receipt['database_confirmation'] ?? [];
-		if (($receipt['schema_version'] ?? 0) !== 1 || ($receipt['status'] ?? '') !== self::STATUS || ($receipt['identity'] ?? null) !== $identity
+		$diagnostic = ($candidate['status'] ?? self::STATUS) === self::DIAGNOSTIC_STATUS;
+		if (($receipt['schema_version'] ?? 0) !== 1 || ($receipt['status'] ?? '') !== ($diagnostic ? self::DIAGNOSTIC_STATUS : self::STATUS) || ($receipt['identity'] ?? null) !== $identity
 			|| ($receipt['sha256'] ?? '') !== $candidate['file']['sha256'] || ($receipt['size'] ?? 0) !== $candidate['file']['size'] || ($receipt['snapshot_sha256'] ?? '') !== $snapshot['sha256'] || ($receipt['proof_sha256'] ?? '') !== $candidate['proof_sha256']
-			|| ($confirmation['database_values_verified'] ?? false) !== true || ($confirmation['original_comparison_performed'] ?? null) !== false || empty($confirmation['confirmed_by']) || empty($confirmation['confirmed_at']) || !strtotime($confirmation['confirmed_at'])
+			|| ($confirmation['database_values_verified'] ?? null) !== !$diagnostic || ($confirmation['original_comparison_performed'] ?? null) !== false || empty($confirmation['confirmed_by']) || empty($confirmation['confirmed_at']) || !strtotime($confirmation['confirmed_at'])
 			|| !preg_match('/^[a-f0-9]{64}$/D', $confirmation['run_sha256'] ?? '') || !preg_match('/^[a-f0-9]{64}$/D', $confirmation['scope_sha256'] ?? '')) throw new RuntimeException('Review publication is invalid or stale');
 	}
 
@@ -110,7 +114,7 @@ class DEEC_DocumentReview
 		$identity = ['module' => $module, 'controller' => $controller, 'id' => $id, 'clientid' => $clientId, 'document_number' => (string)($context['parent'][$controller . 'id'] ?? '')];
 		$db = Zend_Db_Table::getDefaultAdapter();
 		$locator = self::locatorPath($clientId);
-		$results = ['candidates' => [], 'invalid' => []];
+		$results = ['candidates' => [], 'invalid' => [], 'diagnostic_publications' => 0];
 		if (!file_exists($locator)) return $results;
 		if ($db->fetchOne('SELECT COUNT(*) FROM documentarchive WHERE clientid = ? AND module = ? AND controller = ? AND documentid = ? AND format = ?', [$clientId, $module, $controller, $id, 'pdf'])) return $results;
 		$snapshot = self::snapshot($db, $identity);
@@ -119,11 +123,12 @@ class DEEC_DocumentReview
 		$root = $location['review'];
 		self::validateRoot($root, $clientId);
 		if (($location['binding_sha256'] ?? '') !== hash_file('sha256', $root . '/review.json')) throw new RuntimeException('Review area binding changed');
-		foreach (glob(self::publicationDirectory($root, $identity) . '/*.json') as $path) {
+		foreach ([false, true] as $diagnostic) foreach (glob(self::publicationDirectory($root, $identity, $diagnostic) . '/*.json') as $path) {
+			if ($diagnostic) $results['diagnostic_publications']++;
 			$sha = basename($path, '.json');
 			try {
 				$receipt = self::read($path);
-				$candidate = self::candidate($root, $root . '/' . $receipt['directory'], $identity, $snapshot, $sha);
+				$candidate = self::candidate($root, $root . '/' . $receipt['directory'], $identity, $snapshot, $sha, $diagnostic);
 				self::receipt($receipt, $identity, $candidate, $snapshot);
 				$results['candidates'][$sha] = $candidate + ['receipt' => $receipt];
 			} catch (RuntimeException | InvalidArgumentException | JsonException $error) {
@@ -147,7 +152,7 @@ class DEEC_DocumentReview
 			$hash = hash_init('sha256');
 			$size = hash_update_stream($hash, $stream);
 			if ($stat['size'] !== $candidate['file']['size'] || $size !== $stat['size'] || hash_final($hash) !== $sha || !rewind($stream)) throw new RuntimeException('Review PDF changed before download');
-			return ['stream' => $stream, 'size' => $size, 'sha256' => $sha, 'status' => self::STATUS, 'filename' => $controller . '-' . $id . '-pending-original-comparison-' . substr($sha, 0, 12) . '.pdf'];
+			return ['stream' => $stream, 'size' => $size, 'sha256' => $sha, 'status' => $candidate['status'], 'filename' => $controller . '-' . $id . ($candidate['status'] === self::DIAGNOSTIC_STATUS ? '-diagnostic-' : '-pending-original-comparison-') . substr($sha, 0, 12) . '.pdf'];
 		} catch (Throwable $error) { fclose($stream); throw $error; }
 	}
 }

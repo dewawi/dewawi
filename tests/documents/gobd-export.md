@@ -52,6 +52,7 @@ Dieser ZIP-Typ ist ausdrücklich **INTERNAL DOCUMENT REVIEW ONLY**, `metadata.ex
 | --- | --- |
 | `archived_original` | Verifiziertes registriertes Original unter `originals/<Mandant>/<Modul>/<Belegart>/<Nummer>.pdf`. |
 | `historical_reconstruction_pending_original_comparison` | Weiterhin gültige, über `publish-reviewable` veröffentlichte Rekonstruktion unter `review/<Mandant>/<Modul>/<Belegart>/<Nummer>--<SHA-Präfix>.pdf`. Jede Fassung bleibt separat, ohne automatische Originalauswahl. |
+| `historical_diagnostic_reconstruction` | Sichtbar auf jeder Seite als unbestätigt markierter Diagnosebeleg mit gespeicherten Daten und offenen Problemen, unter `diagnostics/<Mandant>/<Modul>/<Belegart>/<Nummer>--<SHA-Präfix>.pdf`. Keine validierte Rekonstruktion, Originalauswahl oder Archivfreigabe. |
 | `missing` | Kein registriertes Original und keine verfügbare veröffentlichte Rekonstruktion; reine Vorbereitungsdateien reichen nicht. Kein PDF-Eintrag. |
 | `invalid` | Archivprüfung oder veröffentlichter Kandidat technisch gesperrt, etwa durch Größen-/SHA-Fehler, veralteten Datenfingerprint oder geänderten Nachweis. Kein PDF-Eintrag. Gültige andere Fassungen können weiterhin enthalten sein. |
 | `excluded` | Nicht ausgestellter Beleg oder gelöschter ausgestellter Beleg ohne verifiziertes Original. Kein Prüf-PDF und keine Reaktivierung. |
@@ -61,6 +62,8 @@ Entsprechend dem vorhandenen Originalexport bleiben verifizierte Archivoriginale
 Die Manifeste enthalten Mandant, Modul, Belegart, interne ID, gespeicherte Nummer/Datierung, historischen Dateinamen, PDF-Größe, SHA-256, ZIP-Pfad und `evidence_status`. Bei Prüf-PDFs kommen Erzeugungszeitpunkt, aktueller Geschäftsdatenfingerprint, SHA-256 des geschützten Rekonstruktionsnachweises und die unveränderte Betreiberbestätigung der Datenbankprüfung hinzu. Bestehende Archiv-/Wiederherstellungsinformationen bleiben für Originale erhalten. Eine neue Papierprüfung oder steuerliche Belegänderung wird nicht behauptet.
 
 Es werden ausschließlich die von `DEEC_DocumentReview` aktuell validierten Veröffentlichungen berücksichtigt. Unveröffentlichte PDFs, veraltete Nachweise, fremde Mandanten und gesperrte Dateien gelangen nicht ins ZIP. Die vorhandenen Dateien außerhalb des Webroots werden gestreamt; keine Rekonstruktion, keine neue Auswahl/Freigabe und keine Archivregistrierung. Der normale GoBD-Originalexport zählt diese Prüf-PDFs weiterhin nicht als Originale.
+
+Für separat veröffentlichte Diagnose-PDFs bedeutet die technische Prüfung ausschließlich aktuelle Identität, Nachweis, Datenfingerprint und Datei-Integrität; ihre Geschäftswerte sind ausdrücklich nicht als konsistent bestätigt. `diagnostic_issues` enthält die tatsächlichen offenen Probleme, `database_confirmation.database_values_verified` bleibt `false`. Diagnosen ohne gespeichertes Datum werden zusätzlich und ausdrücklich **ohne Zuordnung zum ausgewählten Zeitraum** aufgenommen (`date_scope=undated_diagnostic_not_assigned_to_period`); andere Zeilen behalten `date_scope=selected_period`. Die Metadaten zählen `documents`, `dated_documents` und `undated_diagnostic_documents` getrennt. Das ist keine nachträgliche Datierung. Der GoBD-Originalexport bleibt von dieser Ergänzung unberührt.
 
 ## Paket prüfen
 

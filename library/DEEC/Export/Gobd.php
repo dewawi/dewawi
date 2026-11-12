@@ -127,7 +127,7 @@ class DEEC_Export_Gobd
 			if ($this->reviewExport) {
 				$metadata['export_kind'] = 'internal_document_review';
 				$metadata['exportType'] = 'Internal document review';
-				$metadata['documents']['scope'] = 'stored document date, inclusive; all eight types; archive originals, published reconstructions and unresolved or excluded documents';
+				$metadata['documents']['scope'] = 'stored document date, inclusive; all eight types; archive originals, published reconstructions and unresolved or excluded documents; undated diagnostic publications are additionally included explicitly unassigned to the period';
 			}
 			$bytes = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 			if (file_put_contents($filePath . 'metadata.json', $bytes) !== strlen($bytes)) throw new RuntimeException('Could not write export metadata');
@@ -142,6 +142,7 @@ class DEEC_Export_Gobd
 			if ($this->reviewExport) $bytes = "INTERNAL DOCUMENT REVIEW ONLY\nNot a GoBD original-document export. No original equivalence or completed paper comparison is asserted.\n"
 				. "Period (inclusive stored document dates): $from to $to\nTenant: " . $this->clientId . "\n"
 				. "originals/ contains verified registered originals; review/ contains only currently valid published reconstructions. The latter require an original comparison before final archive approval.\n"
+				. "diagnostics/ contains visibly marked diagnostic documents with incomplete or contradictory data. They are not validated reconstructions and cannot be approved as originals. Undated diagnostic publications are included additionally with date_scope=undated_diagnostic_not_assigned_to_period; no historical date or period is inferred.\n"
 				. "Every dated document is identified in document_index.csv. document_manifest.csv lists every included version and all missing, invalid or excluded cases. missing_documents.csv lists unresolved cases. Deleted issued originals retain their deleted flag and are also listed in excluded_documents.csv; no document is reactivated.\n"
 				. "Visible numbers name PDFs. Unsafe or missing numbers and collisions receive --id-<internal ID> (and a counter if necessary); review versions also carry their SHA-256 prefix. Original filenames and internal IDs remain in the manifests.\n"
 				. "Different versions are not automatically selected. No PDFs were rendered, no business data changed, and no files were registered as originals by this export.\n"
@@ -167,14 +168,15 @@ class DEEC_Export_Gobd
 	protected function writeDocuments(string $directory, array $profile, string $from, string $to): array
 	{
 		$fields = ['record_key', 'clientid', 'module', 'controller', 'documentid', 'document_number', 'document_date', 'filename', 'deleted', 'issued', 'csv_file', 'csv_key_column', 'csv_key_value', 'status', 'reason', 'archive_version', 'zip_path', 'filesize', 'sha256', 'archived', 'archivedby', 'correctionarchiveid', 'archive_parameters', 'historical_conflicts'];
-		if ($this->reviewExport) $fields = array_merge($fields, ['evidence_status', 'proof_sha256', 'snapshot_sha256', 'generated_at', 'database_confirmation']);
+		if ($this->reviewExport) $fields = array_merge($fields, ['evidence_status', 'proof_sha256', 'snapshot_sha256', 'generated_at', 'database_confirmation', 'diagnostic_issues', 'date_scope']);
 		$handles = [];
 		foreach (['document_index', 'document_manifest', 'missing_documents', 'excluded_documents'] as $name) {
 			$handles[$name] = fopen($directory . $name . '.csv', 'xb');
 			if (!$handles[$name] || fputcsv($handles[$name], $fields, ';', '"', '') === false) throw new RuntimeException('Could not create document manifest');
 		}
 		$summary = ['dated_documents' => 0, 'issued' => 0, 'included' => 0, 'missing' => 0, 'excluded' => 0, 'deleted_issued' => 0, 'complete' => true];
-		$reviewCounts = ['archived_original' => 0, DEEC_DocumentReview::STATUS => 0, 'missing' => 0, 'invalid' => 0, 'excluded' => 0];
+		$reviewCounts = ['archived_original' => 0, DEEC_DocumentReview::STATUS => 0, DEEC_DocumentReview::DIAGNOSTIC_STATUS => 0, 'missing' => 0, 'invalid' => 0, 'excluded' => 0];
+		$undatedCount = 0;
 		$archive = new DEEC_DocumentArchive(BASE_PATH);
 		$archiveDb = new Application_Model_DbTable_Documentarchive();
 		try {
@@ -182,13 +184,25 @@ class DEEC_Export_Gobd
 				$dataset = null;
 				foreach ($profile as $name => $config) if ($config['table'] === $controller) $dataset = $name . '.csv';
 				$columns = ['id', 'clientid', 'contactid', 'filename', $controller . 'id', $controller . 'date', 'state', 'completed', 'cancelled', 'deleted'];
-				$query = $this->db->query('SELECT ' . implode(', ', array_map([$this, 'quoteIdentifier'], $columns)) . ' FROM ' . $this->quoteIdentifier($controller) . ' WHERE clientid = ? AND ' . $this->quoteIdentifier($controller . 'date') . ' >= ? AND ' . $this->quoteIdentifier($controller . 'date') . ' <= ? ORDER BY id', [$this->clientId, $from, $to]);
+				$dateColumn = $this->quoteIdentifier($controller . 'date');
+				$period = $dateColumn . ' >= ? AND ' . $dateColumn . ' <= ?';
+				if ($this->reviewExport) $period = '(' . $period . ' OR ' . $dateColumn . " IS NULL OR " . $dateColumn . " = '0000-00-00')";
+				$query = $this->db->query('SELECT ' . implode(', ', array_map([$this, 'quoteIdentifier'], $columns)) . ' FROM ' . $this->quoteIdentifier($controller) . ' WHERE clientid = ? AND ' . $period . ' ORDER BY id', [$this->clientId, $from, $to]);
 				while ($document = $query->fetch(Zend_Db::FETCH_ASSOC)) {
+					$inspection = null;
+					$undated = empty($document[$controller . 'date']) || $document[$controller . 'date'] === '0000-00-00';
+					if ($this->reviewExport && $undated) {
+						if (!DEEC_Permission::isDocumentReadonly($module, $controller, $document) || $document['deleted']) continue;
+						$inspection = (new DEEC_DocumentReview())->inspection((int)$document['id'], $module, $controller);
+						if (!$inspection['diagnostic_publications']) continue;
+						$undatedCount++;
+					}
 					$summary['dated_documents']++;
 					$issued = DEEC_Permission::isDocumentReadonly($module, $controller, $document);
 					$key = $this->clientId . '/' . $module . '/' . $controller . '/' . $document['id'];
 					$row = ['record_key' => $key, 'clientid' => $this->clientId, 'module' => $module, 'controller' => $controller, 'documentid' => $document['id'], 'document_number' => $document[$controller . 'id'], 'document_date' => $document[$controller . 'date'],
 						'filename' => $document['filename'], 'deleted' => $document['deleted'], 'issued' => $issued ? 1 : 0, 'csv_file' => $dataset ?? 'document_index.csv', 'csv_key_column' => $dataset ? 'id' : 'record_key', 'csv_key_value' => $dataset ? $document['id'] : $key, 'status' => 'not_issued', 'reason' => ''];
+					if ($this->reviewExport) $row['date_scope'] = $undated ? 'undated_diagnostic_not_assigned_to_period' : 'selected_period';
 					$excluded = $issued && !empty($document['deleted']);
 					if ($issued) {
 						$summary['issued']++;
@@ -223,7 +237,7 @@ class DEEC_Export_Gobd
 						$summary['excluded']++;
 					}
 					if ($this->reviewExport) {
-						$rows = $this->reviewRows($row, $document, $module, $controller);
+						$rows = $this->reviewRows($row, $document, $module, $controller, $inspection);
 						$indexRow = $rows[0];
 						foreach ($rows as $entry) {
 							$reviewCounts[$entry['status']]++;
@@ -243,7 +257,7 @@ class DEEC_Export_Gobd
 				}
 			}
 		} finally { foreach ($handles as $handle) if ($handle) fclose($handle); }
-		if ($this->reviewExport) return array_intersect_key($summary, array_flip(['dated_documents', 'issued', 'deleted_issued'])) + $reviewCounts + ['complete' => $reviewCounts['missing'] === 0 && $reviewCounts['invalid'] === 0 && $reviewCounts['excluded'] === 0];
+		if ($this->reviewExport) return ['documents' => $summary['dated_documents'], 'dated_documents' => $summary['dated_documents'] - $undatedCount, 'undated_diagnostic_documents' => $undatedCount, 'issued' => $summary['issued'], 'deleted_issued' => $summary['deleted_issued']] + $reviewCounts + ['complete' => $reviewCounts['missing'] === 0 && $reviewCounts['invalid'] === 0 && $reviewCounts['excluded'] === 0];
 		$summary['complete'] = $summary['missing'] === 0 && $summary['excluded'] === 0;
 		return $summary;
 	}
@@ -267,20 +281,22 @@ class DEEC_Export_Gobd
 		return $name;
 	}
 
-	protected function reviewRows(array $row, array $document, string $module, string $controller): array
+	protected function reviewRows(array $row, array $document, string $module, string $controller, ?array $inspection = null): array
 	{
 		if ($row['status'] === 'included') return [array_replace($row, ['status' => 'archived_original', 'evidence_status' => 'verified_registered_original'])];
 		if (!$row['issued'] || $row['deleted']) return [array_replace($row, ['status' => 'excluded', 'reason' => $row['deleted'] ? 'deleted_issued_without_verified_original' : 'not_issued', 'evidence_status' => 'excluded'])];
 		if ($row['reason'] !== 'archive_registration_missing') return [array_replace($row, ['status' => 'invalid', 'evidence_status' => 'archive_verification_failed'])];
 		try {
-			$inspection = (new DEEC_DocumentReview())->inspection((int)$document['id'], $module, $controller);
+			$inspection = $inspection ?? (new DEEC_DocumentReview())->inspection((int)$document['id'], $module, $controller);
 			$rows = [];
 			foreach ($inspection['candidates'] as $sha => $candidate) {
-				$name = $this->documentZipPath('review', $module, $controller, $document, $sha);
+				$diagnostic = $candidate['status'] === DEEC_DocumentReview::DIAGNOSTIC_STATUS;
+				$name = $this->documentZipPath($diagnostic ? 'diagnostics' : 'review', $module, $controller, $document, $sha);
 				$this->documentFiles[$name] = ['path' => $candidate['file']['path'], 'size' => $candidate['file']['size'], 'sha256' => $sha];
-				$rows[] = array_replace($row, ['status' => DEEC_DocumentReview::STATUS, 'reason' => 'original_comparison_pending', 'evidence_status' => 'current_published_reconstruction',
+				$rows[] = array_replace($row, ['status' => $candidate['status'], 'reason' => $diagnostic ? 'diagnostic_only_not_an_approved_basis' : 'original_comparison_pending', 'evidence_status' => $diagnostic ? 'diagnostic_only_not_validated' : 'current_published_reconstruction',
 					'zip_path' => $name, 'filesize' => $candidate['file']['size'], 'sha256' => $sha, 'proof_sha256' => $candidate['proof_sha256'], 'snapshot_sha256' => $candidate['proof']['snapshot_sha256'],
-					'generated_at' => $candidate['proof']['generated_at'], 'database_confirmation' => json_encode($candidate['receipt']['database_confirmation'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)]);
+					'generated_at' => $candidate['proof']['generated_at'], 'database_confirmation' => json_encode($candidate['receipt']['database_confirmation'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+					'diagnostic_issues' => $diagnostic ? json_encode($candidate['proof']['diagnosis']['issues'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) : '']);
 			}
 			foreach ($inspection['invalid'] as $sha => $reason) $rows[] = array_replace($row, ['status' => 'invalid', 'reason' => $reason, 'sha256' => $sha, 'evidence_status' => 'published_reconstruction_invalid']);
 			return $rows ?: [array_replace($row, ['status' => 'missing', 'reason' => 'no_current_published_review_pdf', 'evidence_status' => 'no_published_reconstruction'])];
@@ -1281,8 +1297,8 @@ class DEEC_Export_Gobd
 		$metadata = json_decode($zip->getFromName('metadata.json'), true, 512, JSON_THROW_ON_ERROR);
 		if (($metadata['export_kind'] ?? '') !== 'internal_document_review') throw new RuntimeException('Review export kind is missing');
 		$sets = []; $index = []; $documents = []; $expectedReports = ['missing_documents' => [], 'excluded_documents' => []];
-		$issued = 0; $deleted = 0;
-		$counts = ['archived_original' => 0, DEEC_DocumentReview::STATUS => 0, 'missing' => 0, 'invalid' => 0, 'excluded' => 0];
+		$issued = 0; $deleted = 0; $undated = 0;
+		$counts = ['archived_original' => 0, DEEC_DocumentReview::STATUS => 0, DEEC_DocumentReview::DIAGNOSTIC_STATUS => 0, 'missing' => 0, 'invalid' => 0, 'excluded' => 0];
 		foreach (['document_index', 'document_manifest', 'missing_documents', 'excluded_documents'] as $file) {
 			$sets[$file] = [];
 			$stream = $zip->getStream($file . '.csv');
@@ -1292,21 +1308,25 @@ class DEEC_Export_Gobd
 					if (count($values) !== count($fields)) throw new RuntimeException('Invalid review inventory row');
 					$row = array_combine($fields, $values);
 					$key = $row['clientid'] . '/' . $row['module'] . '/' . $row['controller'] . '/' . $row['documentid'];
-					if ($row['record_key'] !== $key || (int)$row['clientid'] !== $this->clientId || !DEEC_DocumentArchive::validDocumentType($row['module'], $row['controller']) || $row['document_date'] < $metadata['from'] || $row['document_date'] > $metadata['to'] || !array_key_exists($row['status'], $counts)) throw new RuntimeException('Review inventory identity, period or status differs');
-					$identity = hash('sha256', json_encode(array_intersect_key($row, array_flip(['document_number', 'document_date', 'deleted', 'issued', 'filename'])), JSON_THROW_ON_ERROR));
+					$unknownDate = $row['date_scope'] === 'undated_diagnostic_not_assigned_to_period';
+					$dateValid = $unknownDate ? in_array($row['document_date'], ['', '0000-00-00'], true) && in_array($row['status'], [DEEC_DocumentReview::DIAGNOSTIC_STATUS, 'invalid'], true) : $row['date_scope'] === 'selected_period' && $row['document_date'] >= $metadata['from'] && $row['document_date'] <= $metadata['to'];
+					if ($row['record_key'] !== $key || (int)$row['clientid'] !== $this->clientId || !DEEC_DocumentArchive::validDocumentType($row['module'], $row['controller']) || !$dateValid || !array_key_exists($row['status'], $counts)) throw new RuntimeException('Review inventory identity, period or status differs');
+					$identity = hash('sha256', json_encode(array_intersect_key($row, array_flip(['document_number', 'document_date', 'date_scope', 'deleted', 'issued', 'filename'])), JSON_THROW_ON_ERROR));
 					if ($file === 'document_index') {
 						if (isset($index[$key])) throw new RuntimeException('Duplicate review document index');
 						$index[$key] = $identity;
+						if ($unknownDate) $undated++;
 						if ($row['issued']) { $issued++; if ($row['deleted']) $deleted++; }
 						continue;
 					}
 					if (($index[$key] ?? null) !== $identity) throw new RuntimeException('Review manifest and document index differ');
 					if ($row['csv_file'] !== 'document_index.csv' || $row['csv_key_column'] !== 'record_key' || $row['csv_key_value'] !== $key) throw new RuntimeException('Review index reference differs');
-					$pdf = in_array($row['status'], ['archived_original', DEEC_DocumentReview::STATUS], true);
+					$pdf = in_array($row['status'], ['archived_original', DEEC_DocumentReview::STATUS, DEEC_DocumentReview::DIAGNOSTIC_STATUS], true);
 					if ($pdf) {
-						$prefix = ($row['status'] === 'archived_original' ? 'originals' : 'review') . '/' . $this->clientId . '/' . $row['module'] . '/' . $row['controller'] . '/';
-						if (!str_starts_with($row['zip_path'], $prefix) || !$row['issued'] || ($row['status'] === DEEC_DocumentReview::STATUS && $row['deleted'])) throw new RuntimeException('Original and review PDF separation differs');
+						$prefix = ($row['status'] === 'archived_original' ? 'originals' : ($row['status'] === DEEC_DocumentReview::DIAGNOSTIC_STATUS ? 'diagnostics' : 'review')) . '/' . $this->clientId . '/' . $row['module'] . '/' . $row['controller'] . '/';
+						if (!str_starts_with($row['zip_path'], $prefix) || !$row['issued'] || ($row['status'] !== 'archived_original' && $row['deleted'])) throw new RuntimeException('Original and review PDF separation differs');
 						if ($row['status'] === DEEC_DocumentReview::STATUS && ($row['evidence_status'] !== 'current_published_reconstruction' || !preg_match('/^[a-f0-9]{64}$/D', $row['proof_sha256']) || !preg_match('/^[a-f0-9]{64}$/D', $row['snapshot_sha256']))) throw new RuntimeException('Review evidence is incomplete');
+						if ($row['status'] === DEEC_DocumentReview::DIAGNOSTIC_STATUS && ($row['evidence_status'] !== 'diagnostic_only_not_validated' || json_decode($row['database_confirmation'], true, 512, JSON_THROW_ON_ERROR)['database_values_verified'] !== false || $row['diagnostic_issues'] === '')) throw new RuntimeException('Diagnostic status or evidence differs');
 					} elseif ($row['zip_path'] !== '') throw new RuntimeException('Unresolved review case contains a PDF');
 					$hash = hash('sha256', json_encode($row, JSON_THROW_ON_ERROR));
 					if (isset($sets[$file][$hash])) throw new RuntimeException('Duplicate review manifest row');
@@ -1323,7 +1343,7 @@ class DEEC_Export_Gobd
 		foreach ($expectedReports as $file => $required) if (array_diff_key($sets[$file], $required) || array_diff_key($required, $sets[$file])) throw new RuntimeException('Review reports differ from manifest');
 		$summary = $metadata['documents']['summary'];
 		foreach ($counts as $status => $count) if ($summary[$status] !== $count) throw new RuntimeException('Review status counts differ');
-		if (array_diff_key($index, $documents) || count($index) !== count($documents) || $summary['dated_documents'] !== count($index) || $summary['issued'] !== $issued || $summary['deleted_issued'] !== $deleted
+		if (array_diff_key($index, $documents) || count($index) !== count($documents) || $summary['documents'] !== count($index) || $summary['dated_documents'] !== count($index) - $undated || $summary['undated_diagnostic_documents'] !== $undated || $summary['issued'] !== $issued || $summary['deleted_issued'] !== $deleted
 			|| $summary['complete'] !== ($counts['missing'] === 0 && $counts['invalid'] === 0 && $counts['excluded'] === 0)) throw new RuntimeException('Review scope or availability statement differs');
 	}
 

@@ -20,10 +20,13 @@ class Zend_View_Helper_Document extends Zend_View_Helper_Abstract
 		$html = '';
 		try { $candidates = (new DEEC_DocumentReview())->candidates((int)$document['id'], $module, $controller); }
 		catch (RuntimeException | InvalidArgumentException | JsonException $error) { $candidates = []; error_log('Historical review list unavailable: ' . $error->getMessage()); }
-		if ($candidates) {
-			$html .= '<section class="dw-alert dw-alert--warning" role="status" data-document-status="' . DEEC_DocumentReview::STATUS . '"><div><p><strong>' . $this->view->escape($this->view->translate('DOCUMENTS_RECONSTRUCTION_PENDING')) . '</strong></p>';
+		$groups = [];
+		foreach ($candidates as $sha => $candidate) $groups[$candidate['status']][$sha] = $candidate;
+		foreach ($groups as $status => $versions) {
+			$title = $status === DEEC_DocumentReview::DIAGNOSTIC_STATUS ? 'DOCUMENTS_DIAGNOSTIC_RECONSTRUCTION' : 'DOCUMENTS_RECONSTRUCTION_PENDING';
+			$html .= '<section class="dw-alert dw-alert--warning" role="status" data-document-status="' . $status . '"><div><p><strong>' . $this->view->escape($this->view->translate($title)) . '</strong></p>';
 			$html .= '<p>' . $this->view->escape($this->view->translate('DOCUMENTS_RECONSTRUCTION_INTERNAL_ONLY')) . '</p><ul>';
-			foreach ($candidates as $sha => $candidate) {
+			foreach ($versions as $sha => $candidate) {
 				$params = ['module' => $module, 'controller' => $controller, 'action' => 'reviewdownload', 'id' => $document['id'], 'sha256' => $sha];
 				$html .= '<li><a target="_blank" rel="noopener" href="' . $this->view->escape($this->view->url($params + ['mode' => 'inline'])) . '">' . $this->view->escape($this->view->translate('DOCUMENTS_RECONSTRUCTION_VIEW')) . '</a> · ';
 				$html .= '<a href="' . $this->view->escape($this->view->url($params + ['mode' => 'download'])) . '">' . $this->view->escape($this->view->translate('DOCUMENTS_RECONSTRUCTION_DOWNLOAD')) . '</a><br />';

@@ -49,6 +49,10 @@ try:
                     panel = browser.execute("return {width: innerWidth, overflow: document.documentElement.scrollWidth > innerWidth, status: document.querySelector('[role=status]').dataset.documentStatus, links: document.querySelectorAll('a').length, text: document.body.textContent}")
                     assert panel['width'] == width and not panel['overflow'] and panel['status'] == 'historical_reconstruction_pending_original_comparison' and panel['links'] == 4 and 'DOCUMENTS_' not in panel['text'], panel
                     print('PASS: recovery review panel ' + locale + '/' + str(width) + '; two separate PDFs, translated status and no overflow')
+                    browser.navigate((work / ('diagnostic-panel-' + locale + '.html')).as_uri())
+                    panel = browser.execute("return {overflow: document.documentElement.scrollWidth > innerWidth, status: document.querySelector('[role=status]').dataset.documentStatus, links: document.querySelectorAll('a').length, text: document.body.textContent}")
+                    assert not panel['overflow'] and panel['status'] == 'historical_diagnostic_reconstruction' and panel['links'] == 2 and 'DOCUMENTS_' not in panel['text'], panel
+                    print('PASS: diagnostic panel ' + locale + '/' + str(width) + '; separate diagnostic status and no overflow')
         finally:
             browser.close()
     raise SystemExit(result.returncode)

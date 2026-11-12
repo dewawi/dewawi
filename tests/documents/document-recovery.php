@@ -105,6 +105,7 @@ function recoverySelection(array $job, DEEC_DocumentArchive $reviewArchive, ?arr
 	reviewPrivateFile($path);
 	$file = $reviewArchive->inspect($path, 'pdf');
 	if ($file['status'] !== 'ok' || !is_string($selection['sha256'] ?? null) || !hash_equals($file['sha256'], $selection['sha256'])) throw new RuntimeException('Selected candidate integrity differs');
+	if (file_exists($job['directory'] . '/diagnostics/' . $file['sha256'] . '.json')) throw new RuntimeException('Diagnostic PDFs cannot be selected or approved as originals');
 	$proven = str_starts_with($relative, 'external/') && in_array($kind, ['datev', 'email', 'historical_pdf'], true);
 	if (str_starts_with($relative, 'candidates/')) {
 		if (basename($relative, '.pdf') !== $file['sha256']) throw new RuntimeException('Candidate hash filename differs');
@@ -169,6 +170,46 @@ function recoveryPublishReviewable(Zend_Db_Adapter_Abstract $db, array $job, str
 	return ['status' => $results ? ($errors ? 'partially_published' : 'published') : 'failed', 'category' => $results ? DEEC_DocumentReview::STATUS : 'invalid_review_candidate',
 		'document_date' => $snapshot['data']['document'][$id['controller'] . 'date'] ?? '', 'candidates' => $results, 'candidate_errors' => $errors, 'error' => $errors ? implode('; ', $errors) : '',
 		'reason' => 'Internal review only; no original comparison, selection, approval or archive registration', 'next_action' => 'accounting must compare each chosen PDF with an original before the existing recovery release'];
+}
+
+function recoveryPrepareDiagnostic(Zend_Db_Adapter_Abstract $db, array $job, string $root, array $failure, array $authorization): array
+{
+	$id = $job['identity'];
+	if (recoveryArchives($db, $id)) return ['status' => 'already_registered', 'reason' => 'Existing archive registration retained'];
+	$snapshot = recoverySnapshot($db, $id);
+	$inspection = (new DEEC_DocumentReview())->inspection($id['id'], $id['module'], $id['controller']);
+	foreach ($inspection['candidates'] as $candidate) if ($candidate['status'] === DEEC_DocumentReview::STATUS) return ['status' => 'skipped', 'reason' => 'Existing validated review PDF retained'];
+	$candidate = null;
+	foreach (glob($job['directory'] . '/diagnostics/*.json') as $path) {
+		try { $candidate = DEEC_DocumentReview::candidate($root, $job['directory'], $id, $snapshot, basename($path, '.json'), true); break; }
+		catch (RuntimeException | InvalidArgumentException | JsonException $error) { /* Stale diagnostics remain available as private evidence. */ }
+	}
+	$reused = $candidate !== null;
+	if (!$candidate) {
+		$rendered = (new DEEC_Pdf())->reconstructDiagnostic($id['id'], $id['module'], $id['controller']);
+		if ($rendered['snapshot_sha256'] !== $snapshot['sha256'] || recoverySnapshot($db, $id)['sha256'] !== $snapshot['sha256']) throw new RuntimeException('Diagnostic rendering changed business values');
+		$sha = hash('sha256', $rendered['bytes']);
+		reviewDirectory($job['directory'] . '/diagnostic-candidates'); reviewDirectory($job['directory'] . '/diagnostics');
+		reviewWrite($job['directory'] . '/diagnostic-candidates/' . $sha . '.pdf', $rendered['bytes']);
+		$record = ['schema_version' => 1, 'status' => DEEC_DocumentReview::DIAGNOSTIC_STATUS, 'identity' => $id, 'generated_at' => gmdate('c'), 'generated_by' => (int)Zend_Registry::get('User')['id'],
+			'size' => strlen($rendered['bytes']), 'sha256' => $sha, 'snapshot_sha256' => $snapshot['sha256'], 'fiscal_correction' => false, 'manual_approval_required' => true, 'archive_approval_allowed' => false,
+			'diagnosis' => $rendered['diagnosis'], 'dependencies' => $rendered['dependencies'], 'source_failure' => $failure];
+		reviewWrite($job['directory'] . '/diagnostics/' . $sha . '.json', reviewJson($record));
+		$candidate = DEEC_DocumentReview::candidate($root, $job['directory'], $id, $snapshot, $sha, true);
+	}
+	$sha = $candidate['file']['sha256'];
+	$directory = DEEC_DocumentReview::publicationDirectory($root, $id, true);
+	reviewDirectory($directory);
+	$path = $directory . '/' . $sha . '.json';
+	$receipt = ['schema_version' => 1, 'status' => DEEC_DocumentReview::DIAGNOSTIC_STATUS, 'identity' => $id, 'directory' => basename($job['directory']), 'sha256' => $sha, 'size' => $candidate['file']['size'],
+		'snapshot_sha256' => $snapshot['sha256'], 'proof_sha256' => $candidate['proof_sha256'], 'database_confirmation' => array_diff_key($authorization, ['scope' => true])];
+	$exists = file_exists($path);
+	if ($exists) $receipt = recoveryJsonFile($path);
+	DEEC_DocumentReview::receipt($receipt, $id, $candidate, $snapshot);
+	if (!$exists) reviewWrite($path, reviewJson($receipt));
+	return ['status' => $reused ? 'already_diagnostic' : 'diagnostic_prepared', 'category' => $candidate['proof']['diagnosis']['incomplete'] ? 'diagnostic_incomplete' : 'diagnostic_created',
+		'sha256' => $sha, 'document_date' => (string)($snapshot['data']['document'][$id['controller'] . 'date'] ?? ''), 'issues' => $candidate['proof']['diagnosis']['issues'], 'source_failure' => $candidate['proof']['source_failure'],
+		'reason' => 'Diagnostic only; no verified accounting basis, original comparison or archive approval', 'next_action' => 'accounting must investigate the listed gaps and contradictions'];
 }
 
 function recoveryPrepare(Zend_Db_Adapter_Abstract $db, array $job, string $root, DEEC_Pdf $renderer): array
@@ -593,13 +634,14 @@ umask(0077);
 $options = getopt('', ['config:', 'environment:', 'review:', 'run:', 'client:', 'operator-user:', 'action:', 'only:', 'decisions:', 'confirm-client:', 'backup-verified', 'authorize-batch:', 'attest-previous-paper-match:', 'baseline:', 'retry-failed-from:', 'database-values-verified']);
 $db = null;
 try {
-	foreach (['config', 'review', 'run', 'client', 'operator-user', 'action'] as $field) if (!is_string($options[$field] ?? null)) throw new RuntimeException('Required: --config --review --run --client --operator-user --action=publish-reviewable|release-plan|release|prepare|select|approve|import|inspect|retention-plan');
+	foreach (['config', 'review', 'run', 'client', 'operator-user', 'action'] as $field) if (!is_string($options[$field] ?? null)) throw new RuntimeException('Required: --config --review --run --client --operator-user --action=prepare-diagnostic|publish-reviewable|release-plan|release|prepare|select|approve|import|inspect|retention-plan');
 	$clientId = reviewId($options['client']);
 	$userId = reviewId($options['operator-user']);
 	$root = rtrim($options['review'], '/');
 	$context = recoveryJobs($root, $options['run'], $clientId);
 	$action = $options['action'];
-	if (!in_array($action, ['prepare', 'select', 'approve', 'import', 'inspect', 'retention-plan', 'release-plan', 'release', 'publish-reviewable'], true)) throw new RuntimeException('Invalid recovery action');
+	if (!in_array($action, ['prepare', 'select', 'approve', 'import', 'inspect', 'retention-plan', 'release-plan', 'release', 'publish-reviewable', 'prepare-diagnostic'], true)) throw new RuntimeException('Invalid recovery action');
+	if ($action === 'prepare-diagnostic' && (!isset($options['retry-failed-from']) || (string)($options['confirm-client'] ?? '') !== (string)$clientId)) throw new RuntimeException('Diagnostic preparation requires --retry-failed-from=<prepare report>|latest and --confirm-client');
 	if ($action === 'publish-reviewable' && ((string)($options['confirm-client'] ?? '') !== (string)$clientId || !array_key_exists('database-values-verified', $options))) throw new RuntimeException('Review publication requires --confirm-client and --database-values-verified; this does not confirm an original comparison');
 	if (in_array($action, ['import', 'release'], true) && ((string)($options['confirm-client'] ?? '') !== (string)$clientId || !array_key_exists('backup-verified', $options))) throw new RuntimeException('Import requires --confirm-client and --backup-verified for both database and file backups');
 	$jobs = $context['jobs'];
@@ -607,16 +649,25 @@ try {
 	if (isset($options['attest-previous-paper-match']) && (!in_array($action, ['release', 'release-plan'], true) || !isset($options['only']) || count($jobs) !== 1 || !preg_match('/^[a-f0-9]{64}$/D', $options['attest-previous-paper-match']))) throw new RuntimeException('Paper attestation requires release/release-plan, exactly one --only document and its exact SHA-256');
 	if ($action === 'release' && !isset($options['attest-previous-paper-match']) && ($options['authorize-batch'] ?? '') !== 'verified-evidence-v1') throw new RuntimeException('Release requires explicit --authorize-batch=verified-evidence-v1');
 	if (isset($options['retry-failed-from'])) {
-		if ($action !== 'prepare' || !str_starts_with($options['retry-failed-from'], $root . '/runs/')) throw new RuntimeException('Retry requires a recovery preparation report in this review area');
-		$previous = recoveryJsonFile($options['retry-failed-from']);
-		if (($previous['action'] ?? '') !== 'prepare' || ($previous['clientid'] ?? 0) !== $clientId) throw new RuntimeException('Foreign retry report');
-		$jobs = array_intersect_key($jobs, array_filter($previous['results'], static fn(array $row): bool => $row['status'] === 'failed'));
+		$options['_diagnostic_failures'] = [];
+		if ($action === 'prepare-diagnostic' && $options['retry-failed-from'] === 'latest') $options['_diagnostic_failures'] = recoveryPreparationFailures($root, $clientId);
+		else {
+			if (!in_array($action, ['prepare', 'prepare-diagnostic'], true) || !str_starts_with($options['retry-failed-from'], $root . '/runs/')) throw new RuntimeException('Retry requires a recovery preparation report in this review area');
+			$previous = recoveryJsonFile($options['retry-failed-from']);
+			if (($previous['action'] ?? '') !== 'prepare' || ($previous['clientid'] ?? 0) !== $clientId) throw new RuntimeException('Foreign retry report');
+			foreach ($previous['results'] as $key => $row) if ($row['status'] === 'failed') $options['_diagnostic_failures'][$key] = ['error' => $row['error'] ?? 'Failed preparation', 'report' => $options['retry-failed-from']];
+		}
+		$jobs = array_intersect_key($jobs, $options['_diagnostic_failures']);
+		foreach ($options['_diagnostic_failures'] as &$failure) $failure['report_sha256'] = hash_file('sha256', $failure['report']);
+		unset($failure);
 	}
 	$inventory = in_array($action, ['release-plan', 'release'], true) ? recoveryInventoryRows($context['reports'], $clientId, $options['baseline'] ?? null) : [];
 	if (in_array($action, ['release-plan', 'release'], true)) $options['_preparation_failures'] = recoveryPreparationFailures($root, $clientId);
 	$authorization = ['policy' => isset($options['attest-previous-paper-match']) ? 'document_paper_attestation' : ($options['authorize-batch'] ?? null), 'confirmed_by' => $userId, 'confirmed_at' => gmdate('c'),
 		'database_and_file_backup_confirmed' => array_key_exists('backup-verified', $options), 'scope_sha256' => hash('sha256', reviewJson(array_keys($jobs))), 'documents_in_scope' => count($jobs), 'run' => $options['run'], 'run_sha256' => hash_file('sha256', $options['run'])];
 	if ($action === 'publish-reviewable') $authorization = array_replace($authorization, ['policy' => 'internal_reconstruction_review', 'database_values_verified' => true, 'original_comparison_performed' => false,
+		'scope' => array_column($jobs, 'identity'), 'scope_sha256' => hash('sha256', reviewJson(array_column($jobs, 'identity')))]);
+	if ($action === 'prepare-diagnostic') $authorization = array_replace($authorization, ['policy' => 'diagnostic_only', 'database_values_verified' => false, 'original_comparison_performed' => false,
 		'scope' => array_column($jobs, 'identity'), 'scope_sha256' => hash('sha256', reviewJson(array_column($jobs, 'identity')))]);
 	$decisions = [];
 	if ($action === 'select') {
@@ -652,7 +703,7 @@ try {
 		reviewPrivateFile($root . '/.collector.lock');
 		$lock = fopen($root . '/.collector.lock', 'r+b');
 		if (!flock($lock, LOCK_EX | LOCK_NB)) throw new RuntimeException('Review area is busy');
-		if ($action === 'publish-reviewable') {
+		if (in_array($action, ['publish-reviewable', 'prepare-diagnostic'], true)) {
 			recoveryBindReviewable($root, $clientId);
 			$options['_preparation_failures'] = recoveryPreparationFailures($root, $clientId);
 		}
@@ -660,8 +711,9 @@ try {
 			try {
 				if (!in_array($action, ['import', 'release'], true)) $db->query('SET TRANSACTION READ ONLY');
 				$db->beginTransaction();
-				$snapshot = $action === 'publish-reviewable' ? null : recoverySnapshot($db, $job['identity']);
+				$snapshot = in_array($action, ['publish-reviewable', 'prepare-diagnostic'], true) ? null : recoverySnapshot($db, $job['identity']);
 				if ($action === 'publish-reviewable') $results[$key] = recoveryPublishReviewable($db, $job, $root, $authorization, $options['_preparation_failures']);
+				elseif ($action === 'prepare-diagnostic') $results[$key] = recoveryPrepareDiagnostic($db, $job, $root, $options['_diagnostic_failures'][$key], $authorization);
 				elseif ($action === 'prepare') {
 					$module = $job['identity']['module'];
 					require_once dirname(__DIR__, 2) . '/application/modules/' . $module . '/controllers/helpers/Positions.php';
@@ -685,19 +737,21 @@ try {
 			} catch (Throwable $exception) {
 				try { $db->rollBack(); } catch (Throwable $ignored) {}
 				$results[$key] = ['status' => 'failed', 'error' => $exception->getMessage()];
+				if ($action === 'prepare-diagnostic') $results[$key] += ['category' => 'diagnostic_unavailable', 'source_failure' => $options['_diagnostic_failures'][$key]];
 			}
 		}
 		flock($lock, LOCK_UN); fclose($lock);
 	}
 	$report = $root . '/runs/recovery-' . gmdate('Ymd\THis\Z') . '-' . bin2hex(random_bytes(6)) . '.json';
 	$publicationSummary = [];
-	if ($action === 'publish-reviewable') foreach ($results as $result) {
+	if (in_array($action, ['publish-reviewable', 'prepare-diagnostic'], true)) foreach ($results as $result) {
 		$status = $result['category'] ?? $result['status'];
 		$publicationSummary[$status] = ($publicationSummary[$status] ?? 0) + 1;
 		$publicationSummary['available_candidates'] = ($publicationSummary['available_candidates'] ?? 0) + count($result['candidates'] ?? []);
+		if ($action === 'prepare-diagnostic' && isset($result['sha256'])) $publicationSummary['available_candidates']++;
 		$publicationSummary['invalid_candidates'] = ($publicationSummary['invalid_candidates'] ?? 0) + count($result['candidate_errors'] ?? []);
 	}
-	recoveryWriteReports($report, ['action' => $action, 'clientid' => $clientId, 'operator_user' => $userId, 'executed_at' => gmdate('c'), 'authorization' => in_array($action, ['release', 'publish-reviewable'], true) ? $authorization : null, 'results' => $results, 'publication_summary' => $publicationSummary], array_merge(recoveryReportRows($results, $jobs), $inventory));
+	recoveryWriteReports($report, ['action' => $action, 'clientid' => $clientId, 'operator_user' => $userId, 'executed_at' => gmdate('c'), 'authorization' => in_array($action, ['release', 'publish-reviewable', 'prepare-diagnostic'], true) ? $authorization : null, 'results' => $results, 'publication_summary' => $publicationSummary], array_merge(recoveryReportRows($results, $jobs), $inventory));
 	if ($action === 'inspect') reviewWrite(substr($report, 0, -5) . '.html', recoveryHtml($results, $root));
 	echo reviewJson(['report' => $report, 'results' => $results]);
 	$exit = count(array_filter($results, static fn(array $row): bool => $row['status'] === 'failed' || !empty($row['candidate_errors']))) ? 1 : 0;

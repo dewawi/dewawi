@@ -1,4 +1,5 @@
 <?php return array(
+	'DOCUMENTS_DIAGNOSTIC_RECONSTRUCTION' => 'Diagnostic reconstruction – incomplete or inconsistent data; not a confirmed original',
 	'DOCUMENTS_RECONSTRUCTION_PENDING' => 'Historical reconstruction – original comparison pending',
 	'DOCUMENTS_RECONSTRUCTION_INTERNAL_ONLY' => 'Internal review only. Compare with the original or a verified dispatch copy before final archive approval.',
 	'DOCUMENTS_RECONSTRUCTION_VIEW' => 'View review PDF',

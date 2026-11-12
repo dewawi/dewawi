@@ -1,4 +1,5 @@
 <?php return array(
+	'DOCUMENTS_DIAGNOSTIC_RECONSTRUCTION' => 'Diagnosebeleg – unvollständige oder widersprüchliche Daten; kein bestätigtes Original',
 	'DOCUMENTS_RECONSTRUCTION_PENDING' => 'Historische Rekonstruktion – Papierprüfung ausstehend',
 	'DOCUMENTS_RECONSTRUCTION_INTERNAL_ONLY' => 'Nur zur internen Prüfung. Vor endgültiger Archivfreigabe mit dem Original oder einer verifizierten Versandkopie vergleichen.',
 	'DOCUMENTS_RECONSTRUCTION_VIEW' => 'Prüf-PDF ansehen',

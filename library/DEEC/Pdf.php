@@ -155,6 +155,98 @@ class DEEC_Pdf
 		]];
 	}
 
+	public function reconstructDiagnostic(int $id, string $module, string $controller): array
+	{
+		if (PHP_SAPI !== 'cli' || !DEEC_DocumentArchive::validDocumentType($module, $controller)) throw new RuntimeException('Diagnostic reconstruction is CLI-only');
+		$permission = new DEEC_Permission((array)Zend_Registry::get('User'));
+		$context = $permission->getObjectContext($id, $module, $controller);
+		if (!$context || !$permission->hasPermission($module, $controller, 'view') || !$permission->hasPermission($module, $controller, 'edit')) throw new RuntimeException('Diagnostic reconstruction access denied');
+		$identity = ['module' => $module, 'controller' => $controller, 'id' => $id, 'clientid' => $context['clientid'], 'document_number' => (string)($context['parent'][$controller . 'id'] ?? '')];
+		$snapshot = DEEC_DocumentReview::snapshot(Zend_Db_Table::getDefaultAdapter(), $identity);
+		$data = $snapshot['data']; $document = $data['document'];
+		$numeric = static fn($value): bool => $value !== null && $value !== '' && is_numeric($value) && is_finite((float)$value);
+		$issues = []; $incomplete = false; $canCalculate = true; $lines = []; $references = []; $rules = [];
+		$issue = static function(string $code, string $field, $stored = null, bool $missing = false) use (&$issues, &$incomplete): void {
+			$issues[] = ['code' => $code, 'field' => $field, 'stored' => $stored];
+			$incomplete = $incomplete || $missing;
+		};
+		foreach ([$controller . 'id', $controller . 'date', 'currency'] as $field) if (empty($document[$field])) $issue('missing_document_value', $field, $document[$field] ?? null, true);
+		$date = (string)($document[$controller . 'date'] ?? '');
+		if (!preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', $date) || !checkdate((int)substr($date, 5, 2), (int)substr($date, 8, 2), (int)substr($date, 0, 4))) $issue('invalid_document_date', $controller . 'date', $date, true);
+		if (!preg_match('/^[A-Z]{3}$/D', (string)($document['currency'] ?? '')) || !isset(Zend_Locale::getTranslationList('nametocurrency', 'en')[$document['currency']])) { $canCalculate = false; $issue('currency_not_reconstructable', 'currency', $document['currency'] ?? null, true); }
+		if (!isset($document['taxfree']) || !in_array((string)$document['taxfree'], ['0', '1'], true)) { $canCalculate = false; $issue('unknown_taxfree_basis', 'taxfree', $document['taxfree'] ?? null, true); }
+		$client = Zend_Registry::get('Client');
+		$matches = empty($document['contactid']) ? [] : Zend_Db_Table::getDefaultAdapter()->fetchCol('SELECT id FROM contact WHERE clientid = ? AND contactid = ? AND deleted = 0', [(int)($client['modules']['contacts'] ?? $identity['clientid']), $document['contactid']]);
+		if (count($matches) !== 1) $issue('contact_mapping_unresolved', 'contactid', ['stored' => $document['contactid'], 'matches' => count($matches)], true);
+		foreach (['billingname1', 'billingstreet', 'billingcity', 'billingcountry'] as $field) if (empty($document[$field])) $issue('stored_recipient_incomplete', $field, $document[$field] ?? null, true);
+		foreach ($data['pos'] as $position) if (empty($position['deleted'])) $lines[(int)$position['id']] = $position;
+		if (!$lines) { $canCalculate = false; $issue('stored_positions_missing', 'positions', null, true); }
+		foreach ($data['rules'] as $rule) {
+			$active = empty($rule['deleted']) && isset($lines[(int)$rule['parentid']]);
+			$valid = $numeric($rule['amount']) && (in_array($rule['action'], ['bypercent', 'byfixed', 'topercent', 'tofixed'], true) || (in_array($rule['action'], ['', null], true) && (float)$rule['amount'] === 0.0));
+			$rules[] = ['stored' => $rule, 'active_for_calculation' => $active, 'valid' => $valid];
+			if ($active && !$valid) { $canCalculate = false; $issue('invalid_saved_price_rule', 'pricerulepos.' . $rule['id'], $rule, true); }
+		}
+		foreach ($lines as $positionId => $position) {
+			foreach (['price', 'quantity', 'taxrate'] as $field) if (!$numeric($position[$field] ?? null) || ($field === 'taxrate' && (float)$position[$field] < 0)) { $canCalculate = false; $issue('position_value_not_reconstructable', 'position.' . $positionId . '.' . $field, $position[$field] ?? null, true); }
+			if (!$numeric($position['total'] ?? null)) $issue('stored_position_total_missing_or_invalid', 'position.' . $positionId . '.total', $position['total'] ?? null, true);
+			if (!empty($position['currency']) && $position['currency'] !== $document['currency']) { $canCalculate = false; $issue('position_currency_conflict', 'position.' . $positionId . '.currency', $position['currency'], true); }
+			$master = (int)($position['masterid'] ?? 0);
+			if ($master && (!isset($lines[$master]) || $master === $positionId || !empty($lines[$master]['masterid']) || count(array_filter($rules, static fn(array $rule): bool => $rule['active_for_calculation'] && (int)$rule['stored']['parentid'] === $positionId)))) { $canCalculate = false; $issue('invalid_price_rule_hierarchy', 'position.' . $positionId . '.masterid', $master, true); }
+			$net = $numeric($position['price'] ?? null) && $numeric($position['quantity'] ?? null) ? (float)$position['price'] * (float)$position['quantity'] : null;
+			if ($net !== null && !is_finite($net)) { $net = null; $canCalculate = false; $issue('arithmetic_overflow', 'position.' . $positionId, null, true); }
+			$gross = $net !== null && $numeric($position['taxrate'] ?? null) && (float)$position['taxrate'] >= 0 && isset($document['taxfree']) && in_array((string)$document['taxfree'], ['0', '1'], true) ? $net * (1 + (empty($document['taxfree']) ? (float)$position['taxrate'] : 0) / 100) : null;
+			if ($gross !== null && !is_finite($gross)) { $gross = null; $canCalculate = false; $issue('arithmetic_overflow', 'position.' . $positionId . '.gross', null, true); }
+			$references[$positionId] = ['basis' => 'arithmetic_only_without_price_rules_not_an_approved_total', 'net' => $net !== null && is_finite($net) ? $net : null, 'gross' => $gross !== null && is_finite($gross) ? $gross : null,
+				'stored_total' => $position['total'] ?? null, 'difference_to_net' => $numeric($position['total'] ?? null) && $net !== null ? (float)$position['total'] - $net : null, 'difference_to_gross' => $numeric($position['total'] ?? null) && $gross !== null ? (float)$position['total'] - $gross : null];
+		}
+		$calculated = null;
+		if ($canCalculate) try {
+			$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller) . 'pos';
+			$calculated = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->calculate($document, (new $class())->setClientId($identity['clientid'])->getPositions($id), $module, $controller, $identity['clientid'])['row'];
+		} catch (Throwable $error) { $calculated = null; $issue('saved_rules_calculation_unavailable', 'calculation', $error->getMessage(), true); }
+		if ($calculated !== null) foreach ($lines as $positionId => $position) {
+			if (!$numeric($position['total'] ?? null)) continue;
+			$comparison = ['stored' => $position['total'], 'calculated_net' => $calculated[$positionId]['total'], 'calculated_gross' => $calculated[$positionId]['gross'],
+				'difference_to_net' => round((float)$position['total'] - $calculated[$positionId]['total'], 8), 'difference_to_gross' => round((float)$position['total'] - $calculated[$positionId]['gross'], 8)];
+			$references[$positionId]['valid_saved_rules_comparison'] = $comparison;
+			if (abs($comparison['difference_to_net']) > 0.000001 && abs($comparison['difference_to_gross']) > 0.000001) $issue('stored_position_total_difference_unresolved', 'position.' . $positionId . '.total', $comparison);
+		}
+		$header = [];
+		foreach (['subtotal', 'taxes', 'total'] as $field) {
+			$value = $calculated === null ? null : ($field === 'taxes' ? $calculated['taxes']['total'] : $calculated[$field]);
+			$stored = $document[$field] ?? null;
+			$delta = $numeric($stored) && $numeric($value) ? round((float)$stored - $value, 8) : null;
+			$header[$field] = ['stored' => $stored, 'calculated_with_valid_saved_rules' => $value, 'difference' => $delta];
+			if (!$numeric($stored)) $issue('stored_header_value_missing', $field, $stored, true);
+			elseif ($delta !== null && abs($delta) > 0.000001) $issue('header_difference_not_accepted_as_rounding', $field, $header[$field]);
+		}
+		$diagnosis = ['schema_version' => 1, 'incomplete' => $incomplete, 'accounting_basis_verified' => false, 'issues' => $issues, 'header' => $header, 'positions_reference_without_rules' => $references, 'saved_price_rules' => $rules, 'calculated_with_valid_saved_rules' => $calculated];
+		$this->bootstrapTcpdf();
+		$pdf = $this->initPdf('Diagnosebeleg zur internen Prüfung');
+		$pdf->SetFont('dejavusans', '', 8);
+		$escape = static fn($text): string => htmlspecialchars((string)$text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+		$value = static fn($item): string => $item === null ? 'NICHT REKONSTRUIERBAR (gespeichert: NULL)' : ($item === '' ? 'NICHT REKONSTRUIERBAR (leer gespeichert)' : (string)$item);
+		$pdf->writeHTML('<h1>Diagnosebeleg – keine Rechnung / kein Original</h1><p>' . $escape($module . '/' . $controller . ' · ID ' . $id . ' · Mandant ' . $identity['clientid']) . '</p><p>Erzeugt: ' . $escape(gmdate('c')) . '. Historische Datierung und Währung werden nicht ergänzt. Gespeicherte und berechnete Beträge sind getrennt. Keine Differenz wird als zulässige Rundung bestätigt. Leere optionale Felder sind keine erfundenen Werte.</p>');
+		foreach (['Fehlende / widersprüchliche Daten' => $issues, 'Kopfsummen: gespeichert / berechnet / Differenz' => $header, 'Arithmetischer Positionsvergleich OHNE Preisregeln – keine freigegebene Grundlage' => $references, 'Gespeicherte Preisregeln mit Prüfstatus' => $rules, 'Vergleichsrechnung mit gültigen gespeicherten Regeln – keine Bestätigung' => $calculated] as $title => $section) {
+			$pdf->writeHTML('<h2>' . $escape($title) . '</h2><pre>' . $escape($section === null ? 'NICHT REKONSTRUIERBAR' : DEEC_DocumentReview::json($section)) . '</pre>');
+		}
+		foreach (['document' => [$document], 'pos' => $data['pos'], 'posset' => $data['posset']] as $section => $rows) {
+			$pdf->writeHTML('<h2>Gespeicherte Daten: ' . $escape($section) . '</h2>');
+			foreach ($rows as $storedRow) {
+				$html = '<table border="1" cellpadding="3"><tr><th width="28%">Feld</th><th width="72%">Gespeicherter Wert (unverändert)</th></tr>';
+				foreach ($storedRow as $field => $stored) $html .= '<tr><td width="28%">' . $escape($field) . '</td><td width="72%">' . nl2br($escape($value($stored))) . '</td></tr>';
+				$pdf->writeHTML($html . '</table>');
+			}
+		}
+		for ($page = 1; $page <= $pdf->getNumPages(); $page++) {
+			$pdf->setPage($page); $pdf->SetXY(15, 9); $pdf->SetFont('dejavusans', 'B', 8);
+			$pdf->SetTextColor(160, 0, 0);
+			$pdf->Cell(180, 8, 'REKONSTRUKTION ZUR PRÜFUNG – KEIN BESTÄTIGTES ORIGINAL', 1, 0, 'C');
+		}
+		return ['bytes' => $pdf->Output('', 'S'), 'diagnosis' => $diagnosis, 'snapshot_sha256' => $snapshot['sha256'], 'dependencies' => ['renderer_sha256' => hash_file('sha256', __FILE__), 'historical_layout_guaranteed' => false, 'payload_services_used' => false]];
+	}
+
 	protected function validateReconstructionAmounts(array $document, $positions, string $module, string $controller, int $clientId): array
 	{
 		$lines = [];
