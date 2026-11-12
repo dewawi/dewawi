@@ -48,6 +48,8 @@ try {
   check(innerWidth === Number(new URLSearchParams(location.search).get('width')), 'Unexpected viewport width: ' + innerWidth);
   const type = document.querySelector('input[name="type"][value="gobd"]');
   const form = type.form, box = form.querySelector('input[name="include_documents"]');
+  const review = form.querySelector('button[name="review_export"]');
+  check(review && review.value === '1' && !review.textContent.includes('ADMIN_'), 'Separate review export button or translation is missing');
   check(box && !box.checked && box.value === '1', 'Checkbox must default to off');
   check(!new FormData(form).has('include_documents'), 'Default form sends PDF option');
   check(document.querySelectorAll('input[name="include_documents"]').length === 1, 'Other exports received the PDF option');
@@ -59,6 +61,9 @@ try {
   form.elements.from.value = '2033-03-02'; form.elements.to.value = '2033-05-19';
   data = new URLSearchParams(new FormData(form));
   check(data.get('from') === '2033-03-02' && data.get('to') === '2033-05-19' && form.checkValidity(), 'Dates are restricted to a fixed audit period');
+  const reviewData = new URLSearchParams(new FormData(form, review));
+  check(reviewData.get('review_export') === '1' && reviewData.get('from') === '2033-03-02' && reviewData.get('to') === '2033-05-19', 'Review export lost its separate mode or shared dates');
+  check(!data.has('review_export'), 'Normal GoBD export acquired review mode');
   check(document.documentElement.scrollWidth <= innerWidth + 1, 'Export view overflows the viewport');
   document.getElementById('result').textContent = 'PASS: real GoBD view; default off, translated checkbox, free dates and responsive form';
 } catch (error) { document.getElementById('result').textContent = 'FAIL: ' + error.message; }

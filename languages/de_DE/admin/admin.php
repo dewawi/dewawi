@@ -73,6 +73,8 @@
 	'ADMIN_EXPORT_SQL_DESCRIPTION' => 'Daten als SQL-Datei exportieren',
 	'ADMIN_EXPORT_GOBD' => 'GoBD-Export',
 	'ADMIN_EXPORT_DOCUMENTS' => 'PDF-Belegbilder mit exportieren',
+	'ADMIN_EXPORT_REVIEW' => 'Dokumente zur internen Prüfung exportieren',
+	'ADMIN_EXPORT_REVIEW_HINT' => 'Der separate Prüfexport enthält Archivoriginale und veröffentlichte Prüf-PDFs. Eine Originalprüfung wird dadurch nicht bestätigt.',
 	'ADMIN_EXPORT_DOCUMENTS_HINT' => 'Nur verifizierte Archivoriginale werden übernommen. Fehlende Belegbilder werden im Export ausgewiesen.',
 	'ADMIN_EXPORT_INVALID_PERIOD' => 'Bitte gültige Datumsgrenzen im Format JJJJ-MM-TT angeben. Von darf nicht nach Bis liegen.',
 	'ADMIN_EXPORT_DOCUMENTS_DENIED' => 'Für diesen Export werden Administratorzugriff und Leserechte für alle acht Belegarten benötigt.',

@@ -140,6 +140,8 @@
 	'ADMIN_TO' => 'To',
 	'ADMIN_EXPORT_GOBD_DESCRIPTION' => 'Export the stored fiscal CSV data for the selected period.',
 	'ADMIN_EXPORT_DOCUMENTS' => 'Include PDF document images',
+	'ADMIN_EXPORT_REVIEW' => 'Export documents for internal review',
+	'ADMIN_EXPORT_REVIEW_HINT' => 'The separate review export includes archive originals and published review PDFs. It does not confirm an original comparison.',
 	'ADMIN_EXPORT_DOCUMENTS_HINT' => 'Only verified archive originals are included. Missing document images are listed in the export.',
 	'ADMIN_EXPORT_INVALID_PERIOD' => 'Enter valid dates in YYYY-MM-DD format. From must not be later than To.',
 	'ADMIN_EXPORT_DOCUMENTS_DENIED' => 'This export requires administrator access and read permission for all eight document types.',

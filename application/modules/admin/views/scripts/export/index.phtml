@@ -110,6 +110,9 @@ $exportFilterKey = 'dewawi.exportFilters:' . $this->baseUrl() . ':' . (int)$this
 				<button type="submit" class="dw-button dw-button--success">
 					<?php echo $this->translate('ADMIN_EXPORT_GOBD'); ?>
 				</button>
+				<button type="submit" name="review_export" value="1" class="dw-button">
+					<?php echo $this->translate('ADMIN_EXPORT_REVIEW'); ?>
+				</button>
 				<button type="reset" class="dw-btn">
 					<?php echo $this->translate('ADMIN_EXPORT_RESET_FILTERS'); ?>
 				</button>
@@ -117,6 +120,7 @@ $exportFilterKey = 'dewawi.exportFilters:' . $this->baseUrl() . ':' . (int)$this
 
 			<div class="dw-form__hint">
 				<?php echo $this->translate('ADMIN_EXPORT_GOBD_DESCRIPTION'); ?>
+				<?php echo $this->translate('ADMIN_EXPORT_REVIEW_HINT'); ?>
 			</div>
 		</form>
 

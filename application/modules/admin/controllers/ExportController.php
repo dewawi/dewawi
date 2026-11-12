@@ -69,17 +69,20 @@ class Admin_ExportController extends DEEC_Controller_AdminAction
 		$from = $this->_getParam('from', null);
 		$to = $this->_getParam('to', null);
 		$includeDocuments = false;
+		$reviewExport = false;
 		if ($type === 'gobd') {
 			$value = $this->_getParam('include_documents', '0');
+			$review = $this->_getParam('review_export', '0');
 			try {
-				if (!is_string($from) || !is_string($to) || !in_array($value, ['0', '1', 0, 1], true)) throw new InvalidArgumentException('Invalid GoBD options');
+				if (!is_string($from) || !is_string($to) || !in_array($value, ['0', '1', 0, 1], true) || !in_array($review, ['0', '1', 0, 1], true)) throw new InvalidArgumentException('Invalid GoBD options');
 				DEEC_Export_Gobd::validatePeriod($from, $to, true);
 				$includeDocuments = (string)$value === '1';
+				$reviewExport = (string)$review === '1';
 			} catch (InvalidArgumentException $exception) {
 				$this->_flashMessenger->addMessage('ADMIN_EXPORT_INVALID_PERIOD');
 				return $this->_helper->redirector->gotoSimple('index');
 			}
-			if ($includeDocuments) {
+			if ($includeDocuments || $reviewExport) {
 				try { DEEC_Export_Gobd::assertDocumentAccess((int)$this->_user['clientid'], (int)$this->_user['id']); }
 				catch (RuntimeException $exception) {
 					$this->getResponse()->setHttpResponseCode(403);
@@ -113,7 +116,7 @@ class Admin_ExportController extends DEEC_Controller_AdminAction
 				$userId
 			);
 
-			try { $export->export($filePath, $from, $to, $includeDocuments); }
+			try { $export->export($filePath, $from, $to, $includeDocuments, $reviewExport); }
 			catch (Throwable $exception) {
 				error_log('GoBD export failed: ' . $exception->getMessage());
 				$this->_flashMessenger->addMessage('ADMIN_EXPORT_FAILED');

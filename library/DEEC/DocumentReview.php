@@ -97,6 +97,11 @@ class DEEC_DocumentReview
 
 	public function candidates(int $id, string $module, string $controller): array
 	{
+		return $this->inspection($id, $module, $controller)['candidates'];
+	}
+
+	public function inspection(int $id, string $module, string $controller): array
+	{
 		if (!Zend_Registry::isRegistered('User') || !Zend_Registry::isRegistered('Client')) throw new RuntimeException('Document review access denied');
 		$clientId = (int)Zend_Registry::get('Client')['id'];
 		$permission = new DEEC_Permission((array)Zend_Registry::get('User'));
@@ -105,23 +110,26 @@ class DEEC_DocumentReview
 		$identity = ['module' => $module, 'controller' => $controller, 'id' => $id, 'clientid' => $clientId, 'document_number' => (string)($context['parent'][$controller . 'id'] ?? '')];
 		$db = Zend_Db_Table::getDefaultAdapter();
 		$locator = self::locatorPath($clientId);
-		if (!file_exists($locator)) return [];
-		if ($db->fetchOne('SELECT COUNT(*) FROM documentarchive WHERE clientid = ? AND module = ? AND controller = ? AND documentid = ? AND format = ?', [$clientId, $module, $controller, $id, 'pdf'])) return [];
+		$results = ['candidates' => [], 'invalid' => []];
+		if (!file_exists($locator)) return $results;
+		if ($db->fetchOne('SELECT COUNT(*) FROM documentarchive WHERE clientid = ? AND module = ? AND controller = ? AND documentid = ? AND format = ?', [$clientId, $module, $controller, $id, 'pdf'])) return $results;
 		$snapshot = self::snapshot($db, $identity);
 		$location = self::read($locator);
 		if (($location['clientid'] ?? 0) !== $clientId || ($location['base'] ?? '') !== BASE_PATH) throw new RuntimeException('Foreign review locator');
 		$root = $location['review'];
 		self::validateRoot($root, $clientId);
 		if (($location['binding_sha256'] ?? '') !== hash_file('sha256', $root . '/review.json')) throw new RuntimeException('Review area binding changed');
-		$results = [];
 		foreach (glob(self::publicationDirectory($root, $identity) . '/*.json') as $path) {
+			$sha = basename($path, '.json');
 			try {
 				$receipt = self::read($path);
-				$sha = basename($path, '.json');
 				$candidate = self::candidate($root, $root . '/' . $receipt['directory'], $identity, $snapshot, $sha);
 				self::receipt($receipt, $identity, $candidate, $snapshot);
-				$results[$sha] = $candidate + ['receipt' => $receipt];
-			} catch (RuntimeException | InvalidArgumentException | JsonException $error) { error_log('Historical review candidate unavailable: ' . $error->getMessage()); }
+				$results['candidates'][$sha] = $candidate + ['receipt' => $receipt];
+			} catch (RuntimeException | InvalidArgumentException | JsonException $error) {
+				$results['invalid'][$sha] = $error->getMessage();
+				error_log('Historical review candidate unavailable: ' . $error->getMessage());
+			}
 		}
 		return $results;
 	}

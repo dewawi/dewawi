@@ -170,6 +170,12 @@ with tempfile.TemporaryDirectory(prefix="dewawi-attachment-http-") as temp:
         package.writestr('documents/7/sales/invoice/1.pdf', contents)
     private_export_bytes = (export_dir / 'gobd-documents-fixture.zip').read_bytes()
     (export_dir / 'renamed-fixture.zip').write_bytes(private_export_bytes)
+    with zipfile.ZipFile(export_dir / 'document-review-fixture.zip', 'w') as package:
+        package.writestr('metadata.json', '{"clientId":7,"export_kind":"internal_document_review","documents":{"enabled":true}}')
+        package.writestr('review/7/sales/invoice/110395--5fc58b2c1dbc.pdf', contents)
+    private_review_bytes = (export_dir / 'document-review-fixture.zip').read_bytes()
+    (export_dir / 'renamed-review.zip').write_bytes(private_review_bytes)
+    (export_dir / 'document-review-invalid.zip').write_bytes(b'Unfinished private review package')
     (export_dir / 'gobd-export-legacy.zip').write_bytes(b'Private export package')
     for package in export_dir.iterdir():
         package.chmod(0o600)
@@ -342,6 +348,13 @@ DocumentRoot "{site}"
         assert last_headers['Cache-Control'] == 'private, no-store' and last_headers['X-Content-Type-Options'] == 'nosniff'
         assert fetch(document_export, 'admin', 'HEAD') == (200, b''), 'GoBD HEAD returned private bytes'
         assert fetch('/files/export/7/0/7/renamed-fixture.zip', 'admin_no_documents')[0] == 404, 'Renamed image ZIP bypassed document permissions'
+        for user in [None, 'allowed', 'admin_no_documents', 'foreign_admin', 'shared_admin']:
+            assert fetch('/files/export/7/0/7/document-review-fixture.zip', user)[0] == 404, 'Internal review ZIP bypassed tenant or document permissions'
+        assert fetch('/files/export/7/0/7/document-review-fixture.zip', 'admin') == (200, private_review_bytes), 'Authorized review ZIP download failed'
+        assert last_headers['Cache-Control'] == 'private, no-store' and last_headers['X-Content-Type-Options'] == 'nosniff'
+        assert fetch('/files/export/7/0/7/document-review-fixture.zip', 'admin', 'HEAD') == (200, b''), 'Review ZIP HEAD returned private bytes'
+        assert fetch('/files/export/7/0/7/renamed-review.zip', 'admin_no_documents')[0] == 404, 'Renamed review ZIP bypassed permissions'
+        assert fetch('/files/export/7/0/7/document-review-invalid.zip', 'admin')[0] == 404, 'Unfinished review ZIP was downloadable'
         assert fetch('/files/export/7/0/7/gobd-export-legacy.zip', 'admin_no_documents') == (200, b'Private export package'), 'Legacy CSV export download permissions changed'
         assert fetch('/files/export/7/0/7/.gobd-staging/document_manifest.csv', 'admin')[0] in (403, 404), 'Private staging became downloadable'
         for requested in ['files/contacts/7/0/7/1/0/100/linked.pdf', 'files/contacts/7/0/7/1/0/100/%2e%2e/100/quote.pdf', 'files/contacts/7/0/7/1/0/100/%252e%252e/quote.pdf', 'files/contacts/7/0/7/1/0/100/quote.pdf%00']:

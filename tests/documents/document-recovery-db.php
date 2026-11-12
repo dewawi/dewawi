@@ -339,6 +339,20 @@ try {
 	recoveryTestCli($publishOptions + ['only' => 'sales/quote/1']);
 	$view = recoveryTestDownload($quoteQuery + ['view' => 1]);
 	recoveryTestCheck(str_contains($view['bytes'], $quoteSha) && str_contains($view['bytes'], $secondSha) && recoveryTestDownload(array_replace($quoteQuery, ['sha256' => $secondSha]))['bytes'] === $secondBytes, 'Different reconstructions were automatically selected or hidden');
+	$exportDb = recoveryBoot(migrationConfig($work . '/database.ini', 'production') + ['unix_socket' => $socket], $base, 7, 42);
+	$exportUser = Zend_Registry::get('User'); Zend_Registry::set('User', array_replace($exportUser, ['admin' => 1]));
+	$exportDirectory = $base . '/files/export/7/0/7/';
+	reviewDirectory(rtrim($exportDirectory, '/'));
+	$reviewExportName = (new DEEC_Export_Gobd($exportDb, 7, 42))->export($exportDirectory, '2000-01-01', '2020-12-31', false, true);
+	$reviewPackage = new ZipArchive(); $reviewPackage->open($exportDirectory . $reviewExportName, ZipArchive::CHECKCONS);
+	$reviewStream = $reviewPackage->getStream('document_manifest.csv');
+	$reviewFields = fgetcsv($reviewStream, 0, ';', '"', ''); $reviewVersions = [];
+	while (($values = fgetcsv($reviewStream, 0, ';', '"', '')) !== false) $reviewVersions[] = array_combine($reviewFields, $values);
+	fclose($reviewStream);
+	recoveryTestCheck(count($reviewVersions) === 9 && count(array_unique(array_column($reviewVersions, 'controller'))) === 8, 'Internal export lost real published recovery PDFs or their multiple versions');
+	foreach ($reviewVersions as $version) recoveryTestCheck($version['status'] === DEEC_DocumentReview::STATUS && hash('sha256', $reviewPackage->getFromName($version['zip_path'])) === $version['sha256'] && str_starts_with($version['zip_path'], 'review/7/'), 'Real reconstruction was exported as an original or with changed bytes');
+	$reviewPackage->close();
+	Zend_Registry::set('User', $exportUser); $exportDb->closeConnection();
 	foreach (['de_DE', 'en_US'] as $locale) {
 		$panel = recoveryTestDownload($quoteQuery + ['view' => 1, 'locale' => $locale]);
 		preg_match('~<section.*?</section>~s', $panel['bytes'], $match);

@@ -6,6 +6,8 @@ class DEEC_Export_Gobd
 	protected $clientId;
 	protected $userId;
 	protected array $documentFiles = [];
+	protected array $documentNames = [];
+	protected bool $reviewExport = false;
 
 	public function __construct($db, int $clientId, ?int $userId = null)
 	{
@@ -33,7 +35,7 @@ class DEEC_Export_Gobd
 
 	public static function assertPackageAccess(string $path, int $clientId): void
 	{
-		$required = str_starts_with(basename($path), 'gobd-documents-');
+		$required = str_starts_with(basename($path), 'gobd-documents-') || str_starts_with(basename($path), 'document-review-');
 		$zip = new ZipArchive();
 		if ($zip->open($path, ZipArchive::RDONLY) !== true) {
 			if ($required) throw new RuntimeException('Document package is invalid');
@@ -54,8 +56,10 @@ class DEEC_Export_Gobd
 		} finally { $zip->close(); }
 	}
 
-	public function export(string $filePath, ?string $from, ?string $to, bool $includeDocuments = false): string
+	public function export(string $filePath, ?string $from, ?string $to, bool $includeDocuments = false, bool $reviewExport = false): string
 	{
+		$this->reviewExport = $reviewExport;
+		$includeDocuments = $includeDocuments || $reviewExport;
 		self::validatePeriod($from, $to, $includeDocuments);
 		if ($includeDocuments) self::assertDocumentAccess($this->clientId, $this->userId);
 		$destination = rtrim($filePath, '/') . '/';
@@ -80,13 +84,15 @@ class DEEC_Export_Gobd
 				foreach (new FilesystemIterator($stage) as $file) if (!$file->isDir() || $file->isLink()) unlink($file->getPathname());
 				rmdir($stage);
 				$this->documentFiles = [];
+				$this->documentNames = [];
+				$this->reviewExport = false;
 			}
 		}
 	}
 
 	protected function buildPackage(string $filePath, ?string $from, ?string $to, bool $includeDocuments): string
 	{
-		$profile = $this->getProfile();
+		$profile = $this->reviewExport ? [] : $this->getProfile();
 		$resolvedProfile = [];
 		$files = [];
 
@@ -118,6 +124,11 @@ class DEEC_Export_Gobd
 			$files = array_merge($files, ['document_index.csv', 'document_manifest.csv', 'missing_documents.csv', 'excluded_documents.csv']);
 			$metadata = json_decode(file_get_contents($filePath . 'metadata.json'), true, 512, JSON_THROW_ON_ERROR);
 			$metadata['documents'] = ['enabled' => true, 'types' => DEEC_DocumentArchive::documents(), 'scope' => 'stored document date, inclusive; issued documents and excluded original references', 'summary' => $summary];
+			if ($this->reviewExport) {
+				$metadata['export_kind'] = 'internal_document_review';
+				$metadata['exportType'] = 'Internal document review';
+				$metadata['documents']['scope'] = 'stored document date, inclusive; all eight types; archive originals, published reconstructions and unresolved or excluded documents';
+			}
 			$bytes = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 			if (file_put_contents($filePath . 'metadata.json', $bytes) !== strlen($bytes)) throw new RuntimeException('Could not write export metadata');
 			$bytes = "\n\nArchived PDF document images: " . ($summary['complete'] ? 'COMPLETE for the stated scope' : 'INCOMPLETE')
@@ -128,7 +139,15 @@ class DEEC_Export_Gobd
 				. "\ndocument_manifest.csv records included originals and stored archive/recovery provenance. missing_documents.csv records missing, invalid or excluded images."
 				. "\nRecorded historical conflicts remain traceable. Approved restorations are not new fiscal corrections. Header/EOF and hash verification do not prove historical content equivalence."
 				. "\nchecksums.sha256 covers every ZIP entry except itself. Verify with sha256sum -c checksums.sha256 after extraction. Completeness refers only to this stored dated-document scope, not overall legal compliance.\n";
-			if (file_put_contents($filePath . 'readme.txt', $bytes, FILE_APPEND) !== strlen($bytes)) throw new RuntimeException('Could not write export README');
+			if ($this->reviewExport) $bytes = "INTERNAL DOCUMENT REVIEW ONLY\nNot a GoBD original-document export. No original equivalence or completed paper comparison is asserted.\n"
+				. "Period (inclusive stored document dates): $from to $to\nTenant: " . $this->clientId . "\n"
+				. "originals/ contains verified registered originals; review/ contains only currently valid published reconstructions. The latter require an original comparison before final archive approval.\n"
+				. "Every dated document is identified in document_index.csv. document_manifest.csv lists every included version and all missing, invalid or excluded cases. missing_documents.csv lists unresolved cases. Deleted issued originals retain their deleted flag and are also listed in excluded_documents.csv; no document is reactivated.\n"
+				. "Visible numbers name PDFs. Unsafe or missing numbers and collisions receive --id-<internal ID> (and a counter if necessary); review versions also carry their SHA-256 prefix. Original filenames and internal IDs remain in the manifests.\n"
+				. "Different versions are not automatically selected. No PDFs were rendered, no business data changed, and no files were registered as originals by this export.\n"
+				. "Availability: " . ($summary['complete'] ? 'COMPLETE for the stored dated-document scope' : 'INCOMPLETE') . "\n" . json_encode($summary, JSON_THROW_ON_ERROR)
+				. "\nVerify the extracted package with sha256sum -c checksums.sha256. Inspect all missing/invalid/excluded rows. Availability completeness does not mean original equivalence, fiscal completeness or legal compliance.\n";
+			if (file_put_contents($filePath . 'readme.txt', $bytes, $this->reviewExport ? 0 : FILE_APPEND) !== strlen($bytes)) throw new RuntimeException('Could not write export README');
 			$lines = [];
 			foreach ($files as $file) $lines[] = hash_file('sha256', $filePath . $file) . '  ' . $file;
 			foreach ($this->documentFiles as $name => $entry) $lines[] = $entry['sha256'] . '  ' . $name;
@@ -139,6 +158,7 @@ class DEEC_Export_Gobd
 
 		$zipFileName = $this->buildZipFileName($from, $to);
 		if ($includeDocuments) $zipFileName = str_replace('gobd-export-', 'gobd-documents-', substr($zipFileName, 0, -4)) . '-' . bin2hex(random_bytes(8)) . '.zip';
+		if ($this->reviewExport) $zipFileName = str_replace('gobd-documents-', 'document-review-', $zipFileName);
 		$this->createZip($filePath, $files, $zipFileName);
 
 		return $zipFileName;
@@ -147,12 +167,14 @@ class DEEC_Export_Gobd
 	protected function writeDocuments(string $directory, array $profile, string $from, string $to): array
 	{
 		$fields = ['record_key', 'clientid', 'module', 'controller', 'documentid', 'document_number', 'document_date', 'filename', 'deleted', 'issued', 'csv_file', 'csv_key_column', 'csv_key_value', 'status', 'reason', 'archive_version', 'zip_path', 'filesize', 'sha256', 'archived', 'archivedby', 'correctionarchiveid', 'archive_parameters', 'historical_conflicts'];
+		if ($this->reviewExport) $fields = array_merge($fields, ['evidence_status', 'proof_sha256', 'snapshot_sha256', 'generated_at', 'database_confirmation']);
 		$handles = [];
 		foreach (['document_index', 'document_manifest', 'missing_documents', 'excluded_documents'] as $name) {
 			$handles[$name] = fopen($directory . $name . '.csv', 'xb');
 			if (!$handles[$name] || fputcsv($handles[$name], $fields, ';', '"', '') === false) throw new RuntimeException('Could not create document manifest');
 		}
 		$summary = ['dated_documents' => 0, 'issued' => 0, 'included' => 0, 'missing' => 0, 'excluded' => 0, 'deleted_issued' => 0, 'complete' => true];
+		$reviewCounts = ['archived_original' => 0, DEEC_DocumentReview::STATUS => 0, 'missing' => 0, 'invalid' => 0, 'excluded' => 0];
 		$archive = new DEEC_DocumentArchive(BASE_PATH);
 		$archiveDb = new Application_Model_DbTable_Documentarchive();
 		try {
@@ -184,7 +206,7 @@ class DEEC_Export_Gobd
 								$row += ['archive_version' => $original['version'], 'archived' => $original['archived'], 'archivedby' => $original['archivedby'], 'correctionarchiveid' => $original['correctionarchiveid'], 'archive_parameters' => $original['parameters'], 'historical_conflicts' => json_encode(array_values(array_unique($conflicts)), JSON_THROW_ON_ERROR)];
 								if (in_array($plan['reason'], ['historical_versions_differ', 'canonical_version_differs', 'invalid_historical_source'], true)) $row['reason'] = $plan['reason'];
 								else {
-									$name = 'documents/' . $this->clientId . '/' . $module . '/' . $controller . '/' . $document['id'] . '.pdf';
+									$name = $this->documentZipPath($this->reviewExport ? 'originals' : 'documents', $module, $controller, $document);
 									$this->documentFiles[$name] = ['path' => BASE_PATH . '/' . $original['path'], 'size' => (int)$original['filesize'], 'sha256' => $original['sha256']];
 									$row += ['zip_path' => $name, 'filesize' => $original['filesize'], 'sha256' => $original['sha256']];
 									$row['filename'] = $original['filename'];
@@ -200,6 +222,19 @@ class DEEC_Export_Gobd
 						$excluded = true;
 						$summary['excluded']++;
 					}
+					if ($this->reviewExport) {
+						$rows = $this->reviewRows($row, $document, $module, $controller);
+						$indexRow = $rows[0];
+						foreach ($rows as $entry) {
+							$reviewCounts[$entry['status']]++;
+							$line = array_map(static fn(string $field) => $entry[$field] ?? '', $fields);
+							if (fputcsv($handles['document_manifest'], $line, ';', '"', '') === false) throw new RuntimeException('Could not write review manifest');
+							if (in_array($entry['status'], ['missing', 'invalid', 'excluded'], true) && fputcsv($handles['missing_documents'], $line, ';', '"', '') === false) throw new RuntimeException('Could not write unresolved review cases');
+							if (($excluded || $entry['status'] === 'excluded') && fputcsv($handles['excluded_documents'], $line, ';', '"', '') === false) throw new RuntimeException('Could not write review exclusions');
+						}
+						if (fputcsv($handles['document_index'], array_map(static fn(string $field) => $indexRow[$field] ?? '', $fields), ';', '"', '') === false) throw new RuntimeException('Could not write review index');
+						continue;
+					}
 					$line = array_map(static fn(string $field) => $row[$field] ?? '', $fields);
 					if (fputcsv($handles['document_index'], $line, ';', '"', '') === false) throw new RuntimeException('Could not write document index');
 					if ($row['status'] === 'included' && fputcsv($handles['document_manifest'], $line, ';', '"', '') === false) throw new RuntimeException('Could not write document manifest');
@@ -208,8 +243,48 @@ class DEEC_Export_Gobd
 				}
 			}
 		} finally { foreach ($handles as $handle) if ($handle) fclose($handle); }
+		if ($this->reviewExport) return array_intersect_key($summary, array_flip(['dated_documents', 'issued', 'deleted_issued'])) + $reviewCounts + ['complete' => $reviewCounts['missing'] === 0 && $reviewCounts['invalid'] === 0 && $reviewCounts['excluded'] === 0];
 		$summary['complete'] = $summary['missing'] === 0 && $summary['excluded'] === 0;
 		return $summary;
+	}
+
+	protected function documentZipPath(string $prefix, string $module, string $controller, array $document, ?string $sha = null): string
+	{
+		$number = (string)($document[$controller . 'id'] ?? '');
+		$stem = substr(trim((string)preg_replace('/[^A-Za-z0-9._-]+/', '_', $number), '._-'), 0, 80);
+		$safe = $stem !== '' && $stem === $number && !preg_match('/^(?:CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(?:\.|$)/i', $stem);
+		if (!$safe) $stem = ($stem ?: 'document') . '--id-' . $document['id'];
+		if ($sha !== null) $stem .= '--' . substr($sha, 0, 12);
+		$directory = $prefix . '/' . $this->clientId . '/' . $module . '/' . $controller . '/';
+		$name = $directory . $stem . '.pdf';
+		if (isset($this->documentNames[strtolower($name)])) {
+			$stem .= '--id-' . $document['id'];
+			$name = $directory . $stem . '.pdf';
+			$counter = 2;
+			while (isset($this->documentNames[strtolower($name)])) $name = $directory . $stem . '-' . $counter++ . '.pdf';
+		}
+		$this->documentNames[strtolower($name)] = true;
+		return $name;
+	}
+
+	protected function reviewRows(array $row, array $document, string $module, string $controller): array
+	{
+		if ($row['status'] === 'included') return [array_replace($row, ['status' => 'archived_original', 'evidence_status' => 'verified_registered_original'])];
+		if (!$row['issued'] || $row['deleted']) return [array_replace($row, ['status' => 'excluded', 'reason' => $row['deleted'] ? 'deleted_issued_without_verified_original' : 'not_issued', 'evidence_status' => 'excluded'])];
+		if ($row['reason'] !== 'archive_registration_missing') return [array_replace($row, ['status' => 'invalid', 'evidence_status' => 'archive_verification_failed'])];
+		try {
+			$inspection = (new DEEC_DocumentReview())->inspection((int)$document['id'], $module, $controller);
+			$rows = [];
+			foreach ($inspection['candidates'] as $sha => $candidate) {
+				$name = $this->documentZipPath('review', $module, $controller, $document, $sha);
+				$this->documentFiles[$name] = ['path' => $candidate['file']['path'], 'size' => $candidate['file']['size'], 'sha256' => $sha];
+				$rows[] = array_replace($row, ['status' => DEEC_DocumentReview::STATUS, 'reason' => 'original_comparison_pending', 'evidence_status' => 'current_published_reconstruction',
+					'zip_path' => $name, 'filesize' => $candidate['file']['size'], 'sha256' => $sha, 'proof_sha256' => $candidate['proof_sha256'], 'snapshot_sha256' => $candidate['proof']['snapshot_sha256'],
+					'generated_at' => $candidate['proof']['generated_at'], 'database_confirmation' => json_encode($candidate['receipt']['database_confirmation'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)]);
+			}
+			foreach ($inspection['invalid'] as $sha => $reason) $rows[] = array_replace($row, ['status' => 'invalid', 'reason' => $reason, 'sha256' => $sha, 'evidence_status' => 'published_reconstruction_invalid']);
+			return $rows ?: [array_replace($row, ['status' => 'missing', 'reason' => 'no_current_published_review_pdf', 'evidence_status' => 'no_published_reconstruction'])];
+		} catch (RuntimeException | InvalidArgumentException | JsonException $error) { return [array_replace($row, ['status' => 'invalid', 'reason' => $error->getMessage(), 'evidence_status' => 'review_verification_failed'])]; }
 	}
 
 	protected function fetchData(array $config, array $columns, ?string $from, ?string $to): array
@@ -1130,6 +1205,10 @@ class DEEC_Export_Gobd
 			while (($values = fgetcsv($stream, 0, ';', '"', '')) !== false) {
 				if (count($fields) !== count($values)) throw new RuntimeException('Invalid document manifest row');
 				$row = array_combine($fields, $values);
+				if ($this->reviewExport && $row['zip_path'] === '') {
+					if (!in_array($row['status'], ['missing', 'invalid', 'excluded'], true)) throw new RuntimeException('Review manifest omits a required PDF');
+					continue;
+				}
 				$entry = $expected[$row['zip_path']] ?? null;
 				if (!$entry || isset($seen[$row['zip_path']]) || (int)$row['filesize'] !== $entry['size'] || $row['sha256'] !== $entry['sha256'] || (int)$row['clientid'] !== $this->clientId) throw new RuntimeException('Document manifest differs from ZIP entries');
 				$seen[$row['zip_path']] = true;
@@ -1165,6 +1244,7 @@ class DEEC_Export_Gobd
 
 	protected function verifyDocumentInventory(ZipArchive $zip): void
 	{
+		if ($this->reviewExport) { $this->verifyReviewInventory($zip); return; }
 		$metadata = json_decode($zip->getFromName('metadata.json'), true, 512, JSON_THROW_ON_ERROR);
 		$summary = $metadata['documents']['summary'];
 		$sets = [];
@@ -1194,6 +1274,57 @@ class DEEC_Export_Gobd
 		foreach (['document_manifest', 'missing_documents', 'excluded_documents'] as $file) if (array_diff_key($sets[$file], $sets['document_index'])) throw new RuntimeException('Orphan document manifest row');
 		foreach ($counts as $name => $count) if ($summary[$name] !== $count) throw new RuntimeException('Document summary differs from inventory');
 		if ($summary['dated_documents'] !== count($sets['document_index']) || $summary['complete'] !== ($counts['missing'] === 0 && $counts['excluded'] === 0)) throw new RuntimeException('Document completeness statement differs');
+	}
+
+	protected function verifyReviewInventory(ZipArchive $zip): void
+	{
+		$metadata = json_decode($zip->getFromName('metadata.json'), true, 512, JSON_THROW_ON_ERROR);
+		if (($metadata['export_kind'] ?? '') !== 'internal_document_review') throw new RuntimeException('Review export kind is missing');
+		$sets = []; $index = []; $documents = []; $expectedReports = ['missing_documents' => [], 'excluded_documents' => []];
+		$issued = 0; $deleted = 0;
+		$counts = ['archived_original' => 0, DEEC_DocumentReview::STATUS => 0, 'missing' => 0, 'invalid' => 0, 'excluded' => 0];
+		foreach (['document_index', 'document_manifest', 'missing_documents', 'excluded_documents'] as $file) {
+			$sets[$file] = [];
+			$stream = $zip->getStream($file . '.csv');
+			try {
+				$fields = fgetcsv($stream, 0, ';', '"', '');
+				while (($values = fgetcsv($stream, 0, ';', '"', '')) !== false) {
+					if (count($values) !== count($fields)) throw new RuntimeException('Invalid review inventory row');
+					$row = array_combine($fields, $values);
+					$key = $row['clientid'] . '/' . $row['module'] . '/' . $row['controller'] . '/' . $row['documentid'];
+					if ($row['record_key'] !== $key || (int)$row['clientid'] !== $this->clientId || !DEEC_DocumentArchive::validDocumentType($row['module'], $row['controller']) || $row['document_date'] < $metadata['from'] || $row['document_date'] > $metadata['to'] || !array_key_exists($row['status'], $counts)) throw new RuntimeException('Review inventory identity, period or status differs');
+					$identity = hash('sha256', json_encode(array_intersect_key($row, array_flip(['document_number', 'document_date', 'deleted', 'issued', 'filename'])), JSON_THROW_ON_ERROR));
+					if ($file === 'document_index') {
+						if (isset($index[$key])) throw new RuntimeException('Duplicate review document index');
+						$index[$key] = $identity;
+						if ($row['issued']) { $issued++; if ($row['deleted']) $deleted++; }
+						continue;
+					}
+					if (($index[$key] ?? null) !== $identity) throw new RuntimeException('Review manifest and document index differ');
+					if ($row['csv_file'] !== 'document_index.csv' || $row['csv_key_column'] !== 'record_key' || $row['csv_key_value'] !== $key) throw new RuntimeException('Review index reference differs');
+					$pdf = in_array($row['status'], ['archived_original', DEEC_DocumentReview::STATUS], true);
+					if ($pdf) {
+						$prefix = ($row['status'] === 'archived_original' ? 'originals' : 'review') . '/' . $this->clientId . '/' . $row['module'] . '/' . $row['controller'] . '/';
+						if (!str_starts_with($row['zip_path'], $prefix) || !$row['issued'] || ($row['status'] === DEEC_DocumentReview::STATUS && $row['deleted'])) throw new RuntimeException('Original and review PDF separation differs');
+						if ($row['status'] === DEEC_DocumentReview::STATUS && ($row['evidence_status'] !== 'current_published_reconstruction' || !preg_match('/^[a-f0-9]{64}$/D', $row['proof_sha256']) || !preg_match('/^[a-f0-9]{64}$/D', $row['snapshot_sha256']))) throw new RuntimeException('Review evidence is incomplete');
+					} elseif ($row['zip_path'] !== '') throw new RuntimeException('Unresolved review case contains a PDF');
+					$hash = hash('sha256', json_encode($row, JSON_THROW_ON_ERROR));
+					if (isset($sets[$file][$hash])) throw new RuntimeException('Duplicate review manifest row');
+					$sets[$file][$hash] = true;
+					if ($file === 'document_manifest') {
+						$documents[$key] = true;
+						$counts[$row['status']]++;
+						if (in_array($row['status'], ['missing', 'invalid', 'excluded'], true)) $expectedReports['missing_documents'][$hash] = true;
+						if ($row['status'] === 'excluded' || ($row['issued'] && $row['deleted'])) $expectedReports['excluded_documents'][$hash] = true;
+					}
+				}
+			} finally { fclose($stream); }
+		}
+		foreach ($expectedReports as $file => $required) if (array_diff_key($sets[$file], $required) || array_diff_key($required, $sets[$file])) throw new RuntimeException('Review reports differ from manifest');
+		$summary = $metadata['documents']['summary'];
+		foreach ($counts as $status => $count) if ($summary[$status] !== $count) throw new RuntimeException('Review status counts differ');
+		if (array_diff_key($index, $documents) || count($index) !== count($documents) || $summary['dated_documents'] !== count($index) || $summary['issued'] !== $issued || $summary['deleted_issued'] !== $deleted
+			|| $summary['complete'] !== ($counts['missing'] === 0 && $counts['invalid'] === 0 && $counts['excluded'] === 0)) throw new RuntimeException('Review scope or availability statement differs');
 	}
 
 	protected function buildZipFileName(?string $from, ?string $to): string
