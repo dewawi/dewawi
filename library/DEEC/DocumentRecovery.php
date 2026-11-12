@@ -131,6 +131,13 @@ function recoveryArchives(Zend_Db_Adapter_Abstract $db, array $identity, bool $l
 function recoveryOriginalComparison(array $job, array $selected, DEEC_DocumentArchive $reviewArchive): void
 {
 	$comparison = $selected['selection']['original_comparison'] ?? [];
+	if (($comparison['kind'] ?? '') === 'customer_archive_attestation') {
+		if (($comparison['assertion_type'] ?? '') !== 'retrospective_customer_archive_attestation' || ($comparison['identity'] ?? null) !== $job['identity'] || ($comparison['sha256'] ?? '') !== $selected['file']['sha256']
+			|| ($comparison['confirmed_by'] ?? 0) !== (int)$selected['selection']['reviewed_by'] || !is_string($comparison['confirmed_at'] ?? null) || !strtotime($comparison['confirmed_at']) || strtotime($comparison['confirmed_at']) > time()
+			|| !preg_match('/^[a-f0-9]{64}$/D', $comparison['plan_sha256'] ?? '') || !preg_match('/^[a-f0-9]{64}$/D', $comparison['declaration_sha256'] ?? '') || $selected['selection']['origin']['kind'] !== 'historical_pdf') throw new RuntimeException('Customer archive attestation is invalid');
+		DEEC_DocumentRecovery::customerArchiveAttestation($comparison['statement'] ?? [], $job['identity'], $comparison['snapshot_sha256'] ?? '', $selected['file']['sha256']);
+		return;
+	}
 	if (($comparison['kind'] ?? '') === 'verified_historical_origin') {
 		if (($comparison['assertion_type'] ?? '') !== 'explicit_original_provenance' || ($comparison['identity'] ?? null) !== $job['identity'] || ($comparison['sha256'] ?? '') !== $selected['file']['sha256']
 			|| ($comparison['compared_by'] ?? 0) !== (int)$selected['selection']['reviewed_by'] || empty($comparison['compared_at']) || !strtotime($comparison['compared_at']) || empty($comparison['reference']) || ($comparison['amounts_match'] ?? false) !== true
@@ -179,7 +186,8 @@ function recoveryApprove(Zend_Db_Adapter_Abstract $db, array $job, DEEC_Document
 		'snapshot_sha256' => $snapshot['sha256'], 'reconstruction_sha256' => $proof, 'approved_by' => $userId, 'approved_at' => gmdate('c'), 'manual' => true,
 		'method' => $selected['selection']['authorization']['method'] ?? 'individual_selection', 'authorization' => $selected['selection']['authorization'] ?? null,
 		'individual_original_comparison_claimed' => in_array($selected['selection']['original_comparison']['kind'] ?? '', ['paper_document', 'original_document', 'verified_dispatch_copy'], true),
-		'original_provenance_verified' => ($selected['selection']['original_comparison']['kind'] ?? '') === 'verified_historical_origin'];
+		'original_provenance_verified' => in_array($selected['selection']['original_comparison']['kind'] ?? '', ['verified_historical_origin', 'customer_archive_attestation'], true)];
+	if (($selected['selection']['original_comparison']['kind'] ?? '') === 'customer_archive_attestation') $approval['retrospective_customer_archive_comparison_attested'] = true;
 	reviewDirectory($job['directory'] . '/approvals');
 	$path = $job['directory'] . '/approvals/' . $selected['selection_sha256'] . '.json';
 	if (file_exists($path)) {
@@ -263,6 +271,7 @@ function recoverySelect(array $job, array $decision, int $userId, DEEC_DocumentA
 function recoveryReleaseEvidence(Zend_Db_Adapter_Abstract $db, array $job, array $selected, array $snapshot): void
 {
 	if ($selected['selection']['origin']['kind'] !== 'reconstructed' && isset($selected['selection']['original_comparison'])) recoveryOriginalComparison($job, $selected, new DEEC_DocumentArchive(dirname($job['directory'])));
+	if (($selected['selection']['original_comparison']['kind'] ?? '') === 'customer_archive_attestation' && ($selected['selection']['original_comparison']['snapshot_sha256'] ?? '') !== $snapshot['sha256']) throw new RuntimeException('Customer archive attestation data fingerprint is stale');
 	$authorization = $selected['selection']['authorization'] ?? null;
 	if (!$authorization) return;
 	if (!in_array($authorization['method'] ?? '', ['batch_policy', 'operator_attestation'], true) || ($authorization['confirmed_by'] ?? 0) !== (int)$selected['selection']['reviewed_by'] || ($authorization['database_and_file_backup_confirmed'] ?? false) !== true) throw new RuntimeException('Release authorization is invalid');
@@ -275,6 +284,23 @@ function recoveryReleaseEvidence(Zend_Db_Adapter_Abstract $db, array $job, array
 
 class DEEC_DocumentRecovery
 {
+	public static function customerArchiveAttestation(array $statement, array $identity, string $snapshot, string $sha): void
+	{
+		if (($identity['module'] ?? '') !== 'sales' || ($identity['controller'] ?? '') !== 'invoice') throw new RuntimeException('Customer archive invoice attestation requires sales/invoice');
+		if (($statement['document'] ?? null) !== $identity || ($statement['sha256'] ?? '') !== $sha || ($statement['snapshot_sha256'] ?? '') !== $snapshot) throw new RuntimeException('Document-bound declaration identity, SHA or data fingerprint differs');
+		foreach (['original_provenance_verified', 'identity_verified', 'customer_archive_compared', 'business_values_compared', 'positions_taxes_totals_match'] as $field) if (($statement[$field] ?? false) !== true) throw new RuntimeException('Explicit original provenance and archive/business-value comparison are required');
+		if (($statement['unresolved_differences'] ?? null) !== false || ($statement['differences'] ?? null) !== []) throw new RuntimeException('Unresolved PDF/business-data differences require manual clarification');
+		foreach (['provenance', 'comparison_reference'] as $field) if (!is_string($statement[$field] ?? null) || trim($statement[$field]) === '' || strlen($statement[$field]) > 4000) throw new RuntimeException('Concrete original provenance and comparison reference are required');
+		$time = $statement['comparison_performed_at'] ?? null;
+		if (!array_key_exists('comparison_performed_at', $statement)) throw new RuntimeException('Comparison time must explicitly be known or null');
+		if ($time !== null) {
+			if (!is_string($time) || !preg_match('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:Z|[+-]\d\d:\d\d)$/D', $time)) throw new RuntimeException('Invalid comparison time');
+			$date = DateTimeImmutable::createFromFormat('!Y-m-d\TH:i:sP', $time);
+			$errors = DateTimeImmutable::getLastErrors();
+			if (!$date || ($errors !== false && ($errors['warning_count'] || $errors['error_count'])) || $date->getTimestamp() > time()) throw new RuntimeException('Comparison time must be an actual known ISO timestamp or null');
+		}
+	}
+
 	public static function token(array $identity): string
 	{
 		$session = new Zend_Session_Namespace('DocumentRecovery');

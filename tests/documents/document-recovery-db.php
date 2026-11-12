@@ -597,4 +597,5 @@ foreach ($archivedBefore as $old) recoveryTestCheck($pdo->query('SELECT * FROM d
 foreach ($batchBefore as $table => $rows) recoveryTestCheck($pdo->query('SELECT * FROM `' . $table . '` ORDER BY id')->fetchAll(PDO::FETCH_ASSOC) === $rows, 'Batch release changed business or email rows');
 require __DIR__ . '/document-diagnostic-fixtures.php';
 require __DIR__ . '/document-original-review-fixtures.php';
+require __DIR__ . '/invoice-original-batch-fixtures.php';
 echo 'PASS: ' . $checks . " isolated recovery checks; eight types, retrospective attestations, policy releases, private reports, diagnostic PDFs and unchanged business rows\n";
