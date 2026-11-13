@@ -8,6 +8,22 @@ Select/radio options retain their existing HTML values: a list uses numeric keys
 
 Dependencies may be nested or declared with `depends_on`/`depends_value`. They refer to fields in the same step. Missing parents, cycles, ambiguous label matches, invalid field definitions and duplicate/reserved names across steps fail configuration validation. Browser dependency handling scopes triggers to the form, toggles the complete wrapper and disables inactive controls. The server evaluates the same dependency chain and excludes inactive values, including defaults and forged values, from validation and business data.
 
+`depends_value` also accepts a nonempty list of allowed values for the same parent, for example `"depends_on": "application", "depends_value": ["cooling", "climate"]`. This is a bounded membership condition, not a rule language. Nested field activity is evaluated against the complete element set before inactive elements are temporarily excluded from validation. A hidden ancestor disables every descendant, even when a stale descendant selection still matches its immediate parent.
+
+### Basic and advanced presentation
+
+Inquiry fields reuse DEEC_Form's `section`, `tab` and `col` metadata. The default tab stays visible; `"tab": "advanced"` renders that section inside a native, initially closed `details` element in the same form. Collapsing a section does not disable fields, remove their values, or change validation. Server errors open the affected section; browser invalid events reveal closed sections before focusing invalid inputs. All activity conditions still come exclusively from dependencies.
+
+The existing AJAX navigation now includes a back button. Back navigation retains the current filtered draft, including incomplete input; it does not approve it. Moving forward through unchanged earlier steps preserves later drafts. Changing an earlier step discards subsequent steps and selection results as before. Every step is revalidated before persistence.
+
+For optional numbers, `"attribs": {"min": "0", "step": "any", "data-min-exclusive": "0"}` requires a strictly positive value when supplied. The exclusive minimum is checked on the server and in browser validity; it is not applied to other numeric fields automatically. Temperature fields can retain `0`. Numeric comma inputs are normalized without the generic decimal filter's zero-to-null conversion. Nonfinite numeric input is rejected.
+
+### Country sources and delivery addresses
+
+Select fields may declare `"source": "country"` and `"options": {"": "Bitte Land wählen"}`. Every controller-created step loads options from `Shops_Model_DbTable_Country::getCountries()` for the current site tenant. Configured options cannot add country codes outside that source. Posted membership is validated on every step and again before persistence. No internal user/contact registry is required; no default country or tax approval follows from selecting a country. Other dynamic option sources are outside this change.
+
+`country` (legacy alias `land`) continues to supply the billing country. If `lieferadresse_abweichend` is absent or `nein`, the shipping snapshot copies the submitted billing address, preserving legacy forms. With `ja`, the structured fields `lieferempfaenger`, `lieferansprechpartner` (optional), `lieferstrasse`, `lieferplz`, `lieferstadt` and `lieferland` populate the existing `shipping*` columns separately. The required structured fields must be complete; `unbekannt` cannot be turned into a finished quote. Supplemental `lieferadresse` free text remains a request for manual review, not an address parser. Matching an existing email never supplies private master address data. Different delivery tax contexts continue to require manual review.
+
 Defaults must be explicit `default` values. A description promising 35 degrees does not supply an ambient-temperature input. Form 865 must be reviewed manually: make this calculation input required, or explicitly approve and configure a default and matching description. No production form configuration is modified by this change.
 
 Suggestions render independently of step number. Form and field descriptions supply the product-specific guidance; the previous fixed chiller sidebar has been removed. The legacy calculation supports `calculate.required_field` for its demand field (otherwise the calculation field's name, with the previous `kuehlleistung` convention retained for older factor-field configurations) and `calculate.unit` for display. No new technical selection engine is implemented.
@@ -74,8 +90,14 @@ Long document terms render below totals using the available page width and norma
 
 - `php tests/security/inquiry-dynamic-form.php`
 - `python3 tests/ui/inquiry-dependencies.py` (isolated Chromium, mobile and desktop)
+- `php tests/security/inquiry-pilot.php` (synthetic forms plus the local pilot when available)
+- `python3 tests/ui/inquiry-pilot.py` (actual field rendering, collapsed sections, browser validity and AJAX navigation)
 - `php tests/security/inquiry-selection.php`
 - `python3 tests/security/shop-inquiry-quote.py` (isolated MariaDB, actual PDFs and stubbed notifications)
 - Existing inquiry, contact workflow, calculation, PDF, archive, permission and email-fixture suites.
 
 The local references `/tmp/dewawi-inquiry-referenzen/form-865.fields.json` and `Angebot-50635-anonymisiert.pdf` are not committed. When available, the form reference is read by additional regression assertions. The PDF reference is inspected as a read-only layout reference, never regenerated or edited. Database fixtures, images and new PDFs are synthetic and isolated under the test runner's temporary root. Optional `DEWAWI_INQUIRY_TEST_ARTIFACT_DIR=/tmp/dewawi-inquiry-pdf-review` keeps synthetic PDFs for visual inspection; no real email transport is used.
+
+The revised pilot artifacts stay outside Git under `/tmp/dewawi-inquiry-pilot-865-2026-11-13/`: `form-865.pilot.fields.json`, the field CSV, proposed title/description in `form-865.metadata.json`, and local validation/handoff notes. They are not installed into any database. They retain the original numeric option meanings, use nested glycol dependencies and application-specific power fields, and remain `manual` / `automatic_quote: false`. The pilot now has 69 fields (including five structured delivery additions); this count is documentation, not an application rule. Unspecified technical data remain unspecified.
+
+The database runner additionally serves the actual Inquiry controller and views over isolated loopback HTTP, with real cookies/session navigation and the temporary MariaDB. It checks foreign tenant/shop forms and countries, CSRF, skipped steps, back navigation, comma/zero values, structured delivery, manual persistence and replay. Only site chrome, submission throttling and notification transport are stubbed; no real emails are sent. The router accepts only the test socket prefix and never loads application database credentials. A portable synthetic configuration is committed under `tests/security/fixtures`; the private reference files are not required to run the suites.

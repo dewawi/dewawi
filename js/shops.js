@@ -428,6 +428,12 @@ function dispatchSiteConversionElement(element) {
 function toggleDependentFields() {
 	$('form').each(function () {
 		const $form = $(this);
+		if (!$form.data('inquiry-details-handler')) {
+			this.addEventListener('invalid', function (event) {
+				$(event.target).parents('details').prop('open', true);
+			}, true);
+			$form.data('inquiry-details-handler', true);
+		}
 		function isActive($group, visited) {
 			if (!$group.length) return true;
 			const parent = $group.attr('data-depends-on');
@@ -437,7 +443,8 @@ function toggleDependentFields() {
 			if (!isActive($triggers.first().closest('.dependent-field'), visited.concat(parent))) return false;
 			const $choices = $triggers.filter(':radio, :checkbox');
 			const value = $choices.length ? ($choices.filter(':checked').val() || '0') : $triggers.first().val();
-			return String(value == null ? '' : value) === $group.attr('data-depends-value');
+			const values = $group.attr('data-depends-values');
+			return values ? JSON.parse(values).includes(String(value == null ? '' : value)) : String(value == null ? '' : value) === $group.attr('data-depends-value');
 		}
 		function update() {
 			$form.find('.dependent-field').each(function () {
@@ -450,8 +457,15 @@ function toggleDependentFields() {
 					$input.prop('disabled', !active || $input.data('dependency-disabled'));
 				});
 			});
+			$form.find('input[data-min-exclusive]').each(function () {
+				const minimum = this.getAttribute('data-min-exclusive');
+				this.setCustomValidity(!this.disabled && this.value !== '' && Number(this.value) <= Number(minimum) ? 'Bitte geben Sie einen Wert größer als ' + minimum + ' ein.' : '');
+			});
+			$form.find('details.inquiry-details').each(function () {
+				$(this).toggle($(this).find(':input:enabled').length > 0);
+			});
 		}
-		$form.off('change.inquiryDependencies').on('change.inquiryDependencies', ':input', update);
+		$form.off('.inquiryDependencies').on('change.inquiryDependencies input.inquiryDependencies', ':input', update);
 		update();
 	});
 }
@@ -510,6 +524,10 @@ function submitStep(formElement, currentStep) {
 $(document).on('submit', '#inquiry-form', function (event) {
 	event.preventDefault();
 	submitStep(this, String($(this).data('current-step') || ''));
+});
+
+$(document).on('click', '#inquiry-form [data-inquiry-back]', function () {
+	goBackStep(String($(this).closest('form').attr('data-current-step') || ''));
 });
 
 $(document).on('click', '[data-show-tab]', function () {

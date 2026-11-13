@@ -44,7 +44,7 @@
  *
  * Optional (logic / JS):
  * - depends_on (string)		Mapped internally to attribs['data-depends-on']
- * - depends_value (string)		Mapped internally to attribs['data-depends-value']
+ * - depends_value (string|array) Mapped to data-depends-value or data-depends-values
  *
  * Optional (HTML attributes):
  * - attribs (array)			ONLY real HTML attributes:
@@ -572,7 +572,11 @@ class DEEC_Form
 			$attribs['data-depends-on'] = (string)$clean['depends_on'];
 		}
 		if (array_key_exists('depends_value', $clean) && $clean['depends_value'] !== null && $clean['depends_value'] !== '') {
-			$attribs['data-depends-value'] = (string)$clean['depends_value'];
+			if(is_array($clean['depends_value'])) {
+				$attribs['data-depends-values'] = json_encode(array_map('strval', $clean['depends_value']));
+			} else {
+				$attribs['data-depends-value'] = (string)$clean['depends_value'];
+			}
 		}
 
 		$clean['attribs'] = $attribs;
@@ -1491,7 +1495,8 @@ class DEEC_Form
 		if(isset($attribs['data-depends-on'])) {
 			$wrapperClasses .= ' dependent-field';
 			$wrap = true;
-			$wrapperAttributes = ' data-depends-on="'.htmlspecialchars((string)$attribs['data-depends-on'], ENT_QUOTES, 'UTF-8').'" data-depends-value="'.htmlspecialchars((string)$attribs['data-depends-value'], ENT_QUOTES, 'UTF-8').'"';
+			$valueKey = isset($attribs['data-depends-values']) ? 'data-depends-values' : 'data-depends-value';
+			$wrapperAttributes = ' data-depends-on="'.htmlspecialchars((string)$attribs['data-depends-on'], ENT_QUOTES, 'UTF-8').'" '.$valueKey.'="'.htmlspecialchars((string)$attribs[$valueKey], ENT_QUOTES, 'UTF-8').'"';
 		}
 
 		if ($type === 'hidden') {

@@ -143,6 +143,11 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 			if ($request->getPost('back')) {
 				$currentIndex = array_search($step, $stepOrder);
+				$form->isValid($post);
+				$values = $form->getFilteredValues();
+				unset($values['csrf_token'], $values['inquiry_token'], $values['next'], $values['back']);
+				if($values !== ($this->formDataSession->formData[$step] ?? null)) $this->discardFollowingSteps($stepOrder, (int)$currentIndex);
+				$this->formDataSession->formData[$step] = $values;
 				$prevStep = $stepOrder[max(0, $currentIndex - 1)];
 
 				$prevForm = $this->createStepForm($prevStep);
@@ -190,9 +195,9 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 			// Save valid data to session under structured key
 			$formValues = $form->getFilteredValues();
-			unset($formValues['csrf_token'], $formValues['inquiry_token'], $formValues['next']);
+			unset($formValues['csrf_token'], $formValues['inquiry_token'], $formValues['next'], $formValues['back']);
 			$currentIndex = array_search($step, $stepOrder, true);
-			$this->discardFollowingSteps($stepOrder, (int)$currentIndex);
+			if($formValues !== ($this->formDataSession->formData[$step] ?? null)) $this->discardFollowingSteps($stepOrder, (int)$currentIndex);
 			$this->formDataSession->formData[$step] = $formValues;
 
 			if (($this->inquirySettings()['selection']['method'] ?? 'form_calc') === 'form_calc' && $this->hasCalculation($this->formConfig[$step])) {
@@ -243,7 +248,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 				$stepForm->isValid($stepValues);
 				$allFormValues = array_merge($allFormValues, $stepForm->getFilteredValues());
 			}
-			unset($allFormValues['csrf_token'], $allFormValues['inquiry_token'], $allFormValues['next']);
+			unset($allFormValues['csrf_token'], $allFormValues['inquiry_token'], $allFormValues['next'], $allFormValues['back']);
 			$selection = $this->evaluateSelection($allFormValues);
 
 			// Datenschutz-Checkbox MUSS bestätigt sein
@@ -392,12 +397,19 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 	protected function createStepForm(string $step): Shops_Form_DynamicForm
 	{
-		return new Shops_Form_DynamicForm(
+		$form = new Shops_Form_DynamicForm(
 			$this->formConfig,
 			$step,
 			$this->csrfToken,
 			$this->inquiryToken
 		);
+		$countries = null;
+		foreach($form->getElements() as $name => $element) {
+			if($element['source'] !== 'country') continue;
+			$countries ??= (new Shops_Model_DbTable_Country())->getCountries();
+			$form->addOptions($name, ['' => $element['options'][''] ?? 'Bitte wählen'] + $countries, 'replace');
+		}
+		return $form;
 	}
 
 	protected function getStepOrder(): array
@@ -1010,7 +1022,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 		$city = trim((string)($data['stadt'] ?? ''));
 		$country = trim((string)($data['country'] ?? $data['land'] ?? ''));
 
-		return [
+		$snapshot = [
 			'billingname1' => $name1,
 			'billingname2' => $name2,
 			'billingdepartment' => '',
@@ -1028,6 +1040,16 @@ class Shops_InquiryController extends Shops_Controller_Action
 			'shippingphone' => trim((string)($data['telefon'] ?? '')),
 			'taxfree' => 0,
 		];
+		$shipping = (string)($data['lieferadresse_abweichend'] ?? 'nein');
+		if(!in_array($shipping, ['ja', 'nein'], true)) throw new UnexpectedValueException('Delivery address requires review');
+		if($shipping === 'ja') {
+			foreach(['lieferempfaenger' => 'shippingname1', 'lieferstrasse' => 'shippingstreet', 'lieferplz' => 'shippingpostcode', 'lieferstadt' => 'shippingcity', 'lieferland' => 'shippingcountry'] as $field => $target) {
+				if(!is_scalar($data[$field] ?? null) || trim((string)$data[$field]) === '') throw new UnexpectedValueException('Incomplete delivery address');
+				$snapshot[$target] = trim((string)$data[$field]);
+			}
+			$snapshot['shippingname2'] = trim((string)($data['lieferansprechpartner'] ?? ''));
+		}
+		return $snapshot;
 	}
 
 	protected function generateQuotePdf(int $quoteId, bool $createOriginal = false): array

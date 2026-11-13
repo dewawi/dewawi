@@ -42,7 +42,7 @@ class Shops_Service_InquirySelection
 			$result['reasons'][] = 'capacity_not_verified';
 		}
 		if(isset($values['quantity']) && (self::decimal($values['quantity']) === null || self::decimal($values['quantity']) <= 0)) $result['reasons'][] = 'quantity_not_verified';
-		$contactFields = ['sku', 'titel', 'title', 'quantity', 'firma', 'company', 'ansprechpartner', 'firstname', 'lastname', 'vorname', 'nachname', 'name', 'email', 'telefon', 'phone', 'adresse', 'street', 'plz', 'postcode', 'stadt', 'city', 'country', 'land', 'projektname', 'reference', 'privacy'];
+		$contactFields = ['sku', 'titel', 'title', 'quantity', 'firma', 'company', 'ansprechpartner', 'firstname', 'lastname', 'vorname', 'nachname', 'name', 'email', 'telefon', 'phone', 'adresse', 'street', 'plz', 'postcode', 'stadt', 'city', 'country', 'land', 'projektname', 'reference', 'privacy', 'lieferadresse_abweichend', 'lieferempfaenger', 'lieferansprechpartner', 'lieferstrasse', 'lieferplz', 'lieferstadt', 'lieferland'];
 		$accepted = $selection['accepted_values'] ?? [];
 		$optionFields = $selection['option_fields'] ?? [];
 		if(!is_array($accepted) || !is_array($optionFields)) throw new InvalidArgumentException('Invalid selection coverage');
@@ -81,6 +81,8 @@ class Shops_Service_InquirySelection
 		$country = strtoupper(trim((string)($values['country'] ?? $values['land'] ?? '')));
 		$taxCountry = $settings['quote']['tax_country'] ?? null;
 		if(!is_string($taxCountry) || !preg_match('/^[A-Z]{2}$/D', $taxCountry) || $country !== $taxCountry) $result['reasons'][] = 'tax_review_required';
+		if(isset($values['lieferadresse_abweichend']) && !in_array($values['lieferadresse_abweichend'], ['ja', 'nein'], true)) $result['reasons'][] = 'delivery_review_required';
+		if(($values['lieferadresse_abweichend'] ?? '') === 'ja' && strtoupper(trim((string)($values['lieferland'] ?? ''))) !== $taxCountry) $result['reasons'][] = 'tax_review_required';
 		$result['reasons'] = array_values(array_unique($result['reasons']));
 		$result['options'] = array_values(array_unique($result['options']));
 		$result['eligible'] = !$result['reasons'];

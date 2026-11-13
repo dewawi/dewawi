@@ -42,14 +42,18 @@ class Shops_Model_FormConfig
 			self::collectFields($fields, $steps[$step], $names);
 			$byName = array_column($steps[$step], null, 'name');
 			foreach($steps[$step] as &$definition) {
-				if(isset($definition['depends_on']) && isset($byName[$definition['depends_on']])) $definition['depends_value'] = self::dependencyValue($byName[$definition['depends_on']], $definition['depends_value']);
+				if(isset($definition['depends_on']) && isset($byName[$definition['depends_on']])) {
+					$value = $definition['depends_value'];
+					$values = array_map(static fn($trigger): string => self::dependencyValue($byName[$definition['depends_on']], $trigger), (array)$value);
+					$definition['depends_value'] = is_array($value) ? array_values(array_unique($values)) : $values[0];
+				}
 				$field = $definition;
 				$visited = [$field['name']];
 				while(isset($field['depends_on'])) {
 					$parent = $field['depends_on'];
 					if(!isset($byName[$parent]) || in_array($parent, $visited, true)) throw new InvalidArgumentException('Invalid or cyclic field dependency');
 					$visited[] = $parent;
-					self::dependencyValue($byName[$parent], $field['depends_value']);
+					foreach((array)$field['depends_value'] as $trigger) self::dependencyValue($byName[$parent], $trigger);
 					$field = $byName[$parent];
 				}
 			}
@@ -71,7 +75,14 @@ class Shops_Model_FormConfig
 				$field['depends_on'] = $dependency['name'];
 				$field['depends_value'] = $dependency['value'];
 			}
-			if(isset($field['depends_on']) && (!is_string($field['depends_on']) || !array_key_exists('depends_value', $field) || !is_scalar($field['depends_value']))) throw new InvalidArgumentException('Invalid dependency');
+			if(isset($field['depends_on'])) {
+				$values = $field['depends_value'] ?? null;
+				if(!is_string($field['depends_on']) || (!is_scalar($values) && (!is_array($values) || !$values || array_values($values) !== $values))) throw new InvalidArgumentException('Invalid dependency');
+				foreach((array)$values as $value) if(!is_scalar($value)) throw new InvalidArgumentException('Invalid dependency value');
+			}
+			if(isset($field['source']) && ($field['source'] !== 'country' || $field['type'] !== 'select')) throw new InvalidArgumentException('Unknown inquiry option source');
+			$exclusiveMinimum = $field['attribs']['data-min-exclusive'] ?? null;
+			if($exclusiveMinimum !== null && ($field['type'] !== 'number' || !is_numeric($exclusiveMinimum) || !is_finite((float)$exclusiveMinimum))) throw new InvalidArgumentException('Invalid exclusive minimum');
 			if(in_array($field['type'], ['select', 'radio'], true)) {
 				if(!is_array($field['options'] ?? null) || !$field['options']) throw new InvalidArgumentException('Missing selection options');
 				foreach($field['options'] as $value => $label) {

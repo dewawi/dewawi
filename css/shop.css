@@ -1108,6 +1108,29 @@ form .hidden {
   margin-top: 4px;
 }
 
+#inquiry-form .inquiry-details {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  border: 1px solid #dce3e8;
+  border-radius: 8px;
+}
+
+#inquiry-form .inquiry-details summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#inquiry-form .inquiry-details[open] summary {
+  margin-bottom: 1rem;
+}
+
+#inquiry-form .inquiry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
 .sidebar {
   background-color: #f7fbff;
   border: 1px solid #e3edf5;

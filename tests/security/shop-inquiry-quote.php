@@ -124,7 +124,7 @@ $adapter = new Zend_Db_Adapter_Pdo_Mysql([
 	'dbname' => 'dewawi_shop_inquiry_quote_test', 'charset' => 'utf8mb4',
 ]);
 $structure = file_get_contents($root . '/install/config/structure.sql');
-foreach (['address', 'category', 'contact', 'currency', 'documentarchive', 'email', 'filename', 'footer', 'increment', 'item', 'itematr', 'itematrset', 'itemopt', 'itemoptset', 'itemvariantopt', 'media', 'language', 'pricerulepos', 'quote', 'quotepos', 'shopinquirydata', 'taxrate', 'template', 'uom'] as $table) {
+foreach (['address', 'category', 'contact', 'country', 'currency', 'documentarchive', 'email', 'filename', 'footer', 'increment', 'item', 'itematr', 'itematrset', 'itemopt', 'itemoptset', 'itemvariantopt', 'media', 'language', 'pricerulepos', 'quote', 'quotepos', 'shopinquirydata', 'shopinquiryform', 'taxrate', 'template', 'uom'] as $table) {
 	$adapter->query(inquiryQuoteSchema($structure, $table));
 }
 
@@ -539,6 +539,25 @@ $manualDraftInquiry = (new Shops_Model_DbTable_Inquirydata())->getById($manualDr
 $beforeNumber = $adapter->fetchOne('SELECT quoteid FROM increment WHERE clientid = 100');
 checkInquiryQuote($controller->restore($manualDraftInquiry)['status'] === 'manual_review', 'Customer replay finalized a manual quote draft');
 checkInquiryQuote(empty($adapter->fetchOne('SELECT quoteid FROM quote WHERE id = ?', [$manualDraftId])) && $adapter->fetchOne('SELECT quoteid FROM increment WHERE clientid = 100') === $beforeNumber, 'Manual draft replay consumed a document number');
+
+$deliveryData = array_replace($fullData, ['lieferadresse_abweichend' => 'ja', 'lieferempfaenger' => 'Submitted Delivery GmbH', 'lieferstrasse' => 'Submitted Delivery Street', 'lieferplz' => '54321', 'lieferstadt' => 'Delivery City', 'lieferland' => 'DE']);
+$deliveryInquiryId = (new Shops_Model_DbTable_Inquirydata())->save(865, str_repeat('a8', 16), $deliveryData);
+$deliveryQuoteId = $controller->createQuote($deliveryData, $deliveryInquiryId);
+$deliveryQuote = $adapter->fetchRow('SELECT * FROM quote WHERE id = ?', [$deliveryQuoteId]);
+checkInquiryQuote($deliveryQuote['billingstreet'] === 'Submitted Street 1' && $deliveryQuote['shippingstreet'] === 'Submitted Delivery Street' && $deliveryQuote['shippingname1'] === 'Submitted Delivery GmbH', 'Separate delivery snapshot copied master data or billing address');
+$foreignDelivery = array_replace($deliveryData, ['lieferland' => 'CH']);
+$foreignDeliveryId = (new Shops_Model_DbTable_Inquirydata())->save(865, str_repeat('b8', 16), $foreignDelivery);
+checkInquiryQuote($controller->createQuote($foreignDelivery, $foreignDeliveryId) === null, 'Different delivery tax context automatically offered');
+
+// The Python runner continues with actual HTTP requests against this isolated database.
+require __DIR__.'/fixtures/inquiry-pilot-config.php';
+$pilotPath = '/tmp/dewawi-inquiry-pilot-865-2026-11-13/form-865.pilot.fields.json';
+$pilotConfig = is_file($pilotPath) ? Shops_Model_FormConfig::decode(file_get_contents($pilotPath)) : inquiryPilotConfig();
+$adapter->insert('shopinquiryform', ['id' => 865, 'shopid' => 120, 'clientid' => 100, 'title' => 'Synthetic pilot inquiry', 'fields' => json_encode($pilotConfig), 'language' => 'de_DE', 'quotetemplateid' => 100]);
+$adapter->insert('shopinquiryform', ['id' => 866, 'shopid' => 121, 'clientid' => 100, 'title' => 'Other shop', 'fields' => json_encode(inquiryPilotConfig()), 'quotetemplateid' => 100]);
+$adapter->insert('shopinquiryform', ['id' => 867, 'shopid' => 120, 'clientid' => 200, 'title' => 'Other tenant', 'fields' => json_encode(inquiryPilotConfig()), 'quotetemplateid' => 100]);
+foreach(['DE' => 'Deutschland', 'CH' => 'Schweiz'] as $code => $name) $adapter->insert('country', ['code' => $code, 'name' => $name, 'language' => 'de_DE', 'clientid' => 100]);
+$adapter->insert('country', ['code' => 'XX', 'name' => 'Foreign fixture country', 'language' => 'de_DE', 'clientid' => 200]);
 
 if(getenv('DEWAWI_INQUIRY_TEST_ARTIFACT_DIR')) {
 	$artifactDir = getenv('DEWAWI_INQUIRY_TEST_ARTIFACT_DIR');
