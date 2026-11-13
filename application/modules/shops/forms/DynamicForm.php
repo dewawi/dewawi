@@ -46,9 +46,11 @@ class Shops_Form_DynamicForm extends DEEC_Form
 		$active = $this->getActiveValues($data);
 		$scalarData = $active;
 		$elements = $this->elements;
+		$activeElements = [];
 		foreach($this->elements as $name => $element) {
-			if(!$this->isFieldActive($name, $data)) unset($this->elements[$name]);
+			if($this->isFieldActive($name, $data)) $activeElements[$name] = $element;
 		}
+		$this->elements = $activeElements;
 		$invalidFields = [];
 		foreach ($this->getElements() as $name => $element) {
 			if (array_key_exists($name, $scalarData) && !is_scalar($scalarData[$name]) && $scalarData[$name] !== null) {

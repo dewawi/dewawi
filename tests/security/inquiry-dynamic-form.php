@@ -76,6 +76,39 @@ if(is_file($referencePath)) {
 	checkDynamic(!isset($referenceForm->getFilteredValues()['glykol_anteil']), 'Real hidden glycol default leaked');
 	checkDynamic(empty($referenceForm->getFilteredValues()['umgebung_temp_max']), 'Real description silently supplied 35 degrees');
 }
+$nested = [1 => [[
+	'name' => 'medium', 'type' => 'select', 'options' => ['Wasser', 'Wasser/Glykol'], 'required' => true, 'depends' => [
+		'1' => [
+			['name' => 'glykol_typ', 'type' => 'select', 'options' => ['EG', 'PG', 'Sonstiges'], 'required' => true, 'depends' => [
+				'2' => [['name' => 'glykol_typ_sonstiges', 'type' => 'text', 'required' => true]],
+			]],
+			['name' => 'glykol_bezugsart', 'type' => 'select', 'options' => ['masse' => 'Masse', 'volumen' => 'Volumen'], 'depends' => [
+				'volumen' => [['name' => 'glykol_bezugstemperatur', 'type' => 'number', 'required' => true]],
+			]],
+		],
+	],
+]]];
+set_error_handler(static function(int $severity, string $message): bool {
+	if($severity & (E_WARNING | E_NOTICE)) throw new ErrorException($message, 0, $severity);
+	return false;
+});
+try {
+	$nestedForm = new Shops_Form_DynamicForm($nested, 1);
+	checkDynamic($nestedForm->isValid(['medium' => '0', 'glykol_typ' => ['forged'], 'glykol_typ_sonstiges' => ['forged'], 'glykol_bezugstemperatur' => ['forged']]), 'Inactive nested fields warned or blocked water');
+	checkDynamic(!isset($nestedForm->getFilteredValues()['glykol_typ_sonstiges']), 'Inactive descendant leaked');
+	checkDynamic(!$nestedForm->isValid(['medium' => '1', 'glykol_typ' => '2', 'glykol_bezugsart' => 'volumen']), 'Active nested requirements accepted empty');
+	checkDynamic(isset($nestedForm->getErrors()['glykol_typ_sonstiges'], $nestedForm->getErrors()['glykol_bezugstemperatur']), 'Nested required errors missing');
+	checkDynamic($nestedForm->isValid(['medium' => '1', 'glykol_typ' => '2', 'glykol_typ_sonstiges' => 'Custom fluid', 'glykol_bezugsart' => 'volumen', 'glykol_bezugstemperatur' => '0']), 'Nested zero temperature rejected');
+	checkDynamic((string)$nestedForm->getFilteredValues()['glykol_bezugstemperatur'] === '0', 'Zero temperature lost');
+	checkDynamic($nestedForm->isValid(['medium' => '1', 'glykol_typ' => '1', 'glykol_typ_sonstiges' => ['forged'], 'glykol_bezugsart' => 'masse', 'glykol_bezugstemperatur' => ['forged']]), 'Inactive second-level fields blocked mass request');
+	checkDynamic(!isset($nestedForm->getFilteredValues()['glykol_typ_sonstiges'], $nestedForm->getFilteredValues()['glykol_bezugstemperatur']), 'Changed nested selection retained stale fields');
+	checkDynamic($nestedForm->isValid(['medium' => '0']), 'Repeated water validation failed');
+	$nestedForm->setValues(['medium' => '1', 'glykol_typ' => '2', 'glykol_typ_sonstiges' => 'Session value', 'glykol_bezugsart' => 'volumen', 'glykol_bezugstemperatur' => '0']);
+	checkDynamic($nestedForm->isValid($nestedForm->getValues()), 'Restored session values rejected');
+} finally {
+	restore_error_handler();
+}
 echo "PASS: $checks dynamic inquiry dependency, defaults and configuration checks\n";
 
 if(($argv[1] ?? '') === 'render') echo '<!--fixture-->'.(new Shops_Form_DynamicForm($fields, 1))->render();
+if(($argv[1] ?? '') === 'render-nested') echo '<!--fixture-->'.(new Shops_Form_DynamicForm($nested, 1))->render();
