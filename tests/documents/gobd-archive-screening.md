@@ -4,7 +4,7 @@ Alle konkreten Profile, Firmen-/Belegidentitäten, Quellen und Ergebnisse bleibe
 
 ## Zweck und Grenzen
 
-Der normale Ausgangsbelegexport bleibt streng: Ohne belastbaren Ausstellernachweis wird die betreffende PDF als Nichtlieferung ausgewiesen, während ihre CSV-Geschäftsdaten erhalten bleiben. Fehlende Konfiguration ist niemals eine automatische Ausstellerbestätigung.
+Der normale Ausgangsbelegexport liefert gültige registrierte Archiv-PDFs auch ohne separaten Ausstellernachweis. Offene Aussteller bleiben als `review_required` erkennbar; bestätigte Fremdaussteller werden gesperrt. Archiv-, Herkunfts-, Mandanten- und Integritätsprüfungen bleiben erforderlich. Fehlende Konfiguration ist niemals eine automatische Ausstellerbestätigung. Der hier beschriebene Prüf- und Freigabeablauf ist optional und keine Voraussetzung für den normalen Export.
 
 Der neue Ablauf reduziert den Aufwand für große Bestände durch einen direkten read-only Scan registrierter Archive, einen wiederverwendbaren privaten Textcache und eine Erklärung für einen exakt benannten Dokument-/SHA-Umfang. Dafür ist **kein ZIP-Zwischenexport aller PDFs und keine PDF-Neuerstellung** erforderlich. Ein Sammelnachweis braucht tatsächliche unabhängige Ausstellerbelege und eine ausdrückliche fachliche Bestätigung. Textbefunde allein dürfen ihn nicht begründen. Fehlen solche Belege, bleibt die Zuordnung offen; die Software gibt keine erfundenen Bestätigungen aus.
 
@@ -100,7 +100,7 @@ Die tatsächlich bestätigte Erklärung nach Sicherung der bisherigen Datei kont
 
 ## 5. Export und separate Freigabe der konkreten Übergabe
 
-Den normalen GoBD-Export in `/admin/export` mit PDFs erstellen. Die bestehende [private Konfiguration und Paketprüfung](gobd-package.md) bleibt erforderlich. ZIP, Liefernachweis und die exakt verwendete Erklärungs-/Scope-Version unverändert privat sichern. Fachliche CSVs, README, Metadaten und Strukturinformationen bleiben erhalten; bestätigte Fremdaussteller-PDFs werden weiterhin nicht geliefert. Ungeklärte Aussteller erscheinen als dokumentierte Lieferlücken.
+Den normalen GoBD-Export in `/admin/export` mit PDFs erstellen. Das bestehende [private Berichtsverzeichnis](gobd-package.md) bleibt erforderlich; Ausstellerprüfung und Paketfreigabe sind optional. ZIP, Liefernachweis und gegebenenfalls verwendete Erklärungs-/Scope-Version unverändert privat sichern. Fachliche CSVs, README, Metadaten und Strukturinformationen bleiben erhalten; bestätigte Fremdaussteller-PDFs werden weiterhin nicht geliefert. Ungeklärte Aussteller bleiben ausdrücklich unbestätigt, ohne allein deswegen eine Lieferlücke zu erzeugen.
 
 Zuerst den finalen technischen Preflight durchführen:
 

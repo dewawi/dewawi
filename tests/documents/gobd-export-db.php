@@ -10,7 +10,7 @@ umask(0077);
 $root = dirname(__DIR__, 2);
 if (in_array($argv[2] ?? '', ['--large-export', '--large-review'], true)) {
 	$db = recoveryBoot(migrationConfig($work . '/database.ini', 'production') + ['unix_socket' => $socket], $work . '/source', 7, 42);
-	gobdFixtureIssuerReview($db, 7);
+	putenv('DEWAWI_GOBD_ISSUER_REVIEW_DIR');
 	$name = (new DEEC_Export_Gobd($db, 7, 42))->export(BASE_PATH . '/files/export/7/0/7/', '2030-01-01', '2030-12-31', true, $argv[2] === '--large-review');
 	echo json_encode(['name' => $name, 'peak' => memory_get_peak_usage(true)], JSON_THROW_ON_ERROR);
 	exit;
@@ -205,13 +205,33 @@ putenv('DEWAWI_GOBD_REPORT_DIR=' . $privateReports);
 $issuerDirectory = getenv('DEWAWI_GOBD_ISSUER_REVIEW_DIR');
 $issuerPath = $issuerDirectory . '/' . $metadata['clientId'] . '.json';
 $issuerRecord = json_decode(file_get_contents($issuerPath), true, 512, JSON_THROW_ON_ERROR);
-putenv('DEWAWI_GOBD_ISSUER_REVIEW_DIR');
-$unconfirmedName = $export->export($destination, $metadata['from'], $metadata['to'], true);
-$unconfirmedZip = new ZipArchive(); $unconfirmedZip->open($destination . $unconfirmedName);
-$unconfirmedRows = exportCsv($unconfirmedZip, 'document_files.csv');
-exportCheck(count(array_filter($unconfirmedRows, static fn(array $row) => $row['pdf_supplied'] === '1')) === 0 && in_array('issuer_review_required', array_column($unconfirmedRows, 'missing_reason'), true), 'Archive registration alone confirmed an actual PDF issuer');
-exportCheck($unconfirmedZip->getFromName('invoices.csv') === $zip->getFromName('invoices.csv') && !json_decode($unconfirmedZip->getFromName('metadata.json'), true)['documents']['summary']['complete'], 'Issuer review removed fiscal data or hid PDF gaps');
-$unconfirmedZip->close();
+$emptyIssuerDirectory = $issuerDirectory . '/empty'; mkdir($emptyIssuerDirectory, 0700);
+foreach (['unconfigured', 'missing_file', 'unresolved'] as $mode) {
+	putenv($mode === 'unconfigured' ? 'DEWAWI_GOBD_ISSUER_REVIEW_DIR' : 'DEWAWI_GOBD_ISSUER_REVIEW_DIR=' . ($mode === 'missing_file' ? $emptyIssuerDirectory : $issuerDirectory));
+	if ($mode === 'unresolved') {
+		$pendingRecord = $issuerRecord;
+		foreach ($pendingRecord['decisions'] as &$decision) $decision['decision'] = 'unresolved';
+		unset($decision);
+		file_put_contents($issuerPath, json_encode($pendingRecord, JSON_THROW_ON_ERROR));
+	}
+	$unconfirmedName = $export->export($destination, $metadata['from'], $metadata['to'], true);
+	$unconfirmedZip = new ZipArchive(); exportCheck($unconfirmedZip->open($destination . $unconfirmedName, ZipArchive::CHECKCONS) === true, 'Optional issuer review broke ZIP creation');
+	$unconfirmedRows = exportCsv($unconfirmedZip, 'document_files.csv');
+	$unconfirmedMetadata = json_decode($unconfirmedZip->getFromName('metadata.json'), true, 512, JSON_THROW_ON_ERROR);
+	$expectedRows = $delivery;
+	foreach ($expectedRows as &$row) if ($row['pdf_supplied'] === '1') $row['issuer_status'] = 'review_required';
+	unset($row);
+	exportCheck($unconfirmedRows === $expectedRows, 'Optional issuer review suppressed PDFs, changed gaps or invented issuer confirmations: ' . $mode);
+	exportCheck($unconfirmedMetadata['documents']['summary'] === $metadata['documents']['summary'] && $unconfirmedMetadata['documents']['by_type'] === $metadata['documents']['by_type'], 'Optional issuer review changed actual delivery counts');
+	exportCheck($unconfirmedMetadata['professional_package_release_required'] === false && $unconfirmedMetadata['issuer_review_required_for_pdf_inclusion'] === false && str_contains($unconfirmedZip->getFromName('readme.txt'), 'unconfirmed issuer'), 'Optional issuer status or limitations are misrepresented');
+	for ($i = 0; $i < $legacy->numFiles; $i++) {
+		$file = $legacy->getNameIndex($i);
+		if (str_ends_with($file, '.csv')) exportCheck($unconfirmedZip->getFromName($file) === $legacy->getFromName($file) && $unconfirmedMetadata['csv_files'][$file]['rows'] === $metadata['csv_files'][$file]['rows'], 'Optional issuer review changed fiscal CSVs, dictionary or relationships');
+	}
+	foreach ($manifest as $row) exportCheck(hash('sha256', $unconfirmedZip->getFromName($row['zip_path'])) === $row['sha256'], 'Optional issuer review changed archive PDF bytes');
+	$unconfirmedZip->close();
+}
+file_put_contents($issuerPath, json_encode($issuerRecord, JSON_THROW_ON_ERROR));
 putenv('DEWAWI_GOBD_ISSUER_REVIEW_DIR=' . $issuerDirectory);
 $scopePath = dirname(BASE_PATH) . '/issuer-export-scope.json';
 $scopeIdentity = $issuerRecord['decisions'][0]['identity'];
@@ -226,7 +246,7 @@ $scopedName = $export->export($destination, $metadata['from'], $metadata['to'], 
 $scopedZip = new ZipArchive(); $scopedZip->open($destination . $scopedName);
 $scopedRow = array_values(array_filter(exportCsv($scopedZip, 'document_files.csv'), static fn(array $row) => $row['module'] === $scopeIdentity['module'] && $row['controller'] === $scopeIdentity['controller'] && $row['documentid'] === (string)$scopeIdentity['id']))[0];
 exportCheck($scopedRow['pdf_supplied'] === '1' && $scopedRow['issuer_status'] === 'scope_attested', 'Explicit independent scope evidence did not make the registered archive operational');
-exportCheck($scopedZip->getFromName('invoices.csv') === $zip->getFromName('invoices.csv') && json_decode($scopedZip->getFromName('metadata.json'), true)['professional_package_release_required'] === true, 'Scope evidence changed fiscal data or hid final package release');
+exportCheck($scopedZip->getFromName('invoices.csv') === $zip->getFromName('invoices.csv') && json_decode($scopedZip->getFromName('metadata.json'), true)['professional_package_release_required'] === false, 'Scope evidence changed fiscal data or made package release mandatory');
 $scopedZip->close();
 $negative = $issuerRecord['decisions'][0]; $negative['decision'] = 'confirmed_foreign_issuer';
 $scopedRecord['decisions'][] = $negative;
@@ -240,6 +260,7 @@ file_put_contents($issuerPath, json_encode($issuerRecord, JSON_THROW_ON_ERROR));
 $firstIdentity = $issuerRecord['decisions'][0]['identity'];
 $issuerRecord['decisions'][0]['decision'] = 'confirmed_foreign_issuer';
 $issuerRecord['decisions'][0]['actual_issuer'] = 'SYNTHETIC FOREIGN ISSUER';
+$issuerRecord['decisions'] = [$issuerRecord['decisions'][0]];
 file_put_contents($issuerPath, json_encode($issuerRecord, JSON_THROW_ON_ERROR));
 putenv('DEWAWI_GOBD_ISSUER_REVIEW_DIR=' . $issuerDirectory);
 $foreignName = $export->export($destination, $metadata['from'], $metadata['to'], true);
@@ -247,6 +268,7 @@ $foreignZip = new ZipArchive(); $foreignZip->open($destination . $foreignName);
 $foreignRows = exportCsv($foreignZip, 'document_files.csv');
 $foreignRow = array_values(array_filter($foreignRows, static fn(array $row) => $row['module'] === $firstIdentity['module'] && $row['controller'] === $firstIdentity['controller'] && $row['documentid'] === (string)$firstIdentity['id']))[0];
 exportCheck($foreignRow['pdf_supplied'] === '0' && $foreignRow['issuer_status'] === 'conflict' && $foreignRow['missing_reason'] === 'issuer_conflict' && $foreignRow['pdf_path'] === '', 'Confirmed foreign issuer entered the outgoing delivery');
+exportCheck(count(array_filter($foreignRows, static fn(array $row) => $row['pdf_supplied'] === '1' && $row['issuer_status'] === 'review_required')) === 7 && $foreignZip->getFromName('invoices.csv') === $zip->getFromName('invoices.csv'), 'A conflict without positive attestations suppressed unrelated archive PDFs or fiscal data');
 exportCheck(!str_contains($foreignZip->getFromName('metadata.json') . $foreignZip->getFromName('readme.txt') . $foreignZip->getFromName('document_files.csv'), 'SYNTHETIC FOREIGN ISSUER'), 'Private issuer evidence leaked externally');
 $foreignZip->close();
 gobdFixtureIssuerReview($db, (int)$metadata['clientId']);

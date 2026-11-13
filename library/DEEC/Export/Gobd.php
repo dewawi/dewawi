@@ -232,7 +232,8 @@ class DEEC_Export_Gobd
 		$metadata = json_decode(file_get_contents($directory . 'metadata.json'), true, 512, JSON_THROW_ON_ERROR);
 		$metadata['documents']['overview'] = ['file' => 'document_files.csv', 'columns' => $fields, 'key' => 'record_key', 'pdf_path' => 'Exact ZIP entry; empty when not supplied', 'pdf_supplied' => '1 for a verified registered archive PDF, including approved reconstructed duplicates', 'pdf_origin' => 'issued_original; verified_recovered_original; reviewed_reconstruction_duplicate; registered_archive_origin_unconfirmed; reconstruction_origin_unconfirmed; not_supplied. Reconstructed duplicates are not unchanged historical original files.', 'csv_reference' => 'csv_file/csv_key_column/csv_key_value identify the fiscal CSV row; types without a separate fiscal dataset refer to this overview', 'delivery_note' => 'supplied; requested_pdf_not_supplied; original_reference_not_supplied_issue_status_unconfirmed; draft_no_original_requested'];
 		unset($metadata['userId']);
-		$metadata['professional_package_release_required'] = true;
+		$metadata['professional_package_release_required'] = false;
+		$metadata['issuer_review_required_for_pdf_inclusion'] = false;
 		$metadata['documents']['overview']['issuer_status'] = 'manually_verified (individual full-document review); scope_attested (explicit independent evidence for the named SHA-bound scope); conflict; review_required; not_checked. Archive registration and tenant ID alone do not establish the actual PDF issuer; issued_original describes archive provenance, not dispatch.';
 		$metadata['documents']['overview']['missing_reason'] = 'Reason code for an undelivered requested PDF or unresolved original reference; detailed technical evidence remains in the private report';
 		$bytes = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
@@ -240,8 +241,8 @@ class DEEC_Export_Gobd
 		$this->writeReadme($directory . 'readme.txt', $metadata['from'], $metadata['to']);
 		$bytes = "\n\nRequested PDF delivery: " . ($metadata['documents']['summary']['complete'] ? 'COMPLETE for the stated stored dated-document scope' : 'INCOMPLETE')
 			. "\n" . json_encode($metadata['documents']['summary'], JSON_THROW_ON_ERROR)
-			. "\nOnly verified registered archive PDFs supported by explicit SHA-bound issuer evidence are supplied. scope_attested describes independently attested archive-scope evidence, not an individual full-document review. Approved reconstructed duplicates are identified by pdf_origin=reviewed_reconstruction_duplicate and are not unchanged historical original files. No unreviewed reconstructions or diagnostic PDFs are included."
-			. "\nA separate professional release of these exact ZIP bytes is required before handover; a technical preflight is not that release."
+			. "\nVerified registered archive PDFs are supplied without requiring separate issuer attestations. Confirmed foreign-issuer conflicts are withheld. review_required or not_checked records an unconfirmed issuer, not manual verification or an unavailable PDF. scope_attested describes independently attested archive-scope evidence, not an individual full-document review. Approved reconstructed duplicates are identified by pdf_origin=reviewed_reconstruction_duplicate and are not unchanged historical original files. No unreviewed reconstructions or diagnostic PDFs are included."
+			. "\nIssuer screening, detailed reviews and separate package release are optional operator tools. Archive integrity and PDF delivery do not establish the legal issuer or overall legal compliance."
 			. "\ndocument_files.csv lists every document in the requested stored-date scope, its fiscal CSV reference, supplied PDF path and any delivery gap. Deleted issued documents retain their flags and are included when a verified original exists."
 			. "\nEmpty pdf_path with pdf_supplied=0 explicitly means no PDF was delivered. Inspect delivery_note; missing requested originals make this delivery incomplete. Drafts without an original reference do not request a PDF."
 			. "\nPDFs use visible document numbers under documents/<module>/<type>/. pdf_origin distinguishes issued originals, verified recovered originals, approved reconstructed duplicates and uncertain provenance. Delivery completeness describes available archive PDFs, not historical original-file equivalence. Archive integrity and the full technical inventory were verified and retained internally. Completeness of this delivery is not an assertion of overall legal compliance.\n";
@@ -271,7 +272,7 @@ class DEEC_Export_Gobd
 				if (in_array($status, ['missing', 'excluded'], true) !== ($row['missing_reason'] !== '')) throw new RuntimeException('Delivery gap reason differs');
 				if (isset($counts[$status])) $counts[$status]++;
 				if ($status === 'included') {
-					if (!in_array($row['issuer_status'], ['manually_verified', 'scope_attested'], true)) throw new RuntimeException('Delivered PDF issuer is unconfirmed');
+					if (!in_array($row['issuer_status'], ['manually_verified', 'scope_attested', 'review_required', 'not_checked'], true)) throw new RuntimeException('Delivered PDF issuer status is invalid or conflicting');
 					if (($this->documentFiles[$row['pdf_path']]['document_key'] ?? null) !== $row['record_key']) throw new RuntimeException('Delivered PDF document identity differs');
 					if (!$row['issued'] || !isset($this->documentFiles[$row['pdf_path']]) || isset($paths[$row['pdf_path']]) || !str_starts_with($row['pdf_path'], 'documents/' . $row['module'] . '/' . $row['controller'] . '/')) throw new RuntimeException('Delivered PDF assignment differs');
 					if ($row['pdf_origin'] !== ($this->documentFiles[$row['pdf_path']]['pdf_origin'] ?? '') || !in_array($row['pdf_origin'], ['issued_original', 'verified_recovered_original', 'reviewed_reconstruction_duplicate', 'registered_archive_origin_unconfirmed', 'reconstruction_origin_unconfirmed'], true)) throw new RuntimeException('Delivered PDF provenance differs');
@@ -387,7 +388,7 @@ class DEEC_Export_Gobd
 										$issuer = $this->issuer->check($identity, $original['sha256']);
 										$row['issuer_status'] = $issuer['status'];
 										$row['issuer_evidence'] = json_encode($issuer, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-										if ($issuer['reason'] !== '') throw new RuntimeException($issuer['reason']);
+										if ($issuer['status'] === 'conflict') throw new RuntimeException($issuer['reason']);
 									}
 									$name = $this->documentZipPath($this->reviewExport ? 'originals' : 'documents', $module, $controller, $document);
 									$this->documentFiles[$name] = ['path' => BASE_PATH . '/' . $original['path'], 'size' => (int)$original['filesize'], 'sha256' => $original['sha256'], 'pdf_origin' => $pdfOrigin, 'document_key' => $key];
