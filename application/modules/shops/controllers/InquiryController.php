@@ -460,6 +460,11 @@ class Shops_InquiryController extends Shops_Controller_Action
 			$matches = $this->findMatchingReferences($referenceRows, $targetValue, $requiredCooling, $tolerance * 2);
 		}
 
+		foreach($matches as &$match) {
+			$match['required'] = $requiredCooling;
+			$match['unit'] = 'kW';
+		}
+		unset($match);
 		return $this->filterAvailableSuggestions($matches);
 	}
 
@@ -518,6 +523,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 				'images' => $mediaDb->getMedia((int)$item['id'], 'items', 'item'),
 				'description' => (string)$item['sku'],
 				'value' => $suggestion['value'],
+				'required' => $suggestion['required'] ?? null,
+				'unit' => $suggestion['unit'] ?? '',
 				'percent' => $suggestion['percent'],
 			];
 		}

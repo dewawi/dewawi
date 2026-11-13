@@ -1487,6 +1487,13 @@ class DEEC_Form
 		// Render by type
 		// ------------------------------------------------------------
 
+		$wrapperAttributes = '';
+		if(isset($attribs['data-depends-on'])) {
+			$wrapperClasses .= ' dependent-field';
+			$wrap = true;
+			$wrapperAttributes = ' data-depends-on="'.htmlspecialchars((string)$attribs['data-depends-on'], ENT_QUOTES, 'UTF-8').'" data-depends-value="'.htmlspecialchars((string)$attribs['data-depends-value'], ENT_QUOTES, 'UTF-8').'"';
+		}
+
 		if ($type === 'hidden') {
 			$hiddenAttribs = $attribs;
 			$hiddenAttribs['type'] = 'hidden';
@@ -1495,7 +1502,8 @@ class DEEC_Form
 
 			unset($hiddenAttribs['class']);
 
-			return '<input' . $this->renderHtmlAttribs($hiddenAttribs) . '>';
+			$hidden = '<input' . $this->renderHtmlAttribs($hiddenAttribs) . '>';
+			return $wrapperAttributes !== '' ? '<div class="dependent-field"'.$wrapperAttributes.'>'.$hidden.'</div>' : $hidden;
 		}
 
 		if ($type === 'button') {
@@ -1543,7 +1551,7 @@ class DEEC_Form
 				. '</button>';
 
 			return $wrap
-				? '<div class="' . $wrapperClasses . '">' . $button . '</div>'
+				? '<div class="' . $wrapperClasses . '"' . $wrapperAttributes . '>' . $button . '</div>'
 				: $button;
 		}
 
@@ -1577,7 +1585,7 @@ class DEEC_Form
 				. '</button>';
 
 			return $wrap
-				? '<div class="' . $wrapperClasses . '">' . $button . '</div>'
+				? '<div class="' . $wrapperClasses . '"' . $wrapperAttributes . '>' . $button . '</div>'
 				: $button;
 		}
 
@@ -1599,7 +1607,7 @@ class DEEC_Form
 				. "<textarea$taAttrs>".htmlspecialchars((string)$val)."</textarea>"
 				. $errorHtml . $desc . $info;
 
-			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$field.'</div>' : $field;
+			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'"'.$wrapperAttributes.'>'.$field.'</div>' : $field;
 		}
 
 		if ($type === 'select') {
@@ -1632,7 +1640,7 @@ class DEEC_Form
 				. "<select$selAttrs>$opts</select>"
 				. $errorHtml . $desc . $info;
 
-			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$field.'</div>' : $field;
+			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'"'.$wrapperAttributes.'>'.$field.'</div>' : $field;
 		}
 
 		if ($type === 'checkbox') {
@@ -1664,7 +1672,7 @@ class DEEC_Form
 			$checkbox .= '</label>';
 			$checkbox .= $errorHtml . $desc . $info;
 
-			return $wrap ? '<div class="'.$wrapperClasses.'">'.$checkbox.'</div>' : $checkbox;
+			return $wrap ? '<div class="'.$wrapperClasses.'"'.$wrapperAttributes.'>'.$checkbox.'</div>' : $checkbox;
 		}
 
 		if ($type === 'radio') {
@@ -1680,6 +1688,8 @@ class DEEC_Form
 				$field .= '<input type="radio"'
 					. ' name="'.$nameEsc.'"'
 					. ' value="'.htmlspecialchars((string)$optValue).'"'
+					. (isset($attribs['required']) ? ' required' : '')
+					. (isset($attribs['disabled']) ? ' disabled' : '')
 					. (isset($attribs['data-default']) ? ' data-default="'.htmlspecialchars((string)$attribs['data-default']).'"' : '')
 					. ($checked ? ' checked' : '')
 					. '>';
@@ -1690,7 +1700,7 @@ class DEEC_Form
 			$field .= '</div>';
 			$field .= $errorHtml . $desc . $info;
 
-			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$field.'</div>' : $field;
+			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'"'.$wrapperAttributes.'>'.$field.'</div>' : $field;
 		}
 
 		if ($type === 'multicheckbox') {
@@ -1732,7 +1742,7 @@ class DEEC_Form
 			$field .= '</div>';
 			$field .= $errorHtml . $desc . $info;
 
-			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$field.'</div>' : $field;
+			return $wrap ? '<div class="'.$wrapperClasses.$colClass.'"'.$wrapperAttributes.'>'.$field.'</div>' : $field;
 		}
 
 		// ------------------------------------------------------------
@@ -1744,7 +1754,7 @@ class DEEC_Form
 			. "<input$attrs$valueAttr>"
 			. $errorHtml . $desc . $info;
 
-		return $wrap ? '<div class="'.$wrapperClasses.$colClass.'">'.$field.'</div>' : $field;
+		return $wrap ? '<div class="'.$wrapperClasses.$colClass.'"'.$wrapperAttributes.'>'.$field.'</div>' : $field;
 	}
 
 	public function getMultiElements(): array

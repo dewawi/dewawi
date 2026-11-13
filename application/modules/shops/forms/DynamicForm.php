@@ -4,6 +4,7 @@ class Shops_Form_DynamicForm extends DEEC_Form
 {
 	public function __construct(array $config, $step = null, string $csrfToken = '', string $inquiryToken = '')
 	{
+		$config = Shops_Model_FormConfig::normalize($config);
 		$this->setMethod('post');
  	 	$this->currentStep = $step;
 
@@ -29,17 +30,6 @@ class Shops_Form_DynamicForm extends DEEC_Form
 			}
 
 			$this->addElement($field);
-
-			// Dependent fields
-			if (!empty($field['depends']) && is_array($field['depends'])) {
-				foreach ($field['depends'] as $triggerValue => $deps) {
-					foreach ($deps as $dep) {
-						$dep['depends_on'] = $field['name'];
-						$dep['depends_value'] = $triggerValue;
-						$this->addElement($dep);
-					}
-				}
-			}
 		}
 
 		// Submit button
@@ -53,7 +43,12 @@ class Shops_Form_DynamicForm extends DEEC_Form
 
 	public function isValid(array $data)
 	{
-		$scalarData = $data;
+		$active = $this->getActiveValues($data);
+		$scalarData = $active;
+		$elements = $this->elements;
+		foreach($this->elements as $name => $element) {
+			if(!$this->isFieldActive($name, $data)) unset($this->elements[$name]);
+		}
 		$invalidFields = [];
 		foreach ($this->getElements() as $name => $element) {
 			if (array_key_exists($name, $scalarData) && !is_scalar($scalarData[$name]) && $scalarData[$name] !== null) {
@@ -63,17 +58,28 @@ class Shops_Form_DynamicForm extends DEEC_Form
 		}
 
 		$valid = parent::isValid($scalarData);
+		$validated = $this->elements;
+		$this->elements = $elements;
+		foreach($validated as $name => $element) $this->elements[$name] = $element;
+		foreach($this->elements as $name => $element) {
+			if(!$this->isFieldActive($name, $data)) $this->elements[$name]['value'] = null;
+		}
 		foreach ($invalidFields as $name) {
 			$this->errors[$name][] = 'invalid';
 			$valid = false;
 		}
 
 		foreach ($this->getElements() as $name => $element) {
-			if (!array_key_exists($name, $data)) continue;
-			if (!is_scalar($data[$name]) && $data[$name] !== null) continue;
+			if(!$this->isFieldActive($name, $data)) continue;
+			if(in_array($element['type'], ['select', 'radio'], true) && isset($active[$name]) && is_scalar($active[$name]) && $active[$name] !== '' && !array_key_exists((string)$active[$name], $element['options'])) {
+				$this->errors[$name][] = 'invalid';
+				$valid = false;
+			}
+			if (!array_key_exists($name, $active)) continue;
+			if (!is_scalar($active[$name]) && $active[$name] !== null) continue;
 			$maximum = (int)($element['attribs']['maxlength'] ?? 0);
 			if ($maximum <= 0) continue;
-			$length = function_exists('mb_strlen') ? mb_strlen((string)$data[$name], 'UTF-8') : strlen((string)$data[$name]);
+			$length = function_exists('mb_strlen') ? mb_strlen((string)$active[$name], 'UTF-8') : strlen((string)$active[$name]);
 			if ($length > $maximum) {
 				$this->errors[$name][] = 'maxlength';
 				$valid = false;
@@ -82,5 +88,30 @@ class Shops_Form_DynamicForm extends DEEC_Form
 
 		return $valid;
 	}
-}
 
+	public function isFieldActive(string $name, array $data): bool
+	{
+		$element = $this->elements[$name];
+		$parent = $element['attribs']['data-depends-on'] ?? null;
+		if($parent === null) return true;
+		if(!$this->isFieldActive($parent, $data)) return false;
+		$trigger = $data[$parent] ?? $this->elements[$parent]['default'] ?? '';
+		return is_scalar($trigger) && (string)$trigger === (string)$element['attribs']['data-depends-value'];
+	}
+
+	public function getActiveValues(array $data): array
+	{
+		$values = [];
+		foreach($this->elements as $name => $element) {
+			if(!$this->isFieldActive($name, $data)) continue;
+			if(array_key_exists($name, $data)) $values[$name] = $data[$name];
+			elseif($element['default'] !== null) $values[$name] = $element['default'];
+		}
+		return $values;
+	}
+
+	public function getFilteredValues(): array
+	{
+		return $this->getActiveValues(parent::getFilteredValues());
+	}
+}

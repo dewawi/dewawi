@@ -27,7 +27,7 @@ $categories = $this->{'categories'};
 								</div>
 							<?php endif; ?>
 
-							<?php if (($this->step == '2') && !empty($this->requestValues)): ?>
+							<?php if (!empty($this->requestValues)): ?>
 							<div class="alert alert-info">
 								<h5>Ihre Angaben:</h5>
 								<ul>
@@ -38,7 +38,7 @@ $categories = $this->{'categories'};
 							</div>
 							<?php endif; ?>
 
-							<?php if (($this->step == '2') && !empty($this->suggestions)): ?>
+							<?php if (!empty($this->suggestions)): ?>
 								<div class="alert alert-info">
 									<h5>Geräteempfehlung basierend auf Ihrer Berechnung:</h5>
 									<div class="row">
@@ -73,11 +73,13 @@ $categories = $this->{'categories'};
 														<div class="card-body">
 															<h5 class="card-title"><?= $this->escape($item['item']['title']); ?></h5>
 															<p class="card-text"><?= $this->escape($item['item']['description']); ?></p>
+															<?php if(isset($item['required'])): ?>
 															<p class="text-muted">
-																Anforderung: <?= number_format($this->requestValues['kuehlleistung'], 2, ',', '.') ?> kW
+																Anforderung: <?= number_format($item['required'], 2, ',', '.') ?> <?= $this->escape($item['unit'] ?? ''); ?>
 															</p>
+															<?php endif; ?>
 															<p>
-																<strong>Berechneter Wert: <?= number_format($item['value'], 2, ',', '.') ?> kW (<?= number_format($this->escape($item['percent']), 2, ',', '.') ?> %)</strong>
+																<strong>Berechneter Wert: <?= number_format($item['value'], 2, ',', '.') ?> <?= $this->escape($item['unit'] ?? ''); ?> (<?= number_format($this->escape($item['percent']), 2, ',', '.') ?> %)</strong>
 															</p>
 															<?php if ($hasSpecial): ?>
 																<p class="fw-bold"><strong style="color:#008000;font-size:1.3rem;">Sonderpreis: <?= number_format($special, 2, ',', '.') ?> €</strong>

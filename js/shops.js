@@ -426,22 +426,33 @@ function dispatchSiteConversionElement(element) {
 }
 
 function toggleDependentFields() {
-	$('.dependent-field').each(function () {
-		const $group = $(this);
-		const dependsOn = $group.data('depends-on');
-		const dependsValue = $group.data('depends-value');
-		const $trigger = $('[name="' + dependsOn + '"]');
-
-		function toggleField() {
-			if ($trigger.val() === dependsValue) {
-				$group.show();
-			} else {
-				$group.hide();
-			}
+	$('form').each(function () {
+		const $form = $(this);
+		function isActive($group, visited) {
+			if (!$group.length) return true;
+			const parent = $group.attr('data-depends-on');
+			if (visited.includes(parent)) return false;
+			const $triggers = $form.find(':input').filter(function () { return this.name === parent; });
+			if (!$triggers.length) return false;
+			if (!isActive($triggers.first().closest('.dependent-field'), visited.concat(parent))) return false;
+			const $choices = $triggers.filter(':radio, :checkbox');
+			const value = $choices.length ? ($choices.filter(':checked').val() || '0') : $triggers.first().val();
+			return String(value == null ? '' : value) === $group.attr('data-depends-value');
 		}
-
-		toggleField(); // Initial check
-		$trigger.on('change', toggleField);
+		function update() {
+			$form.find('.dependent-field').each(function () {
+				const $group = $(this);
+				const active = isActive($group, []);
+				$group.toggle(active).attr('aria-hidden', String(!active));
+				$group.find(':input').each(function () {
+					const $input = $(this);
+					if ($input.data('dependency-disabled') === undefined) $input.data('dependency-disabled', this.disabled);
+					$input.prop('disabled', !active || $input.data('dependency-disabled'));
+				});
+			});
+		}
+		$form.off('change.inquiryDependencies').on('change.inquiryDependencies', ':input', update);
+		update();
 	});
 }
 
