@@ -85,6 +85,8 @@ try {
 		if ($index === 0) {
 			$actor = Zend_Registry::get('User'); Zend_Registry::set('User', array_replace($actor, ['admin' => 1]));
 			$exportDir = $base . '/files/export/7/0/7/';
+			require_once __DIR__ . '/gobd-issuer-fixture.php';
+			gobdFixtureIssuerReview($webDb, (int)Zend_Registry::get('Client')['id']);
 			$internalName = (new DEEC_Export_Gobd($webDb, 7, 42))->export($exportDir, '2010-01-01', '2010-12-31', false, true);
 			$internal = new ZipArchive(); $internal->open($exportDir . $internalName);
 			$stream = $internal->getStream('document_manifest.csv'); $columns = fgetcsv($stream, 0, ';', '"', ''); $found = false;

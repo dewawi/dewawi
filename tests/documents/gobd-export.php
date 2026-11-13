@@ -12,6 +12,7 @@ require_once $root . '/library/DEEC/Export/Gobd.php';
 class GobdAuditExport extends DEEC_Export_Gobd
 {
 	public function __construct() {}
+	public function csv(string $path, array $rows, array $columns): void { $this->writeCsv($path, $rows, $columns); }
 	public function profile(): array { return $this->getProfile(); }
 	public function readme(string $path): void { $this->clientId = 7; $this->writeReadme($path, '2026-05-01', '2026-12-31'); }
 }
@@ -39,6 +40,16 @@ try {
 } finally {
 	unlink($readme);
 }
+
+$csv = tempnam(sys_get_temp_dir(), 'dewawi-gobd-csv-');
+try {
+	$values = ["Synthetic \"quoted\" value", "Synthetic trailing \\", "Synthetic \\\"quoted\" and newline\nvalue", ''];
+	$rows = array_map(static fn(string $value) => ['key' => 'synthetic', 'value' => $value], $values);
+	$export->csv($csv, $rows, ['key', 'value']);
+	$handle = fopen($csv, 'rb'); fgetcsv($handle, 0, ';', '"', '');
+	foreach ($values as $value) gobdCheck(fgetcsv($handle, 0, ';', '"', '') === ['synthetic', $value], 'CSV quoting changed a stored value');
+	fclose($handle);
+} finally { unlink($csv); }
 
 foreach ([['2019-01-01', '2021-12-31'], ['2034-02-28', '2034-02-28'], ['2024-02-29', '2024-03-01']] as [$from, $to]) DEEC_Export_Gobd::validatePeriod($from, $to, true);
 foreach ([['2019-02-29', '2020-01-01'], ['2026-11-13', '2026-11-12'], ['2026-1-01', '2026-12-31'], [null, null]] as [$from, $to]) {

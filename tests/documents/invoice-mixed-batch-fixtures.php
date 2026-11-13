@@ -126,6 +126,8 @@ foreach (DEEC_DocumentArchive::documents() as $module => $controllers) $rights[$
 $pdo->prepare('UPDATE permission SET sales = ?, purchases = ? WHERE userid = 142')->execute([$rights['sales'], $rights['purchases']]);
 $exportDb = recoveryBoot(migrationConfig($work . '/database.ini', 'production') + ['unix_socket' => $socket], $base, 100, 142);
 $destination = $base . '/files/export/1/0/100/'; reviewDirectory(rtrim($destination, '/'));
+require_once __DIR__ . '/gobd-issuer-fixture.php';
+gobdFixtureIssuerReview($exportDb, (int)Zend_Registry::get('Client')['id']);
 $package = (new DEEC_Export_Gobd($exportDb, 100, 142))->export($destination, '2010-01-01', '2010-12-31', true);
 $zip = new ZipArchive(); $zip->open($destination . $package);
 $stream = $zip->getStream('document_files.csv'); $columns = fgetcsv($stream, 0, ';', '"', ''); $origins = [];

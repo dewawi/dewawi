@@ -19,6 +19,7 @@ class DEEC_Permission
 			|| (in_array([$module, $parent], [['processes', 'process'], ['tasks', 'task'], ['campaigns', 'campaign']], true) && $type === 'pos');
 	}
 
+	// Technical write protection; this classification is not evidence of customer dispatch.
 	public static function isDocumentReadonly(string $module, string $controller, array $row): bool
 	{
 		return self::isDocument($module, $controller) && (

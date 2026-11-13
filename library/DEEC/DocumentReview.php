@@ -38,6 +38,12 @@ class DEEC_DocumentReview
 		return $value;
 	}
 
+	public static function privateDirectory(string $path): void
+	{
+		if (realpath($path) !== $path || !is_dir($path) || (fileperms($path) & 0777) !== 0700) throw new RuntimeException('A canonical private directory with mode 0700 is required');
+		foreach ([BASE_PATH, dirname(__DIR__, 2)] as $root) if ($path === $root || str_starts_with($path, $root . '/')) throw new RuntimeException('Private operator files must be outside the installation and repository');
+	}
+
 	public static function snapshot(Zend_Db_Adapter_Abstract $db, array $identity, bool $lock = false): array
 	{
 		if (!Zend_Registry::isRegistered('User') || !Zend_Registry::isRegistered('Client')) throw new RuntimeException('Document review access denied');

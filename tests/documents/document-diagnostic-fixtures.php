@@ -102,6 +102,8 @@ recoveryTestCli(['run' => $diagnosticRunPath, 'action' => 'release', 'only' => r
 $diagnosticDb = recoveryBoot(migrationConfig($work . '/database.ini', 'production') + ['unix_socket' => $socket], $base, 7, 42);
 $diagnosticUser = Zend_Registry::get('User'); Zend_Registry::set('User', array_replace($diagnosticUser, ['admin' => 1]));
 $diagnosticExportDir = $base . '/files/export/7/0/7/'; reviewDirectory(rtrim($diagnosticExportDir, '/'));
+require_once __DIR__ . '/gobd-issuer-fixture.php';
+gobdFixtureIssuerReview($diagnosticDb, (int)Zend_Registry::get('Client')['id']);
 $diagnosticExportName = (new DEEC_Export_Gobd($diagnosticDb, 7, 42))->export($diagnosticExportDir, '2010-01-01', '2010-12-31', false, true);
 $diagnosticZip = new ZipArchive(); $diagnosticZip->open($diagnosticExportDir . $diagnosticExportName, ZipArchive::CHECKCONS);
 $stream = $diagnosticZip->getStream('document_manifest.csv'); $fields = fgetcsv($stream, 0, ';', '"', ''); $diagnosticRows = [];

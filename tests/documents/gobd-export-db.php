@@ -5,10 +5,12 @@ $socket = $argv[1] ?? '';
 $work = realpath(dirname($socket));
 if (!$work || !preg_match('~^/tmp/dewawi-gobd-export-db-[a-zA-Z0-9_]+$~D', $work) || $socket !== $work . '/mysql.sock') throw new RuntimeException('Only an isolated GoBD test socket is accepted');
 require __DIR__ . '/document-recovery.php';
+require __DIR__ . '/gobd-issuer-fixture.php';
 umask(0077);
 $root = dirname(__DIR__, 2);
 if (in_array($argv[2] ?? '', ['--large-export', '--large-review'], true)) {
 	$db = recoveryBoot(migrationConfig($work . '/database.ini', 'production') + ['unix_socket' => $socket], $work . '/source', 7, 42);
+	gobdFixtureIssuerReview($db, 7);
 	$name = (new DEEC_Export_Gobd($db, 7, 42))->export(BASE_PATH . '/files/export/7/0/7/', '2030-01-01', '2030-12-31', true, $argv[2] === '--large-review');
 	echo json_encode(['name' => $name, 'peak' => memory_get_peak_usage(true)], JSON_THROW_ON_ERROR);
 	exit;
@@ -102,6 +104,7 @@ $before = [];
 foreach ($tables as $table) $before[$table] = $pdo->query('SELECT * FROM `' . $table . '` ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
 $fileBefore = [];
 foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base . '/files/documents', FilesystemIterator::SKIP_DOTS)) as $file) $fileBefore[$file->getPathname()] = [filesize($file->getPathname()), hash_file('sha256', $file->getPathname()), filemtime($file->getPathname())];
+gobdFixtureIssuerReview($db, 7);
 $export = new DEEC_Export_Gobd($db, 7, 42);
 class GobdFilenameFixture extends DEEC_Export_Gobd
 {
@@ -124,11 +127,12 @@ for ($i = 0; $i < $legacy->numFiles; $i++) {
 	$file = $legacy->getNameIndex($i);
 	if (str_ends_with($file, '.csv')) exportCheck($legacy->getFromName($file) === $zip->getFromName($file), 'Optional images changed an existing CSV dataset: ' . $file);
 }
+$metadataClient = (int)Zend_Registry::get('Client')['id'];
 $technical = new ZipArchive();
-exportCheck($technical->open($destination . '.gobd-reports/' . $name . '.audit.zip', ZipArchive::CHECKCONS) === true, 'Private technical inventory is missing');
-$verification = json_decode(file_get_contents($destination . '.gobd-reports/' . $name . '.verification.json'), true, 512, JSON_THROW_ON_ERROR);
-exportCheck($verification['sha256'] === hash_file('sha256', $destination . $name) && $verification['technical_inventory_sha256'] === hash_file('sha256', $destination . '.gobd-reports/' . $name . '.audit.zip') && $verification['verified_by'] === 42 && strtotime($verification['verified_at']) > 0, 'Internal delivery verification is invalid');
-exportCheck((fileperms($destination . '.gobd-reports') & 0777) === 0700 && (fileperms($destination . '.gobd-reports/' . $name . '.audit.zip') & 0777) === 0600, 'Internal verification is not private');
+exportCheck($technical->open(getenv('DEWAWI_GOBD_REPORT_DIR') . '/' . $metadataClient . '/' . $name . '.audit.zip', ZipArchive::CHECKCONS) === true, 'Private technical inventory is missing');
+$verification = json_decode(file_get_contents(getenv('DEWAWI_GOBD_REPORT_DIR') . '/' . $metadataClient . '/' . $name . '.verification.json'), true, 512, JSON_THROW_ON_ERROR);
+exportCheck($verification['sha256'] === hash_file('sha256', $destination . $name) && $verification['technical_inventory_sha256'] === hash_file('sha256', getenv('DEWAWI_GOBD_REPORT_DIR') . '/' . $metadataClient . '/' . $name . '.audit.zip') && $verification['verified_by'] === 42 && strtotime($verification['verified_at']) > 0, 'Internal delivery verification is invalid');
+exportCheck((fileperms(getenv('DEWAWI_GOBD_REPORT_DIR') . '/' . $metadataClient) & 0777) === 0700 && (fileperms(getenv('DEWAWI_GOBD_REPORT_DIR') . '/' . $metadataClient . '/' . $name . '.audit.zip') & 0777) === 0600, 'Internal verification is not private');
 foreach (['document_index.csv', 'document_manifest.csv', 'missing_documents.csv', 'excluded_documents.csv', 'checksums.sha256'] as $private) exportCheck($zip->locateName($private) === false && $technical->locateName($private) !== false, 'Technical inventory leaked or was lost: ' . $private);
 $delivery = exportCsv($zip, 'document_files.csv');
 exportCheck(array_column($delivery, 'record_key') === array_column(exportCsv($technical, 'document_index.csv'), 'record_key') && count(array_filter($delivery, static fn(array $row) => $row['pdf_supplied'] === '1')) === 8, 'Public delivery inventory lost supplied or missing documents');
@@ -187,6 +191,34 @@ exportCheck($idColumn['primary_key'] === '1' && $metadata['tables']['invoices'][
 exportCheck(isset($metadata['historical_evidence']['master_data']) && str_contains($zip->getFromName('readme.txt'), 'keine vollständigen Feldänderungsfolgen') && str_contains($zip->getFromName('readme.txt'), 'Beleg-Snapshots'), 'Historical evidence limitations or software description are missing');
 exportCheck($metadata['documents']['summary']['complete'] === false && str_contains($zip->getFromName('readme.txt'), 'INCOMPLETE'), 'Missing images were presented as complete');
 foreach (explode("\n", trim($technical->getFromName('checksums.sha256'))) as $line) { [$sha, $file] = explode('  ', $line, 2); exportCheck(hash('sha256', str_ends_with($file, '.pdf') ? $zip->getFromName($file) : $technical->getFromName($file)) === $sha, 'ZIP checksum manifest differs'); }
+$privateReports = getenv('DEWAWI_GOBD_REPORT_DIR');
+putenv('DEWAWI_GOBD_REPORT_DIR');
+exportReject(static fn() => $export->export($destination, $metadata['from'], $metadata['to'], true), 'Missing private report configuration was ignored');
+putenv('DEWAWI_GOBD_REPORT_DIR=' . $privateReports);
+$issuerDirectory = getenv('DEWAWI_GOBD_ISSUER_REVIEW_DIR');
+$issuerPath = $issuerDirectory . '/' . $metadata['clientId'] . '.json';
+$issuerRecord = json_decode(file_get_contents($issuerPath), true, 512, JSON_THROW_ON_ERROR);
+putenv('DEWAWI_GOBD_ISSUER_REVIEW_DIR');
+$unconfirmedName = $export->export($destination, $metadata['from'], $metadata['to'], true);
+$unconfirmedZip = new ZipArchive(); $unconfirmedZip->open($destination . $unconfirmedName);
+$unconfirmedRows = exportCsv($unconfirmedZip, 'document_files.csv');
+exportCheck(count(array_filter($unconfirmedRows, static fn(array $row) => $row['pdf_supplied'] === '1')) === 0 && in_array('issuer_review_required', array_column($unconfirmedRows, 'missing_reason'), true), 'Archive registration alone confirmed an actual PDF issuer');
+exportCheck($unconfirmedZip->getFromName('invoices.csv') === $zip->getFromName('invoices.csv') && !json_decode($unconfirmedZip->getFromName('metadata.json'), true)['documents']['summary']['complete'], 'Issuer review removed fiscal data or hid PDF gaps');
+$unconfirmedZip->close();
+$firstIdentity = $issuerRecord['decisions'][0]['identity'];
+$issuerRecord['decisions'][0]['decision'] = 'confirmed_foreign_issuer';
+$issuerRecord['decisions'][0]['actual_issuer'] = 'SYNTHETIC FOREIGN ISSUER';
+file_put_contents($issuerPath, json_encode($issuerRecord, JSON_THROW_ON_ERROR));
+putenv('DEWAWI_GOBD_ISSUER_REVIEW_DIR=' . $issuerDirectory);
+$foreignName = $export->export($destination, $metadata['from'], $metadata['to'], true);
+$foreignZip = new ZipArchive(); $foreignZip->open($destination . $foreignName);
+$foreignRows = exportCsv($foreignZip, 'document_files.csv');
+$foreignRow = array_values(array_filter($foreignRows, static fn(array $row) => $row['module'] === $firstIdentity['module'] && $row['controller'] === $firstIdentity['controller'] && $row['documentid'] === (string)$firstIdentity['id']))[0];
+exportCheck($foreignRow['pdf_supplied'] === '0' && $foreignRow['issuer_status'] === 'conflict' && $foreignRow['missing_reason'] === 'issuer_conflict' && $foreignRow['pdf_path'] === '', 'Confirmed foreign issuer entered the outgoing delivery');
+exportCheck(!str_contains($foreignZip->getFromName('metadata.json') . $foreignZip->getFromName('readme.txt') . $foreignZip->getFromName('document_files.csv'), 'SYNTHETIC FOREIGN ISSUER'), 'Private issuer evidence leaked externally');
+$foreignZip->close();
+gobdFixtureIssuerReview($db, (int)$metadata['clientId']);
+exportCheck(str_contains($metadata['document_status']['issued'], 'technical readonly') && str_contains($metadata['document_status']['issued'], 'not proof of dispatch') && str_contains($metadata['prepayment_note'], 'does not prove absence'), 'Technical status or empty prepayment was misrepresented');
 $empty = $export->export($destination, '2040-01-01', '2040-12-31', true);
 $emptyZip = new ZipArchive(); $emptyZip->open($destination . $empty);
 exportCheck(exportCsv($emptyZip, 'document_files.csv') === [] && json_decode($emptyZip->getFromName('metadata.json'), true)['documents']['summary']['complete'], 'Empty dated-document scope is invalid'); $emptyZip->close();
@@ -232,7 +264,7 @@ class FalseGobdInventory extends DEEC_Export_Gobd
 		parent::createZip($filePath, $files, $zipFileName);
 	}
 }
-exportReject(static fn() => (new FalseGobdInventory(7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'False delivered CSV row count was accepted');
+exportReject(static fn() => (new FalseGobdInventory($db, 7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'False delivered CSV row count was accepted');
 class FalseGobdCompleteness extends DEEC_Export_Gobd
 {
 	protected function createZip(string $filePath, array $files, string $zipFileName): void
@@ -243,7 +275,29 @@ class FalseGobdCompleteness extends DEEC_Export_Gobd
 		parent::createZip($filePath, $files, $zipFileName);
 	}
 }
-exportReject(static fn() => (new FalseGobdCompleteness(7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'False deleted issued gap count was accepted');
+exportReject(static fn() => (new FalseGobdCompleteness($db, 7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'False deleted issued gap count was accepted');
+class SwappedGobdDocuments extends DEEC_Export_Gobd
+{
+	protected function createZip(string $filePath, array $files, string $zipFileName): void
+	{
+		$input = fopen($filePath . 'document_files.csv', 'rb');
+		$fields = fgetcsv($input, 0, ';', '"', ''); $rows = []; $selected = []; $groups = [];
+		while (($values = fgetcsv($input, 0, ';', '"', '')) !== false) {
+			$row = array_combine($fields, $values); $rows[] = $row;
+			if ($row['controller'] === 'invoice' && $row['pdf_supplied'] === '1') $groups[$row['pdf_origin']][] = count($rows) - 1;
+		}
+		fclose($input);
+		foreach ($groups as $group) if (count($group) >= 2) { $selected = $group; break; }
+		if (count($selected) < 2) throw new LogicException('Synthetic swap fixture requires two registered invoices');
+		[$a, $b] = $selected;
+		[$rows[$a]['pdf_path'], $rows[$b]['pdf_path']] = [$rows[$b]['pdf_path'], $rows[$a]['pdf_path']];
+		$output = fopen($filePath . 'document_files.csv', 'wb'); fputcsv($output, $fields, ';', '"', '');
+		foreach ($rows as $row) fputcsv($output, array_map(static fn($field) => $row[$field], $fields), ';', '"', '');
+		fclose($output);
+		parent::createZip($filePath, $files, $zipFileName);
+	}
+}
+exportReject(static fn() => (new SwappedGobdDocuments($db, (int)$metadata['clientId'], (int)Zend_Registry::get('User')['id']))->export($destination, $metadata['from'], $metadata['to'], true), 'Swapped PDF document assignments were accepted');
 class MislabelledGobdPackage extends DEEC_Export_Gobd
 {
 	protected function createZip(string $filePath, array $files, string $zipFileName): void
@@ -277,6 +331,7 @@ exportReject(static fn() => (new BrokenGobdPackage($db, 7, 42))->export($destina
 exportReject(static fn() => (new BrokenGobdReference($db, 7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'Unresolved CSV reference was published');
 exportReject(static fn() => (new DEEC_Export_Gobd(new GobdRollbackFixture($db), 7, 42))->export($destination, '2019-01-01', '2021-12-31', true), 'Rollback failure published a package');
 exportCheck(glob($destination . '*.zip') === $published && array_values(array_diff(glob($destination . '.gobd-*'), [$destination . '.gobd-reports'])) === [], 'Failed export left public partial files or staging');
+exportCheck(glob(getenv('DEWAWI_GOBD_REPORT_DIR') . '/.gobd-*') === [] && !file_exists($destination . '.gobd-reports'), 'Sensitive staging or reports remained in the public worktree');
 require $root . '/application/modules/admin/controllers/ExportController.php';
 symlink($root . '/library', $base . '/library');
 class GobdFlashFixture extends Zend_Controller_Action_Helper_Abstract

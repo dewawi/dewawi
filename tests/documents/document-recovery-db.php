@@ -343,6 +343,8 @@ try {
 	$exportUser = Zend_Registry::get('User'); Zend_Registry::set('User', array_replace($exportUser, ['admin' => 1]));
 	$exportDirectory = $base . '/files/export/7/0/7/';
 	reviewDirectory(rtrim($exportDirectory, '/'));
+	require_once __DIR__ . '/gobd-issuer-fixture.php';
+	gobdFixtureIssuerReview($exportDb, (int)Zend_Registry::get('Client')['id']);
 	$reviewExportName = (new DEEC_Export_Gobd($exportDb, 7, 42))->export($exportDirectory, '2000-01-01', '2020-12-31', false, true);
 	$reviewPackage = new ZipArchive(); $reviewPackage->open($exportDirectory . $reviewExportName, ZipArchive::CHECKCONS);
 	$reviewStream = $reviewPackage->getStream('document_manifest.csv');
