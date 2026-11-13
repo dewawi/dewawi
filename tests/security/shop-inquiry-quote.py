@@ -11,6 +11,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import runpy
 
 
 def check(condition, message):
@@ -150,9 +151,14 @@ def check_http(work, socket):
             saved = state()['catalog_inquiries'][-1]
             check(status == 200 and saved['_selection']['selected'] is None and saved['_selection']['eligible'] is False and state()['quotes'] == before['quotes'], 'No-match manual inquiry was lost or auto-offered')
             print('PASS: two catalog HTTP product groups, canonical IDs/SKUs, tamper rejection, back navigation, manual storage and replay')
+            variants = runpy.run_path(str(root / 'tests/security/inquiry-variants.py'))
+            variants['check_variant_http'](work, root, env, request, state, Inputs, check)
             ui = subprocess.run(['python3', str(root / 'tests/ui/inquiry-catalog.py'), str(work)], capture_output=True, text=True)
             print(ui.stdout)
             check(ui.returncode == 0, 'Catalog Chromium regression failed: ' + ui.stderr)
+            ui = subprocess.run(['python3', str(root / 'tests/ui/inquiry-variants.py'), str(work)], capture_output=True, text=True)
+            print(ui.stdout)
+            check(ui.returncode == 0, 'Variant Chromium regression failed: ' + ui.stderr)
         except Exception:
             print(log_path.read_text())
             raise

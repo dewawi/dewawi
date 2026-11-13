@@ -23,14 +23,18 @@ spl_autoload_register(static function(string $class) use ($root): void {
 $adapter = new Zend_Db_Adapter_Pdo_Mysql(['host' => 'localhost', 'unix_socket' => $socket, 'username' => 'root', 'password' => '', 'dbname' => 'dewawi_shop_inquiry_quote_test', 'charset' => 'utf8mb4']);
 Zend_Db_Table::setDefaultAdapter($adapter);
 if(PHP_SAPI === 'cli') {
+	if(($argv[1] ?? '') === 'variant-retire') $adapter->update('item', ['shopenabled' => 0], 'id = 2001 AND clientid = 100');
+	if(($argv[1] ?? '') === 'variant-price') $adapter->update('item', ['shopenabled' => 1, 'price' => 1400.125], 'id = 2001 AND clientid = 100');
 	$rows = $adapter->fetchAll("SELECT clientid, shopid, data FROM shopinquirydata WHERE data LIKE '%http-pilot@example.test%'");
 	$catalogRows = $adapter->fetchAll("SELECT data FROM shopinquirydata WHERE data LIKE '%catalog-http@example.test%'");
-	echo json_encode(['quotes' => (int)$adapter->fetchOne('SELECT COUNT(*) FROM quote'), 'inquiries' => array_map(static fn(array $row): array => json_decode($row['data'], true), $rows), 'scopes' => array_map(static fn(array $row): array => ['clientid' => (int)$row['clientid'], 'shopid' => (int)$row['shopid']], $rows), 'catalog_inquiries' => array_map(static fn(array $row): array => json_decode($row['data'], true), $catalogRows)]);
+	$variantRows = $adapter->fetchAll("SELECT data FROM shopinquirydata WHERE data LIKE '%variant-http@example.test%'");
+	echo json_encode(['quotes' => (int)$adapter->fetchOne('SELECT COUNT(*) FROM quote'), 'inquiries' => array_map(static fn(array $row): array => json_decode($row['data'], true), $rows), 'scopes' => array_map(static fn(array $row): array => ['clientid' => (int)$row['clientid'], 'shopid' => (int)$row['shopid']], $rows), 'catalog_inquiries' => array_map(static fn(array $row): array => json_decode($row['data'], true), $catalogRows), 'variant_inquiries' => array_map(static fn(array $row): array => json_decode($row['data'], true), $variantRows)]);
 	exit;
 }
 Zend_Session::setOptions(['save_path' => dirname($socket).'/sessions', 'use_cookies' => true]);
 Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 120, 'clientid' => 100], [], ['inquiry', 'catalog']));
 Zend_Registry::set('Zend_Locale', new Zend_Locale('de_DE'));
+Zend_Registry::set('Zend_Currency', new Zend_Currency('EUR', 'de_DE'));
 $translator = new DEEC_Translate('de_DE');
 $translator->loadDir('default', $root.'/languages/de_DE/default');
 $translator->loadDir('country', $root.'/languages/de_DE/country');
@@ -55,6 +59,7 @@ $front->addControllerDirectory($root.'/application/modules/shops/controllers', '
 $front->getRouter()->addRoute('inquiry_success', new Zend_Controller_Router_Route_Static('success', ['module' => 'shops', 'controller' => 'inquiry', 'action' => 'success']));
 $front->getRouter()->addRoute('shop_home', new Zend_Controller_Router_Route_Static('', ['module' => 'shops', 'controller' => 'index', 'action' => 'index']));
 Zend_Controller_Action_HelperBroker::addPath($root.'/library/Zend/Layout/Controller/Action/Helper', 'Zend_Layout_Controller_Action_Helper');
+Zend_Controller_Action_HelperBroker::addPath($root.'/application/controllers/helpers', 'Application_Controller_Action_Helper');
 Zend_Layout::startMvc(['layoutPath' => $root.'/application/layouts/scripts']);
 Zend_Controller_Action_HelperBroker::getStaticHelper('json')->suppressExit = true;
 Zend_Controller_Action_HelperBroker::getStaticHelper('redirector')->setExit(false);

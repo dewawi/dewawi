@@ -60,7 +60,61 @@ class Shops_Model_FormConfig
 			unset($definition);
 		}
 		if(($config['_settings']['selection']['method'] ?? '') === 'catalog') self::catalogSettings($steps, $config['_settings']['selection']);
+		if(($config['_settings']['selection']['method'] ?? '') === 'variant_config') self::variantSettings($steps, $config['_settings']['selection']);
 		return $steps;
+	}
+
+	public static function variantSettings(array $steps, array $selection): array
+	{
+		if(array_diff(array_keys($selection), ['method', 'automatic_quote', 'base_field', 'step', 'variant_field', 'quantity_field', 'bases'])) throw new InvalidArgumentException('Unknown variant selection setting');
+		$fields = $fieldSteps = [];
+		$order = array_map('strval', array_keys($steps));
+		foreach($steps as $step => $definitions) foreach($definitions as $field) {
+			if($field['name'] === 'preview') throw new InvalidArgumentException('Reserved variant preview field');
+			$fields[$field['name']] = $field;
+			$fieldSteps[$field['name']] = (string)$step;
+		}
+		$baseField = $selection['base_field'] ?? '';
+		$variantField = $selection['variant_field'] ?? '';
+		$step = $selection['step'] ?? '';
+		foreach([$baseField, $variantField, $step] as $name) if(!is_string($name) || $name === '') throw new InvalidArgumentException('Missing variant field or step');
+		if(!isset($steps[$step], $fields[$baseField], $fields[$variantField]) || $step === end($order)
+			|| array_search($fieldSteps[$baseField], $order, true) >= array_search($step, $order, true)
+			|| $fieldSteps[$variantField] !== $step || $fields[$baseField]['type'] !== 'select' || empty($fields[$baseField]['required'])
+			|| $fields[$variantField]['type'] !== 'hidden' || !empty($fields[$variantField]['required'])) throw new InvalidArgumentException('Invalid variant selection steps');
+		foreach([$baseField, $variantField] as $name) if(isset($fields[$name]['depends_on']) || !empty($fields[$name]['default']) || !empty($fields[$name]['value'])) throw new InvalidArgumentException('Variant identity fields must be unconditional and empty');
+		$quantityField = $selection['quantity_field'] ?? null;
+		if($quantityField !== null && (!is_string($quantityField) || !isset($fields[$quantityField]) || $fieldSteps[$quantityField] !== $step || $fields[$quantityField]['type'] !== 'number' || isset($fields[$quantityField]['depends_on']))) throw new InvalidArgumentException('Invalid variant quantity field');
+		$bases = $selection['bases'] ?? [];
+		if(!is_array($bases) || !$bases || count($bases) > 20) throw new InvalidArgumentException('Invalid variant base mappings');
+		$positiveId = static fn($id): bool => (is_int($id) || is_string($id)) && (bool)filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+		$baseIds = [];
+		foreach($bases as $value => $base) {
+			if((string)$value === '' || !array_key_exists($value, $fields[$baseField]['options']) || !is_array($base)
+				|| array_diff(array_keys($base), ['itemid', 'included_options', 'option_fields']) || !$positiveId($base['itemid'] ?? null)
+				|| in_array((int)$base['itemid'], $baseIds, true)) throw new InvalidArgumentException('Invalid or duplicate variant base');
+			$baseIds[] = (int)$base['itemid'];
+			$fixed = $base['included_options'] ?? [];
+			if(!is_array($fixed) || array_values($fixed) !== $fixed || count($fixed) > 24 || count(array_unique($fixed, SORT_REGULAR)) !== count($fixed)) throw new InvalidArgumentException('Invalid fixed variant options');
+			foreach($fixed as $id) if(!$positiveId($id)) throw new InvalidArgumentException('Invalid fixed variant option ID');
+			$mappings = $base['option_fields'] ?? [];
+			if(!is_array($mappings) || count($mappings) > 12) throw new InvalidArgumentException('Invalid variant option fields');
+			foreach($mappings as $name => $mapping) {
+				if(!isset($fields[$name]) || $fieldSteps[$name] !== $step || $fields[$name]['type'] !== 'select' || isset($fields[$name]['depends_on'])
+					|| !is_array($mapping) || array_diff(array_keys($mapping), ['group_id', 'role', 'choices', 'exclusivity', 'compatibility_verified'])
+					|| !$positiveId($mapping['group_id'] ?? null) || !in_array($mapping['role'] ?? '', ['variant', 'additional'], true)
+					|| (isset($mapping['exclusivity']) && !in_array($mapping['exclusivity'], ['single', 'multiple'], true))
+					|| (isset($mapping['compatibility_verified']) && !is_bool($mapping['compatibility_verified']))) throw new InvalidArgumentException('Invalid variant option mapping');
+				$choices = $mapping['choices'] ?? [];
+				if(!is_array($choices) || !$choices || count($choices) > 24) throw new InvalidArgumentException('Invalid variant choices');
+				$ids = [];
+				foreach($choices as $choice => $id) {
+					if((string)$choice === '' || !array_key_exists($choice, $fields[$name]['options']) || ($id !== null && (!$positiveId($id) || in_array((int)$id, $ids, true)))) throw new InvalidArgumentException('Invalid or duplicate variant choice');
+					if($id !== null) $ids[] = (int)$id;
+				}
+			}
+		}
+		return ['base_field' => $baseField, 'variant_field' => $variantField, 'step' => $step, 'quantity_field' => $quantityField, 'bases' => $bases];
 	}
 
 	public static function catalogSettings(array $steps, array $selection): array

@@ -1,0 +1,63 @@
+<?php
+$selection = $this->selection;
+$messages = [
+	'variant_base_unavailable' => 'Der Basisartikel ist nicht mehr verfügbar. Bitte gehen Sie zurück und wählen Sie erneut.',
+	'variant_catalog_unavailable' => 'Die öffentliche Artikelauswahl ist derzeit nicht verfügbar.',
+	'variant_scan_limit' => 'Die Konfiguration ist zu umfangreich für eine eindeutige Onlineprüfung.',
+	'variant_inputs_incomplete' => 'Bitte wählen Sie die gewünschte Ausstattung und aktualisieren Sie die Konfiguration.',
+	'variant_no_match' => 'Zu dieser Ausstattung ist keine passende freigegebene Variante hinterlegt.',
+	'variant_ambiguous' => 'Mehrere Varianten haben dieselbe Ausstattung. Eine manuelle Klärung ist erforderlich.',
+	'variant_selection_invalid' => 'Die Auswahl ist veraltet oder unzulässig. Bitte prüfen Sie Varianten und Optionen erneut.',
+	'variant_relations_unverified' => 'Einzelne Varianten haben ungeklärte Optionszuordnungen und werden nicht zur Auswahl angeboten.',
+	'variant_group_rules_unknown' => 'Die Kombinationsregeln einzelner Optionsgruppen müssen manuell geprüft werden.',
+	'variant_group_rules_conflict' => 'Die hinterlegten Kombinationsregeln widersprechen sich.',
+	'variant_group_conflict' => 'Die gewählten Optionen derselben Gruppe schließen sich aus.',
+	'variant_duplicate_option' => 'Dieselbe Option wurde mehrfach zugeordnet.',
+	'variant_option_pricing_review' => 'Preis, Verfügbarkeit oder Zuordnung zusätzlicher Ausstattung müssen geprüft werden.',
+	'variant_pricing_review' => 'Ein vollständiger verlässlicher Preis kann derzeit nicht angegeben werden.',
+];
+?>
+<section class="inquiry-variants inquiry-catalog" aria-label="Variantenkonfiguration" data-variant-field="<?= $this->escape($selection['variant_field']); ?>">
+	<h3>Varianten und Ausstattung</h3>
+	<p>Die Auswahl vorhandener Varianten bestätigt keine technische Eignung. Ihre Anfrage wird technisch und kaufmännisch manuell geprüft. Es wird kein automatisches Angebot erstellt.</p>
+	<?php if($selection['base']): ?><h4><?= $this->escape($selection['base']['sku'].' – '.$selection['base']['title']); ?></h4><?php endif; ?>
+	<ul class="variant-review-reasons" role="status">
+	<?php foreach($selection['reasons'] as $reason): if(!isset($messages[$reason])) continue; ?>
+		<li><?= $this->escape($messages[$reason]); ?></li>
+	<?php endforeach; ?>
+	</ul>
+	<div class="inquiry-catalog-items">
+	<?php foreach($selection['candidates'] as $variant): ?>
+		<article class="inquiry-catalog-item">
+			<h4><?= $this->escape($variant['sku'].' – '.$variant['title']); ?></h4>
+			<p>Hinterlegte Ausstattung: <?= $this->escape(implode(', ', $variant['option_labels']) ?: 'Keine eindeutige Zuordnung'); ?></p>
+			<?php if($selection['editable']): ?>
+			<button type="button" class="btn btn-outline-primary select-inquiry-variant" aria-pressed="<?= ($selection['selected']['itemid'] ?? null) === $variant['itemid'] ? 'true' : 'false'; ?>" data-variantid="<?= $variant['itemid']; ?>" data-field-values="<?= $this->escape(json_encode($variant['field_values'])); ?>"<?= !$variant['configurable'] ? ' disabled' : ''; ?>>Diese Variante konfigurieren</button>
+			<?php endif; ?>
+		</article>
+	<?php endforeach; ?>
+	</div>
+	<p class="variant-pending" aria-live="polite"></p>
+	<?php if($selection['selected']): ?>
+	<div class="variant-current-selection">
+		<h4>Zur Prüfung vorgemerkt: <?= $this->escape($selection['selected']['sku'].' – '.$selection['selected']['title']); ?></h4>
+		<ul><?php foreach($selection['options'] as $option): ?>
+			<li><?= $this->escape($option['title']); ?>:
+				<?php if($option['status'] === 'unavailable'): ?>Nicht verfügbar
+				<?php elseif($option['status'] === 'on_request'): ?>Preis auf Anfrage
+				<?php elseif($option['included']): ?>Im Variantenpreis enthalten<?= $option['catalog_price'] === 0.0 ? ' (kostenlose Ausstattung)' : ''; ?>
+				<?php elseif($option['status'] === 'priced'): ?>Zusätzlich <?= number_format($option['price'], 2, ',', '.'); ?> <?= $this->escape($option['currency']); ?> netto je <?= $this->escape($option['uom']); ?> (Menge <?= $this->escape((string)$option['quantity']); ?>)
+				<?php else: ?>Manuelle Preis- und Verfügbarkeitsprüfung erforderlich<?php endif; ?>
+			</li>
+		<?php endforeach; ?></ul>
+	</div>
+	<?php endif; ?>
+	<?php if(($selection['commercial']['pricing_status'] ?? '') === 'complete'): $pricing = $selection['commercial']; ?>
+	<div class="variant-pricing">
+		<p>Gespeicherter Variantenpreis: <?= number_format($pricing['positions'][0]['price'], 2, ',', '.'); ?> <?= $this->escape($pricing['currency']); ?> netto je <?= $this->escape($pricing['positions'][0]['uom']); ?><?= $pricing['positions'][0]['price_source'] === 'item.specialprice' ? ' (Sonderpreis)' : ''; ?></p>
+		<p>Unverbindliche Summe der Ausstattung: <?= number_format($pricing['totals']['subtotal'], 2, ',', '.'); ?> <?= $this->escape($pricing['currency']); ?> netto; <?= number_format($pricing['totals']['total'], 2, ',', '.'); ?> <?= $this->escape($pricing['currency']); ?> einschließlich hinterlegter Steuern.</p>
+		<p>Lieferland, Versand, Verfügbarkeit und sämtliche technischen Anforderungen sind noch zu prüfen.</p>
+	</div>
+	<?php endif; ?>
+	<?php if($selection['editable']): ?><button type="button" class="btn btn-outline-primary preview-inquiry-variant">Konfiguration aktualisieren</button><?php endif; ?>
+</section>

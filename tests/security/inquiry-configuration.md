@@ -88,6 +88,70 @@ Catalog candidate/rejected records contain canonical `itemid`, `sku`, `title` an
 
 Manual and legacy FORM_CALC calls retain their existing behavior and gate. Legacy controller suggestions now also carry IDs/SKUs/titles for the common result envelope. The legacy `eligible` value still permits only an attempt through the pre-existing quote creation/commercial/finalization checks; the open review status is not a new technical or tax certification. Catalog's gate is unconditionally false. Stored catalog metadata contains the chosen identity, open statuses, diagnostic summary and manual-review reasons, avoiding a large snapshot of every proposed/rejected record. Normal inquiry fields remain available to the existing internal workflow.
 
+## Existing variants and options (`variant_config`)
+
+This method uses the same step forms, public models, AJAX navigation and selection envelope. It only reads existing `item.parentid` variants, `itemoptset`, `itemopt` and `itemvariantopt`. It never calls `Items_Service_Variant` or writes product/option records. `eligible` is always false, even with `automatic_quote: true`; `technical.status` and `commercial.status` remain `review_required`. It cannot create, finalize or send a quote. Form 865 and its local manual pilot are unchanged.
+
+Use three ordered steps: a required unconditional base `select`, a configuration step containing an optional empty hidden variant ID and mapped option `select` fields, then contact details. Ordinary additional requirement fields are retained. Country sources and existing field validation/dependencies continue to work. Mapped identity/option fields themselves are unconditional; this keeps the bounded family mapping auditable. A quantity field, when configured, must be an unconditional number in the configuration step. Omitting it means one configured article.
+
+The **complete portable form** is [fixtures/inquiry-variant-config.php](fixtures/inquiry-variant-config.php). The following selection excerpt uses its actual isolated fixture identities; it is **not a production configuration**:
+
+```json
+{
+  "method": "variant_config",
+  "automatic_quote": false,
+  "base_field": "family",
+  "variant_field": "variantid",
+  "step": "configuration",
+  "quantity_field": "quantity",
+  "bases": {
+    "equipment": {
+      "itemid": 2000,
+      "included_options": [203],
+      "option_fields": {
+        "execution": {
+          "group_id": 200, "role": "variant", "exclusivity": "single",
+          "choices": {"small": 201, "large": 202}
+        },
+        "kit": {
+          "group_id": 202, "role": "additional", "exclusivity": "single",
+          "compatibility_verified": true,
+          "choices": {"none": null, "yes": 204}
+        }
+      }
+    },
+    "trading": {
+      "itemid": 2100,
+      "option_fields": {
+        "execution": {
+          "group_id": 210, "role": "variant", "exclusivity": "single",
+          "choices": {"small": 211, "large": 212}
+        },
+        "kit": {
+          "group_id": 212, "role": "additional", "exclusivity": "single",
+          "compatibility_verified": true,
+          "choices": {"none": null, "yes": 214}
+        }
+      }
+    }
+  }
+}
+```
+
+`family` values identify reviewed base articles; the other choice keys must exist in the corresponding form select. Labels are populated from accessible database rows, and choices are restricted to the selected family. Different families can use different fields and option IDs. Fields belonging only to another family are removed from the rendered/validated step. Changing an earlier base step discards subsequent variant/option drafts. The configuration buttons populate existing choices; “Konfiguration aktualisieren” uses the same CSRF-protected AJAX POST without advancing or saving an inquiry. Local option/quantity edits invalidate the displayed variant/price until rechecked.
+
+`included_options` declares fixed equipment that must actually occur in the saved variant relations. `role: variant` adds the chosen option to the exact requested variant combination; `role: additional` requests optional extra equipment. `null` explicitly means no additional choice. Stored relation IDs are authoritative for inclusion, including an additional choice already contained in the variant. Only an exact, unique, publicly accessible saved combination resolves `selected.itemid`. A submitted variant ID must agree and cannot conceal duplicate combinations. SKUs never identify variants. Unknown/unmapped, foreign or deleted relations prevent a variant from matching. No new combination is synthesized.
+
+There are no exclusivity/compatibility columns in `itemoptset`. A reviewed mapping may explicitly declare `exclusivity: single` or `multiple`; conflicting single-group selections have no selected variant. Missing rules are reported as `variant_group_rules_unknown`, never inferred from the group name or number of options. `compatibility_verified: true` is a trusted mapping assertion allowing a particular additional option for that family; it provides no technical approval. An extra with missing compatibility or group rules has no confirmed price/total. Complex dependencies, inherited master pricing and unverified accessory relations require manual review; this is not a rule engine.
+
+Base articles, variants and linked accessory identities must belong to the public SiteContext, have `shopenabled=1` and an active scoped shop category, and be undeleted. Option/group ownership and parent IDs are checked independently. The existing parent-owned public shop remains usable by authorized child users; internal tenant sharing metadata cannot widen a child-owned public shop. The `catalog` site feature is required. Reads are bounded to 20 configured bases, 12 option fields per base, 24 choices per field, 24 fixed options, 100 saved variants, 200 options/groups and 2,400 relations per evaluated base. Database scan overflow returns review status with no partial matches.
+
+The saved variant `item.price`, or its positive saved `item.specialprice`, is the authoritative price source. Included options have zero additional price, with original option price retained as a reference; free equipment is explicitly labelled. Extras use the mapped `itemopt.price`, existing `PriceRule` actions, stored quantity multiplier, scoped unit, currency and tax. Null multiplier/unit/tax/currency use the same one-per-device and variant defaults as existing selected quote options. Negative/missing prices, nonpositive quantities, invalid currency/unit/tax, unavailable accessory links or unknown price actions suppress a complete total. `-1` is on request and `-2` unavailable. No email/contact lookup supplies private customer conditions.
+
+`Calculate::calculate()` computes transient preview rows and normal position/tax rounding; its mutating `direct()` is never used. `commercial.pricing_status: complete` means only that the shown equipment price is computable. Shipping, delivery country, availability and all technical requirements remain open. Public edits and final submission reload current rows; changed prices produce a fresh snapshot, and retired/stale selections are rejected. There is no stock reservation or price lock because no quote is created.
+
+Stored `_selection` contains `base`, `selected`, actual option IDs, optional accessible linked article IDs, `included`, quantity/unit/currency/tax, price source and applied option rule, open statuses, review reasons and preview totals when reliable. An unresolved combination stores requested option identities with `included: null` and no confirmed price rather than inventing a variant. Candidate lists are not persisted. Existing issued quote snapshots and PDFs remain unchanged. No schema migration or production data update is required; activating a real form later requires independently reviewed real family/option mappings.
+
 ## Automatic quotes are opt-in
 
 Without explicit approval, inquiries are saved for manual processing and no automatic quote is created or sent. A representative settings object is:
@@ -155,6 +219,7 @@ Long document terms render below totals using the available page width and norma
 - `php tests/security/inquiry-selection.php`
 - `python3 tests/security/shop-inquiry-quote.py` (isolated MariaDB, actual PDFs and stubbed notifications)
 - The same isolated runner includes `tests/security/inquiry-catalog.php`, two catalog HTTP flows and `tests/ui/inquiry-catalog.py` at mobile/desktop widths.
+- It also includes `tests/security/inquiry-variants.php`, `tests/security/inquiry-variants.py` HTTP scenarios and `tests/ui/inquiry-variants.py` at 390/1280 px. Two synthetic families cover included paid/free equipment, linked extras, existing PriceRule/Calculate semantics, duplicate SKUs/combinations, group conflicts, missing rules, manipulated identities, public scopes, changing prices/relations, final revalidation, bounded reads, escaped markup, base changes, manual-only persistence and replay. Read-only evaluation compares all product, option, relation and quote rows before/after. HTTP notification transport is stubbed and rejects offer emails.
 - Existing inquiry, contact workflow, calculation, PDF, archive, permission and email-fixture suites.
 
 The local references `/tmp/dewawi-inquiry-referenzen/form-865.fields.json` and `Angebot-50635-anonymisiert.pdf` are not committed. When available, the form reference is read by additional regression assertions. The PDF reference is inspected as a read-only layout reference, never regenerated or edited. Database fixtures, images and new PDFs are synthetic and isolated under the test runner's temporary root. Optional `DEWAWI_INQUIRY_TEST_ARTIFACT_DIR=/tmp/dewawi-inquiry-pdf-review` keeps synthetic PDFs for visual inspection; no real email transport is used.

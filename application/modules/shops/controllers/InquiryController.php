@@ -92,6 +92,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 		$this->view->shop = $shop;
 		$this->view->formRow = $this->formRow;
 		$this->view->catalogSelection = $request->isPost() ? [] : $this->catalogSelectionForStep($step);
+		$this->view->variantSelection = $request->isPost() ? [] : $this->variantSelectionForStep($step);
 
 		$form = $this->createStepForm($step);
 
@@ -115,6 +116,11 @@ class Shops_InquiryController extends Shops_Controller_Action
 			}
 
 			$submittedToken = strtolower(trim((string)($post['inquiry_token'] ?? '')));
+			$selectionSettings = $this->inquirySettings()['selection'] ?? [];
+			if(($selectionSettings['method'] ?? '') === 'variant_config' && $request->getPost('preview') && $step !== $selectionSettings['step']) {
+				$this->getResponse()->setHttpResponseCode(400);
+				return $this->_helper->json(['status' => 'error', 'message' => 'Ungültiger Konfigurationsschritt.']);
+			}
 
 			if (!preg_match('/^[a-f0-9]{32,64}$/D', $submittedToken)) {
 				$this->getResponse()->setHttpResponseCode(400);
@@ -160,6 +166,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 				$formHtml = $this->view->partial('inquiry/index.phtml', [
 					'form' => $prevForm,
 					'catalogSelection' => $this->catalogSelectionForStep($prevStep),
+					'variantSelection' => $this->variantSelectionForStep($prevStep),
 					'step' => $prevStep,
 					'ajax' => true,
 					'suggestions' => $this->formDataSession->suggestions ?? [],
@@ -181,6 +188,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 				$formHtml = $this->view->partial('inquiry/index.phtml', [
 					'form' => $form,
 					'catalogSelection' => $this->catalogSelectionForStep($step),
+					'variantSelection' => $this->variantSelectionForStep($step, $form->getFilteredValues()),
 					'step' => $step,
 					'ajax' => true,
 					'errors' => $form->getErrors(),
@@ -203,6 +211,22 @@ class Shops_InquiryController extends Shops_Controller_Action
 			$currentIndex = array_search($step, $stepOrder, true);
 			if($formValues !== ($this->formDataSession->formData[$step] ?? null)) $this->discardFollowingSteps($stepOrder, (int)$currentIndex);
 			$this->formDataSession->formData[$step] = $formValues;
+			if(($selectionSettings['method'] ?? '') === 'variant_config' && $step === $selectionSettings['step']) {
+				$variantSelection = $this->variantSelectionForStep($step);
+				if($variantSelection['invalid']) {
+					$this->getResponse()->setHttpResponseCode(400);
+					return $this->_helper->json(['status' => 'error', 'message' => 'Die Konfiguration ist nicht mehr verfügbar. Bitte prüfen Sie Varianten und Optionen erneut.']);
+				}
+				if($variantSelection['selected'] !== null) {
+					$id = (string)$variantSelection['selected']['itemid'];
+					$this->formDataSession->formData[$step][$variantSelection['variant_field']] = $id;
+					$form->setValue($variantSelection['variant_field'], $id);
+				}
+				if($request->getPost('preview')) {
+					$formHtml = $this->view->partial('inquiry/index.phtml', ['form' => $form, 'step' => $step, 'ajax' => true, 'variantSelection' => $variantSelection, 'formRow' => $this->formRow]);
+					return $this->_helper->json(['status' => 'ok', 'formHtml' => $formHtml]);
+				}
+			}
 
 			if (($this->inquirySettings()['selection']['method'] ?? 'form_calc') === 'form_calc' && $this->hasCalculation($this->formConfig[$step])) {
 				$suggestions = $this->calculateSuggestions($this->formConfig[$step], $formValues);
@@ -234,6 +258,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 				$formHtml = $this->view->partial('inquiry/index.phtml', [
 					'form' => $nextForm,
 					'catalogSelection' => $this->catalogSelectionForStep($nextStep),
+					'variantSelection' => $this->variantSelectionForStep($nextStep),
 					'step' => $nextStep,
 					'ajax' => true,
 					'suggestions' => $this->formDataSession->suggestions ?? [],
@@ -262,6 +287,13 @@ class Shops_InquiryController extends Shops_Controller_Action
 			}
 			unset($allFormValues['csrf_token'], $allFormValues['inquiry_token'], $allFormValues['next'], $allFormValues['back']);
 			$selection = $this->evaluateSelection($allFormValues);
+			if($selection['method'] === 'variant_config') {
+				if($selection['invalid']) {
+					$this->getResponse()->setHttpResponseCode(400);
+					return $this->_helper->json(['status' => 'error', 'message' => 'Die Konfiguration ist nicht mehr verfügbar. Bitte gehen Sie zurück und prüfen Sie Ihre Auswahl erneut.']);
+				}
+				if($selection['selected'] !== null) foreach(['sku' => 'sku', 'titel' => 'title'] as $field => $key) if(array_key_exists($field, $allFormValues)) $allFormValues[$field] = $selection['selected'][$key];
+			}
 			if($selection['method'] === 'catalog') {
 				$itemField = $selection['item_field'];
 				if(($allFormValues[$itemField] ?? '') !== '' && ($allFormValues[$itemField] ?? null) !== null && $selection['selected'] === null) {
@@ -314,6 +346,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 				if($review['selected'] !== null) $review['selected'] = array_intersect_key($review['selected'], array_flip(['itemid', 'sku', 'title']));
 				$storedData['_selection'] += $review;
 			}
+			if($selection['method'] === 'variant_config') $storedData['_selection'] += array_intersect_key($selection, array_flip(['base', 'selected', 'options', 'technical', 'commercial']));
 
 			$inquiryDb = new Shops_Model_DbTable_Inquirydata();
 			try {
@@ -424,8 +457,14 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 	protected function createStepForm(string $step): Shops_Form_DynamicForm
 	{
+		$config = $this->formConfig;
+		$selection = $this->inquirySettings()['selection'] ?? [];
+		if(($selection['method'] ?? '') === 'variant_config') {
+			$values = array_merge([], ...array_values((array)($this->formDataSession->formData ?? [])));
+			$config = (new Shops_Service_InquirySelection())->variantFormConfig($config, $selection, $values);
+		}
 		$form = new Shops_Form_DynamicForm(
-			$this->formConfig,
+			$config,
 			$step,
 			$this->csrfToken,
 			$this->inquiryToken
@@ -437,6 +476,18 @@ class Shops_InquiryController extends Shops_Controller_Action
 			$form->addOptions($name, ['' => $element['options'][''] ?? 'Bitte wählen'] + $countries, 'replace');
 		}
 		return $form;
+	}
+
+	protected function variantSelectionForStep(string $step, array $currentValues = []): array
+	{
+		$selection = $this->inquirySettings()['selection'] ?? [];
+		if(($selection['method'] ?? '') !== 'variant_config') return [];
+		$order = $this->getStepOrder();
+		if(array_search($step, $order, true) < array_search($selection['step'], $order, true)) return [];
+		$values = array_merge([], ...array_values((array)($this->formDataSession->formData ?? [])));
+		$result = $this->evaluateSelection(array_replace($values, $currentValues));
+		$result['editable'] = $step === $selection['step'];
+		return $result;
 	}
 
 	protected function getStepOrder(): array

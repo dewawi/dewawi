@@ -39,6 +39,7 @@ $categories = $this->{'categories'};
 							<?php endif; ?>
 
 							<?php if(!empty($this->catalogSelection)) echo $this->partial('inquiry/catalog.phtml', ['selection' => $this->catalogSelection]); ?>
+							<?php if(!empty($this->variantSelection)) echo $this->partial('inquiry/variants.phtml', ['selection' => $this->variantSelection]); ?>
 
 							<?php if (!empty($this->suggestions)): ?>
 								<div class="alert alert-info">

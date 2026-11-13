@@ -491,6 +491,29 @@ function selectInquiryCatalogItem(button, notify = true) {
 	return true;
 }
 
+function invalidateInquiryVariant(form) {
+	const $form = $(form);
+	const $selection = $form.find('.inquiry-variants');
+	const name = $selection.attr('data-variant-field');
+	$form.find(':input').filter(function () { return this.name === name; }).val('');
+	$selection.find('.select-inquiry-variant').attr('aria-pressed', 'false');
+	$selection.find('.variant-current-selection, .variant-pricing, .variant-review-reasons').hide();
+	$selection.find('.variant-pending').text('Auswahl geändert. Bitte aktualisieren Sie die Konfiguration; Preis und Zuordnung werden erneut geprüft.');
+}
+
+function selectInquiryVariant(button) {
+	const $button = $(button);
+	const $form = $button.closest('form');
+	invalidateInquiryVariant($form);
+	const values = JSON.parse($button.attr('data-field-values'));
+	Object.keys(values).forEach(function (name) {
+		$form.find(':input').filter(function () { return this.name === name; }).val(values[name]).trigger('change');
+	});
+	const name = $button.closest('.inquiry-variants').attr('data-variant-field');
+	$form.find(':input').filter(function () { return this.name === name; }).val($button.attr('data-variantid'));
+	$button.attr('aria-pressed', 'true');
+}
+
 // Function to show or hide shipping fields
 function toggleShippingFields() {
 	if ($('#differentshippingaddress').is(':checked')) {
@@ -502,7 +525,7 @@ function toggleShippingFields() {
 	}
 }
 
-function submitStep(formElement, currentStep) {
+function submitStep(formElement, currentStep, preview = false) {
 	if (!formElement.checkValidity()) {
 		formElement.reportValidity();
 		return false;
@@ -513,7 +536,7 @@ function submitStep(formElement, currentStep) {
 	$form.data('submitting', true);
 	const $buttons = $form.find('button, input[type="submit"]');
 	$buttons.prop('disabled', true);
-	const formData = $(formElement).serialize() + '&step=' + encodeURIComponent(currentStep);
+	const formData = $(formElement).serialize() + '&step=' + encodeURIComponent(currentStep) + (preview ? '&preview=1' : '');
 
 	$.post(window.location.href, formData, function (response) {
 		dispatchSiteConversions(response && response.conversionEvents);
@@ -557,6 +580,19 @@ $(document).on('click', '#inquiry-form .select-catalog-suggestion', function () 
 
 $(document).on('click', '#inquiry-form .clear-catalog-suggestion', function () {
 	selectInquiryCatalogItem(this);
+});
+
+$(document).on('change input', '#inquiry-form [data-variant-choice]', function () {
+	invalidateInquiryVariant($(this).closest('form'));
+});
+
+$(document).on('click', '#inquiry-form .select-inquiry-variant', function () {
+	selectInquiryVariant(this);
+});
+
+$(document).on('click', '#inquiry-form .preview-inquiry-variant', function () {
+	const form = $(this).closest('form')[0];
+	submitStep(form, String($(form).attr('data-current-step') || ''), true);
 });
 
 $(document).on('click', '[data-show-tab]', function () {

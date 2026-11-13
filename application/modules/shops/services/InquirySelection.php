@@ -2,6 +2,9 @@
 
 class Shops_Service_InquirySelection
 {
+	// Existing quote/option quantities use DECIMAL(12,4).
+	private const POSITION_QUANTITY_MAX = 99999999.9999;
+
 	public static function settings(array $formRow): array
 	{
 		$config = Shops_Model_FormConfig::decode((string)($formRow['fields'] ?? '{}'));
@@ -14,7 +17,7 @@ class Shops_Service_InquirySelection
 	{
 		$selection = $settings['selection'] ?? [];
 		if(!is_array($selection)) throw new InvalidArgumentException('Invalid selection settings');
-		if(($selection['method'] ?? '') === 'catalog') $config = Shops_Model_FormConfig::normalize($config);
+		if(in_array($selection['method'] ?? '', ['catalog', 'variant_config'], true)) $config = Shops_Model_FormConfig::normalize($config);
 		$definitions = [];
 		foreach($config as $step) foreach($step as $field) $definitions[$field['name']] = $field;
 		$result = ['eligible' => false, 'method' => $selection['method'] ?? 'form_calc', 'reasons' => [], 'options' => [],
@@ -26,6 +29,7 @@ class Shops_Service_InquirySelection
 			if($id !== '' && $id !== null && $result['selected'] === null) $result['reasons'][] = 'catalog_selection_invalid';
 			return $result;
 		}
+		if($result['method'] === 'variant_config') return $this->evaluateVariant($config, $selection, $values, $result);
 		foreach($suggestions as $suggestion) if(!empty($suggestion['itemid'])) {
 			$candidate = ['itemid' => (int)$suggestion['itemid'], 'sku' => (string)$suggestion['sku'], 'title' => (string)$suggestion['title'], 'conditions' => [], 'technical' => $result['technical'], 'commercial' => $result['commercial']];
 			$result['candidates'][] = $candidate;
@@ -105,6 +109,273 @@ class Shops_Service_InquirySelection
 		return $result;
 	}
 
+	public function variantFormConfig(array $config, array $selection, array $values): array
+	{
+		$settings = Shops_Model_FormConfig::variantSettings($config, $selection);
+		$data = $this->variantData($settings, $values);
+		return $this->hydrateVariantFields($config, $settings, $data);
+	}
+
+	private function hydrateVariantFields(array $config, array $settings, array $data): array
+	{
+		$options = [$settings['base_field'] => ['' => 'Bitte wählen']];
+		foreach($data['bases'] as $value => $base) $options[$settings['base_field']][$value] = $base['sku'].' – '.$base['title'];
+		// Fields belonging only to another family remain empty and cannot accept stale values.
+		foreach($settings['bases'] as $base) foreach($base['option_fields'] ?? [] as $name => $mapping) $options[$name] = ['' => 'Bitte wählen'];
+		foreach($data['mapping']['option_fields'] ?? [] as $name => $mapping) foreach($mapping['choices'] as $value => $id) {
+			if($id === null) $options[$name][$value] = 'Keine zusätzliche Auswahl';
+			elseif(isset($data['options'][$id]) && (int)$data['options'][$id]['optsetid'] === (int)$mapping['group_id']) $options[$name][$value] = $data['options'][$id]['title'];
+		}
+		foreach($config as &$fields) {
+			foreach($fields as $index => &$field) {
+				$name = $field['name'];
+				if($name === $settings['quantity_field']) $field['attribs']['data-variant-choice'] = '1';
+				if(!isset($options[$name])) continue;
+				if($name !== $settings['base_field'] && !isset($data['mapping']['option_fields'][$name])) { unset($fields[$index]); continue; }
+				$field['options'] = $options[$name];
+				$field['attribs']['data-variant-choice'] = '1';
+			}
+			unset($field);
+			$fields = array_values($fields);
+		}
+		unset($fields);
+		return $config;
+	}
+
+	private function variantData(array $settings, array $values): array
+	{
+		$data = ['bases' => [], 'base' => null, 'mapping' => [], 'options' => [], 'groups' => [], 'variants' => [], 'relations' => [], 'reasons' => []];
+		if(!Zend_Registry::get('SiteContext')->hasFeature('catalog')) {
+			$data['reasons'][] = 'variant_catalog_unavailable';
+			return $data;
+		}
+		$items = new Shops_Model_DbTable_Item();
+		$categories = (new Shops_Model_DbTable_Category())->getCategories();
+		$public = static fn(?array $item): bool => $item && (int)$item['shopenabled'] === 1 && isset($categories[$item['shopcatid']]) && trim((string)$item['sku']) !== '';
+		$bases = array_column($items->getInquiryBases(array_column($settings['bases'], 'itemid')), null, 'id');
+		foreach($settings['bases'] as $value => $mapping) {
+			$item = $bases[(int)$mapping['itemid']] ?? null;
+			if($public($item) && empty($item['parentid'])) $data['bases'][$value] = $item;
+		}
+		$value = $values[$settings['base_field']] ?? '';
+		if(!is_scalar($value) || !isset($data['bases'][(string)$value])) {
+			$data['reasons'][] = 'variant_base_unavailable';
+			return $data;
+		}
+		$data['base'] = $data['bases'][(string)$value];
+		$data['mapping'] = $settings['bases'][(string)$value];
+		$baseId = (int)$data['base']['id'];
+		$groups = (new Shops_Model_DbTable_Itemoptset())->getInquiryGroups($baseId);
+		$options = (new Shops_Model_DbTable_Itemopt())->getInquiryOptions($baseId);
+		$variants = $items->getInquiryVariants($baseId);
+		if(count($groups) > Shops_Model_DbTable_Itemoptset::INQUIRY_GROUP_LIMIT || count($options) > Shops_Model_DbTable_Itemopt::INQUIRY_OPTION_LIMIT || count($variants) > Shops_Model_DbTable_Item::INQUIRY_VARIANT_LIMIT) {
+			$data['reasons'][] = 'variant_scan_limit';
+			return $data;
+		}
+		foreach($groups as $group) $data['groups'][(int)$group['id']] = $group;
+		foreach($options as $option) if(isset($data['groups'][(int)$option['optsetid']])) $data['options'][(int)$option['id']] = $option;
+		foreach($variants as $variant) if($public($variant)) $data['variants'][(int)$variant['id']] = $variant;
+		$relations = (new Shops_Model_DbTable_Itemvariantopt())->getInquiryRelations(array_keys($data['variants']));
+		if(count($relations) > Shops_Model_DbTable_Itemvariantopt::INQUIRY_RELATION_LIMIT) {
+			$data['variants'] = [];
+			$data['reasons'][] = 'variant_scan_limit';
+			return $data;
+		}
+		foreach($relations as $relation) $data['relations'][(int)$relation['itemid']][] = (int)$relation['itemoptid'];
+		return $data;
+	}
+
+	private function evaluateVariant(array $config, array $selection, array $values, array $result): array
+	{
+		$settings = Shops_Model_FormConfig::variantSettings($config, $selection);
+		$data = $this->variantData($settings, $values);
+		$result['reasons'] = array_merge(['technical_review_required', 'commercial_review_required'], $data['reasons']);
+		$result['variant_field'] = $settings['variant_field'];
+		$result['base'] = $data['base'] ? $this->variantIdentity($data['base']) : null;
+		$result['invalid'] = false;
+		$result['inputs'] = [];
+		$hydrated = $this->hydrateVariantFields($config, $settings, $data);
+		$valid = true;
+		foreach($hydrated as $step => $fields) {
+			$form = new Shops_Form_DynamicForm([$step => $fields], $step);
+			$this->hydrateCountries($form);
+			$valid = $form->isValid($values) && $valid;
+			$result['inputs'] += array_intersect_key(array_diff_key($form->getFilteredValues(), $form->getErrors()), array_column($fields, null, 'name'));
+			if((string)$step === $settings['step']) break;
+		}
+		if(!$data['base'] || $data['reasons']) {
+			$result['invalid'] = true;
+			return $result;
+		}
+		$mapping = $data['mapping'];
+		$target = array_map('intval', $mapping['included_options'] ?? []);
+		$extraIds = $requested = $rules = $known = [];
+		$complete = $valid;
+		foreach($target as $id) $known[$id] = true;
+		foreach($mapping['option_fields'] ?? [] as $name => $field) {
+			$groupId = (int)$field['group_id'];
+			$rule = $field['exclusivity'] ?? 'unknown';
+			if(isset($rules[$groupId]) && $rules[$groupId] !== $rule) $result['reasons'][] = 'variant_group_rules_conflict';
+			$rules[$groupId] = $rule;
+			foreach($field['choices'] as $id) if($id !== null) {
+				$known[(int)$id] = true;
+				if($field['role'] === 'additional') $extraIds[] = (int)$id;
+			}
+			$value = $result['inputs'][$name] ?? '';
+			if($value === '' || $value === null) {
+				$complete = false;
+				if(isset($values[$name]) && $values[$name] !== '' && $values[$name] !== null) $result['invalid'] = true;
+				continue;
+			}
+			$id = $field['choices'][(string)$value] ?? null;
+			if($id === null) continue;
+			if(!isset($data['options'][$id]) || (int)$data['options'][$id]['optsetid'] !== $groupId) {
+				$result['invalid'] = true;
+				$complete = false;
+				continue;
+			}
+			if(isset($requested[(int)$id])) $result['reasons'][] = 'variant_duplicate_option';
+			$requested[(int)$id] = $field;
+			if($field['role'] === 'variant') $target[] = (int)$id;
+		}
+		foreach($settings['bases'] as $base) foreach($base['option_fields'] ?? [] as $name => $field) if(!isset($mapping['option_fields'][$name]) && isset($values[$name]) && $values[$name] !== '' && $values[$name] !== null) $result['invalid'] = true;
+		$target = array_values(array_unique($target));
+		sort($target);
+		foreach(array_keys($requested) as $id) {
+			$option = $data['options'][$id];
+			$result['options'][] = ['itemoptid' => $id, 'itemid' => null, 'group_id' => (int)$option['optsetid'], 'sku' => (string)$option['sku'], 'title' => (string)$option['title'], 'included' => null, 'price' => null, 'status' => 'review_required'];
+		}
+		$matches = [];
+		foreach($data['variants'] as $id => $variant) {
+			$included = $data['relations'][$id] ?? [];
+			if(array_diff($included, array_keys($data['options'])) || array_diff($included, array_keys($known)) || count($included) !== count(array_unique($included))) {
+				$result['reasons'][] = 'variant_relations_unverified';
+				continue;
+			}
+			$core = array_values(array_diff($included, $extraIds));
+			sort($core);
+			$fieldValues = [];
+			$configurable = !array_diff(array_map('intval', $mapping['included_options'] ?? []), $included);
+			foreach($mapping['option_fields'] ?? [] as $name => $field) {
+				$choices = array_keys(array_filter($field['choices'], static fn($option): bool => $option !== null && in_array((int)$option, $included, true) && (int)$data['options'][$option]['optsetid'] === (int)$field['group_id']));
+				if(count($choices) === 1) $fieldValues[$name] = (string)$choices[0];
+				elseif($field['role'] === 'variant') {
+					$none = array_keys($field['choices'], null, true);
+					if(!$choices && count($none) === 1) $fieldValues[$name] = (string)$none[0];
+					else $configurable = false;
+				}
+			}
+			$candidate = $this->variantIdentity($variant) + ['included_options' => $included, 'option_labels' => array_map(static fn($option): string => (string)$data['options'][$option]['title'], $included), 'field_values' => $fieldValues, 'configurable' => $configurable,
+				'commercial' => ['status' => 'review_required'], 'technical' => ['status' => 'review_required']];
+			$result['candidates'][] = $candidate;
+			if($complete && $configurable && $core === $target) $matches[$id] = $variant;
+		}
+		$explicit = $values[$settings['variant_field']] ?? '';
+		if($explicit !== '' && $explicit !== null && ((!is_string($explicit) && !is_int($explicit)) || !filter_var($explicit, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) || !isset($matches[(int)$explicit]))) $result['invalid'] = true;
+		if(!$complete) $result['reasons'][] = 'variant_inputs_incomplete';
+		elseif(!$matches) $result['reasons'][] = 'variant_no_match';
+		elseif(count($matches) > 1) $result['reasons'][] = 'variant_ambiguous';
+		elseif(!$result['invalid']) {
+			$variant = reset($matches);
+			$result['selected'] = $this->variantIdentity($variant);
+			$included = $data['relations'][(int)$variant['id']] ?? [];
+			$chosen = array_values(array_unique(array_merge($included, array_keys($requested))));
+			$groups = [];
+			foreach($chosen as $id) $groups[(int)$data['options'][$id]['optsetid']][] = $id;
+			foreach($groups as $group => $ids) {
+				if(($rules[$group] ?? 'unknown') === 'unknown') $result['reasons'][] = 'variant_group_rules_unknown';
+				if(($rules[$group] ?? '') === 'single' && count($ids) > 1) $result['reasons'][] = 'variant_group_conflict';
+			}
+			if(array_intersect($result['reasons'], ['variant_group_conflict', 'variant_group_rules_conflict', 'variant_duplicate_option'])) $result['selected'] = null;
+			else $result = $this->variantPrices($variant, $chosen, $included, $requested, $data, $settings, $result);
+		}
+		if($result['invalid']) $result['reasons'][] = 'variant_selection_invalid';
+		$result['reasons'] = array_values(array_unique($result['reasons']));
+		return $result;
+	}
+
+	private function variantIdentity(array $item): array
+	{
+		return ['itemid' => (int)$item['id'], 'parentid' => (int)$item['parentid'], 'sku' => (string)$item['sku'], 'title' => (string)$item['title']];
+	}
+
+	private function variantPrices(array $variant, array $chosen, array $included, array $requested, array $data, array $settings, array $result): array
+	{
+		$result['options'] = [];
+		try { $currency = (string)(new Shops_Model_DbTable_Currency())->getPrimaryCurrency()['code']; }
+		catch(RuntimeException $e) { $currency = ''; }
+		$owner = (int)Zend_Registry::get('SiteContext')->getClientId();
+		$uoms = (new Application_Model_DbTable_Uom())->setClientId($owner)->getUoms();
+		$tax = (new Shops_Model_DbTable_Taxrate())->getTaxRate((int)$variant['taxid']);
+		$rate = self::decimal($tax['rate'] ?? null);
+		$uom = trim((string)($uoms[(int)$variant['uomid']] ?? ''));
+		$quantity = $settings['quantity_field'] === null ? 1.0 : self::decimal($result['inputs'][$settings['quantity_field']] ?? null);
+		if($quantity !== null && ($quantity <= 0 || $quantity > self::POSITION_QUANTITY_MAX)) $quantity = null;
+		$list = self::decimal($variant['price']);
+		$special = $variant['specialprice'] === null ? 0.0 : self::decimal($variant['specialprice']);
+		$price = $special !== null && $special > 0 ? $special : $list;
+		$valid = $list !== null && $list >= 0 && $special !== null && $special >= 0 && $price !== null && $quantity !== null && $quantity > 0
+			&& preg_match('/^[A-Z]{3}$/D', $currency) && $variant['currency'] === $currency && $rate !== null && $rate >= 0 && $rate <= 100 && $uom !== '';
+		$positions = [];
+		$base = ['itemid' => (int)$variant['id'], 'itemoptid' => null, 'included' => false, 'price' => $price, 'quantity' => $quantity, 'uom' => $uom, 'currency' => (string)$variant['currency'], 'taxrate' => $rate,
+			'price_source' => $special > 0 ? 'item.specialprice' : 'item.price', 'list_price' => $list, 'status' => $valid ? 'priced' : 'review_required'];
+		$positions[] = $base;
+		$priceRules = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
+		foreach($chosen as $id) {
+			$option = $data['options'][$id];
+			$isIncluded = in_array($id, $included, true);
+			$optionPrice = self::decimal($option['price']);
+			$multiplier = $option['quantity'] === null ? 1.0 : self::decimal($option['quantity']);
+			$lineQuantity = $quantity !== null && $multiplier !== null ? $quantity * $multiplier : null;
+			if($lineQuantity !== null && (!is_finite($lineQuantity) || $lineQuantity <= 0 || $lineQuantity > self::POSITION_QUANTITY_MAX)) $lineQuantity = null;
+			$optionRate = $option['taxrate'] === null ? $rate : self::decimal($option['taxrate']);
+			$optionUnit = trim((string)$option['uom']) ?: $uom;
+			$action = (string)$option['priceruleaction'];
+			$amount = $option['priceruleamount'] === null ? 0.0 : self::decimal($option['priceruleamount']);
+			$available = $optionPrice !== null && $optionPrice >= 0;
+			$priced = $available && $lineQuantity !== null && $optionRate !== null && $optionRate >= 0 && $optionRate <= 100
+				&& ($option['currency'] === null || $option['currency'] === '' || $option['currency'] === $currency) && $optionUnit !== '' && in_array($optionUnit, $uoms, true)
+				&& empty($option['masterid']) && $amount !== null && ($action === '' || in_array($action, ['bypercent', 'byfixed', 'topercent', 'tofixed'], true));
+			if($priced && $action !== '') $optionPrice = $priceRules->usePriceRules([['action' => $action, 'amount' => $amount]], $optionPrice);
+			if($optionPrice !== null && (!is_finite($optionPrice) || $optionPrice < 0)) $priced = false;
+			$accessoryId = (int)$option['itemid'];
+			if($accessoryId > 0) {
+				$accessory = (new Shops_Model_DbTable_Item())->getItem($accessoryId);
+				if(!$accessory || !(int)$accessory['shopenabled'] || !(new Shops_Model_DbTable_Category())->getCategory((int)$accessory['shopcatid'])) { $priced = false; $accessoryId = 0; }
+			}
+			if(!$isIncluded && (($requested[$id]['compatibility_verified'] ?? false) !== true || !isset($requested[$id]['exclusivity']))) $priced = false;
+			$record = ['itemoptid' => $id, 'itemid' => $accessoryId ?: null, 'variantid' => (int)$variant['id'], 'group_id' => (int)$option['optsetid'],
+				'sku' => (string)$option['sku'], 'title' => (string)$option['title'], 'included' => $isIncluded, 'catalog_price' => self::decimal($option['price']),
+				'price' => $isIncluded ? 0.0 : ($priced ? $optionPrice : null), 'quantity' => $lineQuantity,
+				'uom' => $optionUnit, 'currency' => $option['currency'] ?: $currency, 'taxrate' => $optionRate, 'price_source' => $isIncluded ? $base['price_source'].'_included' : 'itemopt.price',
+				'price_rule' => ['action' => $action, 'amount' => $amount], 'status' => $priced ? ($isIncluded ? 'included' : 'priced') : ($optionPrice === -2.0 ? 'unavailable' : ($optionPrice === -1.0 ? 'on_request' : 'review_required'))];
+			$result['options'][] = $record;
+			$positions[] = $record;
+			if(!$priced) { $valid = false; $result['reasons'][] = 'variant_option_pricing_review'; }
+		}
+		$result['commercial'] += ['pricing_status' => 'review_required', 'currency' => $currency, 'positions' => $positions];
+		if(!$valid) { $result['reasons'][] = 'variant_pricing_review'; return $result; }
+		$rows = [];
+		foreach($positions as $index => $position) {
+			if(!is_finite($position['price'] * $position['quantity'])) { $result['reasons'][] = 'variant_pricing_review'; return $result; }
+			// These transient rows have no persisted position rules. Option rules were applied above.
+			$rows[] = (object)($position + ['id' => $index + 1, 'masterid' => -1, 'pricerulemaster' => 0]);
+		}
+		$calculated = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->calculate(['currency' => $currency, 'taxfree' => 0], $rows, 'shops', 'quote', $owner);
+		$result['commercial']['pricing_status'] = 'complete';
+		$result['commercial']['totals'] = array_intersect_key($calculated['row'], array_flip(['subtotal', 'taxes', 'total']));
+		return $result;
+	}
+
+	private function hydrateCountries(Shops_Form_DynamicForm $form): void
+	{
+		$countries = null;
+		foreach($form->getElements() as $name => $element) if($element['source'] === 'country') {
+			$countries ??= (new Shops_Model_DbTable_Country())->getCountries();
+			$form->addOptions($name, ['' => $element['options'][''] ?? 'Bitte wählen'] + $countries, 'replace');
+		}
+	}
+
 	private function evaluateCatalog(array $config, array $selection, array $values, array $result): array
 	{
 		$catalog = Shops_Model_FormConfig::catalogSettings($config, $selection);
@@ -122,11 +393,7 @@ class Shops_Service_InquirySelection
 		}
 		$form = $needed ? new Shops_Form_DynamicForm(['inputs' => array_values($needed)], 'inputs') : null;
 		if($form) {
-			$countries = null;
-			foreach($form->getElements() as $name => $element) if($element['source'] === 'country') {
-				$countries ??= (new Shops_Model_DbTable_Country())->getCountries();
-				$form->addOptions($name, ['' => $element['options'][''] ?? 'Bitte wählen'] + $countries, 'replace');
-			}
+			$this->hydrateCountries($form);
 			$valid = $form->isValid($values);
 			$result['inputs'] = array_intersect_key(array_diff_key($form->getFilteredValues(), $form->getErrors()), $needed);
 		} else $valid = true;

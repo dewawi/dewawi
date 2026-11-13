@@ -5,6 +5,20 @@ class Shops_Model_DbTable_Item extends DEEC_Model_DbTable_SiteEntity
 	protected $_name = 'item';
 	public const PER_PAGE = 25;
 	public const INQUIRY_SCAN_LIMIT = 200;
+	public const INQUIRY_VARIANT_LIMIT = 100;
+
+	public function getInquiryBases(array $ids): array
+	{
+		if(!$ids) return [];
+		return $this->fetchAll($this->getPublicSelect()->where('id IN (?)', $ids)->where('shopenabled = ?', 1)
+			->where('(parentid IS NULL OR parentid = 0)')->order('id ASC'))->toArray();
+	}
+
+	public function getInquiryVariants(int $parentId): array
+	{
+		return $this->fetchAll($this->getPublicSelect()->where('parentid = ?', $parentId)->where('shopenabled = ?', 1)
+			->order('id ASC')->limit(self::INQUIRY_VARIANT_LIMIT + 1))->toArray();
+	}
 
 	public function getInquiryItems(array $categoryIds): array
 	{
