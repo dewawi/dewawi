@@ -38,6 +38,8 @@ $categories = $this->{'categories'};
 							</div>
 							<?php endif; ?>
 
+							<?php if(!empty($this->catalogSelection)) echo $this->partial('inquiry/catalog.phtml', ['selection' => $this->catalogSelection]); ?>
+
 							<?php if (!empty($this->suggestions)): ?>
 								<div class="alert alert-info">
 									<h5>Unverbindliche Geräteauswahl:</h5>

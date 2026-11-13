@@ -30,6 +30,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 					$this->formDataSession->formData,
 					$this->formDataSession->suggestions,
 					$this->formDataSession->suggestionStep,
+					$this->formDataSession->catalogReady,
 					$this->formDataSession->requestValues,
 					$this->formDataSession->downloadUrl,
 					$this->formDataSession->downloadFile,
@@ -90,6 +91,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 		$this->view->shop = $shop;
 		$this->view->formRow = $this->formRow;
+		$this->view->catalogSelection = $request->isPost() ? [] : $this->catalogSelectionForStep($step);
 
 		$form = $this->createStepForm($step);
 
@@ -157,6 +159,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 				$formHtml = $this->view->partial('inquiry/index.phtml', [
 					'form' => $prevForm,
+					'catalogSelection' => $this->catalogSelectionForStep($prevStep),
 					'step' => $prevStep,
 					'ajax' => true,
 					'suggestions' => $this->formDataSession->suggestions ?? [],
@@ -177,6 +180,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 				$formHtml = $this->view->partial('inquiry/index.phtml', [
 					'form' => $form,
+					'catalogSelection' => $this->catalogSelectionForStep($step),
 					'step' => $step,
 					'ajax' => true,
 					'errors' => $form->getErrors(),
@@ -206,6 +210,13 @@ class Shops_InquiryController extends Shops_Controller_Action
 				$this->formDataSession->suggestionStep = $step;
 				$this->formDataSession->requestValues = $suggestions ? $this->normalizeRequestValues($formValues) : [];
 			}
+			$selectionSettings = $this->inquirySettings()['selection'] ?? [];
+			if(($selectionSettings['method'] ?? '') === 'catalog' && $step === (string)($selectionSettings['step'] ?? array_key_first($this->formConfig))) {
+				$this->formDataSession->catalogReady = true;
+				$this->formDataSession->suggestionStep = $step;
+				$this->formDataSession->suggestions = [];
+				$this->formDataSession->requestValues = [];
+			}
 
 			// Get next step key
 			$nextStep = $stepOrder[$currentIndex + 1] ?? null;
@@ -222,6 +233,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 				$formHtml = $this->view->partial('inquiry/index.phtml', [
 					'form' => $nextForm,
+					'catalogSelection' => $this->catalogSelectionForStep($nextStep),
 					'step' => $nextStep,
 					'ajax' => true,
 					'suggestions' => $this->formDataSession->suggestions ?? [],
@@ -250,6 +262,16 @@ class Shops_InquiryController extends Shops_Controller_Action
 			}
 			unset($allFormValues['csrf_token'], $allFormValues['inquiry_token'], $allFormValues['next'], $allFormValues['back']);
 			$selection = $this->evaluateSelection($allFormValues);
+			if($selection['method'] === 'catalog') {
+				$itemField = $selection['item_field'];
+				if(($allFormValues[$itemField] ?? '') !== '' && ($allFormValues[$itemField] ?? null) !== null && $selection['selected'] === null) {
+					$this->getResponse()->setHttpResponseCode(400);
+					return $this->_helper->json(['status' => 'error', 'message' => 'Die Artikelauswahl ist nicht mehr verfügbar. Bitte prüfen Sie Ihre Anforderungen erneut.']);
+				}
+				if($selection['selected'] !== null) {
+					foreach(['sku' => 'sku', 'titel' => 'title'] as $field => $key) if(array_key_exists($field, $allFormValues)) $allFormValues[$field] = $selection['selected'][$key];
+				}
+			}
 
 			// Datenschutz-Checkbox MUSS bestätigt sein
 			$privacyOk = !empty($allFormValues['privacy']) && (int)$allFormValues['privacy'] === 1;
@@ -287,6 +309,11 @@ class Shops_InquiryController extends Shops_Controller_Action
 				'source_path' => $this->getSourcePath(),
 				'_selection' => ['method' => $selection['method'], 'eligible' => $selection['eligible'], 'reasons' => $selection['reasons']],
 			]);
+			if($selection['method'] === 'catalog') {
+				$review = array_intersect_key($selection, array_flip(['selected', 'technical', 'commercial', 'summary', 'has_more']));
+				if($review['selected'] !== null) $review['selected'] = array_intersect_key($review['selected'], array_flip(['itemid', 'sku', 'title']));
+				$storedData['_selection'] += $review;
+			}
 
 			$inquiryDb = new Shops_Model_DbTable_Inquirydata();
 			try {
@@ -417,6 +444,17 @@ class Shops_InquiryController extends Shops_Controller_Action
 		return array_map('strval', array_keys($this->formConfig));
 	}
 
+	protected function catalogSelectionForStep(string $step): array
+	{
+		$selection = $this->inquirySettings()['selection'] ?? [];
+		if(($selection['method'] ?? '') !== 'catalog') return [];
+		$order = $this->getStepOrder();
+		$after = (string)($selection['step'] ?? $order[0]);
+		if(array_search($step, $order, true) <= array_search($after, $order, true)) return [];
+		if(empty($this->formDataSession->catalogReady)) return [];
+		return $this->evaluateSelection(array_merge(...array_values((array)$this->formDataSession->formData)));
+	}
+
 	protected function discardFollowingSteps(array $stepOrder, int $currentIndex): void
 	{
 		foreach (array_slice($stepOrder, $currentIndex + 1) as $laterStep) {
@@ -429,7 +467,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 			unset(
 				$this->formDataSession->suggestions,
 				$this->formDataSession->requestValues,
-				$this->formDataSession->suggestionStep
+				$this->formDataSession->suggestionStep,
+				$this->formDataSession->catalogReady
 			);
 		}
 	}
@@ -527,6 +566,9 @@ class Shops_InquiryController extends Shops_Controller_Action
 			$item = $sku !== '' ? $itemDb->getItemBySku($sku) : null;
 			if (!$item || !$categoryDb->getCategory((int)($item['shopcatid'] ?? 0))) continue;
 			$suggestion['description'] = (string)$item['sku'];
+			$suggestion['itemid'] = (int)$item['id'];
+			$suggestion['sku'] = (string)$item['sku'];
+			$suggestion['title'] = (string)$item['title'];
 			$available[] = $suggestion;
 		}
 
@@ -668,7 +710,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 			$this->formDataSession->formData,
 			$this->formDataSession->suggestions,
 			$this->formDataSession->requestValues,
-			$this->formDataSession->suggestionStep
+			$this->formDataSession->suggestionStep,
+			$this->formDataSession->catalogReady
 		);
 	}
 

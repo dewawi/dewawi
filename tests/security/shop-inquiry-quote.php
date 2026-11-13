@@ -558,6 +558,7 @@ $adapter->insert('shopinquiryform', ['id' => 866, 'shopid' => 121, 'clientid' =>
 $adapter->insert('shopinquiryform', ['id' => 867, 'shopid' => 120, 'clientid' => 200, 'title' => 'Other tenant', 'fields' => json_encode(inquiryPilotConfig()), 'quotetemplateid' => 100]);
 foreach(['DE' => 'Deutschland', 'CH' => 'Schweiz'] as $code => $name) $adapter->insert('country', ['code' => $code, 'name' => $name, 'language' => 'de_DE', 'clientid' => 100]);
 $adapter->insert('country', ['code' => 'XX', 'name' => 'Foreign fixture country', 'language' => 'de_DE', 'clientid' => 200]);
+require __DIR__.'/inquiry-catalog.php';
 
 if(getenv('DEWAWI_INQUIRY_TEST_ARTIFACT_DIR')) {
 	$artifactDir = getenv('DEWAWI_INQUIRY_TEST_ARTIFACT_DIR');

@@ -108,6 +108,8 @@ try {
 } finally {
 	restore_error_handler();
 }
+$zeroForm = new Shops_Form_DynamicForm([1 => [['name' => 'temperature', 'type' => 'number', 'format' => ['type' => 'decimal']]]], 1);
+checkDynamic($zeroForm->isValid(['temperature' => '0,0']) && $zeroForm->getFilteredValues()['temperature'] === 0.0, 'Decimal format turned a valid numeric zero into null');
 echo "PASS: $checks dynamic inquiry dependency, defaults and configuration checks\n";
 
 if(($argv[1] ?? '') === 'render') echo '<!--fixture-->'.(new Shops_Form_DynamicForm($fields, 1))->render();

@@ -4,6 +4,17 @@ class Shops_Model_DbTable_Item extends DEEC_Model_DbTable_SiteEntity
 {
 	protected $_name = 'item';
 	public const PER_PAGE = 25;
+	public const INQUIRY_SCAN_LIMIT = 200;
+
+	public function getInquiryItems(array $categoryIds): array
+	{
+		if(!$categoryIds) return [];
+		$select = $this->getPublicSelect()->from($this->_name, ['id', 'sku', 'title', 'shopcatid'])
+			->where('shopenabled = ?', 1)->where('shopcatid IN (?)', $categoryIds)
+			->where("sku IS NOT NULL AND TRIM(sku) <> ''")
+			->order('sku ASC')->order('id ASC')->limit(self::INQUIRY_SCAN_LIMIT + 1);
+		return $this->fetchAll($select)->toArray();
+	}
 
 	public function hasPublicDownload(string $filename): bool
 	{

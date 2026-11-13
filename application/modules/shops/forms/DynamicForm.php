@@ -128,7 +128,13 @@ class Shops_Form_DynamicForm extends DEEC_Form
 
 	public function getFilteredValues(): array
 	{
-		return $this->getActiveValues(parent::getFilteredValues());
+		$values = parent::getFilteredValues();
+		$raw = $this->getValues();
+		foreach($this->elements as $name => $element) {
+			if($element['type'] === 'number' && ($element['format']['type'] ?? '') === 'decimal' && ($values[$name] ?? null) === null
+				&& Shops_Service_InquirySelection::decimal($raw[$name] ?? null) === 0.0) $values[$name] = 0.0;
+		}
+		return $this->getActiveValues($values);
 	}
 
 	public function render()

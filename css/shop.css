@@ -1131,6 +1131,30 @@ form .hidden {
   margin-top: 1.5rem;
 }
 
+.inquiry-catalog-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 1rem;
+}
+
+.inquiry-catalog-item {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid #dce3e8;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+
+.inquiry-catalog-image {
+  width: 100%;
+  max-height: 12rem;
+  object-fit: contain;
+}
+
+.inquiry-catalog-diagnostics {
+  margin: 1rem 0;
+}
+
 .sidebar {
   background-color: #f7fbff;
   border: 1px solid #e3edf5;

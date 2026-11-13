@@ -113,6 +113,46 @@ def check_http(work, socket):
             post(contact)
             check(len(state()['inquiries']) == 1, 'HTTP replay duplicated the inquiry')
             print('PASS: isolated HTTP form, AJAX/back navigation, scoped countries, structured delivery, numeric values, manual persistence and replay')
+            for form_id, selected_id, expected_sku, name in [(900, '1001', 'DUPLICATE', 'equipment'), (901, '1100', 'BOLT-12', 'trading')]:
+                path = '/?id=' + str(form_id)
+                status, html = request(path)
+                inputs = Inputs(html).values
+                catalog_tokens = {key: inputs[key] for key in ['csrf_token', 'inquiry_token']}
+
+                def catalog_post(values):
+                    return request(path, dict(catalog_tokens, **values))
+
+                status, body = catalog_post({'step': 'requirements', 'demand': '12,5', 'material': '0', 'clientid': '200'})
+                suggestions = json.loads(body)['formHtml']
+                check(status == 200 and 'inquiry-catalog-item' in suggestions and 'Berechneter Wert' not in suggestions, 'Generic HTTP catalog suggestions failed')
+                (work / ('catalog-' + name + '.html')).write_text(suggestions)
+                contact = {'step': 'contact', 'itemid': '1010', 'email': 'catalog-http@example.test', 'privacy': '1', 'sku': 'FORGED', 'titel': 'Forged customer title'}
+                check(catalog_post(contact)[0] == 400, 'Catalog accepted an inaccessible item ID')
+                contact['itemid'] = selected_id
+                catalog_post(dict(contact, back='1'))
+                status, body = catalog_post({'step': 'requirements', 'demand': '12,5', 'material': '0'})
+                check(Inputs(json.loads(body)['formHtml']).values.get('itemid') == selected_id, 'Catalog back navigation lost selected identity')
+                status, body = catalog_post(contact)
+                check(status == 200 and 'gespeichert' in json.loads(body)['formHtml'], 'Catalog inquiry was not saved')
+                saved = state()['catalog_inquiries'][-1]
+                check(saved['sku'] == expected_sku and saved['_selection']['selected']['itemid'] == int(selected_id) and saved['_selection']['eligible'] is False, 'Catalog trusted SKU/title or enabled quotes')
+                check(state()['quotes'] == before['quotes'], 'Catalog created an automatic quote')
+                previous_count = len(state()['catalog_inquiries'])
+                catalog_post(contact)
+                check(len(state()['catalog_inquiries']) == previous_count, 'Repeated catalog submission duplicated inquiry')
+            path = '/?id=900'
+            status, html = request(path)
+            inputs = Inputs(html).values
+            catalog_tokens = {key: inputs[key] for key in ['csrf_token', 'inquiry_token']}
+            status, body = catalog_post({'step': 'requirements', 'demand': '1000', 'material': '0'})
+            check('class="inquiry-catalog-item"' not in json.loads(body)['formHtml'], 'Nonmatching catalog returned candidates')
+            status, body = catalog_post({'step': 'contact', 'itemid': '', 'email': 'catalog-http@example.test', 'privacy': '1'})
+            saved = state()['catalog_inquiries'][-1]
+            check(status == 200 and saved['_selection']['selected'] is None and saved['_selection']['eligible'] is False and state()['quotes'] == before['quotes'], 'No-match manual inquiry was lost or auto-offered')
+            print('PASS: two catalog HTTP product groups, canonical IDs/SKUs, tamper rejection, back navigation, manual storage and replay')
+            ui = subprocess.run(['python3', str(root / 'tests/ui/inquiry-catalog.py'), str(work)], capture_output=True, text=True)
+            print(ui.stdout)
+            check(ui.returncode == 0, 'Catalog Chromium regression failed: ' + ui.stderr)
         except Exception:
             print(log_path.read_text())
             raise

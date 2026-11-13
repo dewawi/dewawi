@@ -9,6 +9,7 @@ if(!in_array(PHP_SAPI, ['cli', 'cli-server'], true) || !is_string($socket) || !s
 error_reporting(E_ALL & ~E_DEPRECATED);
 ini_set('display_errors', '0');
 $root = dirname(__DIR__, 3);
+define('BASE_PATH', dirname($socket).'/base');
 set_include_path($root.'/library'.PATH_SEPARATOR.get_include_path());
 spl_autoload_register(static function(string $class) use ($root): void {
 	if($path = stream_resolve_include_path(str_replace('_', '/', $class).'.php')) { require_once $path; return; }
@@ -23,11 +24,12 @@ $adapter = new Zend_Db_Adapter_Pdo_Mysql(['host' => 'localhost', 'unix_socket' =
 Zend_Db_Table::setDefaultAdapter($adapter);
 if(PHP_SAPI === 'cli') {
 	$rows = $adapter->fetchAll("SELECT clientid, shopid, data FROM shopinquirydata WHERE data LIKE '%http-pilot@example.test%'");
-	echo json_encode(['quotes' => (int)$adapter->fetchOne('SELECT COUNT(*) FROM quote'), 'inquiries' => array_map(static fn(array $row): array => json_decode($row['data'], true), $rows), 'scopes' => array_map(static fn(array $row): array => ['clientid' => (int)$row['clientid'], 'shopid' => (int)$row['shopid']], $rows)]);
+	$catalogRows = $adapter->fetchAll("SELECT data FROM shopinquirydata WHERE data LIKE '%catalog-http@example.test%'");
+	echo json_encode(['quotes' => (int)$adapter->fetchOne('SELECT COUNT(*) FROM quote'), 'inquiries' => array_map(static fn(array $row): array => json_decode($row['data'], true), $rows), 'scopes' => array_map(static fn(array $row): array => ['clientid' => (int)$row['clientid'], 'shopid' => (int)$row['shopid']], $rows), 'catalog_inquiries' => array_map(static fn(array $row): array => json_decode($row['data'], true), $catalogRows)]);
 	exit;
 }
 Zend_Session::setOptions(['save_path' => dirname($socket).'/sessions', 'use_cookies' => true]);
-Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 120, 'clientid' => 100]));
+Zend_Registry::set('SiteContext', new DEEC_Site_Context(['id' => 120, 'clientid' => 100], [], ['inquiry', 'catalog']));
 Zend_Registry::set('Zend_Locale', new Zend_Locale('de_DE'));
 $translator = new DEEC_Translate('de_DE');
 $translator->loadDir('default', $root.'/languages/de_DE/default');
@@ -59,6 +61,7 @@ Zend_Controller_Action_HelperBroker::getStaticHelper('redirector')->setExit(fals
 $view = new Zend_View();
 $view->addScriptPath($root.'/application/modules/shops/views/scripts');
 $view->addHelperPath($root.'/application/views/helpers', 'Zend_View_Helper');
+$view->addHelperPath($root.'/application/modules/shops/views/helpers', 'Zend_View_Helper');
 Zend_Controller_Action_HelperBroker::getStaticHelper('viewRenderer')->setView($view);
 $controller = new PilotHttpController($request, $response);
 $action = $request->getActionName();

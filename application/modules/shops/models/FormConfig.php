@@ -59,7 +59,57 @@ class Shops_Model_FormConfig
 			}
 			unset($definition);
 		}
+		if(($config['_settings']['selection']['method'] ?? '') === 'catalog') self::catalogSettings($steps, $config['_settings']['selection']);
 		return $steps;
+	}
+
+	public static function catalogSettings(array $steps, array $selection): array
+	{
+		$step = (string)($selection['step'] ?? array_key_first($steps));
+		$stepIds = array_map('strval', array_keys($steps));
+		if(!isset($steps[$step]) || $step === end($stepIds)) throw new InvalidArgumentException('Catalog selection needs a following form step');
+		$fields = $inputFields = [];
+		foreach($steps as $id => $definitions) foreach($definitions as $field) {
+			$fields[$field['name']] = $field;
+			if(array_search((string)$id, $stepIds, true) <= array_search($step, $stepIds, true)) $inputFields[$field['name']] = $field;
+		}
+		$itemField = $selection['item_field'] ?? 'itemid';
+		if(!is_string($itemField) || !isset($fields[$itemField]) || isset($inputFields[$itemField]) || $fields[$itemField]['type'] !== 'hidden'
+			|| isset($fields[$itemField]['depends_on']) || !empty($fields[$itemField]['required']) || !empty($fields[$itemField]['default']) || !empty($fields[$itemField]['value'])) throw new InvalidArgumentException('Invalid catalog item field');
+		$categories = $selection['categories'] ?? [];
+		if(!is_array($categories) || !$categories || count($categories) > 20 || array_values($categories) !== $categories) throw new InvalidArgumentException('Invalid catalog categories');
+		foreach($categories as $id) if((!is_int($id) && !is_string($id)) || !filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) throw new InvalidArgumentException('Invalid catalog category ID');
+		$limit = $selection['limit'] ?? 12;
+		if(!is_int($limit) || $limit < 1 || $limit > 24 || (isset($selection['include_subcategories']) && !is_bool($selection['include_subcategories']))) throw new InvalidArgumentException('Invalid catalog result bounds');
+		$filters = $selection['filters'] ?? [];
+		if(!is_array($filters) || array_values($filters) !== $filters || count($filters) > 10) throw new InvalidArgumentException('Invalid catalog filters');
+		foreach($filters as &$filter) {
+			if(!is_array($filter) || array_diff(array_keys($filter), ['field', 'values', 'value_map', 'attribute', 'column', 'type', 'operator', 'unit', 'set_id', 'label'])) throw new InvalidArgumentException('Unknown catalog filter setting');
+			if(!is_string($filter['attribute'] ?? null) || trim($filter['attribute']) === '' || strlen($filter['attribute']) > 255
+				|| !in_array($filter['column'] ?? '', ['value', 'description'], true) || !in_array($filter['type'] ?? '', ['text', 'number'], true)
+				|| !in_array($filter['operator'] ?? '', $filter['type'] === 'number' ? ['eq', 'gte', 'lte'] : ['eq'], true)) throw new InvalidArgumentException('Invalid catalog attribute comparison');
+			if(($filter['type'] === 'number' && !array_key_exists('unit', $filter)) || (array_key_exists('unit', $filter) && (!is_string($filter['unit']) || strlen($filter['unit']) > 32))) throw new InvalidArgumentException('Explicit catalog units are required');
+			$filter['unit'] = trim($filter['unit'] ?? '');
+			if(isset($filter['set_id']) && ((!is_int($filter['set_id']) && !is_string($filter['set_id'])) || filter_var($filter['set_id'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) === false)) throw new InvalidArgumentException('Invalid catalog attribute group');
+			if(isset($filter['label']) && (!is_string($filter['label']) || strlen($filter['label']) > 255)) throw new InvalidArgumentException('Invalid catalog filter label');
+			if(isset($filter['field']) === isset($filter['values'])) throw new InvalidArgumentException('Catalog filter needs a field or fixed values');
+			if(isset($filter['field'])) {
+				$name = $filter['field'];
+				if(!is_string($name) || !isset($inputFields[$name]) || trim((string)($inputFields[$name]['unit'] ?? '')) !== $filter['unit']) throw new InvalidArgumentException('Invalid catalog input mapping or unit');
+			}
+			if(isset($filter['value_map']) && (!isset($filter['field']) || !is_array($filter['value_map']) || !$filter['value_map'] || count($filter['value_map']) > 20)) throw new InvalidArgumentException('Invalid catalog input value mapping');
+			if(isset($filter['value_map']) && in_array($inputFields[$filter['field']]['type'], ['select', 'radio', 'checkbox'], true)) {
+				$options = $inputFields[$filter['field']]['type'] === 'checkbox' ? ['0' => '', '1' => ''] : $inputFields[$filter['field']]['options'];
+				foreach($filter['value_map'] as $key => $value) if(!array_key_exists((string)$key, $options)) throw new InvalidArgumentException('Unknown catalog input option');
+			}
+			$values = $filter['values'] ?? array_values($filter['value_map'] ?? []);
+			if(!is_array($values) || (isset($filter['values']) && (!$values || array_values($values) !== $values || count($values) > 20 || ($filter['operator'] !== 'eq' && count($values) !== 1)))) throw new InvalidArgumentException('Invalid catalog value list');
+			foreach($values as $value) {
+				if(!is_scalar($value) || is_bool($value) || trim((string)$value) === '' || strlen((string)$value) > 255 || ($filter['type'] === 'number' && Shops_Service_InquirySelection::decimal($value) === null)) throw new InvalidArgumentException('Invalid catalog comparison value');
+			}
+		}
+		unset($filter);
+		return ['step' => $step, 'item_field' => $itemField, 'categories' => array_values(array_unique(array_map('intval', $categories))), 'include_subcategories' => $selection['include_subcategories'] ?? false, 'limit' => $limit, 'filters' => $filters];
 	}
 
 	private static function collectFields(array $fields, array &$result, array &$names, ?array $dependency = null): void

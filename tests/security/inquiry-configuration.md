@@ -28,6 +28,66 @@ Defaults must be explicit `default` values. A description promising 35 degrees d
 
 Suggestions render independently of step number. Form and field descriptions supply the product-specific guidance; the previous fixed chiller sidebar has been removed. The legacy calculation supports `calculate.required_field` for its demand field (otherwise the calculation field's name, with the previous `kuehlleistung` convention retained for older factor-field configurations) and `calculate.unit` for display. No new technical selection engine is implemented.
 
+## Catalog suggestions
+
+`_settings.selection.method: "catalog"` adds category/attribute suggestions to the existing controller, form and AJAX workflow. It always returns `eligible: false`, including when `automatic_quote` was accidentally set to true. It cannot number, finalize, archive or email an offer. The production configuration and local pilot of form 865 are not changed.
+
+The following complete example uses **synthetic fixture category 40**, not a production mapping. Replace that ID and the attribute identifiers only after reviewing the actual shop data. The portable two-group examples are in `tests/security/fixtures/inquiry-catalog-config.php`.
+
+```json
+{
+  "requirements": [
+    {"name": "diameter", "label": "Mindestdurchmesser", "type": "number", "unit": "mm", "required": true, "attribs": {"step": "any"}},
+    {"name": "material", "label": "Material", "type": "select", "required": true, "options": {"": "Bitte wählen", "0": "Stahl", "1": "Messing"}}
+  ],
+  "contact": [
+    {"name": "itemid", "type": "hidden"},
+    {"name": "sku", "label": "Gewünschte Artikelnummer", "type": "text"},
+    {"name": "titel", "label": "Gewünschte Bezeichnung", "type": "text"},
+    {"name": "email", "label": "E-Mail", "type": "email", "required": true},
+    {"name": "privacy", "label": "Datenschutz bestätigt", "type": "checkbox", "required": true}
+  ],
+  "_settings": {
+    "selection": {
+      "method": "catalog",
+      "automatic_quote": false,
+      "step": "requirements",
+      "item_field": "itemid",
+      "categories": [40],
+      "include_subcategories": false,
+      "limit": 12,
+      "filters": [
+        {"field": "diameter", "attribute": "Diameter", "column": "description", "type": "number", "operator": "gte", "unit": "mm"},
+        {"field": "material", "attribute": "Material", "column": "description", "type": "text", "operator": "eq", "value_map": {"0": "steel", "1": "brass"}},
+        {"attribute": "Grade", "column": "value", "type": "text", "operator": "eq", "values": ["A", "B"]}
+      ]
+    }
+  }
+}
+```
+
+`step` identifies the submitted requirements step; suggestions appear in following steps. It defaults to the first step and must have a following step. Filter inputs may refer to fields in that step or preceding steps. Those submitted inputs are revalidated and inactive values excluded; future contact data and unknown posted properties are not selection inputs. Existing same-step dependencies apply, including inactive filters, which are explicitly marked `inactive` rather than satisfied. A missing/invalid active filter input prevents matches. No default technical values are supplied.
+
+`item_field` names an unconditional, optional hidden field in a following step, without a preset item ID. Selection uses the item ID, preserving distinct records even with duplicate SKUs. The browser fills the existing optional `sku`/`titel` fields for convenience; on final submission the server repeats selection, validates the ID against current bounded candidates, and canonicalizes these fields. An inaccessible, stale, malformed or nonmatching selected ID returns an error before storing the inquiry. No selected ID is required to send a valid manual request, including when there are no matches. Selection can be cleared explicitly. Each rendered preview is refreshed from validated session inputs and current scoped data rather than retaining a product list across requests.
+
+Each filter has a literal attribute `title`, an explicit source `column` (`value` or `description`), a `type` (`text` or `number`) and `operator`. Text supports exact, case-sensitive `eq`; numbers support `eq`, `gte` and `lte` without rounding or tolerance. Numbers accept decimal comma or point, preserve zero, and reject null/empty, nonfinite, decorated and ambiguous numeric strings. No SQL casts or formulas are used. A decimal format on an Inquiry number no longer converts an explicitly entered zero to null.
+
+Use either `field` or a nonempty fixed `values` list. All filters combine with AND; `eq` accepts any member of its own list. A range comparison has exactly one fixed value. Optional `value_map` explicitly maps submitted field keys to stored attribute values; it never guesses meanings from translated option labels. Select/radio mapping keys must exist in the configured options. Lists/maps are limited to 20 values and a form to 10 filters. Unknown filter settings/operators/columns and invalid configuration fail validation.
+
+Numeric filters require an explicit `unit`, including `""` for dimensionless data. A mapped field's unit and the attribute's trimmed `uom` must agree exactly; there is no W/kW, case, spelling or fluid conversion. Text filters default to dimensionless units. A literal attribute title must resolve to exactly one active attribute for the candidate's `parentid`; duplicate rows remain ambiguous even if their values agree. Optional `set_id` narrows to a reviewed attribute group (`0` means ungrouped). Attributes of deleted, foreign or wrong-parent groups cannot supply matches. No SKU-based attribute join or fallback to other columns is used.
+
+The existing site-owned public category scope is retained. Every configured category must be an active shop category of the selected shop/tenant. Descendants are included only when requested and reached through active scoped categories. Candidate items must have `shopenabled=1`, a nonempty SKU and be undeleted. The selected SiteContext is authoritative even for a logged-in child user; internal `Client.modules` sharing metadata never widens public shop reads. An authorized parent-owned shop still uses its parent owner correctly. The `catalog` site feature is additionally required. No internal permissions, entitlements or public routes are expanded.
+
+Results use fixed database ordering `sku ASC, id ASC`. The configurable candidate limit is 1–24 (default 12); rejected diagnostics are bounded separately by the same limit. At most 200 candidate articles and 5,000 relevant attribute rows are examined. An attribute overflow produces no partial matches. A truncated article/result list sets `has_more` and a visible refinement notice; it does not claim an exhaustive search. This initial bounded preview has no separate pagination workflow. Large catalogs should use narrower category/filter configurations; suitable SQL prefilters or paging need a separately reviewed extension. At most one scoped image reference per result is supplied and the existing SiteImage helper checks the published file before rendering.
+
+### Selection result contract
+
+The existing service returns these additive fields: `method`, `inputs`, `candidates`, `rejected`, `conditions`, `selected`, `technical`, `commercial`, `reasons`, `options` and `eligible`. Catalog results also include `item_field`, `limit`, `scanned`, `has_more` and diagnostic `summary` counts. Counts in `summary` represent failed conditions, not distinct products.
+
+Catalog candidate/rejected records contain canonical `itemid`, `sku`, `title` and their condition outcomes. Conditions report the configured source, expected value(s), actual value/unit when unambiguous, and `matched`, `not_matched`, `missing_attribute`, `ambiguous_attribute`, `invalid_attribute`, `unit_mismatch` or `inactive`. Global input conditions can be `ready`, `missing_input` or `invalid_input`. Technical and commercial statuses remain `review_required`; an attribute match is never presented as complete suitability or pricing/tax approval.
+
+Manual and legacy FORM_CALC calls retain their existing behavior and gate. Legacy controller suggestions now also carry IDs/SKUs/titles for the common result envelope. The legacy `eligible` value still permits only an attempt through the pre-existing quote creation/commercial/finalization checks; the open review status is not a new technical or tax certification. Catalog's gate is unconditionally false. Stored catalog metadata contains the chosen identity, open statuses, diagnostic summary and manual-review reasons, avoiding a large snapshot of every proposed/rejected record. Normal inquiry fields remain available to the existing internal workflow.
+
 ## Automatic quotes are opt-in
 
 Without explicit approval, inquiries are saved for manual processing and no automatic quote is created or sent. A representative settings object is:
@@ -94,6 +154,7 @@ Long document terms render below totals using the available page width and norma
 - `python3 tests/ui/inquiry-pilot.py` (actual field rendering, collapsed sections, browser validity and AJAX navigation)
 - `php tests/security/inquiry-selection.php`
 - `python3 tests/security/shop-inquiry-quote.py` (isolated MariaDB, actual PDFs and stubbed notifications)
+- The same isolated runner includes `tests/security/inquiry-catalog.php`, two catalog HTTP flows and `tests/ui/inquiry-catalog.py` at mobile/desktop widths.
 - Existing inquiry, contact workflow, calculation, PDF, archive, permission and email-fixture suites.
 
 The local references `/tmp/dewawi-inquiry-referenzen/form-865.fields.json` and `Angebot-50635-anonymisiert.pdf` are not committed. When available, the form reference is read by additional regression assertions. The PDF reference is inspected as a read-only layout reference, never regenerated or edited. Database fixtures, images and new PDFs are synthetic and isolated under the test runner's temporary root. Optional `DEWAWI_INQUIRY_TEST_ARTIFACT_DIR=/tmp/dewawi-inquiry-pdf-review` keeps synthetic PDFs for visual inspection; no real email transport is used.

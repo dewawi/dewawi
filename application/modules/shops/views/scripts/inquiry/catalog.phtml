@@ -1,0 +1,52 @@
+<?php
+$selection = $this->selection;
+$statuses = ['matched' => 'Erfüllt', 'not_matched' => 'Nicht erfüllt', 'missing_attribute' => 'Merkmal fehlt', 'ambiguous_attribute' => 'Merkmal ist mehrdeutig', 'unit_mismatch' => 'Einheit stimmt nicht überein', 'invalid_attribute' => 'Merkmalswert ist ungültig'];
+?>
+<section class="inquiry-catalog" aria-label="Katalogvorschläge">
+	<h3>Unverbindliche Katalogvorschläge</h3>
+	<p>Attributübereinstimmungen bestätigen keine vollständige Eignung. Die fachliche und kaufmännische Prüfung steht noch aus. Ein Angebot wird nach manueller Prüfung erstellt.</p>
+	<?php if(in_array('catalog_inputs_incomplete', $selection['reasons'], true)): ?>
+		<p role="status">Für den Vergleich fehlen gültige Angaben. Sie können zurückgehen und Ihre Anforderungen ergänzen oder Ihre Anfrage zur manuellen Prüfung senden.</p>
+		<ul><?php foreach($selection['conditions'] as $condition): if(!in_array($condition['status'], ['missing_input', 'invalid_input'], true)) continue; ?>
+			<li><?= $this->escape($condition['label']); ?>: <?= $condition['status'] === 'missing_input' ? 'Angabe fehlt' : 'Angabe ist ungültig'; ?></li>
+		<?php endforeach; ?></ul>
+	<?php elseif(in_array('catalog_unavailable', $selection['reasons'], true) || in_array('catalog_category_unavailable', $selection['reasons'], true) || in_array('catalog_attribute_limit', $selection['reasons'], true)): ?>
+		<p role="status">Der Katalogvergleich ist derzeit nicht vollständig verfügbar. Ihre Anfrage kann zur manuellen Prüfung gesendet werden.</p>
+	<?php elseif(!$selection['candidates']): ?>
+		<p role="status"><?= $selection['has_more'] ? 'Im geprüften Katalogausschnitt' : 'Für die angegebenen Filter'; ?> wurden keine eindeutigen Übereinstimmungen gefunden. Ihre Anfrage kann zur manuellen Prüfung gesendet werden.</p>
+	<?php endif; ?>
+	<?php if($selection['has_more']): ?>
+		<p role="status">Die Vorschlagsliste ist begrenzt. Weitere Artikel können passen. Bitte grenzen Sie Ihre Anforderungen bei Bedarf weiter ein.</p>
+	<?php endif; ?>
+	<div class="inquiry-catalog-items">
+	<?php foreach($selection['candidates'] as $item): ?>
+		<article class="inquiry-catalog-item">
+			<h4><?= $this->escape($item['sku']); ?> – <?= $this->escape($item['title']); ?></h4>
+			<?php if(!empty($item['images'][0]['url'])) echo $this->SiteImage('/media/images/'.$item['images'][0]['url'], $item['images'][0]['title'] ?: $item['title'], ['class' => 'inquiry-catalog-image', 'sizes' => '(max-width: 767.98px) 100vw, 50vw']); ?>
+			<ul>
+			<?php foreach($item['conditions'] as $condition): if($condition['status'] === 'inactive') continue; ?>
+				<li><strong><?= $this->escape($condition['label']); ?>:</strong> <?= $this->escape((string)($condition['actual'] ?? '')); ?> <?= $this->escape($condition['unit']); ?>
+					(<?= $this->escape($statuses[$condition['status']]); ?>;
+					Anforderung <?= $this->escape(['eq' => '=', 'gte' => '≥', 'lte' => '≤'][$condition['operator']]); ?> <?= $this->escape(implode(' / ', $condition['expected'])); ?> <?= $this->escape($condition['unit']); ?>)</li>
+			<?php endforeach; ?>
+			</ul>
+			<p>Fachlich ungeprüft · Kaufmännische Prüfung offen</p>
+			<button type="button" class="btn btn-outline-primary select-catalog-suggestion" aria-pressed="false" data-item-field="<?= $this->escape($selection['item_field']); ?>" data-itemid="<?= (int)$item['itemid']; ?>" data-sku="<?= $this->escape($item['sku']); ?>" data-title="<?= $this->escape($item['title']); ?>">Diesen Artikel anfragen</button>
+		</article>
+	<?php endforeach; ?>
+	</div>
+	<p class="inquiry-catalog-choice" aria-live="polite"></p>
+	<button type="button" class="btn btn-outline-secondary clear-catalog-suggestion" data-item-field="<?= $this->escape($selection['item_field']); ?>" data-itemid="" data-sku="" data-title="">Ohne Artikelauswahl anfragen</button>
+	<?php if($selection['summary']): ?>
+	<details class="inquiry-catalog-diagnostics">
+		<summary>Hinweise zu nicht berücksichtigten Artikeln</summary>
+		<p>Fehlende, mehrdeutige oder ungültige Merkmale sowie abweichende Einheiten zählen nicht als Übereinstimmung. Die folgende Liste ist begrenzt.</p>
+		<?php foreach($selection['rejected'] as $item): ?>
+			<p><strong><?= $this->escape($item['sku']); ?> – <?= $this->escape($item['title']); ?></strong></p>
+			<ul><?php foreach($item['conditions'] as $condition): if($condition['status'] === 'inactive') continue; ?>
+				<li><?= $this->escape($condition['label']); ?>: <?= $this->escape($statuses[$condition['status']]); ?></li>
+			<?php endforeach; ?></ul>
+		<?php endforeach; ?>
+	</details>
+	<?php endif; ?>
+</section>

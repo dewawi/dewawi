@@ -467,7 +467,28 @@ function toggleDependentFields() {
 		}
 		$form.off('.inquiryDependencies').on('change.inquiryDependencies input.inquiryDependencies', ':input', update);
 		update();
+		$form.find('.select-catalog-suggestion').each(function () {
+			const name = $(this).attr('data-item-field');
+			const $input = $form.find(':input').filter(function () { return this.name === name; });
+			if ($input.val() === $(this).attr('data-itemid')) selectInquiryCatalogItem(this, false);
+		});
 	});
+}
+
+function selectInquiryCatalogItem(button, notify = true) {
+	const $button = $(button);
+	const $form = $button.closest('form');
+	const field = $button.attr('data-item-field');
+	const $input = $form.find(':input').filter(function () { return this.name === field; });
+	if (!$input.length || $input.prop('disabled')) return false;
+	$input.val($button.attr('data-itemid'));
+	$form.find('[name="sku"]').val($button.attr('data-sku'));
+	$form.find('[name="titel"]').val($button.attr('data-title'));
+	$form.find('.select-catalog-suggestion').attr('aria-pressed', 'false');
+	if ($button.hasClass('select-catalog-suggestion')) $button.attr('aria-pressed', 'true');
+	$form.find('.inquiry-catalog-choice').text($button.attr('data-itemid') ? 'Für Ihre Anfrage vorgemerkt: ' + $button.attr('data-sku') + ' – ' + $button.attr('data-title') : 'Keine Artikelauswahl vorgemerkt.');
+	if (notify) $input.trigger('change');
+	return true;
 }
 
 // Function to show or hide shipping fields
@@ -528,6 +549,14 @@ $(document).on('submit', '#inquiry-form', function (event) {
 
 $(document).on('click', '#inquiry-form [data-inquiry-back]', function () {
 	goBackStep(String($(this).closest('form').attr('data-current-step') || ''));
+});
+
+$(document).on('click', '#inquiry-form .select-catalog-suggestion', function () {
+	selectInquiryCatalogItem(this);
+});
+
+$(document).on('click', '#inquiry-form .clear-catalog-suggestion', function () {
+	selectInquiryCatalogItem(this);
 });
 
 $(document).on('click', '[data-show-tab]', function () {
