@@ -336,24 +336,7 @@ class Sales_Service_DocumentPayloadService
 
 			$media[$itemId] = $mediaDb->getMediaByParentID((int)$item['id'], 'items', 'item');
 
-			$attributeSets = $attributeSetsDb->getPositionSets($itemId);
-
-			foreach ($attributeSets as $attributeSetId => $attributeSet) {
-				$attributesByGroup[$position->id][$attributeSetId] = [
-					'title' => $attributeSet['title'],
-					'description' => $attributeSet['description'],
-					'attributes' => $attributesDb->getPositions($itemId, $attributeSet['id']),
-				];
-			}
-
-			$otherAttributes = $attributesDb->getPositions($itemId, 0);
-			if (count($otherAttributes)) {
-				$attributesByGroup[$position->id][] = [
-					'title' => 'Sonstiges',
-					'description' => '',
-					'attributes' => $otherAttributes,
-				];
-			}
+			$attributesByGroup[$position->id] = $this->getAttributeGroups($itemId, $attributeSetsDb, $attributesDb);
 		}
 
 		return [
@@ -362,6 +345,17 @@ class Sales_Service_DocumentPayloadService
 			'media' => $media,
 			'attributesByGroup' => $attributesByGroup,
 		];
+	}
+
+	protected function getAttributeGroups(int $itemId, $setsDb, $attributesDb): array
+	{
+		$groups = [];
+		foreach($setsDb->getPositionSets($itemId) as $set) {
+			$groups[] = ['title' => $set['title'], 'description' => $set['description'], 'attributes' => $attributesDb->getPositions($itemId, (int)$set['id'])];
+		}
+		$other = $attributesDb->getPositions($itemId, 0);
+		if(count($other)) $groups[] = ['title' => 'Sonstiges', 'description' => '', 'attributes' => $other];
+		return $groups;
 	}
 
 	protected function buildPaymentData(array $document, bool $signed = false): array

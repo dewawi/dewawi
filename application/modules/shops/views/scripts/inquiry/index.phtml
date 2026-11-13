@@ -15,7 +15,7 @@ $categories = $this->{'categories'};
 	<div class="container">
 		<h2><?= htmlspecialchars(($this->formRow['title'] ?? 'Anfrage')) ?></h2>
 		<div class="row g-4">
-			<div class="col-12 col-lg-6">
+			<div class="col-12">
 				<div id="form-container">
 					<div class="form-step">
 						<form method="post" id="inquiry-form" data-current-step="<?php echo $this->escape((string)$this->step); ?>">
@@ -40,7 +40,8 @@ $categories = $this->{'categories'};
 
 							<?php if (!empty($this->suggestions)): ?>
 								<div class="alert alert-info">
-									<h5>Geräteempfehlung basierend auf Ihrer Berechnung:</h5>
+									<h5>Unverbindliche Geräteauswahl:</h5>
+								<p>Zusätzliche Anforderungen und Ausstattung müssen vor einem verbindlichen Angebot technisch und kaufmännisch geprüft werden.</p>
 									<div class="row">
 										<?php foreach ($this->suggestedItems as $item): ?>
 											<?php
@@ -81,15 +82,18 @@ $categories = $this->{'categories'};
 															<p>
 																<strong>Berechneter Wert: <?= number_format($item['value'], 2, ',', '.') ?> <?= $this->escape($item['unit'] ?? ''); ?> (<?= number_format($this->escape($item['percent']), 2, ',', '.') ?> %)</strong>
 															</p>
+															<?php if(isset($item['required']) && ($item['capacity_raw'] ?? $item['value']) < $item['required']): ?>
+															<p>Die berechnete Leistung liegt unter Ihrer Anforderung. Eine manuelle Prüfung ist erforderlich.</p>
+															<?php endif; ?>
 															<?php if ($hasSpecial): ?>
-																<p class="fw-bold"><strong style="color:#008000;font-size:1.3rem;">Sonderpreis: <?= number_format($special, 2, ',', '.') ?> €</strong>
+																<p class="fw-bold"><strong style="color:#008000;font-size:1.3rem;">Sonderpreis: <?= number_format($special, 2, ',', '.') ?> <?= $this->escape($item['item']['currency'] ?? ''); ?></strong>
 																<?php if ($discountPct !== null): ?>
 																	<span class="badge bg-danger ms-2" style="color: #ffffff;">-<?= $discountPct; ?>%</span>
 																<?php endif; ?>
 																</p>
-																<p class="fw-bold">Listenpreis: <?= number_format($base, 2, ',', '.') ?> €</p>
+																<p class="fw-bold">Listenpreis: <?= number_format($base, 2, ',', '.') ?> <?= $this->escape($item['item']['currency'] ?? ''); ?></p>
 															<?php else: ?>
-																<p class="fw-bold"><span style="text-decoration:line-through;font-size:1.3rem;">Listenpreis: <?= number_format($base, 2, ',', '.') ?> €</span></p>
+																<p class="fw-bold"><span style="text-decoration:line-through;font-size:1.3rem;">Listenpreis: <?= number_format($base, 2, ',', '.') ?> <?= $this->escape($item['item']['currency'] ?? ''); ?></span></p>
 															<?php endif; ?>
 															<button type="button" class="btn btn-outline-primary mt-2 select-suggestion"
 																	data-sku="<?= $this->escape($item['item']['sku']) ?>"
@@ -112,52 +116,6 @@ $categories = $this->{'categories'};
 				</div>
 			</div>
 
-			<?php if ($this->step == 1): ?>
-				<div class="col-12 col-lg-6">
-					<aside class="sidebar sticky-lg-top" style="top: 20px;">
-						<h5 class="mb-3">Weiterführende Informationen zur technischen Auslegung</h5>
-
-						<p>Um eine passende und effiziente Lösung für Ihre Anwendung zu ermitteln, benötigen wir möglichst vollständige und genaue Angaben. Die folgenden Hinweise helfen Ihnen, die technischen Anforderungen optimal zu beschreiben:</p>
-						
-						<h5>1. Einsatzbereich und Umgebung</h5>
-						<ul>
-							<li>Art der Anwendung (z. B. Prozesskühlung, Raumkühlung, Maschinenkühlung)</li>
-							<li>Umgebungsbedingungen am Aufstellort (Temperaturbereich, Innen-/Außenaufstellung, Witterungseinflüsse)</li>
-						</ul>
-
-						<h5>2. Leistungsdaten</h5>
-						<ul>
-							<li>Erforderliche Kälteleistung in kW</li>
-							<li>Vor- und Rücklauftemperaturen des Mediums</li>
-							<li>Gewünschte Temperaturkonstanz / Regelgenauigkeit</li>
-						</ul>
-
-						<h5>3. Medium</h5>
-						<ul>
-							<li>Art des Kühlmediums (z. B. Wasser, Wasser-Glykol-Gemisch, Spezialflüssigkeit)</li>
-							<li>Besonderheiten (z. B. Korrosionsschutz, Viskosität)</li>
-						</ul>
-
-						<h5>4. Anschluss- und Installationsbedingungen</h5>
-						<ul>
-							<li>Verfügbare Stromversorgung (Spannung, Frequenz, Phasen)</li>
-							<li>Platzverhältnisse und Zugänglichkeit am Aufstellort</li>
-							<li>Lage und Dimensionierung der Rohrleitungen</li>
-						</ul>
-
-						<h5>5. Zusatzausstattung und Optionen</h5>
-						<ul>
-							<li>Integrierte Pumpen, Pufferspeicher oder Filter</li>
-							<li>Schallschutzmaßnahmen</li>
-							<li>Fernüberwachung oder spezielle Steuerungen</li>
-						</ul>
-
-						<div style="background-color: #f8f9fa; border-left: 4px solid #007bff; padding: 10px; margin-top: 15px;">
-							<strong>Tipp:</strong> Je detaillierter Ihre Angaben, desto schneller können wir ein technisch und wirtschaftlich optimales Angebot erstellen. Falls Ihnen einzelne Werte nicht vorliegen, geben Sie bitte eine Schätzung oder den geplanten Einsatzrahmen an.
-						</div>
-					</aside>
-				</div>
-			<?php endif; ?>
 		</div>
 	</div>
 </section>

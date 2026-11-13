@@ -63,7 +63,7 @@ class Shops_Model_FormConfig
 		foreach($fields as $field) {
 			if(!is_array($field) || !is_string($field['name'] ?? null) || !preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/D', $field['name'])
 				|| !is_string($field['type'] ?? null) || !in_array($field['type'], ['text', 'number', 'email', 'textarea', 'select', 'radio', 'checkbox', 'hidden', 'tel', 'url', 'date', 'search'], true)
-				|| in_array($field['name'], ['csrf_token', 'inquiry_token', 'step', 'back', 'next', '_settings'], true) || isset($names[$field['name']])) {
+				|| in_array($field['name'], ['csrf_token', 'inquiry_token', 'step', 'back', 'next', '_settings', '_selection', '_quote'], true) || isset($names[$field['name']])) {
 				throw new InvalidArgumentException('Invalid or duplicate field');
 			}
 			$names[$field['name']] = true;

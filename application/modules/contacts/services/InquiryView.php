@@ -26,8 +26,12 @@ class Contacts_Service_InquiryView
 		$fields = [];
 
 		foreach ($data as $name => $value) {
-			if (in_array($name, ['origin', 'source_path'], true)) continue;
+			if (in_array($name, ['origin', 'source_path', '_quote'], true)) continue;
 
+			if($name === '_selection') {
+				$fields[] = ['name' => 'selection_review', 'label' => 'Technische und kaufmännische Prüfung', 'value' => !empty($value['eligible']) ? 'Automatische Auswahl freigegeben' : 'Manuelle Prüfung erforderlich: '.implode(', ', (array)($value['reasons'] ?? [])), 'translate_value' => false];
+				continue;
+			}
 			$definition = $definitions[$name] ?? [];
 			$formatted = $this->formatValue($value, $definition);
 			$fields[] = [

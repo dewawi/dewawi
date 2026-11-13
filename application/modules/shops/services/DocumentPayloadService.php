@@ -1,6 +1,6 @@
 <?php
 
-class Shops_Service_DocumentPayloadService
+class Shops_Service_DocumentPayloadService extends Sales_Service_DocumentPayloadService
 {
 	public function build(array $document, string $controller, array $options = []): array
 	{
@@ -48,33 +48,50 @@ class Shops_Service_DocumentPayloadService
 			$position->quantity = Zend_Locale_Format::toNumber($position->quantity, ['precision' => $precision, 'locale' => $locale]);
 		}
 
-		return [
+		$itemData = $this->getItemData($positions);
+		[$selectedOptions, $optionSets] = $this->getSelectedOptions($document);
+		return array_merge($itemData, [
 			'template' => $template,
 			'document' => $document,
 			'contact' => ['id' => (int)$document['contactid']],
 			'positions' => $positions,
-			'options' => [],
-			'optionSets' => [],
-			'attributesByGroup' => [],
+			'options' => $selectedOptions,
+			'optionSets' => $optionSets,
 			'footers' => (new Shops_Model_DbTable_Footer())->getFooters((int)$template['id']),
-			'settings' => $this->buildPdfSettings($document),
-		];
+			'settings' => $this->buildPdfSettings($document, 'quote'),
+		]);
 	}
 
-	protected function buildPdfSettings(array $document): array
+	protected function getItemData($positions): array
 	{
-		return [
-			'showPrices' => isset($document['pdfshowprices']) ? (int)$document['pdfshowprices'] : 1,
-			'showDiscounts' => isset($document['pdfshowdiscounts']) ? (int)$document['pdfshowdiscounts'] : 0,
-			'showOptions' => 0,
-			'showIncludedOptions' => 0,
-			'showAttributes' => 0,
-			'showTotals' => 1,
-			'showFooter' => 1,
-			'showHeader' => 1,
-			'showCover' => isset($document['pdfshowcover']) ? (int)$document['pdfshowcover'] : 0,
-			'showImages' => 0,
-			'showPositionImages' => 0,
-		];
+		$itemDb = new Shops_Model_DbTable_Item();
+		$setsDb = new Shops_Model_DbTable_Itematrset();
+		$attributesDb = new Shops_Model_DbTable_Itematr();
+		$mediaDb = new Shops_Model_DbTable_Media();
+		$items = $media = $attributes = [];
+		foreach($positions as $position) {
+			$itemId = (int)$position->itemid;
+			if($itemId <= 0 || !($item = $itemDb->getItem($itemId))) continue;
+			$items[$itemId] = $item;
+			$media[$itemId] = array_values(array_filter($mediaDb->getMedia($itemId, 'items', 'item'), static fn(array $row): bool => $row['type'] === 'image'));
+			$attributes[$position->id] = $this->getAttributeGroups($itemId, $setsDb, $attributesDb);
+		}
+		return ['items' => $items, 'media' => $media, 'attributesByGroup' => $attributes];
+	}
+
+	protected function getSelectedOptions(array $document): array
+	{
+		$inquiry = (new Shops_Model_DbTable_Inquirydata())->getByQuoteId((int)$document['id']);
+		$data = $inquiry ? json_decode((string)$inquiry['data'], true) : [];
+		$options = $sets = [];
+		$positions = (new Shops_Model_DbTable_Quotepos())->getPositions((int)$document['id'])->toArray();
+		$positionIds = array_column($positions, 'id');
+		foreach((array)($data['_quote']['included_options'] ?? []) as $positionId => $selected) {
+			if(!$selected) continue;
+			if(!in_array((string)$positionId, array_map('strval', $positionIds), true)) continue;
+			$sets[$positionId] = new Zend_Db_Table_Rowset(['data' => [['id' => 0, 'title' => 'Gewählte Ausstattung']]]);
+			$options[$positionId][0] = new Zend_Db_Table_Rowset(['data' => $selected]);
+		}
+		return [$options, $sets];
 	}
 }

@@ -482,6 +482,7 @@ class DEEC_Pdf
 	protected function renderPayload(TCPDF $pdf, array $payload): void
 	{
 		$document = $payload['document'];
+		if(($payload['meta']['module'] ?? '') === 'shops') $document['contactid'] = '';
 		$template = $payload['template'];
 		$positions = $payload['positions'];
 		$options = $payload['options'];
@@ -500,18 +501,23 @@ class DEEC_Pdf
 		if (!empty($settings['showCover'])) {
 			$coverY = $this->renderCoverAndMeta($pdf, $document, $template, $controller, $payload['contact'] ?? []);
 
-			$pages['product_start'] = $pdf->getPage();
-			$this->renderProductDescription($pdf, $positions);
+			$before = $pdf->getPage();
+			$this->renderProductDescription($pdf, $positions, $payload['extra']['items'] ?? []);
+			if($pdf->getPage() > $before) $pages['product_start'] = $before + 1;
 
-			if (true) {
-				$pages['features_start'] = $pdf->getPage();
+			if (!empty($settings['showIncludedOptions'])) {
+				$before = $pdf->getPage();
 				$this->renderIncludedOptions($pdf, $positions, $options, $optionSets);
+				if($pdf->getPage() > $before) {
+					$pages['options_start'] = $before + 1;
+					$pages['options_end'] = $pdf->getPage();
+				}
 			}
 		} else {
 			$this->renderCompactHeader($pdf, $document, $template, $controller, $website, $payload['contact'] ?? []);
 		}
 
-		$pages['offer_start'] = $pdf->getPage();
+		$pages['offer_start'] = $pdf->getPage() + (!empty($settings['showCover']) ? 1 : 0);
 		$this->renderPositions($pdf, $document, $positions, $options, $optionSets, $attributesByGroup, $media, $mediaPath, $settings, !empty($settings['showCover']));
 		$pages['offer_end'] = $pdf->getPage();
 
@@ -522,20 +528,26 @@ class DEEC_Pdf
 		}
 
 		if (!empty($settings['showOptions'])) {
-			$pages['options_start'] = $pdf->getPage();
+			$before = $pdf->getPage();
 			$this->renderOptions($pdf, $positions, $options, $optionSets);
-			$pages['options_end'] = $pdf->getPage();
+			if($pdf->getPage() > $before) {
+				$pages['options_start'] = $pages['options_start'] ?? $before + 1;
+				$pages['options_end'] = $pdf->getPage();
+			}
 		}
 
 		if (!empty($settings['showImages'])) {
-			$pages['images_start'] = $pdf->getPage();
+			$before = $pdf->getPage();
 			$this->renderImages($pdf, $positions, $media, $mediaPath);
-			$pages['images_end'] = $pdf->getPage();
+			if($pdf->getPage() > $before) {
+				$pages['images_start'] = $before + 1;
+				$pages['images_end'] = $pdf->getPage();
+			}
 		}
 
 		if (!empty($settings['showCover'])) {
 			$this->renderTableOfContentsOnCover($pdf, $document, $template, $coverY, $pages, $settings, $responsibleUser);
-			$this->renderCoverImage($pdf, $positions, $media, $mediaPath);
+			if(!empty($settings['showImages'])) $this->renderCoverImage($pdf, $positions, $media, $mediaPath);
 		}
 
 		if (!empty($settings['showHeader'])) {
@@ -968,7 +980,7 @@ class DEEC_Pdf
 		}
 	}
 
-	private function renderProductDescription(TCPDF $pdf, $positions)
+	private function renderProductDescription(TCPDF $pdf, $positions, array $items)
 	{
 		if (!count($positions)) return;
 
@@ -982,8 +994,7 @@ class DEEC_Pdf
 
 		if (!$first || empty($first->itemid)) return;
 
-		$itemDb = new Items_Model_DbTable_Item();
-		$item = $itemDb->getById((int)$first->itemid);
+		$item = $items[(int)$first->itemid] ?? null;
 
 		if (!$item || empty($item['shopdescription'])) {
 			return;
@@ -1106,6 +1117,11 @@ class DEEC_Pdf
 
 		if ($startOnNewPage) {
 			$pdf->AddPage();
+			if(!empty($document['header'])) {
+				$pdf->SetFont('freesans', '', 9);
+				$pdf->MultiCell(175, 0, $document['header'], 0, 'L', false, 1, 15, '', true, 0, true);
+				$pdf->ln(4);
+			}
 		}
 
 		$pdf->setCellPaddings(1, 0, 0, 0);
@@ -1409,28 +1425,14 @@ class DEEC_Pdf
 			$yAfterBox = $this->totalBox($pdf, $document);
 		}
 
-		//$pdf->SetY($yAfterBox + 5);
-
 		$footerHtml = $document['footer'] ?? ($template['footer'] ?? '');
-		if (trim((string)$footerHtml) === '') {
-			return;
-		}
+		if(empty($settings['showFooter']) || trim((string)$footerHtml) === '') return;
 
-		$neededHeight = 60;
-		$currentY = $pdf->GetY();
-		$pageHeightLimit = 265;
-		$footerHtmlWidth = 105;
-
-		if ($currentY + $neededHeight > $pageHeightLimit) {
-			//$pdf->AddPage();
-			//$footerHtmlWidth = 165;
-		} else {
-			$pdf->ln(2);
-		}
-
-		$pdf->SetFont('freesansb', '', 9);
-		$pdf->MultiCell($footerHtmlWidth, 0, $footerHtml, 0, 'L', false, 1, '', '', true, 0, true);
-
+		if(isset($yAfterBox)) $pdf->SetY($yAfterBox + 4);
+		$margins = $pdf->getMargins();
+		$width = $pdf->getPageWidth() - $margins['left'] - $margins['right'];
+		$pdf->SetFont('freesans', '', 9);
+		$pdf->MultiCell($width, 0, $footerHtml, 0, 'L', false, 1, $margins['left'], '', true, 0, true);
 		$pdf->ln(4);
 	}
 
@@ -1525,35 +1527,17 @@ class DEEC_Pdf
 
 	private function renderTableOfContentsOnCover(TCPDF $pdf, array $document, array $template, $yStart, array $pages, $settings, $responsibleUser)
 	{
-		// Compute page numbers (defaults if a section wasn’t added)
-		$pProduct = $pages['product_start'] ?? 2;
-		$pOfferS = $pages['features_start'] ?? 3;
-		$pOfferS = $pages['offer_start'] ?? 4;
-		$pOfferE = $pages['offer_end'] ?? $pOfferS;
-		$pTerms = $pages['terms_start'] ?? ($pOfferE + 1);
-
-		// Options could span included+optional
-		$pOptS = $pages['options_start'] ?? ($pTerms + 1);
-		$pOptE = $pages['options_end'] ?? $pOptS;
-
-		$pImgS = $pages['images_start'] ?? ($pOptE + 1);
-		$pImgE = $pages['images_end'] ?? $pImgS;
-
-		// Draw on page 1
 		$pdf->setPage(1);
 		$pdf->SetY($yStart);
 		$pdf->SetFont('freesansb', 'B', 12);
 		$pdf->MultiCell(100, 0, $this->translate('DOCUMENTS_TOC_TITLE'), 0, 'L', false, 1, 20, '', true, 0);
 		$pdf->SetFont('freesans', '', 10);
-		$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_PRODUCT_DESCRIPTION'), $pProduct);
-		$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_SALES_OFFER'), ($pOfferS == $pOfferE) ? $pOfferS : "{$pOfferS}-{$pOfferE}");
-		if (!empty($settings['showImages'])) {
-			$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_TERMS'), $pTerms);
+		foreach(['product' => 'DOCUMENTS_TOC_PRODUCT_DESCRIPTION', 'offer' => 'DOCUMENTS_TOC_SALES_OFFER', 'terms' => 'DOCUMENTS_TOC_TERMS', 'options' => 'DOCUMENTS_TOC_OPTIONS', 'images' => 'DOCUMENTS_TOC_IMAGES'] as $section => $label) {
+			if(!isset($pages[$section.'_start'])) continue;
+			$start = $pages[$section.'_start'];
+			$end = $pages[$section.'_end'] ?? $start;
+			$this->tocLine($pdf, $this->translate($label), $start === $end ? $start : $start.'-'.$end);
 		}
-		if (!empty($settings['showOptions'])) {
-			$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_OPTIONS'), ($pOptS == $pOptE) ? $pOptS : "{$pOptS}-{$pOptE}");
-		}
-		$this->tocLine($pdf, $this->translate('DOCUMENTS_TOC_IMAGES'), ($pImgS == $pImgE) ? $pImgS : "{$pImgS}-{$pImgE}");
 
 		$this->renderResponsibleContact($pdf, $document, $responsibleUser);
 	}

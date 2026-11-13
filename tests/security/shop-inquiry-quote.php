@@ -63,10 +63,35 @@ class ShopInquiryQuoteController extends Shops_InquiryController
 	public function setup(DEEC_Site_Context $context, array $formRow, array $suggestions): void
 	{
 		$this->_siteContext = $context;
+		$this->formConfig = [1 => [['name' => 'kuehlleistung', 'type' => 'number', 'calculate' => ['target' => 'vorlauf_temp / umgebung_temp_max', 'reference' => 'referenzleistung', 'tolerance' => 0.1]]]];
+		$formRow['fields'] = json_encode(array_merge($this->formConfig, ['_settings' => ['selection' => ['method' => 'form_calc', 'automatic_quote' => true], 'quote' => ['tax_country' => 'DE', 'pdf' => ['cover' => false]]]]));
 		$this->formRow = $formRow;
 		$this->formDataSession = new stdClass();
 		$this->formDataSession->suggestions = $suggestions;
 	}
+
+	public function configure(array $settings, ?array $fields = null, ?string $header = null, ?string $footer = null): void
+	{
+		if($fields !== null) $this->formConfig = Shops_Model_FormConfig::normalize($fields);
+		$this->formRow['fields'] = json_encode(array_merge($this->formConfig, ['_settings' => $settings]));
+		if($header !== null) $this->formRow['quoteheader'] = $header;
+		if($footer !== null) $this->formRow['quotefooter'] = $footer;
+	}
+
+	public function preparePost(): void
+	{
+		$this->_site = ['id' => 120, 'clientid' => 100];
+		$this->formId = 865;
+		$this->csrfToken = 'csrf-value';
+		$this->inquiryToken = str_repeat('9', 32);
+		$this->formDataSession->formData = [];
+		$this->formDataSession->inquiryToken = $this->inquiryToken;
+		$this->formDataSession->lastInquiryToken = '';
+	}
+
+	protected function consumeSubmissionLimit(string $operation, int $limit, int $window): array { return ['allowed' => true]; }
+	protected function sendInquiryNotification(array $data): bool { return false; }
+	protected function sendOfferNotification(array $data, string $pdfPath): bool { throw new RuntimeException('Unexpected offer email'); }
 
 	public function createQuote(array $data, int $inquiryId): ?int
 	{
@@ -99,7 +124,7 @@ $adapter = new Zend_Db_Adapter_Pdo_Mysql([
 	'dbname' => 'dewawi_shop_inquiry_quote_test', 'charset' => 'utf8mb4',
 ]);
 $structure = file_get_contents($root . '/install/config/structure.sql');
-foreach (['address', 'category', 'contact', 'currency', 'documentarchive', 'email', 'filename', 'footer', 'increment', 'item', 'language', 'pricerulepos', 'quote', 'quotepos', 'shopinquirydata', 'taxrate', 'template', 'uom'] as $table) {
+foreach (['address', 'category', 'contact', 'currency', 'documentarchive', 'email', 'filename', 'footer', 'increment', 'item', 'itematr', 'itematrset', 'itemopt', 'itemoptset', 'itemvariantopt', 'media', 'language', 'pricerulepos', 'quote', 'quotepos', 'shopinquirydata', 'taxrate', 'template', 'uom'] as $table) {
 	$adapter->query(inquiryQuoteSchema($structure, $table));
 }
 
@@ -110,9 +135,11 @@ $adapter->insert('increment', [
 $adapter->insert('category', ['id' => 20, 'title' => 'Chillers', 'type' => 'shop', 'parentid' => 0, 'ordering' => 1, 'activated' => 1, 'shopid' => 120, 'clientid' => 100]);
 $adapter->insert('item', [
 	'id' => 10, 'catid' => 0, 'shopcatid' => 20, 'sku' => 'ZCE110', 'title' => 'ZCE 110', 'description' => 'Cooling unit',
-	'type' => 'default', 'price' => 1000, 'specialprice' => 900, 'taxid' => 7, 'uomid' => 3,
+	'type' => 'default', 'currency' => 'EUR', 'price' => 1000, 'specialprice' => 900, 'taxid' => 7, 'uomid' => 3,
 	'shopenabled' => 1, 'shopid' => 120, 'clientid' => 100,
 ]);
+$adapter->insert('itematr', ['parentid' => 0, 'atrsetid' => 0, 'sku' => 'FORM_CALC', 'title' => 'kuehlleistung_20 / 30', 'value' => '1.41', 'clientid' => 100]);
+$adapter->insert('itematr', ['parentid' => 0, 'atrsetid' => 0, 'sku' => 'FORM_CALC', 'title' => 'referenzleistung', 'value' => '7', 'description' => 'ZCE110', 'clientid' => 100]);
 $adapter->insert('taxrate', ['id' => 7, 'name' => 'Reduced fixture', 'rate' => 7, 'ordering' => 1, 'clientid' => 100]);
 $adapter->insert('uom', ['id' => 3, 'title' => 'Stück', 'ordering' => 1, 'clientid' => 100]);
 $adapter->insert('currency', ['id' => 1, 'code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'ordering' => 1, 'clientid' => 100]);
@@ -148,7 +175,7 @@ $adapter->insert('email', ['id' => 3, 'parentid' => 3, 'module' => 'contacts', '
 $adapter->insert('email', ['id' => 4, 'parentid' => 4, 'module' => 'contacts', 'controller' => 'contact', 'email' => 'shared@example.test', 'password' => 'unused', 'ordering' => 2, 'clientid' => 100]);
 $adapter->insert('email', ['id' => 5, 'parentid' => 5, 'module' => 'contacts', 'controller' => 'contact', 'email' => 'foreign@example.test', 'password' => 'unused', 'ordering' => 1, 'clientid' => 200]);
 $inquiryData = [
-	'sku' => 'ZCE110', 'quantity' => '2', 'firma' => 'Submitted GmbH', 'ansprechpartner' => 'Ada Submitted',
+	'sku' => 'ZCE110', 'kuehlleistung' => '9.8', 'vorlauf_temp' => '20', 'umgebung_temp_max' => '30', 'quantity' => '2', 'firma' => 'Submitted GmbH', 'ansprechpartner' => 'Ada Submitted',
 	'email' => 'buyer@example.test', 'adresse' => 'Submitted Street 1', 'plz' => '12345', 'stadt' => 'Submitted City',
 	'country' => 'DE', 'telefon' => '+49 123', 'projektname' => 'Cooling Project',
 ];
@@ -161,6 +188,10 @@ Zend_Db_Table::setDefaultAdapter($adapter);
 $context = new DEEC_Site_Context(['id' => 120, 'clientid' => 100]);
 Zend_Registry::set('SiteContext', $context);
 Zend_Registry::set('Zend_Locale', new Zend_Locale('de_DE'));
+$translator = new DEEC_Translate('de_DE');
+$translator->loadDir('default', $root.'/languages/de_DE/default');
+$translator->loadDir('sales', $root.'/languages/de_DE/sales');
+Zend_Registry::set('DEEC_Translate', $translator);
 Zend_Registry::set('Zend_Currency', new Zend_Currency('EUR', 'de_DE'));
 Zend_Controller_Action_HelperBroker::addHelper(new Application_Controller_Action_Helper_Calculate());
 Zend_Controller_Action_HelperBroker::addHelper(new Application_Controller_Action_Helper_Currency());
@@ -362,4 +393,157 @@ checkInquiryQuote((int)$increments['contactid'] === 505 && (int)$increments['quo
 $failedInquiry = $adapter->fetchRow('SELECT * FROM shopinquirydata WHERE id = 8');
 checkInquiryQuote($failedInquiry['quoteid'] === null && $failedInquiry['contactid'] === null, 'Failed quote partially linked the inquiry');
 
+
+$adapter->query('DROP TRIGGER reject_inquiry_quote_position');
+$adapter->insert('itematrset', ['id' => 1, 'parentid' => 10, 'title' => 'Technical fixture', 'clientid' => 100]);
+$adapter->insert('itematr', ['parentid' => 10, 'atrsetid' => 1, 'sku' => 'ZCE110', 'title' => 'Voltage fixture', 'description' => '400 V fixture', 'clientid' => 100]);
+$adapter->insert('itematr', ['parentid' => 10, 'atrsetid' => 0, 'sku' => 'ZCE110', 'title' => 'Private foreign attribute', 'description' => 'FOREIGN-ATTRIBUTE-MARKER', 'clientid' => 200]);
+$adapter->insert('itemoptset', ['id' => 1, 'parentid' => 10, 'title' => 'Accessories', 'clientid' => 100]);
+foreach([
+	['id' => 1, 'sku' => 'SELECTED-PAID', 'title' => 'Selected paid accessory', 'price' => 150],
+	['id' => 2, 'sku' => 'SELECTED-KIT', 'title' => 'Selected included kit', 'price' => 0],
+	['id' => 3, 'sku' => 'UNSELECTED-OPTION', 'title' => 'Unselected accessory', 'price' => 999],
+] as $option) $adapter->insert('itemopt', array_merge(['parentid' => 10, 'optsetid' => 1, 'quantity' => 1, 'taxrate' => 7, 'currency' => 'EUR', 'clientid' => 100], $option));
+$imageDir = BASE_PATH.'/media/1/0/100/images';
+mkdir($imageDir, 0775, true);
+$image = imagecreatetruecolor(320, 180);
+imagefill($image, 0, 0, imagecolorallocate($image, 30, 100, 170));
+imagestring($image, 5, 15, 70, 'PUBLIC ITEM IMAGE', imagecolorallocate($image, 255, 255, 255));
+imagepng($image, $imageDir.'/fixture.png');
+imagedestroy($image);
+$adapter->insert('media', ['parentid' => 10, 'module' => 'items', 'controller' => 'item', 'type' => 'image', 'url' => 'fixture.png', 'title' => 'Public image fixture', 'clientid' => 100]);
+$adapter->update('item', ['shopdescription' => '<p>Public product description fixture</p>'], 'id = 10');
+$fullSettings = ['selection' => ['method' => 'form_calc', 'automatic_quote' => true, 'option_fields' => [
+	'accessory' => ['yes' => ['itemoptid' => 1, 'selection_verified' => true]],
+	'kit' => ['yes' => ['itemoptid' => 2, 'selection_verified' => true]],
+]], 'quote' => ['tax_country' => 'DE', 'pdf' => ['cover' => true, 'attributes' => true, 'options' => true, 'images' => true, 'positionimages' => true]]];
+$fullFields = [1 => [
+	['name' => 'kuehlleistung', 'type' => 'number', 'calculate' => ['target' => 'vorlauf_temp / umgebung_temp_max', 'reference' => 'referenzleistung', 'tolerance' => 0.1]],
+	['name' => 'accessory', 'type' => 'select', 'options' => ['yes' => 'Accessory']],
+	['name' => 'kit', 'type' => 'select', 'options' => ['yes' => 'Included kit']],
+]];
+$controller->configure($fullSettings, $fullFields, '<p>HEADER-BEGIN '.str_repeat('Configured header text. ', 130).' HEADER-END</p>', '<p>FOOTER-BEGIN '.str_repeat('Configured long footer text. ', 550).' FOOTER-END</p>');
+$fullData = array_replace($inquiryData, ['accessory' => 'yes', 'kit' => 'yes']);
+$fullInquiryId = (new Shops_Model_DbTable_Inquirydata())->save(865, str_repeat('a9', 16), $fullData);
+$fullQuoteId = $controller->createQuote($fullData, $fullInquiryId);
+checkInquiryQuote($fullQuoteId > 0, 'Complete configuration did not create a quote');
+$fullQuote = $adapter->fetchRow('SELECT * FROM quote WHERE id = ?', [$fullQuoteId]);
+checkInquiryQuote(abs((float)$fullQuote['subtotal'] - 2100) < 0.001 && abs((float)$fullQuote['total'] - 2247) < 0.001, 'Selected option pricing differs from standard calculation');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM quotepos WHERE parentid = ?', [$fullQuoteId]) === 3, 'Selected free option was lost or an unselected option was charged');
+$fullPdf = $controller->createPdf($fullQuoteId);
+$text = shell_exec('pdftotext -layout '.escapeshellarg($fullPdf['path']).' -');
+foreach(['HEADER-BEGIN', 'HEADER-END', 'FOOTER-BEGIN', 'FOOTER-END', 'Voltage fixture', '400 V fixture', 'SELECTED-PAID', 'SELECTED-KIT', 'Public product description fixture', 'Public image fixture'] as $marker) {
+	checkInquiryQuote(str_contains($text, $marker), 'Rendered full PDF misses '.$marker);
+}
+foreach(['UNSELECTED-OPTION', 'FOREIGN-ATTRIBUTE-MARKER', 'Private Master Name', 'Private Master Street'] as $private) checkInquiryQuote(!str_contains($text, $private), 'PDF includes unselected or private data: '.$private);
+$images = shell_exec('pdfimages -f 1 -l 1 -list '.escapeshellarg($fullPdf['path']));
+checkInquiryQuote(str_contains($images, '320') && str_contains($images, '180'), 'Cover image was not embedded');
+$info = shell_exec('pdfinfo '.escapeshellarg($fullPdf['path']));
+preg_match('/Pages:\s+(\d+)/', $info, $pageCount);
+checkInquiryQuote((int)($pageCount[1] ?? 0) >= 5, 'Cover and long terms did not produce a complete multipage PDF');
+$bbox = BASE_PATH.'/full-layout.html';
+shell_exec('pdftotext -bbox '.escapeshellarg($fullPdf['path']).' '.escapeshellarg($bbox));
+$layout = simplexml_load_file($bbox);
+$layout->registerXPathNamespace('h', 'http://www.w3.org/1999/xhtml');
+foreach($layout->xpath('//h:word[starts-with(text(), "Configured")]') as $word) checkInquiryQuote((float)$word['yMax'] < 765, 'Header/footer text overlaps the page footer');
+$keptHash = hash_file('sha256', $fullPdf['path']);
+$adapter->update('itematr', ['description' => 'CHANGED-AFTER-ARCHIVE'], "title = 'Voltage fixture'");
+checkInquiryQuote(hash_equals($keptHash, hash_file('sha256', $controller->createPdf($fullQuoteId)['path'])), 'Archived full quote was regenerated from changed product data');
+
+// A variant already includes its saved option prices; no second surcharge is permitted.
+$adapter->update('item', ['parentid' => 11, 'price' => 1200, 'specialprice' => null], 'id = 10');
+$adapter->insert('item', ['id' => 11, 'catid' => 0, 'shopid' => 120, 'shopcatid' => 20, 'sku' => 'PARENT', 'title' => 'Variant parent', 'clientid' => 100]);
+$adapter->update('itemopt', ['parentid' => 11], 'id IN (1, 2)');
+$adapter->update('itemoptset', ['parentid' => 11], 'id = 1');
+$adapter->insert('itemvariantopt', ['itemid' => 10, 'itemoptid' => 1, 'clientid' => 100]);
+$variantInquiryId = (new Shops_Model_DbTable_Inquirydata())->save(865, str_repeat('b9', 16), $fullData);
+$variantQuoteId = $controller->createQuote($fullData, $variantInquiryId);
+checkInquiryQuote(abs((float)$adapter->fetchOne('SELECT subtotal FROM quote WHERE id = ?', [$variantQuoteId]) - 2400) < 0.001, 'Variant option was charged twice');
+$adapter->update('item', ['parentid' => null, 'price' => 1000, 'specialprice' => 900], 'id = 10');
+$adapter->update('itemopt', ['parentid' => 10], 'id IN (1, 2)');
+$adapter->update('itemoptset', ['parentid' => 10], 'id = 1');
+
+
+// Display switches suppress optional sections, never purchased position prices.
+$hiddenSettings = $fullSettings;
+$hiddenSettings['quote']['pdf'] = ['cover' => false, 'attributes' => false, 'options' => false, 'images' => false, 'positionimages' => false];
+$controller->configure($hiddenSettings, $fullFields, 'Short header', 'Short footer');
+$hiddenInquiryId = (new Shops_Model_DbTable_Inquirydata())->save(865, str_repeat('c9', 16), $fullData);
+$hiddenQuoteId = $controller->createQuote($fullData, $hiddenInquiryId);
+$hiddenPdf = $controller->createPdf($hiddenQuoteId);
+$hiddenText = shell_exec('pdftotext -layout '.escapeshellarg($hiddenPdf['path']).' -');
+checkInquiryQuote(!str_contains($hiddenText, 'CHANGED-AFTER-ARCHIVE') && !str_contains($hiddenText, 'Public image fixture') && !str_contains($hiddenText, 'Inhaltsverzeichnis'), 'Disabled sections were rendered');
+checkInquiryQuote(str_contains($hiddenText, 'SELECTED-PAID') && str_contains($hiddenText, 'SELECTED-KIT'), 'Purchased options disappeared with the catalog-option switch');
+$controller->configure($fullSettings, $fullFields);
+$adapter->insert('itemopt', ['id' => 4, 'parentid' => 10, 'optsetid' => 1, 'sku' => 'FOREIGN-OPTION', 'price' => 10, 'clientid' => 200]);
+$adapter->insert('itemopt', ['id' => 5, 'parentid' => 11, 'optsetid' => 1, 'sku' => 'WRONG-PARENT', 'price' => 10, 'clientid' => 100]);
+$adapter->insert('itemopt', ['id' => 6, 'parentid' => 10, 'optsetid' => 1, 'sku' => 'ON-REQUEST', 'price' => -1, 'clientid' => 100]);
+$adapter->insert('itemopt', ['id' => 7, 'parentid' => 10, 'optsetid' => 1, 'sku' => 'UNAVAILABLE', 'price' => -2, 'clientid' => 100]);
+$adapter->insert('itemopt', ['id' => 8, 'parentid' => 10, 'optsetid' => 999, 'sku' => 'MISSING-GROUP', 'price' => 10, 'clientid' => 100]);
+foreach([4, 5, 6, 7, 8] as $invalidOption) {
+	try {
+		(new Shops_Service_InquirySelection())->resolveOptions((new Shops_Model_DbTable_Item())->getItem(10), [$invalidOption], 'EUR');
+		throw new RuntimeException('Unverified option accepted');
+	} catch(UnexpectedValueException $e) { checkInquiryQuote(true, 'Rejected option'); }
+}
+foreach([['price' => null, 'specialprice' => null], ['currency' => 'USD']] as $index => $invalidPrice) {
+	$before = (int)$adapter->fetchOne('SELECT COUNT(*) FROM quote');
+	$adapter->update('item', $invalidPrice, 'id = 10');
+	$invalidInquiryId = (new Shops_Model_DbTable_Inquirydata())->save(865, str_repeat($index ? 'd9' : 'e9', 16), $fullData);
+	try {
+		$controller->createQuote($fullData, $invalidInquiryId);
+		throw new RuntimeException('Unverified item price accepted');
+	} catch(UnexpectedValueException $e) {
+		checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM quote') === $before, 'Incomplete pricing created a quote');
+	}
+	$adapter->update('item', ['price' => 1000, 'specialprice' => 900, 'currency' => 'EUR'], 'id = 10');
+}
+
+// Persist a real-form-shaped incomplete inquiry through the controller, without sending email.
+Zend_Controller_Action_HelperBroker::addPath($root.'/library/Zend/Layout/Controller/Action/Helper', 'Zend_Layout_Controller_Action_Helper');
+Zend_Layout::startMvc(['layoutPath' => $root.'/application/layouts/scripts']);
+Zend_Controller_Action_HelperBroker::getStaticHelper('json')->suppressExit = true;
+Zend_Controller_Action_HelperBroker::getStaticHelper('redirector')->setExit(false);
+Zend_Controller_Front::getInstance()->getRouter()->addRoute('inquiry_success', new Zend_Controller_Router_Route_Static('inquiry/success', ['module' => 'shops', 'controller' => 'inquiry', 'action' => 'success']));
+$reference = is_file('/tmp/dewawi-inquiry-referenzen/form-865.fields.json') ? json_decode(file_get_contents('/tmp/dewawi-inquiry-referenzen/form-865.fields.json'), true) : [1 => [
+	['name' => 'sku', 'type' => 'text'], ['name' => 'email', 'type' => 'email', 'required' => true], ['name' => 'privacy', 'type' => 'checkbox', 'required' => true],
+	['name' => 'medium', 'type' => 'select', 'options' => ['Wasser', 'Wasser/Glykol']],
+]];
+$requestFields = array_merge(...array_values($reference));
+$post = array_replace($inquiryData, ['step' => 'request', 'csrf_token' => 'csrf-value', 'inquiry_token' => str_repeat('9', 32), 'einsatzbereich' => '0', 'medium' => '1', 'glykol_typ' => '1', 'glykol_anteil' => '30', 'pumpe' => '0', 'geraeuschreduktion' => '1', 'titel' => 'Requested device', 'privacy' => '1']);
+unset($post['umgebung_temp_max']);
+$postRequest = new Zend_Controller_Request_HttpTestCase();
+$postRequest->setModuleName('shops')->setControllerName('inquiry')->setActionName('index')->setMethod('POST')->setPost($post);
+$postResponse = new Zend_Controller_Response_HttpTestCase();
+Zend_Controller_Front::getInstance()->setResponse($postResponse);
+$postController = new ShopInquiryQuoteController($postRequest, $postResponse);
+$postController->setup($context, ['id' => 865, 'quotetemplateid' => 100], []);
+$postController->configure([], ['request' => $requestFields]);
+$postController->preparePost();
+$quotesBefore = (int)$adapter->fetchOne('SELECT COUNT(*) FROM quote');
+$postController->indexAction();
+$storedManual = (new Shops_Model_DbTable_Inquirydata())->getByToken(str_repeat('9', 32));
+checkInquiryQuote($storedManual !== null && empty($storedManual['quoteid']), 'Incomplete request was lost or automatically offered');
+$storedManualData = json_decode($storedManual['data'], true);
+checkInquiryQuote(empty($storedManualData['_selection']['eligible']) && $storedManualData['glykol_anteil'] == 30 && empty($storedManualData['umgebung_temp_max']), 'Manual review lost requirements or invented ambient temperature');
+checkInquiryQuote((int)$adapter->fetchOne('SELECT COUNT(*) FROM quote') === $quotesBefore, 'Incomplete request consumed a quote');
+checkInquiryQuote($postController->restore($storedManual)['status'] === 'manual_review', 'Manual review status was lost on replay');
+
+
+// Replaying a customer token must never finalize an internally linked manual draft.
+$manualDraftData = array_merge($fullData, ['_selection' => ['method' => 'form_calc', 'eligible' => false, 'reasons' => ['commercial_review_required']]]);
+$manualDraftInquiryId = (new Shops_Model_DbTable_Inquirydata())->save(865, str_repeat('f9', 16), $manualDraftData);
+$manualDraftId = (new Shops_Model_DbTable_Quote())->addQuote(['contactid' => 500, 'currency' => 'EUR', 'templateid' => 100, 'language' => 'de_DE', 'state' => 100]);
+(new Shops_Model_DbTable_Inquirydata())->updateById($manualDraftInquiryId, ['quoteid' => $manualDraftId]);
+$manualDraftInquiry = (new Shops_Model_DbTable_Inquirydata())->getById($manualDraftInquiryId);
+$beforeNumber = $adapter->fetchOne('SELECT quoteid FROM increment WHERE clientid = 100');
+checkInquiryQuote($controller->restore($manualDraftInquiry)['status'] === 'manual_review', 'Customer replay finalized a manual quote draft');
+checkInquiryQuote(empty($adapter->fetchOne('SELECT quoteid FROM quote WHERE id = ?', [$manualDraftId])) && $adapter->fetchOne('SELECT quoteid FROM increment WHERE clientid = 100') === $beforeNumber, 'Manual draft replay consumed a document number');
+
+if(getenv('DEWAWI_INQUIRY_TEST_ARTIFACT_DIR')) {
+	$artifactDir = getenv('DEWAWI_INQUIRY_TEST_ARTIFACT_DIR');
+	if(!str_starts_with($artifactDir, '/tmp/dewawi-')) throw new RuntimeException('Test artifacts must stay under /tmp/dewawi-*');
+	if(!is_dir($artifactDir)) mkdir($artifactDir, 0775, true);
+	copy($fullPdf['path'], $artifactDir.'/full-inquiry.pdf');
+}
 echo "PASS: $checks guest quote transaction, calculation, privacy, PDF and replay cases\n";

@@ -30,6 +30,8 @@ $offerStatus = $this->offerStatus ?? null;
 				<strong>Ihr Angebot ist fertig.</strong>
 				<a href="<?php echo $this->escape($this->downloadUrl); ?>" target="_blank" rel="noopener">PDF herunterladen</a>
 			</div>
+		<?php elseif ($offerStatus === 'manual_review'): ?>
+			<div class="alert alert-info">Ihre Anfrage wurde gespeichert. Die technische oder kaufmännische Konfiguration muss noch geprüft werden. Sie erhalten Ihr Angebot nach dieser Prüfung.</div>
 		<?php elseif ($offerStatus === 'quote_failed'): ?>
 			<div class="alert alert-warning">Ihre Anfrage wurde gespeichert, das Angebot konnte jedoch noch nicht erstellt werden. Bitte senden Sie die Anfrage nicht erneut.</div>
 		<?php elseif ($offerStatus === 'pdf_failed'): ?>

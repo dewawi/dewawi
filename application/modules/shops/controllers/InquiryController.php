@@ -195,7 +195,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 			$this->discardFollowingSteps($stepOrder, (int)$currentIndex);
 			$this->formDataSession->formData[$step] = $formValues;
 
-			if ($this->hasCalculation($this->formConfig[$step])) {
+			if (($this->inquirySettings()['selection']['method'] ?? 'form_calc') === 'form_calc' && $this->hasCalculation($this->formConfig[$step])) {
 				$suggestions = $this->calculateSuggestions($this->formConfig[$step], $formValues);
 				$this->formDataSession->suggestions = $suggestions;
 				$this->formDataSession->suggestionStep = $step;
@@ -232,21 +232,19 @@ class Shops_InquiryController extends Shops_Controller_Action
 	 	 		return;
 			}
 
-			// Last step: persist first, then run the existing optional quote and notification flow.
-			$allFormValues = [];
-			foreach ($this->formDataSession->formData as $stepValues) {
-				$allFormValues = array_merge($allFormValues, $stepValues);
-			}
-
+			// Revalidate and filter every step before persisting or selecting a product.
 			if (!$this->validateCompletedSteps($stepOrder, (array)$this->formDataSession->formData)) {
 				$this->getResponse()->setHttpResponseCode(400);
 				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_FORM_INVALID')]);
 			}
-
-			if (!$this->isValidSuggestedSku((string)($allFormValues['sku'] ?? ''))) {
-				$this->getResponse()->setHttpResponseCode(400);
-				return $this->_helper->json(['status' => 'error', 'message' => $this->view->translate('SHOPS_FORM_INVALID')]);
+			$allFormValues = [];
+			foreach($this->formDataSession->formData as $stepId => $stepValues) {
+				$stepForm = $this->createStepForm((string)$stepId);
+				$stepForm->isValid($stepValues);
+				$allFormValues = array_merge($allFormValues, $stepForm->getFilteredValues());
 			}
+			unset($allFormValues['csrf_token'], $allFormValues['inquiry_token'], $allFormValues['next']);
+			$selection = $this->evaluateSelection($allFormValues);
 
 			// Datenschutz-Checkbox MUSS bestätigt sein
 			$privacyOk = !empty($allFormValues['privacy']) && (int)$allFormValues['privacy'] === 1;
@@ -282,6 +280,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 			$storedData = array_merge($allFormValues, [
 				'origin' => 'technical_inquiry',
 				'source_path' => $this->getSourcePath(),
+				'_selection' => ['method' => $selection['method'], 'eligible' => $selection['eligible'], 'reasons' => $selection['reasons']],
 			]);
 
 			$inquiryDb = new Shops_Model_DbTable_Inquirydata();
@@ -306,10 +305,17 @@ class Shops_InquiryController extends Shops_Controller_Action
 			// Auto-create quote if a SKU was provided
 			$quoteId = null;
 			$pdfInfo = [];
-			$offerStatus = trim((string)($allFormValues['sku'] ?? '')) === '' ? null : 'quote_failed';
+			$offerStatus = $selection['eligible'] ? 'quote_failed' : 'manual_review';
 
 			try {
-				$quoteId = $this->createQuoteFromInquiry($allFormValues, (int)$stored['id']);
+				if($selection['eligible']) $quoteId = $this->createQuoteFromInquiry($allFormValues, (int)$stored['id']);
+				if($selection['eligible'] && !$quoteId) {
+					$offerStatus = 'manual_review';
+					$this->markInquiryForReview((int)$stored['id'], 'selection_changed');
+				}
+			} catch (UnexpectedValueException $e) {
+				$offerStatus = 'manual_review';
+				$this->markInquiryForReview((int)$stored['id'], 'commercial_review_required');
 			} catch (Throwable $e) {
 				error_log('Stored shop inquiry could not create a quote: ' . $e->getMessage());
 				$failedInquiry = $inquiryDb->getById((int)$stored['id']);
@@ -432,7 +438,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 		$targetExpression = trim((string)($calculation['target'] ?? ''));
 		$referenceTitle = trim((string)($calculation['reference'] ?? ''));
 		$tolerance = self::parseDecimal($calculation['tolerance'] ?? null);
-		$requiredCooling = self::parseDecimal($values['kuehlleistung'] ?? null);
+		$requiredField = (string)($calculation['required_field'] ?? (array_key_exists($fieldName, $values) ? $fieldName : 'kuehlleistung'));
+		$requiredCooling = self::parseDecimal($values[$requiredField] ?? null);
 		if ($fieldName === '' || $targetExpression === '' || $referenceTitle === '' || $tolerance === null || $tolerance < 0
 			|| $requiredCooling === null || $requiredCooling <= 0) return [];
 
@@ -462,7 +469,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 		foreach($matches as &$match) {
 			$match['required'] = $requiredCooling;
-			$match['unit'] = 'kW';
+			$match['unit'] = (string)($calculation['unit'] ?? 'kW');
 		}
 		unset($match);
 		return $this->filterAvailableSuggestions($matches);
@@ -470,26 +477,31 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 	protected static function parseDecimal($value): ?float
 	{
-		if (is_int($value) || is_float($value)) {
-			$value = (float)$value;
-			return is_finite($value) ? $value : null;
-		}
-		if (!is_string($value)) return null;
+		return Shops_Service_InquirySelection::decimal($value);
+	}
 
-		$value = trim($value);
-		if ($value === '' || !preg_match('/^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/D', $value)) return null;
-		$number = (float)str_replace(',', '.', $value);
+	protected function inquirySettings(): array
+	{
+		return Shops_Service_InquirySelection::settings((array)$this->formRow);
+	}
 
-		return is_finite($number) ? $number : null;
+	protected function evaluateSelection(array $values): array
+	{
+		$fields = [];
+		foreach($this->formConfig as $step) $fields = array_merge($fields, $step);
+		$settings = $this->inquirySettings();
+		$suggestions = ($settings['selection']['method'] ?? 'form_calc') === 'form_calc'
+			? $this->calculateSuggestions($fields, $values) : [];
+		return (new Shops_Service_InquirySelection())->evaluate($this->formConfig, $settings, $values, $suggestions);
 	}
 
 	protected function normalizeRequestValues(array $values): array
 	{
-		if (array_key_exists('kuehlleistung', $values)) {
-			$value = self::parseDecimal($values['kuehlleistung']);
-			if ($value !== null) $values['kuehlleistung'] = $value;
+		foreach($this->formConfig as $step) foreach($step as $field) {
+			if($field['type'] !== 'number' || !isset($values[$field['name']])) continue;
+			$value = self::parseDecimal($values[$field['name']]);
+			if($value !== null) $values[$field['name']] = $value;
 		}
-
 		return $values;
 	}
 
@@ -523,6 +535,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 				'images' => $mediaDb->getMedia((int)$item['id'], 'items', 'item'),
 				'description' => (string)$item['sku'],
 				'value' => $suggestion['value'],
+				'capacity_raw' => $suggestion['capacity_raw'] ?? $suggestion['value'],
 				'required' => $suggestion['required'] ?? null,
 				'unit' => $suggestion['unit'] ?? '',
 				'percent' => $suggestion['percent'],
@@ -693,6 +706,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 					$smaller = [
 						'title' => $attrReference['title'],
 						'value' => round($result, 2),
+						'capacity_raw' => $result,
 						'description' => $description,
 						'percent' => $percent
 					];
@@ -703,6 +717,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 					$bigger = [
 						'title' => $attrReference['title'],
 						'value' => round($result, 2),
+						'capacity_raw' => $result,
 						'description' => $description,
 						'percent' => $percent
 					];
@@ -712,6 +727,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 					return [[
 						'title' => $attrReference['title'],
 						'value' => round($result, 2),
+						'capacity_raw' => $result,
 						'description' => $description,
 						'percent' => 100.0
 					]];
@@ -728,6 +744,16 @@ class Shops_InquiryController extends Shops_Controller_Action
 
 	protected function createQuoteFromInquiry(array $data, int $inquiryId): ?int
 	{
+		$inquiryDb = new Shops_Model_DbTable_Inquirydata();
+		$existing = $inquiryDb->getById($inquiryId);
+		if(!$existing) throw new RuntimeException('Inquiry is unavailable');
+		if(!empty($existing['quoteid'])) return $this->finalizeInquiryQuote($inquiryId, (int)$existing['quoteid']);
+		$storedValues = json_decode((string)$existing['data'], true);
+		if(!is_array($storedValues)) throw new RuntimeException('Inquiry data is unavailable');
+		unset($storedValues['_selection'], $storedValues['_quote'], $storedValues['origin'], $storedValues['source_path']);
+		$data = $storedValues;
+		$selection = $this->evaluateSelection($data);
+		if(!$selection['eligible']) return null;
 		$sku = trim((string)($data['sku'] ?? ''));
 		if ($sku === '') return null;
 		if (!$this->isValidSuggestedSku($sku)) throw new RuntimeException('Selected item is no longer available');
@@ -748,19 +774,18 @@ class Shops_InquiryController extends Shops_Controller_Action
 		$template = $templateId > 0 ? $templateDb->getTemplate($templateId) : $templateDb->getPrimaryTemplate();
 		if (!$template) throw new RuntimeException('Configured quote template is unavailable');
 
-		$price = !empty($item['specialprice']) && (float)$item['specialprice'] > 0
-			? (float)$item['specialprice']
-			: (float)($item['price'] ?? 0);
-		if (!is_finite($price) || $price < 0) throw new RuntimeException('Invalid item price');
+		$price = self::parseDecimal(!empty($item['specialprice']) && (float)$item['specialprice'] > 0 ? $item['specialprice'] : $item['price']);
+		if($price === null || $price < 0 || ($item['currency'] ?? '') !== $currency['code']) throw new UnexpectedValueException('Item pricing needs review');
 		$tax = (new Shops_Model_DbTable_Taxrate())->getTaxRate((int)($item['taxid'] ?? 0));
 		$taxRate = self::parseDecimal($tax['rate'] ?? null);
-		if ($taxRate === null || $taxRate < 0) throw new RuntimeException('Invalid item tax rate');
+		if ($taxRate === null || $taxRate < 0) throw new UnexpectedValueException('Invalid item tax rate');
 		$uoms = (new Application_Model_DbTable_Uom())->setClientId((int)$this->_siteContext->getClientId())->getUoms();
 		$uom = trim((string)($uoms[(int)($item['uomid'] ?? 0)] ?? ''));
-		if ($uom === '') throw new RuntimeException('Invalid item unit');
+		if ($uom === '') throw new UnexpectedValueException('Invalid item unit');
 
+		$selectedOptions = (new Shops_Service_InquirySelection())->resolveOptions($item, $selection['options'], (string)$currency['code']);
+		$pdfSettings = $this->quotePdfSettings();
 		$quoteDb = new Shops_Model_DbTable_Quote();
-		$inquiryDb = new Shops_Model_DbTable_Inquirydata();
 		$adapter = $quoteDb->getAdapter();
 		$adapter->beginTransaction();
 		$quoteId = 0;
@@ -775,11 +800,11 @@ class Shops_InquiryController extends Shops_Controller_Action
 				$contactId = (int)($contact['contactid'] ?? 0);
 				if ($contactRowId <= 0 || $contactId <= 0) throw new RuntimeException('Inquiry contact is unavailable');
 				if ($existingContact && !empty($contact['taxfree'])) {
-					throw new RuntimeException('Unverified inquiry contact requires manual tax handling');
+					throw new UnexpectedValueException('Unverified inquiry contact requires manual tax handling');
 				}
 				$snapshot = $this->buildInquiryAddressSnapshot($data);
-				$quoteId = $quoteDb->addQuote(array_merge($snapshot, [
-					'title' => trim((string)($data['titel'] ?? '')) ?: (string)$item['title'],
+				$quoteId = $quoteDb->addQuote(array_merge($snapshot, $pdfSettings, [
+					'title' => (string)$item['title'],
 					'reference' => trim((string)($data['projektname'] ?? '')),
 					'currency' => (string)$currency['code'],
 					'state' => 100,
@@ -792,10 +817,9 @@ class Shops_InquiryController extends Shops_Controller_Action
 					'language' => $language,
 					'contactperson' => '',
 					'templateid' => (int)$template['id'],
-					'pdfshowprices' => 1,
 				]));
 
-				(new Shops_Model_DbTable_Quotepos())->addPosition([
+				$positionId = (new Shops_Model_DbTable_Quotepos())->addPosition([
 					'parentid' => $quoteId,
 					'itemid' => (int)$item['id'],
 					'possetid' => 0,
@@ -809,6 +833,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 					'uom' => $uom,
 					'currency' => (string)$currency['code'],
 				]);
+
+				$this->saveSelectedOptions($inquiryDb, $inquiry, $quoteId, $positionId, $quantity, $selectedOptions, $taxRate, $uom, (string)$currency['code'], $selection);
 
 				$clientId = (int)$this->_siteContext->getClientId();
 				Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->direct($quoteId, 'sales', 'quote', $clientId);
@@ -828,6 +854,67 @@ class Shops_InquiryController extends Shops_Controller_Action
 		return $this->finalizeInquiryQuote($inquiryId, $quoteId);
 	}
 
+	protected function markInquiryForReview(int $id, string $reason): void
+	{
+		$db = new Shops_Model_DbTable_Inquirydata();
+		$adapter = $db->getAdapter();
+		$adapter->beginTransaction();
+		try {
+			$row = $db->getByIdForUpdate($id);
+			if($row) {
+				$quote = !empty($row['quoteid']) ? (new Shops_Model_DbTable_Quote())->getById((int)$row['quoteid']) : null;
+				if(!$quote || empty($quote['quoteid'])) {
+					$data = json_decode((string)$row['data'], true);
+					$data['_selection']['eligible'] = false;
+					$data['_selection']['reasons'][] = $reason;
+					$db->updateById($id, ['data' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)]);
+				}
+			}
+			$adapter->commit();
+		} catch(Throwable $e) {
+			$adapter->rollBack();
+			throw $e;
+		}
+	}
+
+	protected function quotePdfSettings(): array
+	{
+		$settings = $this->inquirySettings();
+		$pdf = $settings['quote']['pdf'] ?? [];
+		if(!is_array($pdf)) throw new InvalidArgumentException('Invalid quote PDF settings');
+		$values = [];
+		foreach(['prices' => true, 'discounts' => false, 'cover' => true, 'attributes' => true, 'options' => true, 'images' => true, 'positionimages' => true] as $key => $default) {
+			if(isset($pdf[$key]) && !is_bool($pdf[$key])) throw new InvalidArgumentException('PDF switches must be boolean');
+			$values['pdfshow'.$key] = (int)($pdf[$key] ?? $default);
+		}
+		return $values;
+	}
+
+	protected function saveSelectedOptions(Shops_Model_DbTable_Inquirydata $inquiryDb, array $inquiry, int $quoteId, int $positionId, float $quantity, array $options, float $taxRate, string $uom, string $currency, array $selection): void
+	{
+		$data = json_decode((string)$inquiry['data'], true);
+		$included = [];
+		foreach($options as $option) {
+			if($option['included']) {
+				$option['price'] = 0;
+				$included[] = array_intersect_key($option, array_flip(['id', 'sku', 'title', 'description', 'price']));
+				continue;
+			}
+			$multiplier = $option['quantity'] === null ? 1.0 : (float)$option['quantity'];
+			if($multiplier <= 0) throw new UnexpectedValueException('Option quantity needs review');
+			(new Shops_Model_DbTable_Quotepos())->addPosition([
+				'parentid' => $quoteId, 'masterid' => $positionId, 'possetid' => 0, 'itemid' => 0,
+				'sku' => (string)$option['sku'], 'title' => (string)$option['title'], 'description' => (string)$option['description'],
+				'price' => (float)$option['price'], 'quantity' => $quantity * $multiplier, 'total' => 0,
+				'taxrate' => $option['taxrate'] === null ? $taxRate : (float)$option['taxrate'],
+				'uom' => $option['uom'] ?: $uom, 'currency' => $currency,
+			]);
+		}
+		$data['_selection'] = array_intersect_key($selection, array_flip(['method', 'eligible', 'reasons']));
+		$data['_quote'] = ['included_options' => [$positionId => $included]];
+		$inquiryDb->updateById((int)$inquiry['id'], ['data' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)]);
+	}
+
 	protected function finalizeInquiryQuote(int $inquiryId, int $quoteId): int
 	{
 		$quoteDb = new Shops_Model_DbTable_Quote();
@@ -844,6 +931,10 @@ class Shops_InquiryController extends Shops_Controller_Action
 			}
 
 			if (empty($quote['quoteid'])) {
+				$values = json_decode((string)$inquiry['data'], true);
+				if(!is_array($values) || ($values['_selection']['eligible'] ?? false) !== true) throw new UnexpectedValueException('Inquiry requires manual review');
+				unset($values['_selection'], $values['_quote'], $values['origin'], $values['source_path']);
+				if(!$this->evaluateSelection($values)['eligible']) throw new UnexpectedValueException('Inquiry requires manual review');
 				$quoteNumber = (new Shops_Model_DbTable_Increment())->reserveIncrement('quoteid');
 				$filename = (new Shops_Model_DbTable_Filename())->getFilename('quote', (string)$quote['language']);
 				$quoteDb->saveQuote($quoteId, $quoteNumber, str_replace('%NUMBER%', (string)$quoteNumber, $filename));
@@ -874,7 +965,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 		$emailDb = new Shops_Model_DbTable_Email();
 		$contactDb = new Shops_Model_DbTable_Contact();
 		$contactIds = $emailDb->findContactIdsByEmail($email);
-		if (count($contactIds) > 1) throw new RuntimeException('Inquiry email matches multiple contacts');
+		if (count($contactIds) > 1) throw new UnexpectedValueException('Inquiry email matches multiple contacts');
 		$contactRowId = $contactIds[0] ?? 0;
 		if ($contactRowId > 0) {
 			$contact = $contactDb->getContact($contactRowId);
@@ -1014,6 +1105,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 	{
 		$storedData = json_decode((string)($inquiry['data'] ?? ''), true);
 		$status = is_array($storedData) && trim((string)($storedData['sku'] ?? '')) !== '' ? 'quote_failed' : null;
+		if(isset($storedData['_selection']) && empty($storedData['_selection']['eligible'])) $status = 'manual_review';
 		$quoteId = (int)($inquiry['quoteid'] ?? 0);
 		if ($quoteId <= 0 || !(new Shops_Model_DbTable_Quote())->getById($quoteId)) return ['url' => null, 'status' => $status];
 
@@ -1021,6 +1113,8 @@ class Shops_InquiryController extends Shops_Controller_Action
 			$this->finalizeInquiryQuote((int)$inquiry['id'], $quoteId);
 			$pdf = $this->generateQuotePdf($quoteId);
 			return ['url' => $pdf['url'] ?? null, 'status' => 'ready'];
+		} catch (UnexpectedValueException $e) {
+			return ['url' => null, 'status' => 'manual_review'];
 		} catch (Throwable $e) {
 			error_log('Stored shop inquiry result could not be restored: ' . $e->getMessage());
 			return ['url' => null, 'status' => 'pdf_failed'];
