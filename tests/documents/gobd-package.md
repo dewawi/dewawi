@@ -13,6 +13,10 @@ Fehlende Ausstellerentscheidungen verhindern die Aufnahme der betreffenden PDFs 
 
 Die Verzeichnisse vom Betreiber mit gezielter Eigentümerzuordnung und 0700 anlegen. Keine rekursiven Rechteänderungen an bestehenden Archiven. Technische Nachweise liegen unter `$DEWAWI_GOBD_REPORT_DIR/<Mandanten-ID>/`: `<Paketname>.audit.zip` und `<Paketname>.verification.json`, jeweils 0600. Alte Nachweise am früheren Speicherort werden weder verschoben noch gelöscht. Die neuen privaten Nachweise sind in die Betriebssicherung einzubeziehen. Ein Nachweis kann bereits vor der abschließenden ZIP-Veröffentlichung angelegt sein; seine Existenz beweist weder eine erfolgte Veröffentlichung noch eine tatsächliche Übergabe.
 
+## Große historische Archive
+
+Für registrierte Bestände ist alternativ die [direkte Archivvorprüfung mit Cache, Prioritätenliste, explizitem Sammelnachweis und gesonderter Paketfreigabe](gobd-archive-screening.md) verfügbar. Sie benötigt keinen PDF-ZIP-Zwischenexport. Ein Sammelnachweis ist eine tatsächliche fachliche Erklärung anhand unabhängiger Nachweise für einen benannten SHA-Umfang, keine automatisch erzeugte Einzelprüfung.
+
 ## Ausstellerentscheidung vorbereiten
 
 1. Im bestehenden `/admin/export` den autorisierten Mandanten und den gewünschten Zeitraum wählen. **Dokumente zur internen Prüfung exportieren** erstellt weiterhin ein separates Paket mit allen acht Arten und sämtlichen verfügbaren Fassungen. Es ist keine externe Originallieferung.
@@ -50,7 +54,7 @@ Diese Ausstellerprüfung ersetzt keine Originalauswahl, keinen historischen Inha
 
 ## Externen Export erzeugen und prüfen
 
-In der vorhandenen Exportmaske denselben Mandanten und Zeitraum wählen, **PDF-Belegbilder mit exportieren** einschalten und den GoBD-Export starten. Das steuerliche CSV-Profil bleibt vollständig erhalten. Extern werden ausschließlich die sechs Verkaufsbelegarten berücksichtigt. Archivpfad, PDF-Struktur, Größe, SHA, bestehende Freigaben und die separate Ausstellerentscheidung werden geprüft.
+In der vorhandenen Exportmaske denselben Mandanten und Zeitraum wählen, **PDF-Belegbilder mit exportieren** einschalten und den GoBD-Export starten. Das steuerliche CSV-Profil bleibt vollständig erhalten. Extern werden ausschließlich die sechs Verkaufsbelegarten berücksichtigt. Archivpfad, PDF-Struktur, Größe, SHA, bestehende Freigaben und die separate Ausstellerentscheidung werden geprüft. `scope_attested` kennzeichnet einen ausdrücklich anhand unabhängiger Nachweise bestätigten benannten Umfang, ohne eine Einzelvollprüfung zu behaupten.
 
 `issuer_status=manually_verified` bedeutet den dokumentierten manuellen Ausstellervergleich, keinen Versandnachweis. `issuer_conflict` und `issuer_review_required` werden als Nichtlieferungsgründe mit leeren PDF-Pfaden und korrekten Fehlstellenzählern ausgegeben. Alle betroffenen CSV-Datensätze bleiben enthalten. Intern stehen die Originale weiterhin im vollständigen Prüfexport zur Verfügung.
 

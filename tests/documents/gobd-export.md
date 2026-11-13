@@ -12,7 +12,7 @@ Beide PDF-Paketarten benötigen Administratorzugriff im aktiven Mandanten und ak
 
 Die gespeicherten Formularfilter bleiben im `sessionStorage` des Browser-Tabs getrennt nach Installation, Mandant und Benutzer erhalten. Zurücksetzen stellt die bisherigen Standardwerte her. Die Route bleibt `/admin/export/export?type=gobd&from=YYYY-MM-DD&to=YYYY-MM-DD`, optional `include_documents=1` oder `review_export=1`. Andere CSV-, SQL- und Listenexporte erhalten keine PDF-Option.
 
-**Vor einem PDF-Paketlauf** die privaten Verzeichnisse gemäß [Preflight-Betreiberanleitung](gobd-package.md) konfigurieren. Technische Berichte und sensible Stagingdateien liegen außerhalb von Installation und Repository. Eine separate, SHA-gebundene Ausstellerentscheidung ist für jede extern gelieferte PDF erforderlich; ohne Entscheidung bleiben die PDFs als Nichtlieferung sichtbar. Die steuerlichen CSV-Datensätze bleiben enthalten.
+**Vor einem PDF-Paketlauf** die privaten Verzeichnisse gemäß [Preflight-Betreiberanleitung](gobd-package.md) konfigurieren. Technische Berichte und sensible Stagingdateien liegen außerhalb von Installation und Repository. Ein separater, SHA-gebundener Einzel- oder ausdrücklich bestätigter Scope-Nachweis ist für jede extern gelieferte PDF erforderlich; ohne Entscheidung bleiben die PDFs als Nichtlieferung sichtbar. Die steuerlichen CSV-Datensätze bleiben enthalten.
 
 ## Externer Umfang und Paketinhalt
 
@@ -39,7 +39,7 @@ Die externe PDF-Option ist ausdrücklich auf sechs Ausgangsbelegarten begrenzt (
 
 `pdf_origin` beschreibt Archivherkunft, nicht Versand oder juristische Ausstelleridentität: `issued_original`, `verified_recovered_original`, `reviewed_reconstruction_duplicate` oder `registered_archive_origin_unconfirmed`. Ein geprüftes Rekonstruktionsdoppel ist keine unveränderte historische Originaldatei. Ungeklärte Archivherkunft bleibt fachlich zu prüfen. Nicht freigegebene erkennbare Rekonstruktionen werden extern nicht geliefert.
 
-`issuer_status=manually_verified` ist eine gesonderte, dokumentierte fachliche Ausstellerbestätigung. `conflict` und `review_required` verhindern die PDF-Aufnahme und erscheinen als Lieferlücken; sie löschen keine Geschäftsdaten. Die [private Ausstellerprüfung](gobd-package.md) verwendet vollständige Dokumentprüfung und belastbare Unterlagen, keine automatische Entscheidung allein über Namen, `clientid`, Dateiname oder einen Texttreffer.
+`issuer_status=manually_verified` ist eine gesonderte, dokumentierte Einzel-Ausstellerbestätigung. `scope_attested` bezeichnet eine ausdrückliche unabhängige Erklärung für einen benannten Dokument-/SHA-Umfang, keine behauptete Einzelvollprüfung. Für große Archive steht die [lesende Sammelvorprüfung](gobd-archive-screening.md) mit separater Paketfreigabe bereit. `conflict` und `review_required` verhindern die PDF-Aufnahme und erscheinen als Lieferlücken; sie löschen keine Geschäftsdaten. Die [private Ausstellerprüfung](gobd-package.md) verwendet vollständige Dokumentprüfung und belastbare Unterlagen, keine automatische Entscheidung allein über Namen, `clientid`, Dateiname oder einen Texttreffer.
 
 ## Status und Vollständigkeit richtig lesen
 

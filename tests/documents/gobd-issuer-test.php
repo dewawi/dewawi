@@ -51,6 +51,28 @@ try {
 		file_put_contents($path, json_encode($bad));
 		issuerReject(static fn() => new DEEC_Export_GobdIssuer($client, $path));
 	}
+	$scopePath = $work . '/scope.json';
+	$scope = ['schema_version' => 1, 'clientid' => $client['id'], 'tenant_identity_sha256' => $record['tenant_identity_sha256'], 'documents' => [['identity' => $record['decisions'][0]['identity'], 'pdf_sha256' => $record['decisions'][0]['pdf_sha256'], 'screening_status' => 'unobtrusive_candidate']]];
+	file_put_contents($scopePath, json_encode($scope));
+	$batch = array_diff_key($record['decisions'][0], array_flip(['identity', 'pdf_sha256', 'full_document_reviewed']));
+	$batch += ['scope_file' => $scopePath, 'scope_sha256' => hash_file('sha256', $scopePath), 'scope_reviewed' => true, 'independent_issuer_evidence_confirmed' => true];
+	$bulk = ['schema_version' => 1, 'clientid' => $client['id'], 'tenant_identity_sha256' => $record['tenant_identity_sha256'], 'decisions' => [], 'batches' => [$batch]];
+	file_put_contents($path, json_encode($bulk));
+	issuerCheck((new DEEC_Export_GobdIssuer($client, $path))->check($scope['documents'][0]['identity'], $scope['documents'][0]['pdf_sha256'])['status'] === 'scope_attested');
+	$pending = $bulk; $pending['batches'][0]['decision'] = 'unresolved';
+	file_put_contents($path, json_encode($pending));
+	issuerCheck((new DEEC_Export_GobdIssuer($client, $path))->check($scope['documents'][0]['identity'], $scope['documents'][0]['pdf_sha256'])['status'] === 'review_required');
+	foreach (['scope_sha256', 'scope_reviewed', 'independent_issuer_evidence_confirmed'] as $field) {
+		$bad = $bulk; $bad['batches'][0][$field] = $field === 'scope_sha256' ? str_repeat('0', 64) : false;
+		file_put_contents($path, json_encode($bad)); issuerReject(static fn() => new DEEC_Export_GobdIssuer($client, $path));
+	}
+	$blocked = $bulk; $blocked['decisions'] = [$foreign['decisions'][0]];
+	file_put_contents($path, json_encode($blocked));
+	issuerCheck((new DEEC_Export_GobdIssuer($client, $path))->check($scope['documents'][0]['identity'], $scope['documents'][0]['pdf_sha256'])['status'] === 'conflict');
+	$scope['documents'][0]['screening_status'] = 'unclear'; file_put_contents($scopePath, json_encode($scope));
+	$bulk['batches'][0]['scope_sha256'] = hash_file('sha256', $scopePath); file_put_contents($path, json_encode($bulk));
+	issuerReject(static fn() => new DEEC_Export_GobdIssuer($client, $path));
+	unlink($scopePath);
 	file_put_contents($path, json_encode($record));
 	issuerReject(static fn() => new DEEC_Export_GobdIssuer(array_replace($client, ['company' => 'SYNTHETIC ISSUER CHANGED']), $path));
 	chmod($path, 0644);

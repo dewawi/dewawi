@@ -224,6 +224,87 @@ $pdf->Output($argv[2], 'F');
     same, _ = run(['--action=compare', '--before=' + str(current), '--after=' + str(current)], 1)
     check(not any(same['comparison']['changes'].values()))
     check(module.digest(current) == original_sha)
+    bulk_tool = Path(__file__).with_name('gobd-issuer-preflight.py')
+    def bulk(arguments, expected):
+        global serial
+        serial += 1
+        output = work / ('bulk-report-' + str(serial) + '.json')
+        process = subprocess.run([sys.executable, str(bulk_tool), '--client=5', '--output=' + str(output), *arguments], capture_output=True, text=True)
+        check(process.returncode == expected)
+        check('SYNTHETIC' not in process.stdout + process.stderr)
+        return json.loads(output.read_text()), output
+
+    source_base = work / 'source'; source_base.mkdir(mode=0o700)
+    header = dict(kind='header', schema_version=1, clientid=5, tenant_identity_sha256='a' * 64, base=str(source_base), mode='registered_archive_read_only')
+    lines = [json.dumps(header, separators=(',', ':')).encode() + b'\n']
+    archive_items = []
+    for ident, content in [(9, sample), (10, (work / 'foreign.pdf').read_bytes()), (11, scanned), (12, sample)]:
+        target = source_base / ('files/documents/5/0/5/sales/invoice/0/' + str(ident) + '.pdf')
+        target.parent.mkdir(parents=True, mode=0o700, exist_ok=True); target.write_bytes(content)
+        identity = dict(clientid=5, module='sales', controller='invoice', id=ident, document_number='SYNTHETIC-NUMBER')
+        item = dict(kind='archive', identity=identity, pdf=dict(path=str(target), size=len(content), sha256=hashlib.sha256(content).hexdigest()), pdf_origin='issued_original')
+        archive_items.append(item); lines.append(json.dumps(item, separators=(',', ':')).encode() + b'\n')
+    footer = dict(kind='summary', counts=dict(registered=4, valid=4, invalid=0), content_sha256=hashlib.sha256(b''.join(lines)).hexdigest())
+    inventory = work / 'inventory.jsonl'; inventory.write_bytes(b''.join(lines) + json.dumps(footer).encode() + b'\n')
+    blank_profile, _ = bulk(['--action=prepare-profile', '--inventory=' + str(inventory)], 1)
+    check(blank_profile['expected_issuer']['legal_name'] == '' and blank_profile['expected_issuer']['identifiers'] == [])
+    profile = work / 'profile.json'
+    module.write_json(profile, dict(schema_version=1, clientid=5, tenant_identity_sha256='a' * 64,
+                                    expected_issuer=dict(legal_name='SYNTHETIC ISSUER A', identifiers=['SYNTHETIC REGISTRATION A']),
+                                    foreign_issuers=[dict(legal_name='SYNTHETIC ISSUER B', identifiers=['SYNTHETIC REGISTRATION B'])]))
+    cache = work / 'text-cache.sqlite'
+    scan_args = ['--action=scan', '--inventory=' + str(inventory), '--profile=' + str(profile), '--cache=' + str(cache)]
+    first, first_path = bulk(scan_args, 1)
+    check(first['counts'] == dict(unobtrusive_candidate=2, contradictory_issuer_evidence=1, unclear=1))
+    records = [json.loads(line) for line in Path(first['results']).read_text().splitlines()]
+    check(not any(row['legal_issuer_confirmed'] for row in records))
+    repeated, _ = bulk(scan_args, 1)
+    check(repeated['extracted'] == 0 and repeated['cache_hits'] == 4)
+    unconfigured, _ = bulk([value for value in scan_args if not value.startswith('--profile=')], 1)
+    check(unconfigured['counts'] == {'unclear': 4})
+    current_review = json.loads(review.read_text())
+    current_review['decisions'][1]['pdf_sha256'] = archive_items[1]['pdf']['sha256']
+    current_review['decisions'][1]['decision'] = 'confirmed_foreign_issuer'
+    current_review['decisions'][1]['actual_issuer'] = 'SYNTHETIC ISSUER B'
+    current_review_path = work / 'current-review.json'; module.write_json(current_review_path, current_review)
+    reused, reused_path = bulk([*scan_args, '--issuer-review=' + str(current_review_path)], 1)
+    check(reused['reused_attestations'] == 2 and reused['counts']['confirmed_foreign_issuer'] == 1)
+    check(next(csv.DictReader(open(reused['priority_csv']), delimiter=';'))['screening_status'] == 'confirmed_foreign_issuer')
+    scope = work / 'scope.json'
+    pending, pending_path = bulk(['--action=prepare-batch', '--screening-report=' + str(reused_path), '--issuer-review=' + str(current_review_path), '--scope-output=' + str(scope)], 1)
+    check(pending['batches'][-1]['decision'] == 'unresolved' and not pending['batches'][-1]['independent_issuer_evidence_confirmed'])
+    check([row['identity']['id'] for row in json.loads(scope.read_text())['documents']] == [12])
+    loaded_pending = module.load_issuer_decisions(pending_path, 5, 'a' * 64)
+    check(module.issuer_state(module.find_issuer_decision(loaded_pending, archive_items[-1]['identity'], archive_items[-1]['pdf']['sha256'])) == 'review_required')
+    batch = pending['batches'][-1]
+    batch.update(decision='confirmed_same_issuer', reviewed_by='synthetic scope reviewer', reviewed_at=datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+                 basis='Synthetic independent archive-scope evidence, not a text-only confirmation', actual_issuer='SYNTHETIC ISSUER A',
+                 scope_reviewed=True, independent_issuer_evidence_confirmed=True, issuer_compared_with_tenant=True)
+    attested = work / 'attested-review.json'; module.write_json(attested, pending)
+    decisions = module.load_issuer_decisions(attested, 5, 'a' * 64)
+    check(module.issuer_state(module.find_issuer_decision(decisions, archive_items[-1]['identity'], archive_items[-1]['pdf']['sha256'])) == 'scope_attested')
+    check(module.issuer_state(module.find_issuer_decision(decisions, archive_items[1]['identity'], archive_items[1]['pdf']['sha256'])) == 'conflict')
+    release_template, release_path = bulk(['--action=prepare-release', '--preflight=' + str(work / 'report-1.json')], 1)
+    check(not release_template['approved_for_delivery'] and not release_template['limitations_acknowledged'])
+    release_args = ['--action=verify-release', '--zip=' + str(current), '--preflight=' + str(work / 'report-1.json'), '--release=' + str(release_path),
+                    '--verification=' + str(proof), '--issuer-review=' + str(review), '--current-issuer-review=' + str(review)]
+    bulk(release_args, 2)
+    release_template.update(approved_for_delivery=True, limitations_acknowledged=True, reviewed_by='synthetic release reviewer',
+                            reviewed_at=datetime.now(timezone.utc).replace(microsecond=0).isoformat(), basis='Synthetic separate review of the exact package and all findings')
+    approved_path = work / 'release.json'; module.write_json(approved_path, release_template)
+    approved, _ = bulk([value if not value.startswith('--release=') else '--release=' + str(approved_path) for value in release_args], 0)
+    check(approved['result'] == 'professional_package_release_verified' and module.digest(current) == original_sha)
+    current_negative = json.loads(review.read_text()); current_negative['decisions'][0]['decision'] = 'confirmed_foreign_issuer'
+    current_negative['decisions'][0]['actual_issuer'] = 'SYNTHETIC CONFLICTING ISSUER'
+    current_negative_path = work / 'new-negative-decision.json'; module.write_json(current_negative_path, current_negative)
+    denied_args = [value if not value.startswith('--release=') else '--release=' + str(approved_path) for value in release_args]
+    denied_args = [value if not value.startswith('--current-issuer-review=') else '--current-issuer-review=' + str(current_negative_path) for value in denied_args]
+    blocked_release, _ = bulk(denied_args, 2)
+    check(blocked_release['result'] == 'not_releasable')
+
+    tampered_release = dict(release_template, package_sha256='0' * 64)
+    wrong_release_path = work / 'wrong-release.json'; module.write_json(wrong_release_path, tampered_release)
+    bulk([value if not value.startswith('--release=') else '--release=' + str(wrong_release_path) for value in release_args], 2)
     unsafe = work / 'unsafe.zip'
     with zipfile.ZipFile(unsafe, 'x') as archive:
         archive.writestr('../outside.pdf', sample)

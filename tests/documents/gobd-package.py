@@ -65,6 +65,91 @@ def bounded_json(path, limit=32 * 1024 * 1024):
         return json.load(source)
 
 
+def decision_key(identity, sha):
+    return json.dumps(identity, sort_keys=True, ensure_ascii=False) + '/' + sha
+
+
+def validate_issuer_identity(identity, sha, client):
+    if (type(identity.get('clientid')) is not int or identity.get('clientid') != client or type(identity.get('id')) is not int or identity['id'] <= 0
+            or identity.get('controller') not in TYPES.get(identity.get('module'), [])
+            or not isinstance(identity.get('document_number'), str) or not re.fullmatch('[a-f0-9]{64}', sha)):
+        raise ValueError('Invalid issuer decision identity')
+
+
+def validate_issuer_attestation(decision, scope=False):
+    if decision.get('decision') == 'unresolved':
+        return
+    if any(not isinstance(decision.get(field), str) or not decision[field].strip() for field in ['reviewed_by', 'reviewed_at', 'basis', 'actual_issuer']):
+        raise ValueError('Incomplete issuer attestation')
+    reviewed = datetime.strptime(decision['reviewed_at'], '%Y-%m-%dT%H:%M:%S%z')
+    if reviewed.isoformat(timespec='seconds') != decision['reviewed_at'] or reviewed > datetime.now(timezone.utc) or decision.get('issuer_compared_with_tenant') is not True:
+        raise ValueError('Issuer comparison is not explicitly attested')
+    required = ['scope_reviewed', 'independent_issuer_evidence_confirmed'] if scope else ['full_document_reviewed']
+    if any(decision.get(field) is not True for field in required):
+        raise ValueError('Issuer evidence is not explicitly attested')
+
+
+def load_issuer_decisions(path, client, context):
+    decisions = {}
+    if path is None:
+        return decisions
+    record = bounded_json(path, 128 * 1024 * 1024)
+    if type(record.get('schema_version')) is not int or record.get('schema_version') != 1 or type(record.get('clientid')) is not int or record.get('clientid') != client or record.get('tenant_identity_sha256') != context:
+        raise ValueError('Issuer review context differs')
+    identities = set()
+    for item in record['decisions']:
+        validate_issuer_identity(item.get('identity', {}), item.get('pdf_sha256', ''), client)
+        if item.get('decision') not in {'unresolved', 'confirmed_same_issuer', 'confirmed_foreign_issuer'}:
+            raise ValueError('Invalid issuer decision')
+        validate_issuer_attestation(item)
+        entity = tuple(item['identity'][field] for field in ['clientid', 'module', 'controller', 'id']) + (item['pdf_sha256'],)
+        key = decision_key(item['identity'], item['pdf_sha256'])
+        if entity in identities or key in decisions:
+            raise ValueError('Ambiguous issuer attestation')
+        identities.add(entity)
+        decisions[key] = item
+        if item['decision'] == 'confirmed_foreign_issuer':
+            negative = 'foreign:' + '/'.join(str(item['identity'][field]) for field in ['clientid', 'module', 'controller', 'id']) + '/' + item['pdf_sha256']
+            decisions[negative] = item
+    scoped = set()
+    for batch in record.get('batches', []):
+        if batch.get('decision') == 'unresolved':
+            continue
+        if batch.get('decision') != 'confirmed_same_issuer':
+            raise ValueError('Invalid issuer scope decision')
+        validate_issuer_attestation(batch, scope=True)
+        scope_path = private_path(batch['scope_file'])
+        scope = bounded_json(scope_path, 128 * 1024 * 1024)
+        if (digest(scope_path) != batch['scope_sha256'] or type(scope.get('schema_version')) is not int or scope.get('schema_version') != 1 or type(scope.get('clientid')) is not int or scope.get('clientid') != client
+                or scope.get('tenant_identity_sha256') != context or not scope.get('documents')):
+            raise ValueError('Issuer scope is invalid or changed')
+        for item in scope['documents']:
+            validate_issuer_identity(item['identity'], item['pdf_sha256'], client)
+            if item.get('screening_status') not in {'unobtrusive_candidate', 'confirmed_same_issuer'}:
+                raise ValueError('Issuer scope includes a suspicious or unresolved case')
+            key = decision_key(item['identity'], item['pdf_sha256'])
+            entity = tuple(item['identity'][field] for field in ['clientid', 'module', 'controller', 'id']) + (item['pdf_sha256'],)
+            if entity in scoped:
+                raise ValueError('Ambiguous issuer scope')
+            scoped.add(entity)
+            if decisions.get(key, {}).get('decision', 'unresolved') == 'unresolved':
+                decisions[key] = dict(batch, identity=item['identity'], pdf_sha256=item['pdf_sha256'], scope_attested=True)
+    return decisions
+
+
+def find_issuer_decision(decisions, identity, sha):
+    foreign_key = 'foreign:' + '/'.join(str(identity[field]) for field in ['clientid', 'module', 'controller', 'id']) + '/' + sha
+    return decisions.get(foreign_key) or decisions.get(decision_key(identity, sha))
+
+
+def issuer_state(decision):
+    if not decision or decision['decision'] == 'unresolved':
+        return 'review_required'
+    if decision['decision'] == 'confirmed_foreign_issuer':
+        return 'conflict'
+    return 'scope_attested' if decision.get('scope_attested') else 'manually_verified'
+
+
 def check_directory(path):
     # Bound central-directory allocation before ZipFile constructs entry objects; support ZIP64.
     with open(path, 'rb') as source:
@@ -451,40 +536,13 @@ class Package:
         return True
 
     def issuer_review(self, path, scratch, details):
-        record = bounded_json(path, 128 * 1024 * 1024) if path else None
         proof = getattr(self, 'delivery_proof', {})
         if path and proof.get('issuer_review_sha256') and digest(path) != proof['issuer_review_sha256']:
             raise ValueError('Issuer review differs from the attestation used at export')
-        decisions = {}
-        if record is not None:
-            if record.get('schema_version') != 1 or record.get('clientid') != self.client or record.get('tenant_identity_sha256') != self.meta.get('tenant_identity_sha256'):
-                raise ValueError('Issuer review context differs')
-            for decision in record['decisions']:
-                identity = decision.get('identity', {})
-                if (identity.get('clientid') != self.client or type(identity.get('id')) is not int or identity['id'] <= 0
-                        or identity.get('controller') not in TYPES.get(identity.get('module'), [])
-                        or not isinstance(identity.get('document_number'), str)
-                        or not re.fullmatch('[a-f0-9]{64}', decision.get('pdf_sha256', ''))
-                        or decision.get('decision') not in {'unresolved', 'confirmed_same_issuer', 'confirmed_foreign_issuer'}):
-                    raise ValueError('Invalid issuer decision identity')
-                key = json.dumps(decision.get('identity'), sort_keys=True) + '/' + decision.get('pdf_sha256', '')
-                if key in decisions:
-                    raise ValueError('Ambiguous issuer attestation')
-                decisions[key] = decision
+        decisions = load_issuer_decisions(path, self.client, self.meta.get('tenant_identity_sha256'))
         for pdf in getattr(self, 'pdf_rows', []):
-            key = json.dumps(pdf['identity'], sort_keys=True) + '/' + pdf['sha256']
-            decision = decisions.get(key)
-            state = 'review_required'
-            if decision and decision.get('decision') != 'unresolved':
-                required = ['reviewed_by', 'reviewed_at', 'basis', 'actual_issuer']
-                if any(not isinstance(decision.get(field), str) or not decision[field].strip() for field in required):
-                    raise ValueError('Incomplete issuer attestation')
-                reviewed = datetime.strptime(decision['reviewed_at'], '%Y-%m-%dT%H:%M:%S%z')
-                if reviewed > datetime.now(timezone.utc) or decision.get('full_document_reviewed') is not True or decision.get('issuer_compared_with_tenant') is not True:
-                    raise ValueError('Issuer comparison is not explicitly attested')
-                if decision['decision'] not in {'confirmed_same_issuer', 'confirmed_foreign_issuer'}:
-                    raise ValueError('Invalid issuer decision')
-                state = 'manually_verified' if decision['decision'] == 'confirmed_same_issuer' else 'conflict'
+            decision = find_issuer_decision(decisions, pdf['identity'], pdf['sha256'])
+            state = issuer_state(decision)
             text = extract_pdf(self.zip, pdf['path'], scratch)
             detail = dict(pdf, issuer_status=state, text_evidence=text, decision=decision,
                           note='Text extraction is a review aid only; no automatic issuer or dispatch confirmation')
@@ -493,22 +551,31 @@ class Package:
             self.issuer_decisions.append({'identity': pdf['identity'], 'pdf_sha256': pdf['sha256'], 'decision': 'unresolved',
                                          'reviewed_by': '', 'reviewed_at': '', 'basis': '', 'actual_issuer': '',
                                          'full_document_reviewed': False, 'issuer_compared_with_tenant': False})
-            if state != 'manually_verified' or text['status'] not in {'text_available', 'no_machine_readable_text'}:
+            if state not in {'manually_verified', 'scope_attested'} or text['status'] not in {'text_available', 'no_machine_readable_text'}:
                 self.review_required = True
             if state == 'conflict':
                 self.problems.append({'kind': 'confirmed_foreign_issuer', 'identity': pdf['identity'], 'sha256': pdf['sha256']})
-            if self.meta.get('export_kind') == 'outgoing_documents' and pdf['declared_issuer_status'] != 'manually_verified':
+            if self.meta.get('export_kind') == 'outgoing_documents' and pdf['declared_issuer_status'] not in {'manually_verified', 'scope_attested'}:
                 self.review_required = True
 
 
 def extract_pdf(zip_file, name, scratch):
-    path, text = scratch / 'review.pdf', scratch / 'review.txt'
+    path = scratch / 'review.pdf'
     if zip_file.getinfo(name).file_size > 256 * 1024 * 1024:
         return {'status': 'review_required_size_limit'}
     with zip_file.open(name) as source, open(path, 'wb') as target:
         os.chmod(path, 0o600)
         for chunk in iter(lambda: source.read(1024 * 1024), b''):
             target.write(chunk)
+    try:
+        return extract_pdf_file(path, scratch / 'review.txt')
+    finally:
+        path.unlink(missing_ok=True)
+
+
+def extract_pdf_file(path, text):
+    if path.stat().st_size > 256 * 1024 * 1024:
+        return {'status': 'review_required_size_limit'}
     with open(path, 'rb') as source:
         header = source.read(8)
         source.seek(max(0, path.stat().st_size - 2048))
@@ -530,7 +597,6 @@ def extract_pdf(zip_file, name, scratch):
     except (FileNotFoundError, subprocess.SubprocessError):
         return {'status': 'extractor_unavailable_or_timed_out'}
     finally:
-        path.unlink(missing_ok=True)
         text.unlink(missing_ok=True)
 
 
