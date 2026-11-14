@@ -138,6 +138,8 @@ check((int)$db->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TAB
 // Version 1.1.8 maps explicit contact roles and normalizes inquiry tokens before adding indexes.
 $db->query('CREATE DATABASE contact_role_upgrade');
 $db->select_db('contact_role_upgrade');
+$db->query('CREATE TABLE client LIKE install_success.client');
+$db->query('CREATE TABLE item LIKE install_success.item');
 $db->query('CREATE TABLE contactperson (id INT PRIMARY KEY, name1 VARCHAR(255) NULL, name2 VARCHAR(255) NULL) ENGINE=InnoDB');
 $db->query('CREATE TABLE contact (id INT PRIMARY KEY, type VARCHAR(255), clientid INT NOT NULL, created DATETIME NULL, createdby INT NOT NULL DEFAULT 0, modified DATETIME NULL, modifiedby INT NOT NULL DEFAULT 0, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query('CREATE TABLE shopinquiryform (id INT PRIMARY KEY, shopid INT NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
