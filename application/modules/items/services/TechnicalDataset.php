@@ -437,6 +437,80 @@ class Items_Service_TechnicalDataset
 		});
 	}
 
+	public function evaluateCompressor(int $id, int $revision, string $expectedHash, stdClass $request, string $mode = 'technical'): array
+	{
+		if(!in_array($mode, ['technical', 'mathematical_reference'], true)) throw new InvalidArgumentException('Unknown compressor evaluation mode');
+		$this->context('view');
+		if($mode === 'mathematical_reference') $this->context('import');
+		$this->schema->fields((object)['id' => $id, 'revision' => $revision, 'hash' => $expectedHash], ['id' => 'int', 'revision' => 'int', 'hash' => 'hash']);
+		$request = $this->schema->fields($request, ['point' => 'object'], ['context' => 'object']);
+		$core = new Items_Service_CompressorPolynomial();
+		$point = $core->point($request->point);
+		return $this->transaction(function() use ($id, $revision, $expectedHash, $request, $mode, $core, $point) {
+			$row = $this->db->fetchRow('SELECT * FROM technicaldataset WHERE id = ? AND clientid = ? AND revision = ? FOR UPDATE', [$id, $this->owner, $revision]);
+			if(!$row || !hash_equals($row['payload_sha256'], $expectedHash)) throw new RuntimeException('Technical revision is unavailable');
+			$payload = $this->verifyRow('technicaldataset', $row);
+			$r = $payload->record;
+			if($r->dataset_type !== 'compressor_polynomial') throw new InvalidArgumentException('A compressor polynomial dataset is required');
+			if($row['dataset_key'] !== $r->dataset_key || (int)$row['revision'] !== $r->revision || $row['dataset_type'] !== $r->dataset_type || (int)$row['schema_version'] !== $r->schema_version || !in_array($row['status'], ['draft', 'approved', 'withdrawn'], true)) throw new RuntimeException('Technical revision integrity failure');
+			$reasons = $this->readiness('technicaldataset', $row, [], false);
+			if($row['status'] === 'withdrawn') $reasons[] = 'revision_withdrawn';
+			if($r->manufacturer_name === null) $reasons[] = 'manufacturer_missing';
+			if($r->manufacturer_revision === null) $reasons[] = 'manufacturer_revision_missing';
+			$released = !$reasons;
+			$approval = $this->compressorApproval($row, $r);
+			$violations = isset($request->context) ? $this->compressorContext($r, $request->context) : [];
+			if($mode === 'technical' && !isset($request->context)) $violations[] = 'operating_context_required';
+			$region = $r->data->operating_envelope === null ? ['status' => 'review_required', 'reason' => 'operating_envelope_missing'] : $core->operatingRegion($r->data->operating_envelope, $point);
+			$result = ['evaluation_mode' => $mode, 'status' => 'review_required', 'scope' => 'compressor_point_only', 'eligible' => false,
+				'package' => ['id' => (int)$row['id'], 'dataset_key' => $r->dataset_key, 'revision' => $r->revision, 'schema_version' => $r->schema_version,
+					'payload_sha256' => $row['payload_sha256'], 'normalization_version' => $payload->normalization_version, 'status' => $row['status'],
+					'approved' => $row['approved'], 'approvedby' => $row['approvedby'] === null ? null : (int)$row['approvedby'], 'withdrawn' => $row['withdrawn'],
+					'approval_sha256' => $approval, 'source_sha256s' => array_values(array_unique(array_map(fn($s) => $s->sha256, $this->sourcesOf($r))))],
+				'equation_id' => $r->data->equation_id, 'calculation_version' => Items_Service_CompressorPolynomial::VERSION, 'inputs' => $point,
+				'curve' => ['manufacturer_name' => $r->manufacturer_name, 'manufacturer_revision' => $r->manufacturer_revision, 'model' => $r->data->model,
+					'refrigerant' => $r->data->refrigerant, 'condition_set' => $r->data->condition_set ?? $r->source->sheet ?? null],
+				'conditions' => $r->data->conditions, 'temperature_basis' => $r->data->temperature_basis, 'electrical' => $r->data->electrical,
+				'operating_region' => $region, 'reasons' => [], 'violations' => $violations, 'calculation' => null];
+			if($mode === 'mathematical_reference') $reasons[] = 'mathematical_reference_only';
+			if($region['reason'] !== null) $reasons[] = $region['reason'];
+			if($mode === 'technical' && !$violations && $released && $region['status'] === 'outside') $result['status'] = 'unsuitable';
+			$canCalculate = !$violations && $row['status'] !== 'withdrawn' && (($mode === 'mathematical_reference' && $region['status'] !== 'outside') || (!$reasons && $region['status'] === 'inside'));
+			if($canCalculate) {
+				$result['calculation'] = $core->evaluate($r, $point);
+				$reasons = array_merge($reasons, $result['calculation']['reasons']);
+				if($mode === 'technical' && !$reasons) $result['status'] = 'valid_compressor_point';
+			}
+			$result['reasons'] = array_values(array_unique(array_merge($reasons, $violations)));
+			return $result;
+		});
+	}
+
+	private function compressorContext(stdClass $record, stdClass $context): array
+	{
+		$c = $this->schema->fields($context, ['manufacturer_name' => '?text', 'manufacturer_revision' => '?revision_text', 'model' => 'text', 'refrigerant' => 'key', 'conditions' => 'object', 'temperature_basis' => 'object', 'electrical' => 'object']);
+		$expected = clone $record; $expected->data = clone $record->data;
+		$expected->manufacturer_name = $c->manufacturer_name; $expected->manufacturer_revision = $c->manufacturer_revision;
+		foreach(['model', 'refrigerant', 'conditions', 'temperature_basis', 'electrical'] as $key) $expected->data->$key = $c->$key;
+		$expected = $this->schema->dataset($expected);
+		$reasons = [];
+		foreach(['manufacturer_name', 'manufacturer_revision'] as $key) if($record->$key !== $expected->$key) $reasons[] = $key.'_mismatch';
+		foreach(['model', 'refrigerant', 'conditions', 'temperature_basis', 'electrical'] as $key) if(Items_Service_TechnicalJson::encode($record->data->$key) !== Items_Service_TechnicalJson::encode($expected->data->$key)) $reasons[] = $key.'_mismatch';
+		return $reasons;
+	}
+
+	private function compressorApproval(array $row, stdClass $record): ?string
+	{
+		if($row['status'] !== 'approved') return $row['approval_json'] === null ? null : hash('sha256', $row['approval_json']);
+		if($row['approval_json'] === null || $row['approved'] === null || (int)$row['approvedby'] <= 0) throw new RuntimeException('Technical approval integrity failure');
+		$proof = $this->schema->fields(Items_Service_TechnicalJson::decode($row['approval_json']), ['evidence' => 'object', 'revision_sha256' => 'hash', 'references' => 'list:object']);
+		$evidence = $this->schema->fields($proof->evidence, ['scope_key' => 'key', 'rights_reference' => 'text', 'engineering_reference' => 'text', 'source_sha256s' => 'list:hash']);
+		$hashes = array_values(array_unique(array_map(fn($s) => $s->sha256, $this->sourcesOf($record))));
+		$actual = $evidence->source_sha256s; sort($hashes); sort($actual);
+		if(!hash_equals($proof->revision_sha256, $row['payload_sha256']) || $hashes !== $actual) throw new RuntimeException('Technical approval integrity failure');
+		return hash('sha256', $row['approval_json']);
+	}
+
 	private function readiness(string $table, array $row, array $visited, bool $approving): array
 	{
 		$key = $table.':'.$row['id'];

@@ -340,3 +340,4 @@ require __DIR__.'/technical-csv.php';
 $expected=range(10,63);$missing=array_diff($expected,array_keys($coverage));
 checkTechnical(!$missing,'Missing D2B matrix coverage: '.implode(',',$missing));
 echo "PASS: 54 D2B matrix cases covered; $checks assertions, isolated fresh install and actual 1.1.7 upgrade, owner/FK/history/lifecycle/concurrency/CSV checks\n";
+require __DIR__.'/compressor-polynomial-db.php';
