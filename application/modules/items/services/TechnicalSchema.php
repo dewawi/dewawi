@@ -3,7 +3,8 @@
 class Items_Service_TechnicalSchema
 {
 	public const ROLES = ['compressor', 'evaporator', 'air_condenser', 'water_condenser', 'pump', 'fan', 'recovery_exchanger', 'tank', 'technical_option', 'machine'];
-	public const TYPES = ['compressor_polynomial', 'machine_configuration', 'machine_family', 'component_spec', 'reference_points', 'heat_exchanger_map', 'thermal_balance_model', 'fluid_properties', 'pressure_loss_map', 'pump_curve', 'hydraulic_path'];
+	public const TYPES = ['compressor_polynomial', 'machine_configuration', 'machine_family', 'component_spec', 'reference_points', 'heat_exchanger_map', 'thermal_balance_model', 'fluid_properties', 'pressure_loss_map', 'pump_curve', 'hydraulic_path', 'operating_mode_model'];
+	public const OPERATING_MODES = ['cooling', 'partial_heat_recovery', 'full_heat_recovery', 'heat_pump'];
 	public const QUANTITIES = ['cooling_capacity' => ['W', 'kW'], 'power_input' => ['W', 'kW'], 'current' => ['A'], 'refrigerant_mass_flow' => ['kg/h', 'kg/s'], 'discharge_temperature' => ['degC']];
 
 	public function fields($value, array $required, array $optional = []): stdClass
@@ -80,6 +81,7 @@ class Items_Service_TechnicalSchema
 			case 'reference_points': $d->data = $this->references($d->data); break;
 			case 'heat_exchanger_map': $d->data = $this->heatExchangerMap($d->data); break;
 			case 'thermal_balance_model': $d->data = $this->thermalBalanceModel($d->data); break;
+			case 'operating_mode_model': $d->data = (new Items_Service_OperatingModeSchema())->model($d->data); break;
 			case 'fluid_properties': case 'pressure_loss_map': case 'pump_curve': case 'hydraulic_path': $d->data = (new Items_Service_FluidHydraulicSchema())->data($d->dataset_type, $d->data); break;
 		}
 		if(strlen(Items_Service_TechnicalJson::encode($d)) > 1048576 || $this->entries($d) > 5000) throw new InvalidArgumentException('Technical package budget exceeded');
@@ -154,7 +156,7 @@ class Items_Service_TechnicalSchema
 		if(!$value instanceof stdClass || !get_object_vars($value)) throw new InvalidArgumentException('Component ports required');
 		foreach($value as $key => $type) {
 			$this->typed($key, 'key');
-			if(!in_array($type, ['refrigerant_in', 'refrigerant_out', 'liquid_in', 'liquid_out', 'air_in', 'air_out'], true)) throw new InvalidArgumentException('Unknown technical port type');
+			if(!in_array($type, ['refrigerant_in', 'refrigerant_out', 'refrigerant_bidirectional', 'liquid_in', 'liquid_out', 'air_in', 'air_out'], true)) throw new InvalidArgumentException('Unknown technical port type');
 		}
 		return clone $value;
 	}
@@ -173,13 +175,14 @@ class Items_Service_TechnicalSchema
 			case 'compressor': $spec = ['polynomial_ref' => '?ref', 'oil_return_stage_limits_ref' => '?ref']; break;
 			case 'technical_option': $spec = ['effect' => ['unknown', 'neutral_verified', 'add', 'replace', 'restrict'], 'effect_dataset_ref' => '?ref', 'source_locator' => '?text']; break;
 		}
-		$d->specification = $this->fields($d->specification, $spec, $d->role === 'tank' ? ['pressure_loss_ref' => '?ref'] : []);
+		$d->specification = $this->fields($d->specification, $spec, $d->role === 'tank' ? ['pressure_loss_ref' => '?ref'] : ($d->role === 'technical_option' ? ['refrigerant_valve' => 'object'] : []));
+		if(isset($d->specification->refrigerant_valve)) $d->specification->refrigerant_valve = (new Items_Service_OperatingModeSchema())->valve($d->specification->refrigerant_valve, $d->ports);
 		if(isset($d->specification->flow_min_m3_h, $d->specification->flow_max_m3_h) && (float)$d->specification->flow_min_m3_h > (float)$d->specification->flow_max_m3_h) throw new InvalidArgumentException('Reversed flow limits');
 		if(isset($d->specification->usable_volume_L, $d->specification->nominal_volume_L) && (float)$d->specification->usable_volume_L > (float)$d->specification->nominal_volume_L) throw new InvalidArgumentException('Usable volume exceeds nominal volume');
 		return $d;
 	}
 
-	private function thermalRange($value, string $unit, bool $positive = false): stdClass
+	public function thermalRange($value, string $unit, bool $positive = false): stdClass
 	{
 		$r = $this->fields($value, ['min' => $positive ? 'positive' : 'number', 'max' => $positive ? 'positive' : 'number', 'unit' => [$unit]]);
 		if(Items_Service_TechnicalJson::compareDecimal($r->min, $r->max) > 0 || ($unit === 'degC' && (float)$r->min <= -273.15)) throw new InvalidArgumentException('Invalid thermal range');
@@ -188,6 +191,7 @@ class Items_Service_TechnicalSchema
 
 	private function heatExchangerMap($data): stdClass
 	{
+		if(isset($data->contract_version) && (string)$data->contract_version === '2') return (new Items_Service_OperatingModeSchema())->exchanger($data);
 		$d = $this->fields($data, ['contract_version' => 'int', 'usage' => ['synthetic_test_only'], 'component_key' => 'key', 'model' => 'text', 'role' => ['evaporator', 'air_condenser', 'water_condenser'],
 			'exchanger_type' => ['plate', 'shell_tube', 'finned_coil'], 'refrigerant' => 'key', 'temperature_basis' => ['dew', 'bubble', 'midpoint', 'pure_saturation'],
 			'model_id' => ['synthetic_evaporator_effectiveness_v1', 'synthetic_air_condenser_effectiveness_v1', 'synthetic_water_condenser_effectiveness_v1'],
@@ -329,7 +333,7 @@ class Items_Service_TechnicalSchema
 
 	public function reference($point): stdClass
 	{
-		$p = $this->fields($point, ['reference_key' => 'key', 'dataset_ref' => 'ref', 'reference_kind' => ['mathematical_polynomial', 'manufacturer_component', 'manufacturer_machine', 'measurement'], 'inputs' => 'object', 'quantity' => array_keys(self::QUANTITIES), 'expected_value' => 'number', 'unit' => 'text', 'absolute_tolerance' => '?nonnegative', 'relative_tolerance' => '?nonnegative', 'tolerance_origin' => 'text', 'source' => 'object', 'revision' => 'int', 'engineering_approval' => '?text'], ['machine_profile_ref' => '?object', 'stage_key' => '?key', 'mode' => ['cooling', 'partial_heat_recovery', 'full_heat_recovery', 'reversible_heating']]);
+		$p = $this->fields($point, ['reference_key' => 'key', 'dataset_ref' => 'ref', 'reference_kind' => ['mathematical_polynomial', 'manufacturer_component', 'manufacturer_machine', 'measurement'], 'inputs' => 'object', 'quantity' => array_keys(self::QUANTITIES), 'expected_value' => 'number', 'unit' => 'text', 'absolute_tolerance' => '?nonnegative', 'relative_tolerance' => '?nonnegative', 'tolerance_origin' => 'text', 'source' => 'object', 'revision' => 'int', 'engineering_approval' => '?text'], ['machine_profile_ref' => '?object', 'stage_key' => '?key', 'mode' => ['cooling', 'partial_heat_recovery', 'full_heat_recovery', 'reversible_heating', 'heat_pump']]);
 		$p->inputs = $this->fields($p->inputs, [], ['Te_degC' => 'number', 'Tc_degC' => 'number', 'supply_degC' => 'number', 'return_degC' => 'number', 'ambient_degC' => 'number', 'fluid_dataset_ref' => 'ref']);
 		if(!get_object_vars($p->inputs) || ($p->absolute_tolerance === null && $p->relative_tolerance === null) || !in_array($p->unit, self::QUANTITIES[$p->quantity], true)) throw new InvalidArgumentException('Incomplete reference point');
 		if(isset($p->machine_profile_ref)) $p->machine_profile_ref = $this->fields($p->machine_profile_ref, ['profile_key' => 'key', 'revision' => 'int']);
@@ -363,7 +367,12 @@ class Items_Service_TechnicalSchema
 
 	private function machine($data): stdClass
 	{
-		$d = $this->fields($data, ['family_ref' => 'ref', 'chassis_key' => 'key', 'machine_item_ref' => 'key', 'base_item_ref' => '?key', 'refrigerant' => 'key', 'circuit_count' => 'int', 'installation_kind' => ['indoor', 'outdoor', 'split'], 'cooling_kind' => ['air', 'water'], 'components' => 'list:object', 'circuits' => 'list:object', 'shared_components' => 'list:object', 'hydraulic_loops' => 'list:object', 'air_paths' => 'list:object', 'stages' => 'list:object', 'approved_stage_keys' => 'list:key', 'mode_topologies' => 'list:object', 'selected_equipment' => 'list:object', 'variant_signature' => 'object', 'approximation' => 'object'], ['thermal_model_ref' => '?ref']);
+		$d = $this->fields($data, ['family_ref' => 'ref', 'chassis_key' => 'key', 'machine_item_ref' => 'key', 'base_item_ref' => '?key', 'refrigerant' => 'key', 'circuit_count' => 'int', 'installation_kind' => ['indoor', 'outdoor', 'split'], 'cooling_kind' => ['air', 'water'], 'components' => 'list:object', 'circuits' => 'list:object', 'shared_components' => 'list:object', 'hydraulic_loops' => 'list:object', 'air_paths' => 'list:object', 'stages' => 'list:object', 'approved_stage_keys' => 'list:key', 'mode_topologies' => 'list:object', 'selected_equipment' => 'list:object', 'variant_signature' => 'object', 'approximation' => 'object'], ['thermal_model_ref' => '?ref', 'configuration_version' => 'int', 'refrigerant_reversible' => 'bool']);
+		if(isset($d->configuration_version)) {
+			if($d->configuration_version !== 2) throw new InvalidArgumentException('Unsupported machine configuration version');
+			return $this->operatingMachine($d);
+		}
+		if(isset($d->refrigerant_reversible)) throw new InvalidArgumentException('Reversibility requires a versioned mode configuration');
 		$instances = $ports = [];
 		foreach($d->components as &$component) {
 			$component = $this->fields($component, ['instance_key' => 'key', 'role' => array_values(array_diff(self::ROLES, ['machine'])), 'component_key' => 'key', 'profile_key' => 'key', 'profile_revision' => 'int', 'ports' => 'object']);
@@ -432,6 +441,43 @@ class Items_Service_TechnicalSchema
 			// Edge pairs are arrays in the version-one contract.
 		}
 		return $this->machinePaths($d, $instances, $ports, $users, $circuits);
+	}
+
+	private function operatingMachine(stdClass $d): stdClass
+	{
+		if(($d->approximation->enabled ?? false) || $d->circuit_count !== 1 || !isset($d->refrigerant_reversible)) throw new InvalidArgumentException('Version two requires one explicit circuit and reversibility property');
+		$instances = $ports = $users = [];
+		foreach($d->components as &$component) {
+			$component = $this->fields($component, ['instance_key' => 'key', 'role' => array_values(array_diff(self::ROLES, ['machine'])), 'component_key' => 'key', 'profile_key' => 'key', 'profile_revision' => 'int', 'ports' => 'object']);
+			if(isset($instances[$component->instance_key])) throw new InvalidArgumentException('Duplicate physical component');
+			$component->ports = $this->ports($component->ports); $instances[$component->instance_key] = $component;
+			foreach($component->ports as $name => $kind) $ports[$component->instance_key.'.'.$name] = $kind;
+		}
+		if(count($d->circuits) !== 1) throw new InvalidArgumentException('Operating circuit count mismatch');
+		$c = $this->fields($d->circuits[0], ['circuit_key' => 'key', 'refrigerant' => 'key', 'compressor_instances' => 'list:key', 'topology_kind' => ['mode_specific_fixed_connections_v1'], 'expansion_device' => 'object', 'refrigerant_connections' => 'list:list:key', 'control_dataset' => '?ref']);
+		if($c->refrigerant !== $d->refrigerant || !$c->compressor_instances) throw new InvalidArgumentException('Invalid operating circuit refrigerant or compressors');
+		$this->unique($c->compressor_instances);
+		$c->expansion_device = $this->fields($c->expansion_device, ['device_key' => 'key', 'kind' => ['electronic', 'thermostatic', 'fixed'], 'component_key' => '?key', 'profile_key' => '?key', 'ports' => 'object'], ['profile_revision' => 'int']);
+		$exp = $c->expansion_device;
+		if(isset($instances[$exp->device_key]) || ($exp->profile_key === null) !== ($exp->component_key === null) || ($exp->profile_key !== null && !isset($exp->profile_revision))) throw new InvalidArgumentException('Invalid expansion identity');
+		$exp->ports = $this->fields($exp->ports, ['in' => ['refrigerant_in', 'refrigerant_bidirectional'], 'out' => ['refrigerant_out', 'refrigerant_bidirectional']]);
+		foreach($exp->ports as $name => $kind) $ports[$exp->device_key.'.'.$name] = $kind;
+		foreach($c->compressor_instances as $key) if(($instances[$key]->role ?? '') !== 'compressor' || ($ports[$key.'.suction'] ?? '') !== 'refrigerant_in' || ($ports[$key.'.discharge'] ?? '') !== 'refrigerant_out') throw new InvalidArgumentException('Invalid operating compressor');
+		foreach($c->compressor_instances as $key) { $names = array_keys((array)$instances[$key]->ports); sort($names); if($names !== ['discharge', 'suction']) throw new InvalidArgumentException('Additional compressor injection or cooling ports are not supported'); }
+		foreach($instances as $key => $component) {
+			if($component->role === 'compressor' && !in_array($key, $c->compressor_instances, true)) throw new InvalidArgumentException('Unassigned operating compressor');
+			foreach($component->ports as $kind) if(str_starts_with($kind, 'refrigerant_')) $users[$key] = [$c->circuit_key];
+		}
+		$seen = $connected = [];
+		foreach($c->refrigerant_connections as $edge) {
+			if(count($edge) !== 2 || $edge[0] === $edge[1]) throw new InvalidArgumentException('Invalid fixed refrigerant connection'); $pair = $edge; sort($pair); $signature = implode('|', $pair);
+			if(isset($seen[$signature])) throw new InvalidArgumentException('Duplicate fixed refrigerant connection'); $seen[$signature] = true;
+			foreach($edge as $port) { if(!str_starts_with($ports[$port] ?? '', 'refrigerant_')) throw new InvalidArgumentException('Unknown fixed refrigerant port'); $connected[$port] = true; }
+		}
+		foreach($ports as $port => $kind) if(str_starts_with($kind, 'refrigerant_') && !isset($connected[$port])) throw new InvalidArgumentException('Unconnected physical refrigerant port');
+		$d->circuits = [$c];
+		foreach($d->hydraulic_loops as &$loop) $loop = $this->fields($loop, ['loop_key' => 'key', 'fluid_dataset' => '?ref', 'boundary_in' => 'key', 'boundary_out' => 'key', 'edges' => 'list:list:key', 'tank_kind' => '?text', 'external_pressure_definition' => ['external_to_machine'], 'pressure_loss_dataset' => '?ref'], ['external_requirement_kPa' => 'nonnegative', 'flow_min_m3_h' => 'nonnegative', 'flow_max_m3_h' => 'positive']);
+		return $this->machinePaths($d, $instances, $ports, $users, [$c->circuit_key => $c]);
 	}
 
 	private function machinePaths(stdClass $d, array $instances, array $ports, array $users, array $circuits): stdClass
@@ -525,17 +571,25 @@ class Items_Service_TechnicalSchema
 		if($requested !== $approved) throw new InvalidArgumentException('Approved stage list mismatch');
 		$modes = [];
 		foreach($d->mode_topologies as &$mode) {
-			$mode = $this->fields($mode, ['mode' => ['cooling', 'partial_heat_recovery', 'full_heat_recovery', 'reversible_heating'], 'release_status' => ['draft', 'approved', 'unsupported'], 'topology_ref' => '?text'], ['circuit_keys' => 'list:key', 'load_loop_key' => 'key']);
+			$mode = $this->fields($mode, ['mode' => ['cooling', 'partial_heat_recovery', 'full_heat_recovery', 'reversible_heating', 'heat_pump'], 'release_status' => ['draft', 'approved', 'unsupported'], 'topology_ref' => '?text'], ['circuit_keys' => 'list:key', 'load_loop_key' => 'key', 'operating_model_ref' => '?ref']);
 			if(isset($modes[$mode->mode])) throw new InvalidArgumentException('Duplicate operating mode');
-			if($mode->mode !== 'cooling' && ($mode->release_status !== 'unsupported' || $mode->topology_ref !== null)) throw new InvalidArgumentException('Unsupported thermal mode');
-			if($mode->mode === 'cooling') {
-				$actual = $mode->circuit_keys ?? []; $expected = array_keys($circuits);
-				sort($actual); sort($expected);
-				if($actual !== $expected || $mode->topology_ref !== 'self:cooling' || !isset($loops[$mode->load_loop_key ?? ''])) throw new InvalidArgumentException('Incomplete cooling mode');
+			if(($d->configuration_version ?? 1) === 2) {
+				if($mode->release_status !== 'unsupported') {
+					$actual = $mode->circuit_keys ?? []; $expected = array_keys($circuits); sort($actual); sort($expected);
+					if(!in_array($mode->mode, self::OPERATING_MODES, true) || !isset($mode->operating_model_ref) || $mode->topology_ref !== 'self:'.$mode->mode || $actual !== $expected || !isset($loops[$mode->load_loop_key ?? ''])) throw new InvalidArgumentException('Incomplete versioned operating mode');
+				} elseif($mode->topology_ref !== null || isset($mode->operating_model_ref)) throw new InvalidArgumentException('Unsupported mode cannot have a model');
+			} else {
+				if(isset($mode->operating_model_ref)) throw new InvalidArgumentException('Mode model requires a versioned machine');
+				if($mode->mode !== 'cooling' && ($mode->release_status !== 'unsupported' || $mode->topology_ref !== null)) throw new InvalidArgumentException('Unsupported thermal mode');
+				if($mode->mode === 'cooling') {
+					$actual = $mode->circuit_keys ?? []; $expected = array_keys($circuits);
+					sort($actual); sort($expected);
+					if($actual !== $expected || $mode->topology_ref !== 'self:cooling' || !isset($loops[$mode->load_loop_key ?? ''])) throw new InvalidArgumentException('Incomplete cooling mode');
+				}
 			}
 			$modes[$mode->mode] = true;
 		}
-		if(!isset($modes['cooling'])) throw new InvalidArgumentException('Cooling topology required');
+		if(($d->configuration_version ?? 1) === 1 && !isset($modes['cooling'])) throw new InvalidArgumentException('Cooling topology required');
 		$d->variant_signature = $this->fields($d->variant_signature, ['included_option_refs' => 'list:key', 'extra_option_refs' => 'list:key']);
 		$this->unique(array_merge($d->variant_signature->included_option_refs, $d->variant_signature->extra_option_refs));
 		$optionKeys = [];

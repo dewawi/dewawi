@@ -9,6 +9,7 @@ class Items_Service_HeatExchangerMap
 		$schema = new Items_Service_TechnicalSchema(); $r = $schema->dataset($record);
 		if($r->dataset_type !== 'heat_exchanger_map') throw new InvalidArgumentException('An exchanger map is required');
 		$d = $r->data;
+		if($d->contract_version !== 1) throw new InvalidArgumentException('Point exchanger maps require the operating mode evaluator');
 		$input = $schema->fields($request, ['medium_key' => 'key', 'inlet_degC' => 'number', 'volume_flow_m3_h' => '?positive', 'fluid_state' => '?text'], $d->role === 'air_condenser' ? ['fan' => 'object'] : []);
 		if((float)$input->inlet_degC <= -273.15) throw new InvalidArgumentException('Invalid secondary inlet temperature');
 		if(isset($input->fan)) $input->fan = $schema->fields($input->fan, ['execution_code' => '?text', 'speed_rpm' => '?positive']);

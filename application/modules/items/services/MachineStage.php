@@ -15,17 +15,24 @@ class Items_Service_MachineStage
 		return $this->evaluateSelected($record, $request, $compressor, $circuitKey);
 	}
 
-	private function evaluateSelected(stdClass $record, stdClass $request, callable $compressor, ?string $circuitKey): array
+	public function evaluateOperatingCircuit(stdClass $record, stdClass $assignment, stdClass $request, callable $compressor): array
+	{
+		return $this->evaluateSelected($record, $request, $compressor, $assignment->circuit_key, $assignment);
+	}
+
+	private function evaluateSelected(stdClass $record, stdClass $request, callable $compressor, ?string $circuitKey, ?stdClass $assignment = null): array
 	{
 		$schema = new Items_Service_TechnicalSchema();
 		$record = $schema->dataset($record);
 		if($record->dataset_type !== 'machine_configuration') throw new InvalidArgumentException('A machine configuration is required');
-		$input = $schema->fields($request, ['stage_key' => 'key', 'operating_mode' => ['cooling'], 'circuit_points' => 'list:object'], ['compressor_contexts' => 'object']);
+		if(($record->data->configuration_version ?? 1) === 2 && $assignment === null) throw new InvalidArgumentException('Versioned mode configuration requires an operating assignment');
+		$input = $schema->fields($request, ['stage_key' => 'key', 'operating_mode' => $assignment === null ? ['cooling'] : Items_Service_TechnicalSchema::OPERATING_MODES, 'circuit_points' => 'list:object'], ['compressor_contexts' => 'object']);
 		$data = $record->data;
 		$stages = array_values(array_filter($data->stages, fn($s) => $s->stage_key === $input->stage_key));
 		$modes = array_values(array_filter($data->mode_topologies, fn($m) => $m->mode === $input->operating_mode && $m->release_status !== 'unsupported'));
 		if(count($stages) !== 1 || count($modes) !== 1) throw new InvalidArgumentException('Machine stage or operating mode unavailable');
 		$stage = $stages[0]; $mode = $modes[0]; $points = [];
+		if($assignment !== null && ($assignment->mode !== $input->operating_mode || !in_array($input->stage_key, $assignment->stage_keys, true))) throw new InvalidArgumentException('Operating stage assignment mismatch');
 		foreach($input->circuit_points as $entry) {
 			$entry = $schema->fields($entry, ['circuit_key' => 'key', 'point' => 'object']);
 			if(isset($points[$entry->circuit_key])) throw new InvalidArgumentException('Duplicate circuit operating point');
@@ -68,8 +75,8 @@ class Items_Service_MachineStage
 				foreach($evaluation['violations'] ?? [] as $reason) if($reason !== 'operating_context_required') $violations[] = $key.':'.$reason;
 			}
 			$circuits[$circuit->circuit_key] = ['circuit_key' => $circuit->circuit_key, 'refrigerant' => $circuit->refrigerant, 'point' => $points[$circuit->circuit_key],
-				'compressor_instances' => $circuit->compressor_instances, 'active_compressors' => $active, 'evaporator_section' => $circuit->evaporator_section,
-				'condenser_instance' => $circuit->condenser_instance, 'missing_evidence' => $missing, 'compressor_sums' => $this->aggregate($evaluations)];
+				'compressor_instances' => $circuit->compressor_instances, 'active_compressors' => $active, 'evaporator_section' => $assignment === null ? $circuit->evaporator_section : $assignment->evaporator,
+				'condenser_instance' => $assignment === null ? $circuit->condenser_instance : $assignment->condenser->instance_key, 'missing_evidence' => $missing, 'compressor_sums' => $this->aggregate($evaluations)];
 		}
 		$active = array_values(array_filter($instances, fn($instance) => $instance['active']));
 		$sums = $this->aggregate(array_column($active, 'evaluation'));

@@ -20,6 +20,7 @@ class Items_Service_ThermalCircuit
 	{
 		$schema = new Items_Service_TechnicalSchema(); $machine = $schema->dataset($machine);
 		if($machine->dataset_type !== 'machine_configuration') throw new InvalidArgumentException('A machine configuration is required');
+		if(($machine->data->configuration_version ?? 1) !== 1) throw new InvalidArgumentException('Versioned mode configuration requires the operating mode evaluator');
 		$input = $schema->fields($request, ['stage_key' => 'key', 'operating_mode' => ['cooling'], 'evaporator' => 'object', 'condenser' => 'object'], ['compressor_contexts' => 'object', 'temperature_offset_probe' => 'object']);
 		$data = $machine->data;
 		$stage = array_values(array_filter($data->stages, fn($s) => $s->stage_key === $input->stage_key));

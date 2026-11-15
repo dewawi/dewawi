@@ -211,7 +211,7 @@ class Items_Service_TechnicalDataset
 	{
 		if($value instanceof stdClass && isset($value->dataset_key, $value->revision) && count(get_object_vars($value)) === 2) {
 			$record = $this->recordOf($this->key('technicaldataset', $value->dataset_key, $value->revision));
-			$required = ['family_ref' => 'machine_family', 'polynomial_ref' => 'compressor_polynomial', 'effect_dataset_ref' => 'component_spec', 'thermal_map_ref' => 'heat_exchanger_map', 'thermal_model_ref' => 'thermal_balance_model', 'circuit_model_ref' => 'thermal_balance_model', 'fluid_ref' => 'fluid_properties', 'fluid_dataset' => 'fluid_properties', 'pressure_loss_ref' => 'pressure_loss_map', 'external_loss_ref' => 'pressure_loss_map', 'pressure_loss_dataset' => 'hydraulic_path', 'curve_ref' => 'pump_curve'];
+			$required = ['family_ref' => 'machine_family', 'polynomial_ref' => 'compressor_polynomial', 'effect_dataset_ref' => 'component_spec', 'thermal_map_ref' => 'heat_exchanger_map', 'thermal_model_ref' => 'thermal_balance_model', 'circuit_model_ref' => 'thermal_balance_model', 'fluid_ref' => 'fluid_properties', 'fluid_dataset' => 'fluid_properties', 'pressure_loss_ref' => 'pressure_loss_map', 'external_loss_ref' => 'pressure_loss_map', 'pressure_loss_dataset' => 'hydraulic_path', 'curve_ref' => 'pump_curve', 'operating_model_ref' => 'operating_mode_model', 'energy_boundary_ref' => 'thermal_balance_model'];
 			if(isset($required[$field]) && ($record->dataset_type !== $required[$field] || ($field === 'effect_dataset_ref' && ($record->data->role ?? '') !== 'technical_option'))) throw new InvalidArgumentException('Technical reference type mismatch');
 			if(!isset($required[$field]) && $field !== 'dataset_ref') throw new InvalidArgumentException('Referenced map schema is not implemented in D2B');
 			if($field === 'dataset_ref' && !in_array($record->dataset_type, ['compressor_polynomial', 'machine_configuration', 'component_spec'], true)) throw new InvalidArgumentException('Invalid reference-point target');
@@ -325,13 +325,14 @@ class Items_Service_TechnicalDataset
 			$dataset = $this->recordOf($datasetKey);
 			if(isset($dataset->data->refrigerant) && $dataset->data->refrigerant !== null && $dataset->data->refrigerant !== $data->refrigerant) throw new InvalidArgumentException('Component refrigerant mismatch');
 			if(isset($dataset->data->ports) && Items_Service_TechnicalJson::encode($dataset->data->ports) !== Items_Service_TechnicalJson::encode($component->ports)) throw new InvalidArgumentException('Component profile ports mismatch');
-			if($component->role === 'evaporator' && isset($dataset->data->specification->sections)) foreach($data->circuits as $c) if($c->evaporator_section->instance_key === $component->instance_key && !in_array($c->evaporator_section->section_key, $dataset->data->specification->sections, true)) throw new InvalidArgumentException('Unknown evaporator section');
+			if($component->role === 'evaporator' && isset($dataset->data->specification->sections)) foreach($data->circuits as $c) if(isset($c->evaporator_section) && $c->evaporator_section->instance_key === $component->instance_key && !in_array($c->evaporator_section->section_key, $dataset->data->specification->sections, true)) throw new InvalidArgumentException('Unknown evaporator section');
 			foreach($model->data->secondary_groups ?? [] as $group) if($group->instance_key === $component->instance_key) {
 				if($dataset->dataset_type !== 'component_spec') throw new InvalidArgumentException('Secondary component specification required');
 				$this->schema->secondarySectionBinding($group, $dataset->data->specification->sections);
 			}
-			foreach($data->circuits as $c) if($c->condenser_instance === $component->instance_key && isset($c->condenser_section_key) && !in_array($c->condenser_section_key, $dataset->data->specification->sections ?? [], true)) throw new InvalidArgumentException('Unknown condenser section');
+			foreach($data->circuits as $c) if(isset($c->condenser_instance) && $c->condenser_instance === $component->instance_key && isset($c->condenser_section_key) && !in_array($c->condenser_section_key, $dataset->data->specification->sections ?? [], true)) throw new InvalidArgumentException('Unknown condenser section');
 		}
+		if(($data->configuration_version ?? 1) === 2) (new Items_Service_OperatingModeSchema())->machineBinding($data, function($table, $key, $revision) { return $this->recordOf($this->key($table, $key, $revision)); });
 		foreach($data->circuits as $circuit) {
 			$expansion = $circuit->expansion_device;
 			if($expansion->profile_key === null) continue;
@@ -345,6 +346,12 @@ class Items_Service_TechnicalDataset
 
 	private function hydraulicArticle(stdClass $r): bool
 	{
+		if($r->dataset_type === 'heat_exchanger_map' && $r->data->contract_version === 2) return true;
+		if($r->dataset_type === 'component_spec') {
+			if(isset($r->data->specification->refrigerant_valve)) return true;
+			$ref = $r->data->specification->thermal_map_ref ?? null;
+			if($ref !== null && $this->recordOf($this->key('technicaldataset', $ref->dataset_key, $ref->revision))->data->contract_version === 2) return true;
+		}
 		return $r->dataset_type === 'pump_curve' || ($r->dataset_type === 'pressure_loss_map' && $r->data->role !== 'external') || ($r->dataset_type === 'component_spec' && (isset($r->data->specification->pressure_loss_ref) || isset($r->data->specification->curve_ref)));
 	}
 
@@ -353,10 +360,13 @@ class Items_Service_TechnicalDataset
 		$core = new Items_Service_FluidHydraulics();
 		$resolve = function($table, $key, $revision) { return $this->recordOf($this->key($table, $key, $revision)); };
 		$d = $record->data;
-		if($record->dataset_type === 'heat_exchanger_map') foreach($d->media as $medium) if(isset($medium->fluid_ref, $medium->fluid_composition)) (new Items_Service_FluidProperties())->composition($core->resolve($resolve, $medium->fluid_ref, 'fluid_properties')->data, $medium->fluid_composition);
+		if($record->dataset_type === 'heat_exchanger_map' && $d->contract_version === 2) (new Items_Service_FluidProperties())->composition($core->resolve($resolve, $d->fluid_ref, 'fluid_properties')->data, $d->fluid_composition);
+		if($record->dataset_type === 'heat_exchanger_map' && $d->contract_version === 1) foreach($d->media as $medium) if(isset($medium->fluid_ref, $medium->fluid_composition)) (new Items_Service_FluidProperties())->composition($core->resolve($resolve, $medium->fluid_ref, 'fluid_properties')->data, $medium->fluid_composition);
 		if($record->dataset_type === 'component_spec') {
-			foreach(['pressure_loss_ref', 'curve_ref'] as $field) if(isset($d->specification->$field)) {
-				$ref = $d->specification->$field; $node = $this->plan[$this->key('technicaldataset', $ref->dataset_key, $ref->revision)];
+			foreach(['pressure_loss_ref', 'curve_ref', 'thermal_map_ref'] as $field) if(isset($d->specification->$field)) {
+				$ref = $d->specification->$field;
+				if($field === 'thermal_map_ref' && $this->recordOf($this->key('technicaldataset', $ref->dataset_key, $ref->revision))->data->contract_version !== 2) continue;
+				$node = $this->plan[$this->key('technicaldataset', $ref->dataset_key, $ref->revision)];
 				$items = isset($node['existing']) ? (array)$this->verifyRow('technicaldataset', $node['existing'])->items : $node['items'];
 				$identity = (array)($items[$d->component_key] ?? []);
 				if(($identity['id'] ?? null) !== $this->item($d->component_key)['id']) throw new InvalidArgumentException('Hydraulic component article mismatch');
@@ -667,6 +677,23 @@ class Items_Service_TechnicalDataset
 		return true;
 	}
 
+	public function evaluateOperatingMode(int $id, int $revision, string $hash, stdClass $request, string $mode = 'technical'): array
+	{
+		if(!in_array($mode, ['technical', 'synthetic_reference'], true)) throw new InvalidArgumentException('Unknown operating evaluation mode');
+		$this->context('view'); if($mode === 'synthetic_reference') $this->context('import');
+		$this->schema->fields((object)['id' => $id, 'revision' => $revision, 'hash' => $hash], ['id' => 'int', 'revision' => 'int', 'hash' => 'hash']);
+		return $this->transaction(function() use ($id, $revision, $hash, $request, $mode) {
+			extract($this->machineSnapshot($id, $revision, $hash), EXTR_SKIP);
+			$resolve = function($table, $key, $revision) use ($graph) { return $graph[$this->key($table, $key, $revision)]['payload']->record ?? throw new RuntimeException('Unpinned operating dependency'); };
+			$blocker = $blocked ? 'operating_dependency_unavailable' : ($mode === 'technical' ? 'released_real_operating_mode_model_not_available' : null);
+			if(($machine->record->data->configuration_version ?? 1) === 2 && $mode === 'synthetic_reference') foreach($graph as $node) if($node['table'] === 'technicaldataset' && ($node['payload']->record->import_context->production_import_allowed ?? null) !== false) $blocker = 'synthetic_operating_provenance_required';
+			$result = (new Items_Service_MachineOperatingMode())->evaluate($machine->record, $request, $resolve, $this->machineCompressor($graph, 'mathematical_reference', $blocker === null), $blocker);
+			$result['evaluation_mode'] = $mode; $result['dependencies'] = $provenance; $result['dependency_reasons'] = $reasons;
+			$result['machine'] = $this->identity('technicaldataset', $row) + ['article' => $machine->items->{$machine->record->data->machine_item_ref}];
+			return $result;
+		});
+	}
+
 	public function evaluateThermalCircuit(int $id, int $revision, string $expectedHash, stdClass $request, string $mode = 'technical'): array
 	{
 		return $this->thermalEvaluation($id, $revision, $expectedHash, $request, $mode, false);
@@ -907,7 +934,7 @@ class Items_Service_TechnicalDataset
 				if($r->dataset_type === 'fluid_properties' && $r->data->freezing_degC === null) $reasons[] = 'fluid_freezing_evidence_missing';
 				if($r->dataset_type === 'hydraulic_path' && $r->data->external_loss_ref === null) $reasons[] = 'external_pressure_loss_missing';
 				break;
-			case 'heat_exchanger_map': case 'thermal_balance_model':
+			case 'operating_mode_model': case 'heat_exchanger_map': case 'thermal_balance_model':
 				$reasons[] = 'synthetic_model_not_releasable';
 				$reasons = array_merge($reasons, $r->data->missing_evidence);
 				break;

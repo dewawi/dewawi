@@ -8,6 +8,7 @@ class Items_Service_ThermalMachine
 	{
 		$schema = new Items_Service_TechnicalSchema(); $machine = $schema->dataset($machine); $data = $machine->data;
 		if($machine->dataset_type !== 'machine_configuration') throw new InvalidArgumentException('A machine configuration is required');
+		if(($machine->data->configuration_version ?? 1) !== 1) throw new InvalidArgumentException('Versioned mode configuration requires the operating mode evaluator');
 		if($data->circuit_count === 1 && (isset($request->fluid_hydraulics) || isset($request->hydraulic_conditions))) throw new InvalidArgumentException('Fluid thermal audit requires the parallel thermal contract');
 		if($data->circuit_count === 1) return (new Items_Service_ThermalCircuit())->evaluate($machine, $request, $resolve, $compressor, $calculationBlocker);
 		$input = $schema->fields($request, ['stage_key' => 'key', 'operating_mode' => ['cooling'], 'secondary_boundaries' => 'list:object'], ['compressor_contexts' => 'object', 'fluid_hydraulics' => 'object', 'hydraulic_conditions' => 'list:object']);
@@ -68,7 +69,9 @@ class Items_Service_ThermalMachine
 			if($profile->profile_key !== $component->profile_key || $profile->revision !== $component->profile_revision || $profile->item_ref !== $component->component_key || $profile->role !== $component->role) throw new InvalidArgumentException('Parallel exchanger profile mismatch');
 			$spec = $this->dataset($resolve, $profile->dataset_ref, 'component_spec'); $ref = $spec->data->specification->thermal_map_ref;
 			if($ref === null) { $result['reasons'][] = $group->group_key.':thermal_map_missing'; return $result; }
-			$map = $this->dataset($resolve, $ref, 'heat_exchanger_map'); $schema->exchangerBinding($spec->data, $map->data);
+			$map = $this->dataset($resolve, $ref, 'heat_exchanger_map');
+			if($map->data->contract_version !== 1) throw new InvalidArgumentException('Point exchanger maps require the operating mode evaluator');
+			$schema->exchangerBinding($spec->data, $map->data);
 			$schema->secondarySectionBinding($group, array_map(fn($section) => $section->section_key, $map->data->sections));
 			if(!$this->synthetic($spec) || !$this->synthetic($map)) { $result['reasons'][] = 'synthetic_exchanger_provenance_required'; return $result; }
 			$boundary = $schema->fields($boundaries[$group->group_key], ['medium_key' => 'key', 'inlet_degC' => 'number', 'volume_flow_m3_h' => '?positive', 'fluid_state' => '?text']);

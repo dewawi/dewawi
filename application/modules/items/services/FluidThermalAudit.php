@@ -46,7 +46,7 @@ class Items_Service_FluidThermalAudit
 		$result['diagnostics']['secondary_groups']=$groups;return $result;
 	}
 
-	private function temperatures(stdClass $machine, stdClass $loop, stdClass $state, stdClass $path, string $exchanger, float $inlet, float $outlet): void
+	public function temperatures(stdClass $machine, stdClass $loop, stdClass $state, stdClass $path, string $exchanger, float $inlet, float $outlet): void
 	{
 		$components=[];foreach($machine->components as $component)$components[$component->instance_key]=$component;
 		$states=[];foreach($state->component_states as $component)$states[$component->instance_key]=$component->sections;
