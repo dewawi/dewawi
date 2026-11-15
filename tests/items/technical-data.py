@@ -3,6 +3,7 @@ import subprocess
 import tempfile
 import time
 import shutil
+import sys
 
 root = Path(__file__).resolve().parents[2]
 work = Path(tempfile.mkdtemp(prefix='dewawi-technical-test-'))
@@ -22,12 +23,13 @@ try:
         if Path(socket).exists():
             break
         time.sleep(0.1)
-    result = subprocess.run(['php', str(Path(__file__).with_suffix('.php')), socket, str(work)], cwd=root, capture_output=True, text=True)
+    result = subprocess.run(['php', str(Path(__file__).with_suffix('.php')), socket, str(work), *sys.argv[1:]], cwd=root, capture_output=True, text=True)
     print(result.stdout, end='')
     if result.stderr:
         print(result.stderr, end='')
     if result.returncode:
         raise SystemExit(result.returncode)
+    subprocess.run(['python3', str(root / 'tests/ui/inquiry-technical.py'), str(work), socket], cwd=root, check=True)
 finally:
     if server is not None:
         server.terminate()

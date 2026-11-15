@@ -23,3 +23,5 @@ echo $this->Messages();
 	'canViewQuote' => $this->canViewQuote,
 	'duplicateWarning' => $this->duplicateWarning ?? false,
 ]); ?>
+
+<?php echo $this->partial('inquiry/technical-entry.phtml', ['inquiry' => $this->inquiry, 'user' => $this->user]); ?>

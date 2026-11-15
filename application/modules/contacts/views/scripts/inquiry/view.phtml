@@ -11,3 +11,5 @@ echo $this->partial('inquiry/workflow.phtml', [
 	'canViewQuote' => $this->canViewQuote,
 ]);
 ?>
+
+<?php echo $this->partial('inquiry/technical-entry.phtml', ['inquiry' => $this->inquiry, 'user' => $this->user]); ?>

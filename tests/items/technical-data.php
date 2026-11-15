@@ -14,6 +14,7 @@ spl_autoload_register(static function(string $class) use ($root): void {
 	$file = $root.($module === 'Application' ? '/application/' : '/application/modules/'.strtolower($module).'/').$section.'/'.implode('/', $parts).'.php';
 	if(is_file($file)) require_once $file;
 });
+Zend_Session::start(['save_path' => $work]);
 require $root.'/install/helper.php';
 require __DIR__.'/fixtures/technical.php';
 $db = Zend_Db::factory('Pdo_Mysql', ['host' => 'localhost', 'unix_socket' => $argv[1], 'username' => 'root', 'password' => '', 'dbname' => 'mysql', 'charset' => 'utf8']);
@@ -76,8 +77,13 @@ $db->insert('quotepos', ['id'=>701, 'parentid'=>700, 'itemid'=>1007, 'possetid'=
 $db->insert('shopinquiryform', ['id'=>865, 'shopid'=>120, 'clientid'=>100, 'quotetemplateid'=>0, 'fields'=>json_encode(['_settings'=>['selection'=>['method'=>'manual','automatic_quote'=>false]]])]);
 $businessBefore=[];foreach(['item','quote','quotepos','shopinquiryform','shopinquirydata'] as $table)$businessBefore[$table]=$db->fetchAll('SELECT * FROM '.$table.' ORDER BY id');
 $service = new Items_Service_TechnicalDataset();
-$bundle = technicalBundle();
 $encode = static fn($v) => Items_Service_TechnicalJson::encode($v);
+if(($argv[3] ?? '') === '--inquiry-technical-only') {
+	require __DIR__.'/fixtures/thermohydraulic-polynomial.php';
+	require __DIR__.'/inquiry-technical-db.php';
+	exit;
+}
+$bundle = technicalBundle();
 $valid = $service->validateJson($encode($bundle));
 checkTechnical(count($valid->datasets) === 9, 'Five-type fixture normalization failed');
 $result = $service->importJson($encode($bundle), $mapping);
@@ -349,3 +355,4 @@ require __DIR__.'/hydraulic-distribution-db.php';
 require __DIR__.'/operating-mode-db.php';
 require __DIR__.'/thermohydraulic-circuit-db.php';
 require __DIR__.'/thermohydraulic-polynomial-db.php';
+require __DIR__.'/inquiry-technical-db.php';

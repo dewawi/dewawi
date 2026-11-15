@@ -2,6 +2,11 @@
 
 class Contacts_InquiryController extends DEEC_Controller_Action
 {
+	protected function shouldPrepareAttachmentDirectory(): bool
+	{
+		return $this->getRequest()->getActionName() !== 'select';
+	}
+
 	protected function buildIndexView(): void
 	{
 		$list = $this->buildListView([
@@ -74,6 +79,44 @@ class Contacts_InquiryController extends DEEC_Controller_Action
 		]);
 		$this->assignWorkflowView($inquiry);
 		$this->assignMessages();
+	}
+
+	public function selectAction()
+	{
+		$request = $this->getRequest();
+		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
+		$input = $request->isPost() ? (array)$request->getPost() : (array)$request->getQuery();
+		$this->view->technical = null;
+		$this->view->technicalError = null;
+		$this->view->technicalInput = $input;
+		$this->view->toolbar = null;
+		try {
+			$integer = static function($value): int {
+				if($value === null || $value === '') return 0;
+				if(!is_scalar($value) || !filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) throw new InvalidArgumentException('CONTACT_TECH_INPUT');
+				return (int)$value;
+			};
+			foreach(['q', 'hash', 'calculation'] as $name) if(isset($input[$name]) && !is_string($input[$name])) throw new InvalidArgumentException('CONTACT_TECH_INPUT');
+			$id = $integer($this->_getParam('id'));
+			$service = new Contacts_Service_InquiryTechnical();
+			$this->view->technical = $service->open($id, (string)($input['q'] ?? ''), $integer($input['itemid'] ?? null), $integer($input['datasetid'] ?? null), $integer($input['revision'] ?? null), (string)($input['hash'] ?? ''));
+			$session = new Zend_Session_Namespace('InquiryTechnical');
+			if(!isset($session->token)) $session->token = bin2hex(random_bytes(32));
+			$this->view->technicalToken = $session->token;
+			if($request->isPost()) {
+				if(!is_string($input['technical_csrf'] ?? null) || !hash_equals($session->token, $input['technical_csrf'])) throw new RuntimeException('CONTACT_TECH_DENIED', 403);
+				$this->view->technical = $service->calculate($this->view->technical, $input);
+			} elseif(!in_array($request->getMethod(), ['GET', 'HEAD'], true)) {
+				throw new RuntimeException('CONTACT_TECH_DENIED', 405);
+			}
+		} catch(InvalidArgumentException $e) {
+			$this->getResponse()->setHttpResponseCode(422);
+			$this->view->technicalError = $e->getMessage() === 'CONTACT_TECH_SYNTHETIC_REQUIRED' ? $e->getMessage() : 'CONTACT_TECH_INPUT';
+		} catch(RuntimeException $e) {
+			$code = in_array($e->getCode(), [403, 405, 409], true) ? $e->getCode() : 403;
+			$this->getResponse()->setHttpResponseCode($code);
+			$this->view->technicalError = $code === 409 ? 'CONTACT_TECH_REVISION' : 'CONTACT_TECH_DENIED';
+		}
 	}
 
 	public function assigncontactAction()

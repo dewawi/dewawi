@@ -1,0 +1,9 @@
+<?php
+$permission = new DEEC_Permission((array)$this->user);
+if(!$permission->hasPermission('contacts', 'contact', 'view') || !$permission->hasPermission('items', 'item', 'view') || !$permission->hasPermission('items', 'technicaldataset', 'view')) return;
+?>
+<section>
+	<h3><?php echo $this->escape($this->translate('CONTACT_TECH_TITLE')); ?></h3>
+	<p><?php echo $this->escape($this->translate('CONTACT_TECH_READONLY')); ?></p>
+	<a class="dw-btn" href="<?php echo $this->escape($this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'select', 'id' => (int)$this->inquiry['id']], null, true)); ?>"><?php echo $this->escape($this->translate('CONTACT_TECH_OPEN')); ?></a>
+</section>

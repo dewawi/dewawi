@@ -2564,3 +2564,16 @@ cursor: default;
   opacity: 1;
   z-index: 999;
 }
+
+/* Private inquiry technical review */
+#inquiry-technical { min-width: 0; overflow-wrap: anywhere; }
+#inquiry-technical .dw-form-row > label { grid-column: span 6; }
+#inquiry-technical .dw-form-row > button { grid-column: span 12; justify-self: start; }
+#inquiry-technical label { display: block; min-width: 0; }
+#inquiry-technical input:not([type="checkbox"]),
+#inquiry-technical select, #inquiry-technical textarea { display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
+#inquiry-technical .dw-table-wrap { max-width: 100%; overflow-x: auto; }
+#inquiry-technical pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  #inquiry-technical .dw-form-row > label { grid-column: span 12; }
+}

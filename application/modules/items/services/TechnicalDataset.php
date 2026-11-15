@@ -507,6 +507,42 @@ class Items_Service_TechnicalDataset
 		return $this->owner;
 	}
 
+	public function machineRevisions(int $itemId): array
+	{
+		$this->context('view');
+		if($itemId <= 0) throw new InvalidArgumentException('Invalid machine article');
+		// Machine bindings live in the immutable payload; a machine profile is optional.
+		$rows = $this->db->fetchAll('SELECT * FROM technicaldataset WHERE clientid = ? AND dataset_type = ? AND JSON_UNQUOTE(JSON_EXTRACT(payload_json, CONCAT(\'$.items."\', JSON_UNQUOTE(JSON_EXTRACT(payload_json, \'$.record.data.machine_item_ref\')), \'".id\'))) = ? ORDER BY dataset_key, revision DESC LIMIT 101', [$this->owner, 'machine_configuration', (string)$itemId]);
+		if(count($rows) > 100) throw new RuntimeException('Too many machine revisions; narrow the technical data inventory');
+		$result = [];
+		foreach($rows as $row) {
+			$p = $this->verifyRow('technicaldataset', $row);
+			if($p->record->dataset_type !== 'machine_configuration' || (int)($p->items->{$p->record->data->machine_item_ref}->id ?? 0) !== $itemId) throw new RuntimeException('Technical article binding mismatch');
+			$result[] = $this->identity('technicaldataset', $row) + ['status' => $row['status']];
+		}
+		return $result;
+	}
+
+	public function inspectMachine(int $itemId, int $id, int $revision, string $hash): array
+	{
+		$this->context('view');
+		return $this->transaction(function() use ($itemId, $id, $revision, $hash) {
+			$snapshot = $this->machineSnapshot($id, $revision, $hash);
+			$p = $snapshot['machine'];
+			if($itemId <= 0 || (int)($p->items->{$p->record->data->machine_item_ref}->id ?? 0) !== $itemId) throw new RuntimeException('Technical article binding mismatch');
+			$records = []; $items = new stdClass();
+			foreach($snapshot['graph'] as $key => $node) {
+				$records[$key] = $node['payload']->record;
+				foreach($node['payload']->items as $ref => $binding) {
+					if(isset($items->$ref) && Items_Service_TechnicalJson::encode($items->$ref) !== Items_Service_TechnicalJson::encode($binding)) throw new RuntimeException('Conflicting technical article binding');
+					$items->$ref = $binding;
+				}
+			}
+			return ['identity' => $this->identity('technicaldataset', $snapshot['row']), 'record' => $p->record, 'items' => $items, 'options' => $p->options,
+				'records' => $records, 'dependencies' => $snapshot['provenance'], 'reasons' => array_values(array_unique($snapshot['reasons'])), 'blocked' => $snapshot['blocked']];
+		});
+	}
+
 	public function technicalStatus(string $table, int $id): array
 	{
 		$this->safeTable($table);

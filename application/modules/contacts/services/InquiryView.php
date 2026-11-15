@@ -38,6 +38,7 @@ class Contacts_Service_InquiryView
 				'name' => (string)$name,
 				'label' => (string)($definition['label'] ?? self::LABELS[$name] ?? $this->humanize((string)$name)),
 				'value' => $formatted['value'],
+				'unit' => (string)($definition['unit'] ?? ''),
 				'translate_value' => $formatted['translate'],
 			];
 		}

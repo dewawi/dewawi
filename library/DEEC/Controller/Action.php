@@ -27,13 +27,18 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
 		$this->view->permissions = $this->getCurrentPermissions();
 
-		if ($this->view->id) {
+		if ($this->view->id && $this->shouldPrepareAttachmentDirectory()) {
 			$this->view->dirwritable = $this->_helper->Directory->isWritable(
 				$this->view->id,
 				'attachment',
 				$this->_flashMessenger
 			);
 		}
+	}
+
+	protected function shouldPrepareAttachmentDirectory(): bool
+	{
+		return true;
 	}
 
 	public function indexAction()

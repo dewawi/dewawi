@@ -1,0 +1,153 @@
+<?php
+$this->headTitle($this->translate('CONTACT_TECH_TITLE'));
+$t = fn($key) => $this->escape($this->translate($key));
+$e = fn($value) => $this->escape((string)$value);
+$reasonText = function(string $reason) use($e): string {
+	$key = 'CONTACT_TECH_REASON_'.strtoupper($reason);
+	$label = $this->translate($key);
+	return $e($label === $key ? $reason : $label.' ('.$reason.')');
+};
+$v = $this->technical;
+$input = $this->technicalInput ?? [];
+$value = fn($key) => is_string($input[$key] ?? null) ? $input[$key] : '';
+$json = static fn($value) => json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+?>
+<h2><?php echo $t('CONTACT_TECH_TITLE'); ?></h2>
+<?php if($this->technicalError): ?><p class="dw-alert dw-alert--warning" role="alert"><?php echo $t($this->technicalError); ?></p><?php endif; ?>
+<?php if(!$v) return; ?>
+<?php
+$base = $this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'select', 'id' => (int)$v['inquiry']['id']], null, true);
+$link = fn($params) => $base.'?'.http_build_query($params);
+$identity = $v['machine']['identity'] ?? null;
+$params = ['itemid' => (int)($v['item']['id'] ?? 0)];
+if($identity) $params += ['datasetid' => $identity['id'], 'revision' => $identity['revision'], 'hash' => $identity['sha256']];
+$hidden = function(array $values) use($e): void { foreach($values as $name => $val) echo '<input type="hidden" name="'.$e($name).'" value="'.$e($val).'">'; };
+?>
+<p><a class="dw-btn" href="<?php echo $e($this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'view', 'id' => (int)$v['inquiry']['id']], null, true)); ?>"><?php echo $t('CONTACT_TECH_BACK'); ?></a> · <?php echo $t('CONTACT_INQUIRIES_REQUEST'); ?> #<?php echo (int)$v['inquiry']['id']; ?></p>
+<p><?php echo $t('CONTACT_TECH_READONLY'); ?></p>
+<p class="dw-alert dw-alert--warning"><?php echo $t('CONTACT_TECH_RELEASE'); ?></p>
+<details open>
+	<summary><?php echo $t('CONTACT_TECH_REQUIREMENTS'); ?></summary>
+	<dl class="view">
+	<?php foreach($v['requirements'] as $field): ?>
+		<dt><?php echo $t($field['label']); ?><?php if(!empty($field['unit'])) echo ' ('.$e($field['unit']).')'; ?></dt>
+		<dd><?php echo $field['value'] === '' ? $t('CONTACT_TECH_MISSING') : nl2br($field['translate_value'] ? $t($field['value']) : $e($field['value'])); ?></dd>
+	<?php endforeach; ?>
+	</dl>
+</details>
+<form method="get" action="<?php echo $e($base); ?>" class="dw-form-layout" data-autosave="false">
+	<div class="dw-form-row">
+		<label><?php echo $t('CONTACT_TECH_SEARCH'); ?><input type="search" name="q" minlength="2" maxlength="100" value="<?php echo $e($v['search']); ?>" required></label>
+		<button class="dw-btn" type="submit"><?php echo $t('CONTACT_TECH_FIND'); ?></button>
+	</div>
+</form>
+<?php if($v['search'] !== '' && !$v['matches']): ?><p><?php echo $t('CONTACT_TECH_NO_MATCH'); ?></p><?php endif; ?>
+<ul>
+<?php foreach($v['matches'] as $match): ?>
+	<li><a href="<?php echo $e($link(['itemid' => (int)$match['id']])); ?>"><?php echo $e($match['sku'].' · '.$match['title'].' (#'.$match['id'].')'); ?></a></li>
+<?php endforeach; ?>
+</ul>
+<?php if(!$v['item']) return; ?>
+<h3><?php echo $t('CONTACT_TECH_MACHINE'); ?>: <?php echo $e($v['item']['sku'].' · '.$v['item']['title']); ?></h3>
+<p><?php echo $t('CONTACT_TECH_ARTICLE'); ?> #<?php echo (int)$v['item']['id']; ?> · <?php echo $t('CONTACT_TECH_PARENT'); ?>: <?php echo $v['item']['parentid'] ? '#'.(int)$v['item']['parentid'] : $t('CONTACT_TECH_NONE'); ?></p>
+<?php if(!$v['revisions']): ?><p class="dw-alert dw-alert--warning"><?php echo $t('CONTACT_TECH_NO_CONFIG'); ?></p><?php return; endif; ?>
+<h4><?php echo $t('CONTACT_TECH_REVISIONS'); ?></h4>
+<ul>
+<?php foreach($v['revisions'] as $revision): ?>
+	<li><a href="<?php echo $e($link(['itemid' => (int)$v['item']['id'], 'datasetid' => $revision['id'], 'revision' => $revision['revision'], 'hash' => $revision['sha256']])); ?>"><?php echo $e($revision['key'].' @'.$revision['revision'].' · '.$revision['status']); ?></a></li>
+<?php endforeach; ?>
+</ul>
+<?php if(!$v['machine']) return; $m = $v['machine']; $d = $m['record']->data; ?>
+<p><?php echo $t('CONTACT_TECH_FAMILY'); ?>: <?php echo $e($d->family_ref->dataset_key.' @'.$d->family_ref->revision); ?> · <?php echo $t('CONTACT_TECH_CIRCUITS'); ?>: <?php echo (int)$d->circuit_count; ?> · <?php echo $t('CONTACT_TECH_COMPRESSORS'); ?>: <?php echo count(array_filter($d->components, fn($c) => $c->role === 'compressor')); ?></p>
+<p><?php echo $t('CONTACT_TECH_REVISION_LABEL'); ?>: <?php echo $e($identity['key'].' @'.$identity['revision']); ?><br><small><?php echo $e($identity['sha256']); ?></small></p>
+<h4><?php echo $t('CONTACT_TECH_MODES'); ?></h4>
+<ul><?php foreach($d->mode_topologies as $mode): ?><li><?php echo $t('CONTACT_TECH_MODE_'.strtoupper($mode->mode)); ?> · <?php echo $e($mode->release_status); ?></li><?php endforeach; ?></ul>
+<h4><?php echo $t('CONTACT_TECH_COMPONENTS'); ?></h4>
+<div class="dw-table-wrap"><table class="dw-table"><thead><tr><th><?php echo $t('CONTACT_TECH_COMPONENT'); ?></th><th><?php echo $t('CONTACT_TECH_ARTICLE'); ?></th><th><?php echo $t('CONTACT_TECH_REVISION_LABEL'); ?></th></tr></thead><tbody>
+<?php foreach($d->components as $component): $article = $m['articles'][$component->component_key]; ?>
+<tr><td><?php echo $e($component->instance_key.' · '.$component->role); ?></td><td><?php echo $e($article['sku'].' · '.$article['title'].' (#'.$article['id'].')'); ?></td><td><?php echo $e($component->profile_key.' @'.$component->profile_revision); ?></td></tr>
+<?php endforeach; ?>
+</tbody></table></div>
+<details><summary><?php echo $t('CONTACT_TECH_VARIANT'); ?></summary><pre><?php echo $e($json((object)['article_id' => (int)$v['item']['id'], 'base_article_id' => $v['item']['parentid'], 'signature' => $d->variant_signature, 'equipment' => $d->selected_equipment, 'option_bindings' => $m['options']])); ?></pre></details>
+<h4><?php echo $t('CONTACT_TECH_BLOCKERS'); ?></h4>
+<p><?php echo $t('CONTACT_TECH_OEM'); ?></p>
+<ul>
+<?php foreach($m['reasons'] as $reason): ?><li><?php echo $reasonText($reason); ?></li><?php endforeach; ?>
+<?php foreach($m['records'] as $record): foreach($record->data->missing_evidence ?? [] as $reason): ?><li><?php echo $e($record->dataset_key).': '.$reasonText($reason); ?></li><?php endforeach; endforeach; ?>
+</ul>
+<details><summary><?php echo $t('CONTACT_TECH_SOURCES'); ?></summary>
+<?php foreach($m['dependencies'] as $node): ?>
+	<p><strong><?php echo $e($node['key'].' @'.$node['revision'].' · '.$node['status']); ?></strong><br><small><?php echo $e($node['sha256']); ?></small></p>
+	<pre><?php echo $e($json(['sources' => $node['sources'], 'approved' => $node['approved'], 'approvedby' => $node['approvedby'], 'withdrawn' => $node['withdrawn']])); ?></pre>
+<?php endforeach; ?>
+</details>
+<?php if($m['blocked']): ?><p class="dw-alert dw-alert--warning"><?php echo $t('CONTACT_TECH_REVISION'); ?></p><?php return; endif; ?>
+<form method="get" action="<?php echo $e($base); ?>" class="dw-form-layout" data-autosave="false">
+	<?php $hidden($params); ?>
+	<div class="dw-form-row"><label><?php echo $t('CONTACT_TECH_CALCULATION'); ?><select name="calculation" required>
+		<option value=""><?php echo $t('CONTACT_TECH_CHOOSE'); ?></option>
+		<?php foreach($v['choices'] as $key => $choice): ?><option value="<?php echo $e($key); ?>"<?php if($value('calculation') === $key) echo ' selected'; ?>><?php echo $t($choice['label']).' · '.$e(isset($choice['mode']) ? $this->translate('CONTACT_TECH_MODE_'.strtoupper($choice['mode'])).' / '.$choice['stage'].' / v'.$choice['contract'] : ($choice['target']['key'] ?? $key)); ?></option><?php endforeach; ?>
+	</select></label><button class="dw-btn" type="submit"><?php echo $t('CONTACT_TECH_INPUTS'); ?></button></div>
+</form>
+<?php $choice = $v['choices'][$value('calculation')] ?? null; if(!$choice) return; ?>
+<h4><?php echo $t($choice['label']); ?></h4>
+<p><?php echo $t('CONTACT_TECH_CONDITIONS'); ?></p>
+<?php if(isset($choice['valves'])): ?><p><?php echo $t('CONTACT_TECH_VALVES'); ?>: <?php echo $e($json($choice['valves'])); ?></p><?php endif; ?>
+<form method="post" action="<?php echo $e($base); ?>" class="dw-form-layout" data-autosave="false" id="inquiry-technical-calculate">
+	<?php $hidden($params + ['calculation' => $value('calculation'), 'technical_csrf' => $this->technicalToken]); ?>
+	<?php if($choice['input'] === 'inlets'): ?>
+	<div class="dw-form-row">
+		<label><?php echo $t('CONTACT_TECH_COLD_INLET'); ?> (°C)<input type="number" step="any" name="cold_inlet" value="<?php echo $e($value('cold_inlet')); ?>" required></label>
+		<label><?php echo $t('CONTACT_TECH_HOT_INLET'); ?> (°C)<input type="number" step="any" name="hot_inlet" value="<?php echo $e($value('hot_inlet')); ?>" required></label>
+	</div>
+	<?php elseif($choice['input'] === 'json'): ?>
+	<p><?php echo $t('CONTACT_TECH_JSON_HELP'); ?></p>
+	<label><?php echo $t('CONTACT_TECH_JSON'); ?><textarea name="request_json" rows="10" maxlength="32768" required><?php echo $e($value('request_json')); ?></textarea></label>
+	<?php else: ?>
+		<?php if($choice['input'] === 'stage'): ?>
+		<label><?php echo $t('CONTACT_TECH_STAGE_KEY'); ?><select name="stage" required><option value=""><?php echo $t('CONTACT_TECH_CHOOSE'); ?></option><?php foreach($d->stages as $stage): ?><option value="<?php echo $e($stage->stage_key); ?>"<?php if($value('stage') === $stage->stage_key) echo ' selected'; ?>><?php echo $e($stage->stage_key); ?></option><?php endforeach; ?></select></label>
+		<?php endif; ?>
+		<?php foreach($choice['input'] === 'stage' ? $d->circuits : [null] as $circuit): ?>
+		<?php if($circuit): ?><p><?php echo $t('CONTACT_TECH_CIRCUIT'); ?>: <?php echo $e($circuit->circuit_key); ?></p><?php endif; ?>
+		<div class="dw-form-row">
+		<?php foreach(['Te_degC' => 'CONTACT_TECH_TE', 'Tc_degC' => 'CONTACT_TECH_TC'] as $name => $label): $fieldName = $circuit ? 'circuits['.$circuit->circuit_key.']['.$name.']' : $name; $circuitValues = $circuit && is_array($input['circuits'] ?? null) && is_array($input['circuits'][$circuit->circuit_key] ?? null) ? $input['circuits'][$circuit->circuit_key] : []; $fieldValue = $circuit ? ($circuitValues[$name] ?? '') : $value($name); ?>
+		<label><?php echo $t($label); ?> (°C)<input type="number" step="any" name="<?php echo $e($fieldName); ?>" value="<?php echo $e(is_string($fieldValue) ? $fieldValue : ''); ?>" required></label>
+		<?php endforeach; ?>
+		</div>
+		<?php endforeach; ?>
+	<?php endif; ?>
+	<div class="dw-form-row"><label><input type="checkbox" name="reference" value="1"<?php if($value('reference') === '1') echo ' checked'; ?>> <?php echo $t('CONTACT_TECH_REFERENCE'); ?></label></div>
+	<button class="dw-btn" type="submit"><?php echo $t('CONTACT_TECH_RUN'); ?></button>
+</form>
+<?php if(!$v['result']) return; $result = $v['result']; ?>
+<section id="inquiry-technical-result">
+	<h3><?php echo $t('CONTACT_TECH_RESULT'); ?></h3>
+	<?php if($v['reference']): ?><p class="dw-alert dw-alert--warning"><?php echo $t('CONTACT_TECH_DEMO'); ?></p><?php endif; ?>
+	<dl class="view">
+		<dt><?php echo $t('CONTACT_TECH_MATH_STATUS'); ?></dt><dd><?php echo $e($result['mathematical_status'] ?? (isset($result['mathematical_converged']) ? ($result['mathematical_converged'] ? 'converged' : 'blocked') : (($result['solution'] ?? $result['calculation'] ?? null) !== null ? 'calculated' : 'see_details'))); ?></dd>
+		<dt><?php echo $t('CONTACT_TECH_TECH_STATUS'); ?></dt><dd>review_required · eligible=false</dd>
+		<dt><?php echo $t('CONTACT_TECH_COMMERCIAL_STATUS'); ?></dt><dd><?php echo $t('CONTACT_TECH_NO_RELEASE'); ?></dd>
+		<dt><?php echo $t('CONTACT_TECH_SCOPE'); ?></dt><dd><?php echo $e($result['scope'] ?? $result['calculation_version'] ?? $result['evaluation_mode']); ?></dd>
+	</dl>
+	<p><?php echo $t('CONTACT_TECH_BOUNDARY'); ?></p>
+	<?php $solution = $result['solution'] ?? []; $point = $solution['point'] ?? null; ?>
+	<dl class="view">
+	<?php foreach(['evaporator_heat_kW' => 'CONTACT_TECH_COLD_HEAT', 'condenser_heat_kW' => 'CONTACT_TECH_HOT_HEAT', 'compressor_input_kW' => 'CONTACT_TECH_POWER'] as $key => $label): if(!isset($solution[$key])) continue; ?>
+		<dt><?php echo $t($label); ?> (kW)</dt><dd><?php echo $e($solution[$key]); ?></dd>
+	<?php endforeach; ?>
+	<?php foreach(['Te_degC' => 'CONTACT_TECH_TE', 'Tc_degC' => 'CONTACT_TECH_TC'] as $key => $label): if(!isset($point->$key)) continue; ?><dt><?php echo $t($label); ?> (°C)</dt><dd><?php echo $e($point->$key); ?></dd><?php endforeach; ?>
+	</dl>
+	<?php $quantities = $result['calculation']['quantities'] ?? $result['stage_compressor_sums'] ?? []; ?>
+	<?php if($quantities): ?>
+	<h4><?php echo $t('CONTACT_TECH_COMPRESSOR'); ?></h4>
+	<dl class="view">
+	<?php foreach(['cooling_capacity' => 'CONTACT_TECH_COLD_HEAT', 'power_input' => 'CONTACT_TECH_POWER', 'refrigerant_mass_flow' => 'CONTACT_TECH_MASS_FLOW', 'current' => 'CONTACT_TECH_CURRENT', 'discharge_temperature' => 'CONTACT_TECH_DISCHARGE'] as $key => $label): $quantity = $quantities[$key] ?? null; if(!$quantity) continue; ?>
+		<dt><?php echo $t($label); ?><?php if($quantity['unit'] ?? null) echo ' ('.$e($quantity['unit']).')'; ?></dt><dd><?php echo $quantity['value'] === null ? $t('CONTACT_TECH_MISSING') : $e($quantity['value']); ?></dd>
+	<?php endforeach; ?>
+	</dl>
+	<?php endif; ?>
+	<h4><?php echo $t('CONTACT_TECH_BLOCKERS'); ?></h4>
+	<ul><?php foreach(array_unique(array_merge($result['reasons'] ?? [], $result['dependency_reasons'] ?? [])) as $reason): ?><li><?php echo $reasonText($reason); ?></li><?php endforeach; ?></ul>
+	<details><summary><?php echo $t('CONTACT_TECH_REQUEST'); ?></summary><pre><?php echo $e($json($v['request'])); ?></pre></details>
+	<details><summary><?php echo $t('CONTACT_TECH_DETAILS'); ?></summary><pre><?php echo $e($json(array_diff_key($result, ['dependencies' => true]))); ?></pre></details>
+</section>

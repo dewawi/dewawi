@@ -28,7 +28,7 @@ $created = $createdTimestamp ? date('d.m.Y H:i', $createdTimestamp) : (string)$t
 		<h3><?php echo $this->escape($this->translate('CONTACT_INQUIRIES_INFORMATION')); ?></h3>
 		<dl class="view">
 			<?php foreach ($this->inquiry['fields'] as $field) : ?>
-				<dt><?php echo $this->escape($this->translate($field['label'])); ?></dt>
+				<dt><?php echo $this->escape($this->translate($field['label'])); ?><?php if(!empty($field['unit'])) echo ' ('.$this->escape($field['unit']).')'; ?></dt>
 				<dd><?php echo nl2br($this->escape($field['translate_value'] ? $this->translate($field['value']) : $field['value'])); ?></dd>
 			<?php endforeach; ?>
 		</dl>
