@@ -39,15 +39,29 @@ class Items_Service_FluidHydraulicSchema
 				$this->axis($flows); if(count($flows) < 2) throw new InvalidArgumentException('Pump curve requires two points');
 				break;
 			case 'hydraulic_path':
-				$d = $this->schema->fields($value, $common + ['loop_key' => 'key', 'topology_kind' => ['serial_components_parallel_sections_v1'], 'component_instances' => 'list:key', 'pump_instance' => '?key', 'external_loss_ref' => '?ref', 'pipe_segments' => 'list:object', 'pressure_boundary' => ['closed_loop_dissipative_only_v1'], 'connections' => 'list:object']);
+				$version = $this->schema->fields((object)['version' => $value->contract_version ?? null], ['version' => 'int'])->version;
+				$distribution = $version === 2 ? ['parallel_instance' => 'key', 'parallel_sections' => 'list:object', 'temperature_model' => ['prescribed_uniform_temperature_v1'], 'numerics' => 'object'] : [];
+				$d = $this->schema->fields($value, $common + $distribution + ['loop_key' => 'key', 'topology_kind' => [$version === 2 ? 'fixed_speed_two_parallel_sections_v1' : 'serial_components_parallel_sections_v1'], 'component_instances' => 'list:key', 'pump_instance' => '?key', 'external_loss_ref' => '?ref', 'pipe_segments' => 'list:object', 'pressure_boundary' => ['closed_loop_dissipative_only_v1'], 'connections' => 'list:object']);
 				if(count($d->component_instances) !== count(array_unique($d->component_instances))) throw new InvalidArgumentException('Duplicate hydraulic component'); $seen = [];
 				foreach($d->connections as &$connection) $connection = $this->schema->fields($connection, ['edge_from' => 'key', 'edge_to' => 'key', 'loss_basis' => ['explicit_pipe_segments', 'included_in_component_maps', 'documented_zero'], 'source_locator' => 'text']);
 				unset($connection);
 				foreach($d->pipe_segments as &$pipe) { $pipe = $this->schema->fields($pipe, ['segment_key' => 'key', 'edge_from' => 'key', 'edge_to' => 'key', 'model_id' => ['circular_laminar_poiseuille_v1'], 'flow_condition' => ['steady_newtonian_fully_developed'], 'length_m' => 'positive', 'internal_diameter_m' => 'positive', 'local_loss_coefficient' => 'nonnegative', 'source_locator' => 'text']); if(isset($seen[$pipe->segment_key])) throw new InvalidArgumentException('Duplicate pipe segment'); $seen[$pipe->segment_key] = true; }
+				if($version === 2) {
+					if($d->pump_instance === null || count($d->parallel_sections) !== 2) throw new InvalidArgumentException('Distribution requires one pump and two sections');
+					$seen = [];
+					foreach($d->parallel_sections as &$section) {
+						$section = $this->schema->fields($section, ['section_key' => 'key', 'flow_min_m3_h' => 'positive', 'flow_max_m3_h' => 'positive']);
+						if(isset($seen[$section->section_key]) || Items_Service_TechnicalJson::compareDecimal($section->flow_min_m3_h, $section->flow_max_m3_h) >= 0) throw new InvalidArgumentException('Invalid parallel section bounds');
+						$seen[$section->section_key] = true;
+					}
+					$d->numerics = $this->schema->fields($d->numerics, ['pressure_tolerance_Pa' => 'positive', 'flow_tolerance_m3_h' => 'positive', 'mass_tolerance_kg_s' => 'positive', 'max_iterations' => 'int']);
+					foreach(['pressure_tolerance_Pa' => '1e-3', 'flow_tolerance_m3_h' => '1e-6', 'mass_tolerance_kg_s' => '1e-6'] as $key => $max) if((float)$d->numerics->$key < 1e-12 || Items_Service_TechnicalJson::compareDecimal($d->numerics->$key, $max) > 0) throw new InvalidArgumentException('Unsupported distribution tolerance');
+					if($d->numerics->max_iterations > 100) throw new InvalidArgumentException('Distribution iteration budget exceeded');
+				}
 				break;
 			default: throw new InvalidArgumentException('Unsupported fluid/hydraulic contract');
 		}
-		if($d->contract_version !== 1) throw new InvalidArgumentException('Unsupported fluid/hydraulic version');
+		if($d->contract_version !== 1 && !($type === 'hydraulic_path' && $d->contract_version === 2)) throw new InvalidArgumentException('Unsupported fluid/hydraulic version');
 		return $d;
 	}
 

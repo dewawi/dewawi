@@ -197,8 +197,10 @@ class Items_Service_TechnicalSchema
 		$d->variables = $this->fields($d->variables, ['saturation_temperature' => ['degC'], 'secondary_inlet' => ['degC'], 'secondary_outlet' => ['degC'], 'volume_flow' => ['m3/h'], 'heat_flow' => ['kW'], 'pressure_drop' => ['kPa']]);
 		$seen = [];
 		foreach($d->media as &$medium) {
-			$medium = $this->fields($medium, ['medium_key' => 'key', 'phase' => ['single_phase_liquid', 'dry_gas'], 'composition' => 'text', 'properties' => 'object']);
+			$medium = $this->fields($medium, ['medium_key' => 'key', 'phase' => ['single_phase_liquid', 'dry_gas'], 'composition' => 'text', 'properties' => 'object'], ['fluid_ref' => '?ref', 'fluid_composition' => '?object']);
 			if(isset($seen[$medium->medium_key]) || ($medium->phase === 'dry_gas') !== ($d->role === 'air_condenser')) throw new InvalidArgumentException('Invalid exchanger medium');
+			if(isset($medium->fluid_composition)) $medium->fluid_composition = $this->fields($medium->fluid_composition, ['basis' => ['mass_fraction', 'volume_fraction'], 'fraction' => 'nonnegative', 'volume_reference_degC' => '?number']);
+			if((isset($medium->fluid_ref) && $medium->phase !== 'single_phase_liquid') || (isset($medium->fluid_composition) && !isset($medium->fluid_ref))) throw new InvalidArgumentException('Fluid identity requires a liquid medium and revision');
 			$seen[$medium->medium_key] = true;
 			$medium->properties = $this->fields($medium->properties, ['model_id' => ['synthetic_constant_cp_density_v1'], 'density_kg_m3' => '?positive', 'specific_heat_kJ_kg_K' => '?positive', 'temperature_range' => 'object', 'source_locator' => 'text']);
 			$medium->properties->temperature_range = $this->thermalRange($medium->properties->temperature_range, 'degC');

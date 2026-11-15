@@ -98,6 +98,23 @@ class Items_Service_FluidHydraulics
 		foreach($d->pipe_segments as $pipe) if(!in_array([$pipe->edge_from,$pipe->edge_to],$loop->edges,true)) throw new InvalidArgumentException('Pipe segment is outside the existing loop');
 	}
 
+	public function distributionBinding(stdClass $machine, stdClass $loop, stdClass $path, callable $resolve): void
+	{
+		$this->pathBinding($machine, $loop, $path);
+		$d = $path->data;
+		if($d->contract_version !== 2) throw new InvalidArgumentException('Versioned distribution path required');
+		$components = []; foreach($machine->components as $component) $components[$component->instance_key] = $component;
+		if(!in_array($d->parallel_instance, $d->component_instances, true) || !in_array($components[$d->parallel_instance]->role ?? '', ['evaporator', 'water_condenser'], true)) throw new InvalidArgumentException('Parallel sections require an existing liquid exchanger');
+		foreach($d->component_instances as $key) {
+			$spec = $this->component($components[$key], $resolve);
+			$sections = $spec->data->specification->sections ?? ['whole'];
+			if($key === $d->parallel_instance) {
+				$actual = array_map(fn($section) => $section->section_key, $d->parallel_sections); sort($actual); sort($sections);
+				if($actual !== $sections) throw new InvalidArgumentException('Distribution section coverage mismatch');
+			} elseif(count($sections) !== 1 || !in_array($spec->data->role, ['tank', 'evaporator', 'water_condenser'], true)) throw new InvalidArgumentException('Additional parallel or valve topology unsupported');
+		}
+	}
+
 	public function evaluate(stdClass $machine, stdClass $request, callable $resolve, ?string $blocker=null): array
 	{
 		$s=new Items_Service_TechnicalSchema(); $machine=$s->dataset($machine); if($machine->dataset_type!=='machine_configuration') throw new InvalidArgumentException('Hydraulic machine configuration required');
@@ -119,6 +136,7 @@ class Items_Service_FluidHydraulics
 	{
 		if($loop->fluid_dataset===null || $loop->pressure_loss_dataset===null) throw new DomainException('fluid_or_hydraulic_path_missing');
 		$f=new Items_Service_FluidProperties();$s=new Items_Service_TechnicalSchema();$fluid=$this->resolve($resolve,$loop->fluid_dataset,'fluid_properties'); $path=$this->resolve($resolve,$loop->pressure_loss_dataset,'hydraulic_path'); $this->pathBinding($machine,$loop,$path);
+		if($path->data->contract_version !== 1) throw new DomainException('distribution_path_requires_operating_point_solver');
 		if($loop->tank_kind==='open')throw new DomainException('open_loop_static_head_not_supported');
 		$composition=$f->composition($fluid->data,$input->composition); $flow=$f->flow($fluid->data,$composition,$input->flow);$mass=$flow['mass_flow_kg_s'];
 		if((isset($loop->flow_min_m3_h) && $flow['volume_flow_m3_h']<(float)$loop->flow_min_m3_h) || (isset($loop->flow_max_m3_h) && $flow['volume_flow_m3_h']>(float)$loop->flow_max_m3_h)) throw new DomainException('hydraulic_loop_flow_limit');

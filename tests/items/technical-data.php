@@ -345,3 +345,4 @@ require __DIR__.'/machine-stage-db.php';
 require __DIR__.'/thermal-circuit-db.php';
 require __DIR__.'/thermal-machine-db.php';
 require __DIR__.'/fluid-hydraulics-db.php';
+require __DIR__.'/hydraulic-distribution-db.php';

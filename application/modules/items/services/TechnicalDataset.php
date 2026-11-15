@@ -353,6 +353,7 @@ class Items_Service_TechnicalDataset
 		$core = new Items_Service_FluidHydraulics();
 		$resolve = function($table, $key, $revision) { return $this->recordOf($this->key($table, $key, $revision)); };
 		$d = $record->data;
+		if($record->dataset_type === 'heat_exchanger_map') foreach($d->media as $medium) if(isset($medium->fluid_ref, $medium->fluid_composition)) (new Items_Service_FluidProperties())->composition($core->resolve($resolve, $medium->fluid_ref, 'fluid_properties')->data, $medium->fluid_composition);
 		if($record->dataset_type === 'component_spec') {
 			foreach(['pressure_loss_ref', 'curve_ref'] as $field) if(isset($d->specification->$field)) {
 				$ref = $d->specification->$field; $node = $this->plan[$this->key('technicaldataset', $ref->dataset_key, $ref->revision)];
@@ -374,6 +375,7 @@ class Items_Service_TechnicalDataset
 		if($record->dataset_type === 'machine_configuration') foreach($d->hydraulic_loops as $loop) {
 			if($loop->pressure_loss_dataset === null) continue;
 			$path = $core->resolve($resolve, $loop->pressure_loss_dataset, 'hydraulic_path'); $core->pathBinding($d, $loop, $path);
+			if($path->data->contract_version === 2) $core->distributionBinding($d, $loop, $path, $resolve);
 			if($loop->fluid_dataset === null) throw new InvalidArgumentException('Hydraulic path requires a loop fluid revision');
 			$fluid = $core->resolve($resolve, $loop->fluid_dataset, 'fluid_properties');
 			foreach($d->components as $component) if(in_array($component->instance_key, array_merge($path->data->component_instances, [$path->data->pump_instance]), true)) {
@@ -597,6 +599,11 @@ class Items_Service_TechnicalDataset
 		return $this->fluidHydraulicEvaluation($id, $revision, $expectedHash, $request, $mode, 'machine');
 	}
 
+	public function evaluateHydraulicDistribution(int $id, int $revision, string $hash, stdClass $request, string $mode = 'technical'): array
+	{
+		return $this->fluidHydraulicEvaluation($id, $revision, $hash, $request, $mode, 'distribution');
+	}
+
 	public function evaluatePressureLoss(int $id, int $revision, string $hash, stdClass $request, string $mode = 'technical'): array
 	{
 		return $this->fluidHydraulicEvaluation($id, $revision, $hash, $request, $mode, 'pressure');
@@ -613,19 +620,20 @@ class Items_Service_TechnicalDataset
 		$this->context('view'); if($mode === 'synthetic_reference') $this->context('import');
 		$this->schema->fields((object)['id' => $id, 'revision' => $revision, 'hash' => $hash], ['id' => 'int', 'revision' => 'int', 'hash' => 'hash']);
 		return $this->transaction(function() use ($id, $revision, $hash, $request, $mode, $kind) {
-			extract($this->machineSnapshot($id, $revision, $hash, ['fluid' => 'fluid_properties', 'machine' => 'machine_configuration', 'pressure' => 'pressure_loss_map', 'pump' => 'pump_curve'][$kind]), EXTR_SKIP);
+			extract($this->machineSnapshot($id, $revision, $hash, ['fluid' => 'fluid_properties', 'machine' => 'machine_configuration', 'distribution' => 'machine_configuration', 'pressure' => 'pressure_loss_map', 'pump' => 'pump_curve'][$kind]), EXTR_SKIP);
 			$blocker = $blocked ? 'dependency_unavailable' : null;
-			foreach($graph as $node) {
-				$r = $node['payload']->record;
-				if($mode === 'synthetic_reference' && $node['table'] === 'technicaldataset' && in_array($r->dataset_type, ['fluid_properties', 'pressure_loss_map', 'pump_curve', 'hydraulic_path'], true) && ($r->data->usage !== 'synthetic_test_only' || ($r->import_context->production_import_allowed ?? null) !== false)) $blocker = 'synthetic_fluid_hydraulic_provenance_required';
-			}
+			if($mode === 'synthetic_reference' && !$this->syntheticFluidHydraulicGraph($graph)) $blocker = 'synthetic_fluid_hydraulic_provenance_required';
 			if($mode === 'technical' && $reasons) $blocker = 'released_fluid_hydraulic_evidence_required';
-			if($blocker !== null) $result = ['eligible' => false, 'status' => 'review_required', 'calculation' => null, 'solution' => null, 'reasons' => [$blocker]];
+			$resolve = function($table, $key, $revision) use ($graph) { return $graph[$this->key($table, $key, $revision)]['payload']->record ?? throw new RuntimeException('Unpinned hydraulic dependency'); };
+			if($blocker !== null && $kind === 'distribution') {
+				$result = (new Items_Service_HydraulicDistribution())->evaluate($machine->record, $request, $resolve, $blocker);
+			}
+			elseif($blocker !== null) $result = ['eligible' => false, 'status' => 'review_required', 'calculation' => null, 'solution' => null, 'reasons' => [$blocker]];
 			elseif($kind === 'fluid') $result = (new Items_Service_FluidProperties())->evaluate($machine->record, $request);
 			else {
-				$resolve = function($table, $key, $revision) use ($graph) { return $graph[$this->key($table, $key, $revision)]['payload']->record ?? throw new RuntimeException('Unpinned hydraulic dependency'); };
 				$core = new Items_Service_FluidHydraulics();
-				if($kind === 'machine') $result = $core->evaluate($machine->record, $request, $resolve);
+				if($kind === 'distribution') $result = (new Items_Service_HydraulicDistribution())->evaluate($machine->record, $request, $resolve);
+				elseif($kind === 'machine') $result = $core->evaluate($machine->record, $request, $resolve);
 				else {
 					$fluid = $core->resolve($resolve, $machine->record->data->fluid_ref, 'fluid_properties');
 					$result = ['eligible' => false, 'status' => 'review_required', 'calculation' => null, 'reasons' => []];
@@ -643,11 +651,20 @@ class Items_Service_TechnicalDataset
 			}
 			$result['evaluation_mode'] = $mode; $result['dependencies'] = $provenance; $result['dependency_reasons'] = $reasons;
 			$result['dataset'] = $this->identity('technicaldataset', $row);
-			$result['scope'] = ['fluid' => 'fluid_properties_only', 'pressure' => 'component_pressure_loss_only', 'pump' => 'pump_at_prescribed_flow_only', 'machine' => 'known_hydraulic_paths_only'][$kind];
+			$result['scope'] = ['fluid' => 'fluid_properties_only', 'pressure' => 'component_pressure_loss_only', 'pump' => 'pump_at_prescribed_flow_only', 'machine' => 'known_hydraulic_paths_only', 'distribution' => 'fixed_temperature_hydraulic_operating_point_only'][$kind];
 			$result['original_request'] = json_decode(json_encode($request, JSON_THROW_ON_ERROR), false, 512, JSON_THROW_ON_ERROR);
-			$result['technical_component_status'] = $kind !== 'machine' && $mode === 'technical' && !$reasons && ($result['calculation'] ?? null) !== null ? 'validated' : 'not_released';
+			$result['technical_component_status'] = in_array($kind, ['fluid', 'pressure', 'pump'], true) && $mode === 'technical' && !$reasons && ($result['calculation'] ?? null) !== null ? 'validated' : 'not_released';
 			return $result;
 		});
+	}
+
+	private function syntheticFluidHydraulicGraph(array $graph): bool
+	{
+		foreach($graph as $node) {
+			$r = $node['payload']->record;
+			if($node['table'] === 'technicaldataset' && in_array($r->dataset_type, ['fluid_properties', 'pressure_loss_map', 'pump_curve', 'hydraulic_path'], true) && ($r->data->usage !== 'synthetic_test_only' || ($r->import_context->production_import_allowed ?? null) !== false)) return false;
+		}
+		return true;
 	}
 
 	public function evaluateThermalCircuit(int $id, int $revision, string $expectedHash, stdClass $request, string $mode = 'technical'): array
@@ -672,6 +689,7 @@ class Items_Service_TechnicalDataset
 				return $graph[$this->key($table, $key, $revision)]['payload']->record ?? throw new RuntimeException('Unpinned thermal dependency');
 			};
 			$blocker = $blocked ? 'machine_dependency_blocks_thermal_calculation' : ($mode === 'synthetic_reference' ? null : 'released_real_thermal_model_not_available');
+			if(isset($request->hydraulic_conditions) && $mode === 'synthetic_reference' && !$this->syntheticFluidHydraulicGraph($graph)) $blocker = 'synthetic_fluid_hydraulic_provenance_required';
 			$core = $multi ? new Items_Service_ThermalMachine() : new Items_Service_ThermalCircuit();
 			$result = $core->evaluate($machine->record, $request, $resolve, $this->machineCompressor($graph, 'mathematical_reference', !$blocked), $blocker);
 			$result['evaluation_mode'] = $mode;

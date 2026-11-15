@@ -8,9 +8,10 @@ class Items_Service_ThermalMachine
 	{
 		$schema = new Items_Service_TechnicalSchema(); $machine = $schema->dataset($machine); $data = $machine->data;
 		if($machine->dataset_type !== 'machine_configuration') throw new InvalidArgumentException('A machine configuration is required');
-		if($data->circuit_count === 1 && isset($request->fluid_hydraulics)) throw new InvalidArgumentException('Fluid thermal audit requires the parallel thermal contract');
+		if($data->circuit_count === 1 && (isset($request->fluid_hydraulics) || isset($request->hydraulic_conditions))) throw new InvalidArgumentException('Fluid thermal audit requires the parallel thermal contract');
 		if($data->circuit_count === 1) return (new Items_Service_ThermalCircuit())->evaluate($machine, $request, $resolve, $compressor, $calculationBlocker);
-		$input = $schema->fields($request, ['stage_key' => 'key', 'operating_mode' => ['cooling'], 'secondary_boundaries' => 'list:object'], ['compressor_contexts' => 'object', 'fluid_hydraulics' => 'object']);
+		$input = $schema->fields($request, ['stage_key' => 'key', 'operating_mode' => ['cooling'], 'secondary_boundaries' => 'list:object'], ['compressor_contexts' => 'object', 'fluid_hydraulics' => 'object', 'hydraulic_conditions' => 'list:object']);
+		if(isset($input->fluid_hydraulics, $input->hydraulic_conditions)) throw new InvalidArgumentException('Choose prescribed-flow audit or computed hydraulic inputs');
 		$stages = array_values(array_filter($data->stages, fn($s) => $s->stage_key === $input->stage_key));
 		$modes = array_values(array_filter($data->mode_topologies, fn($m) => $m->mode === $input->operating_mode && $m->release_status !== 'unsupported'));
 		if(count($stages) !== 1 || count($modes) !== 1) throw new InvalidArgumentException('Machine stage or mode unavailable');
@@ -38,6 +39,21 @@ class Items_Service_ThermalMachine
 		}
 		$expected = array_map(fn($g) => $g->group_key, $contract->secondary_groups); $actual = array_keys($boundaries); sort($expected); sort($actual);
 		if($actual !== $expected) throw new InvalidArgumentException('Explicit boundaries required for every secondary group');
+		$hydraulicPoints = [];
+		if(isset($input->hydraulic_conditions)) {
+			if(!$input->hydraulic_conditions) throw new InvalidArgumentException('Hydraulic operating conditions required');
+			$result['hydraulic_operating_points'] = [];
+			$result['coupling_status'] = 'one_way_hydraulic_inputs_thermal_feedback_unverified'; $result['fully_coupled'] = false;
+			$result['reasons'][] = 'hydraulic_temperatures_not_revalidated_at_thermal_outlets';
+			foreach($input->hydraulic_conditions as $condition) {
+				if(!isset($condition->loop_key) || isset($hydraulicPoints[$condition->loop_key])) throw new InvalidArgumentException('Duplicate or incomplete hydraulic operating condition');
+				$matches = array_values(array_filter($contract->secondary_groups, fn($g) => $g->hydraulic_loop_key === $condition->loop_key));
+				if(count($matches) !== 1 || count($matches[0]->branches) !== 2) throw new InvalidArgumentException('Hydraulic inputs require an existing two-section secondary group');
+				$point = (new Items_Service_HydraulicDistribution())->evaluate($machine, $condition, $resolve, $calculationBlocker);
+				$result['hydraulic_operating_points'][$condition->loop_key] = $point; $hydraulicPoints[$condition->loop_key] = $point;
+				if($point['solution'] === null) { $result['reasons'] = array_merge($result['reasons'], $point['reasons']); return $result; }
+			}
+		}
 		foreach($contract->circuits as $assignment) {
 			$single = $this->dataset($resolve, $assignment->circuit_model_ref, 'thermal_balance_model');
 			if($single->data->contract_version !== 1 || $single->data->circuit_key !== $assignment->circuit_key) throw new InvalidArgumentException('Parallel circuit model mismatch');
@@ -55,8 +71,12 @@ class Items_Service_ThermalMachine
 			$map = $this->dataset($resolve, $ref, 'heat_exchanger_map'); $schema->exchangerBinding($spec->data, $map->data);
 			$schema->secondarySectionBinding($group, array_map(fn($section) => $section->section_key, $map->data->sections));
 			if(!$this->synthetic($spec) || !$this->synthetic($map)) { $result['reasons'][] = 'synthetic_exchanger_provenance_required'; return $result; }
-			if($group->total_volume_flow_m3_h === null || in_array(null, array_map(fn($b) => $b->volume_flow_m3_h, $group->branches), true)) { $result['reasons'][] = 'secondary_split_underdetermined'; return $result; }
 			$boundary = $schema->fields($boundaries[$group->group_key], ['medium_key' => 'key', 'inlet_degC' => 'number', 'volume_flow_m3_h' => '?positive', 'fluid_state' => '?text']);
+			if(isset($hydraulicPoints[$group->hydraulic_loop_key])) {
+				try { [$group, $boundary] = $this->hydraulicGroup($group, $boundary, $map, $hydraulicPoints[$group->hydraulic_loop_key], $resolve); }
+				catch(DomainException $e) { $result['reasons'][] = $e->getMessage(); return $result; }
+			}
+			if($group->total_volume_flow_m3_h === null || in_array(null, array_map(fn($b) => $b->volume_flow_m3_h, $group->branches), true)) { $result['reasons'][] = 'secondary_split_underdetermined'; return $result; }
 			if($boundary->volume_flow_m3_h === null || $boundary->fluid_state === null) { $result['reasons'][] = 'secondary_boundary_incomplete'; return $result; }
 			if($boundary->medium_key !== $group->medium_key || $boundary->volume_flow_m3_h !== $group->total_volume_flow_m3_h) { $result['status'] = 'unsuitable'; $result['reasons'][] = 'secondary_boundary_distribution_mismatch'; return $result; }
 			if(!$hx->inside($boundary->inlet_degC, $group->limits->secondary_inlet) || !$hx->inside($boundary->volume_flow_m3_h, $group->limits->total_volume_flow)) { $result['status'] = 'unsuitable'; $result['reasons'][] = 'secondary_group_boundary_outside_limits'; return $result; }
@@ -111,6 +131,12 @@ class Items_Service_ThermalMachine
 			$mix = $core->mixParallel($branches, $group['boundary']->inlet_degC, $contractGroup->total_volume_flow_m3_h, $contractGroup->side, $contract->numerics);
 			if($mix['mathematical_status'] !== 'calculated') { $result['convergence']['status'] = 'junction_balance_not_converged'; $result['reasons'] = array_merge($result['reasons'], $mix['reasons']); return $result; }
 			$mixed = json_encode($mix['mixed_outlet_degC'], JSON_THROW_ON_ERROR); $first = reset($branches);
+			if(isset($hydraulicPoints[$contractGroup->hydraulic_loop_key])) {
+				$point = $hydraulicPoints[$contractGroup->hydraulic_loop_key]; $ref = $point['fluid_revision'];
+				$fluid = $this->dataset($resolve, (object)['dataset_key' => $ref['dataset_key'], 'revision' => $ref['revision']], 'fluid_properties');
+				try { foreach(array_merge(array_values($mix['section_outlets_degC']), [$mix['mixed_outlet_degC']]) as $outlet) (new Items_Service_FluidProperties())->state($fluid->data, $point['conditions']->composition, Items_Service_FluidProperties::decimal($outlet)); }
+				catch(DomainException $e) { $result['convergence']['status'] = 'hydraulic_fluid_outlet_blocked'; $result['reasons'][] = $e->getMessage(); return $result; }
+			}
 			if(!$hx->inside($mixed, $contractGroup->limits->mixed_outlet) || !$hx->inside($mixed, $first['prepared']['medium']->properties->temperature_range)) { $result['status'] = 'unsuitable'; $result['convergence']['status'] = 'mixed_outlet_outside_limits'; $result['reasons'][] = 'mixed_outlet_outside_limits'; return $result; }
 			$junctions[$key] = $group + ['balance' => $mix];
 		}
@@ -122,6 +148,30 @@ class Items_Service_ThermalMachine
 		$result['reasons'] = array_values(array_unique(array_merge($result['reasons'], $contract->missing_evidence)));
 		if(isset($input->fluid_hydraulics)) $result['fluid_hydraulics'] = (new Items_Service_FluidThermalAudit())->evaluate($machine, $result, $input->fluid_hydraulics, $resolve);
 		return $result;
+	}
+
+	private function hydraulicGroup(stdClass $group, stdClass $boundary, stdClass $map, array $point, callable $resolve): array
+	{
+		$inputs = $point['thermal_inputs'];
+		if($inputs['contract_version'] !== 1 || $inputs['instance_key'] !== $group->instance_key || $inputs['loop_key'] !== $group->hydraulic_loop_key || Items_Service_TechnicalJson::compareDecimal($inputs['inlet_degC'], $boundary->inlet_degC) !== 0) throw new DomainException('hydraulic_thermal_group_or_temperature_mismatch');
+		$flows = []; foreach($inputs['branches'] as $branch) $flows[$branch->section_key] = $branch->volume_flow_m3_h;
+		$expected = array_map(fn($b) => $b->section_key, $group->branches); $actual = array_keys($flows); sort($expected); sort($actual);
+		if($actual !== $expected) throw new DomainException('hydraulic_thermal_section_mismatch');
+		$media = array_values(array_filter($map->data->media, fn($m) => $m->medium_key === $group->medium_key));
+		if(count($media) !== 1) throw new DomainException('hydraulic_thermal_medium_missing'); $properties = $media[0]->properties;
+		if(!isset($media[0]->fluid_ref, $media[0]->fluid_composition) || Items_Service_TechnicalJson::encode($media[0]->fluid_composition) !== Items_Service_TechnicalJson::encode($point['solution']['fluid_state']['composition']) || $media[0]->fluid_ref->dataset_key !== $point['fluid_revision']['dataset_key'] || $media[0]->fluid_ref->revision !== $point['fluid_revision']['revision']) throw new DomainException('hydraulic_thermal_fluid_identity_missing_or_mismatched');
+		$ref = $point['fluid_revision']; $fluid = $this->dataset($resolve, (object)['dataset_key' => $ref['dataset_key'], 'revision' => $ref['revision']], 'fluid_properties');
+		$f = new Items_Service_FluidProperties(); $state = $f->state($fluid->data, $point['conditions']->composition, $inputs['inlet_degC']);
+		foreach($fluid->data->temperatures_degC as $temperature) if((float)$temperature > $state['freezing_degC']) {
+			$p = $f->state($fluid->data, $point['conditions']->composition, $temperature);
+			foreach(['density_kg_m3' => $properties->density_kg_m3, 'specific_heat_J_kg_K' => $properties->specific_heat_kJ_kg_K === null ? null : 1000 * (float)$properties->specific_heat_kJ_kg_K] as $key => $expectedValue) if($expectedValue === null || abs($p[$key] - (float)$expectedValue) > max(1e-9, abs((float)$expectedValue) * 1e-12)) throw new DomainException('hydraulic_fluid_not_compatible_with_constant_capacity_thermal_model');
+		}
+		$group = clone $group; $group->branches = array_map(fn($b) => clone $b, $group->branches);
+		foreach($group->branches as $branch) $branch->volume_flow_m3_h = $flows[$branch->section_key];
+		$group->total_volume_flow_m3_h = $inputs['total_volume_flow_m3_h'];
+		if($boundary->volume_flow_m3_h !== null && abs((float)$boundary->volume_flow_m3_h - (float)$group->total_volume_flow_m3_h) > $point['convergence']['flow_error_bound_m3_h'] + 1e-9) throw new DomainException('explicit_boundary_conflicts_with_hydraulic_operating_point');
+		$boundary = clone $boundary; $boundary->volume_flow_m3_h = $group->total_volume_flow_m3_h;
+		return [$group, $boundary];
 	}
 
 	private function dataset(callable $resolve, stdClass $ref, string $type): stdClass
