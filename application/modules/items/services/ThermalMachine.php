@@ -8,8 +8,9 @@ class Items_Service_ThermalMachine
 	{
 		$schema = new Items_Service_TechnicalSchema(); $machine = $schema->dataset($machine); $data = $machine->data;
 		if($machine->dataset_type !== 'machine_configuration') throw new InvalidArgumentException('A machine configuration is required');
+		if($data->circuit_count === 1 && isset($request->fluid_hydraulics)) throw new InvalidArgumentException('Fluid thermal audit requires the parallel thermal contract');
 		if($data->circuit_count === 1) return (new Items_Service_ThermalCircuit())->evaluate($machine, $request, $resolve, $compressor, $calculationBlocker);
-		$input = $schema->fields($request, ['stage_key' => 'key', 'operating_mode' => ['cooling'], 'secondary_boundaries' => 'list:object'], ['compressor_contexts' => 'object']);
+		$input = $schema->fields($request, ['stage_key' => 'key', 'operating_mode' => ['cooling'], 'secondary_boundaries' => 'list:object'], ['compressor_contexts' => 'object', 'fluid_hydraulics' => 'object']);
 		$stages = array_values(array_filter($data->stages, fn($s) => $s->stage_key === $input->stage_key));
 		$modes = array_values(array_filter($data->mode_topologies, fn($m) => $m->mode === $input->operating_mode && $m->release_status !== 'unsupported'));
 		if(count($stages) !== 1 || count($modes) !== 1) throw new InvalidArgumentException('Machine stage or mode unavailable');
@@ -119,6 +120,7 @@ class Items_Service_ThermalMachine
 		$result['solution'] = ['scope' => 'synthetic_parallel_thermal_machine_only', 'eligible' => false, 'circuits' => $solutions, 'secondary_groups' => $junctions, 'thermal_totals' => $totals, 'compressors' => $compressors,
 			'components' => $components, 'physical_component_count' => count($components)];
 		$result['reasons'] = array_values(array_unique(array_merge($result['reasons'], $contract->missing_evidence)));
+		if(isset($input->fluid_hydraulics)) $result['fluid_hydraulics'] = (new Items_Service_FluidThermalAudit())->evaluate($machine, $result, $input->fluid_hydraulics, $resolve);
 		return $result;
 	}
 

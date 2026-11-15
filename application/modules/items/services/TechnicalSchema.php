@@ -3,7 +3,7 @@
 class Items_Service_TechnicalSchema
 {
 	public const ROLES = ['compressor', 'evaporator', 'air_condenser', 'water_condenser', 'pump', 'fan', 'recovery_exchanger', 'tank', 'technical_option', 'machine'];
-	public const TYPES = ['compressor_polynomial', 'machine_configuration', 'machine_family', 'component_spec', 'reference_points', 'heat_exchanger_map', 'thermal_balance_model'];
+	public const TYPES = ['compressor_polynomial', 'machine_configuration', 'machine_family', 'component_spec', 'reference_points', 'heat_exchanger_map', 'thermal_balance_model', 'fluid_properties', 'pressure_loss_map', 'pump_curve', 'hydraulic_path'];
 	public const QUANTITIES = ['cooling_capacity' => ['W', 'kW'], 'power_input' => ['W', 'kW'], 'current' => ['A'], 'refrigerant_mass_flow' => ['kg/h', 'kg/s'], 'discharge_temperature' => ['degC']];
 
 	public function fields($value, array $required, array $optional = []): stdClass
@@ -80,6 +80,7 @@ class Items_Service_TechnicalSchema
 			case 'reference_points': $d->data = $this->references($d->data); break;
 			case 'heat_exchanger_map': $d->data = $this->heatExchangerMap($d->data); break;
 			case 'thermal_balance_model': $d->data = $this->thermalBalanceModel($d->data); break;
+			case 'fluid_properties': case 'pressure_loss_map': case 'pump_curve': case 'hydraulic_path': $d->data = (new Items_Service_FluidHydraulicSchema())->data($d->dataset_type, $d->data); break;
 		}
 		if(strlen(Items_Service_TechnicalJson::encode($d)) > 1048576 || $this->entries($d) > 5000) throw new InvalidArgumentException('Technical package budget exceeded');
 		return $d;
@@ -172,7 +173,7 @@ class Items_Service_TechnicalSchema
 			case 'compressor': $spec = ['polynomial_ref' => '?ref', 'oil_return_stage_limits_ref' => '?ref']; break;
 			case 'technical_option': $spec = ['effect' => ['unknown', 'neutral_verified', 'add', 'replace', 'restrict'], 'effect_dataset_ref' => '?ref', 'source_locator' => '?text']; break;
 		}
-		$d->specification = $this->fields($d->specification, $spec);
+		$d->specification = $this->fields($d->specification, $spec, $d->role === 'tank' ? ['pressure_loss_ref' => '?ref'] : []);
 		if(isset($d->specification->flow_min_m3_h, $d->specification->flow_max_m3_h) && (float)$d->specification->flow_min_m3_h > (float)$d->specification->flow_max_m3_h) throw new InvalidArgumentException('Reversed flow limits');
 		if(isset($d->specification->usable_volume_L, $d->specification->nominal_volume_L) && (float)$d->specification->usable_volume_L > (float)$d->specification->nominal_volume_L) throw new InvalidArgumentException('Usable volume exceeds nominal volume');
 		return $d;
