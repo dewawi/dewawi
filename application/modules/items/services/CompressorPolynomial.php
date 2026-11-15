@@ -103,10 +103,10 @@ class Items_Service_CompressorPolynomial
 		foreach([$p->Te_degC, $p->Tc_degC] as $axis => $value) {
 			$min = $max = $exact[0][$axis];
 			foreach($exact as $vertex) {
-				if($this->compareDecimal($vertex[$axis], $min) < 0) $min = $vertex[$axis];
-				if($this->compareDecimal($vertex[$axis], $max) > 0) $max = $vertex[$axis];
+				if(Items_Service_TechnicalJson::compareDecimal($vertex[$axis], $min) < 0) $min = $vertex[$axis];
+				if(Items_Service_TechnicalJson::compareDecimal($vertex[$axis], $max) > 0) $max = $vertex[$axis];
 			}
-			if($this->compareDecimal($value, $min) < 0 || $this->compareDecimal($value, $max) > 0) return ['status' => 'outside', 'reason' => 'outside_operating_envelope'];
+			if(Items_Service_TechnicalJson::compareDecimal($value, $min) < 0 || Items_Service_TechnicalJson::compareDecimal($value, $max) > 0) return ['status' => 'outside', 'reason' => 'outside_operating_envelope'];
 			$pointPreserved = $this->preservesDecimal($value) && $pointPreserved;
 		}
 		if(!$pointPreserved) return ['status' => 'review_required', 'reason' => 'operating_point_precision'];
@@ -125,21 +125,6 @@ class Items_Service_CompressorPolynomial
 	private function preservesDecimal(string $value): bool
 	{
 		return Items_Service_TechnicalJson::decimal(json_encode((float)$value, JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR)) === $value;
-	}
-
-	private function compareDecimal(string $a, string $b): int
-	{
-		if($a === $b) return 0;
-		$negativeA = str_starts_with($a, '-'); $negativeB = str_starts_with($b, '-');
-		if($negativeA !== $negativeB) return $negativeA ? -1 : 1;
-		$sign = $negativeA ? -1 : 1;
-		if($a === '0' || $b === '0') return ($a === '0' ? -1 : 1) * $sign;
-		[$mantissaA, $exponentA] = array_pad(explode('e', ltrim($a, '-')), 2, '0');
-		[$mantissaB, $exponentB] = array_pad(explode('e', ltrim($b, '-')), 2, '0');
-		if((int)$exponentA !== (int)$exponentB) return ((int)$exponentA <=> (int)$exponentB) * $sign;
-		$digitsA = str_replace('.', '', $mantissaA); $digitsB = str_replace('.', '', $mantissaB);
-		$length = max(strlen($digitsA), strlen($digitsB));
-		return (strcmp(str_pad($digitsA, $length, '0'), str_pad($digitsB, $length, '0')) <=> 0) * $sign;
 	}
 
 	private function orientation(array $a, array $b, array $p): ?int

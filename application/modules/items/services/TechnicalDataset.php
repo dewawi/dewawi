@@ -165,6 +165,7 @@ class Items_Service_TechnicalDataset
 			$this->collectReferences($r->data, $node['dependencies']);
 			$this->referenceTypes($r->data);
 			if($r->dataset_type === 'machine_configuration') $this->machineBindings($r->data, $node);
+			if($r->dataset_type === 'component_spec') $this->exchangerBinding($r);
 			if($r->dataset_type === 'reference_points') foreach($r->data->records as $point) {
 				$target = $this->recordOf($this->key('technicaldataset', $point->dataset_ref->dataset_key, $point->dataset_ref->revision));
 				if($point->reference_kind === 'mathematical_polynomial' && ($target->dataset_type !== 'compressor_polynomial' || !isset($point->inputs->Te_degC, $point->inputs->Tc_degC) || count(get_object_vars($point->inputs)) !== 2)) throw new InvalidArgumentException('Polynomial reference requires a polynomial and exact Te/Tc inputs');
@@ -208,7 +209,7 @@ class Items_Service_TechnicalDataset
 	{
 		if($value instanceof stdClass && isset($value->dataset_key, $value->revision) && count(get_object_vars($value)) === 2) {
 			$record = $this->recordOf($this->key('technicaldataset', $value->dataset_key, $value->revision));
-			$required = ['family_ref' => 'machine_family', 'polynomial_ref' => 'compressor_polynomial', 'effect_dataset_ref' => 'component_spec'];
+			$required = ['family_ref' => 'machine_family', 'polynomial_ref' => 'compressor_polynomial', 'effect_dataset_ref' => 'component_spec', 'thermal_map_ref' => 'heat_exchanger_map', 'thermal_model_ref' => 'thermal_balance_model'];
 			if(isset($required[$field]) && ($record->dataset_type !== $required[$field] || ($field === 'effect_dataset_ref' && ($record->data->role ?? '') !== 'technical_option'))) throw new InvalidArgumentException('Technical reference type mismatch');
 			if(!isset($required[$field]) && $field !== 'dataset_ref') throw new InvalidArgumentException('Referenced map schema is not implemented in D2B');
 			if($field === 'dataset_ref' && !in_array($record->dataset_type, ['compressor_polynomial', 'machine_configuration', 'component_spec'], true)) throw new InvalidArgumentException('Invalid reference-point target');
@@ -293,6 +294,11 @@ class Items_Service_TechnicalDataset
 		$family = $this->recordOf($this->key('technicaldataset', $data->family_ref->dataset_key, $data->family_ref->revision));
 		$chassis = array_values(array_filter($family->data->chassis ?? [], fn($c) => $c->chassis_key === $data->chassis_key));
 		if($family->dataset_type !== 'machine_family' || count($chassis) !== 1 || !in_array($data->installation_kind, $chassis[0]->installation_kinds, true)) throw new InvalidArgumentException('Machine chassis or installation mismatch');
+		if(isset($data->thermal_model_ref)) {
+			$ref = $data->thermal_model_ref;
+			$model = $this->recordOf($this->key('technicaldataset', $ref->dataset_key, $ref->revision));
+			if(!in_array($model->data->circuit_key, array_map(fn($circuit) => $circuit->circuit_key, $data->circuits), true)) throw new InvalidArgumentException('Thermal model circuit binding mismatch');
+		}
 		foreach($data->selected_equipment as $equipment) {
 			$option = $node['options'][$equipment->option_ref] ?? null;
 			if(!$option) throw new InvalidArgumentException('Unknown selected option');
@@ -324,6 +330,18 @@ class Items_Service_TechnicalDataset
 			if(!isset($dataset->data->ports) || Items_Service_TechnicalJson::encode($dataset->data->ports) !== Items_Service_TechnicalJson::encode($expansion->ports)) throw new InvalidArgumentException('Expansion profile ports mismatch');
 		}
 
+	}
+
+	private function exchangerBinding(stdClass $record): void
+	{
+		$ref = $record->data->specification->thermal_map_ref ?? null;
+		if($ref === null) return;
+		$map = $this->recordOf($this->key('technicaldataset', $ref->dataset_key, $ref->revision))->data;
+		foreach(['component_key', 'model', 'role', 'refrigerant'] as $key) if($map->$key !== $record->data->$key) throw new InvalidArgumentException('Exchanger map component binding mismatch');
+		$spec = $record->data->specification;
+		$sections = array_map(fn($section) => $section->section_key, $map->sections); $expected = $spec->sections;
+		sort($sections); sort($expected);
+		if($sections !== $expected || $map->exchanger_type !== $spec->exchanger_type) throw new InvalidArgumentException('Exchanger map section or construction mismatch');
 	}
 
 	private function sourcesOf(stdClass $record): array
@@ -449,8 +467,11 @@ class Items_Service_TechnicalDataset
 
 	private function compressorEvaluation(int $id, int $revision, string $expectedHash, stdClass $request, string $mode): array
 	{
-		$core = new Items_Service_CompressorPolynomial();
-		$point = $core->point($request->point);
+		return $this->compressorPoint($this->compressorSnapshot($id, $revision, $expectedHash), $request, $mode);
+	}
+
+	private function compressorSnapshot(int $id, int $revision, string $expectedHash): array
+	{
 		$row = $this->db->fetchRow('SELECT * FROM technicaldataset WHERE id = ? AND clientid = ? AND revision = ? FOR UPDATE', [$id, $this->owner, $revision]);
 		if(!$row || !hash_equals($row['payload_sha256'], $expectedHash)) throw new RuntimeException('Technical revision is unavailable');
 		$payload = $this->verifyRow('technicaldataset', $row);
@@ -461,8 +482,14 @@ class Items_Service_TechnicalDataset
 		if($row['status'] === 'withdrawn') $reasons[] = 'revision_withdrawn';
 		if($r->manufacturer_name === null) $reasons[] = 'manufacturer_missing';
 		if($r->manufacturer_revision === null) $reasons[] = 'manufacturer_revision_missing';
-		$released = !$reasons;
 		$approval = $this->revisionApproval($row, $r, $this->sourcesOf($r));
+		return compact('row', 'payload', 'r', 'reasons', 'approval');
+	}
+
+	private function compressorPoint(array $snapshot, stdClass $request, string $mode): array
+	{
+		extract($snapshot, EXTR_SKIP);
+		$core = new Items_Service_CompressorPolynomial(); $point = $core->point($request->point); $released = !$reasons;
 		$violations = isset($request->context) ? $this->compressorContext($r, $request->context) : [];
 		if($mode === 'technical' && !isset($request->context)) $violations[] = 'operating_context_required';
 		$region = $r->data->operating_envelope === null ? ['status' => 'review_required', 'reason' => 'operating_envelope_missing'] : $core->operatingRegion($r->data->operating_envelope, $point);
@@ -496,61 +523,96 @@ class Items_Service_TechnicalDataset
 		if($mode === 'mathematical_reference') $this->context('import');
 		$this->schema->fields((object)['id' => $id, 'revision' => $revision, 'hash' => $expectedHash], ['id' => 'int', 'revision' => 'int', 'hash' => 'hash']);
 		return $this->transaction(function() use ($id, $revision, $expectedHash, $request, $mode) {
-			$row = $this->db->fetchRow('SELECT * FROM technicaldataset WHERE id = ? AND clientid = ? AND revision = ? FOR UPDATE', [$id, $this->owner, $revision]);
-			if(!$row || !hash_equals($row['payload_sha256'], $expectedHash)) throw new RuntimeException('Technical revision is unavailable');
-			$graph = [];
-			$root = $this->machineDependency('technicaldataset', $row, $graph, []);
-			$machine = $graph[$root]['payload'];
-			if($machine->record->dataset_type !== 'machine_configuration') throw new InvalidArgumentException('A machine configuration is required');
-			$this->machineGraphBindings($graph);
-			$reasons = array_values(array_unique($this->readiness('technicaldataset', $row, [], false)));
-			$blocked = (bool)array_intersect($reasons, ['article_identity_changed', 'option_identity_changed', 'variant_signature_changed']);
-			$provenance = [];
-			foreach($graph as $key => $node) {
-				$r = $node['row']; $p = $node['payload']; $table = $node['table'];
-				if($r['status'] === 'withdrawn') { $blocked = true; $reasons[] = 'dependency_withdrawn'; }
-				$sources = $table === 'technicaldataset' ? $this->sourcesOf($p->record) : $this->sourcesOf($graph[$this->key('technicaldataset', $p->record->dataset_ref->dataset_key, $p->record->dataset_ref->revision)]['payload']->record);
-				if($table === 'itemtechnicalprofile' && isset($p->record->binding->source)) $sources[] = $p->record->binding->source;
-				$approval = $this->revisionApproval($r, $p->record, $sources);
-				if($r['status'] === 'approved') {
-					$proof = Items_Service_TechnicalJson::decode($r['approval_json']);
-					$references = [];
-					foreach($proof->references as $released) {
-						$released = $this->schema->fields($released, ['revision' => 'object', 'status' => ['approved'], 'approved' => 'text', 'approvedby' => 'int', 'approval_sha256' => 'hash']);
-						$ref = $this->schema->fields($released->revision, ['table' => ['technicaldataset', 'itemtechnicalprofile'], 'id' => 'int', 'key' => 'key', 'revision' => 'int', 'sha256' => 'hash']);
-						$references[] = $ref;
-						$child = $graph[$this->key($ref->table, $ref->key, $ref->revision)]['row'] ?? null;
-						if(!$child || $released->approved !== $child['approved'] || $released->approvedby !== (int)$child['approvedby'] || !hash_equals($released->approval_sha256, hash('sha256', (string)$child['approval_json']))) throw new RuntimeException('Technical dependency approval integrity failure');
-					}
-					if(Items_Service_TechnicalJson::encode($references) !== Items_Service_TechnicalJson::encode($p->references)) throw new RuntimeException('Technical approval reference integrity failure');
-				}
-				$provenance[$key] = $this->identity($table, $r) + ['schema_version' => $table === 'technicaldataset' ? $p->record->schema_version : 1,
-					'normalization_version' => $p->normalization_version, 'status' => $r['status'], 'approved' => $r['approved'], 'approvedby' => $r['approvedby'] === null ? null : (int)$r['approvedby'],
-					'withdrawn' => $r['withdrawn'], 'approval_sha256' => $approval, 'sources' => $sources, 'references' => $p->references, 'items' => $p->items, 'options' => $p->options];
-			}
+			extract($this->machineSnapshot($id, $revision, $expectedHash), EXTR_SKIP);
 			// D4A has no released machine model; caller-supplied temperatures are reference inputs only.
 			$canCalculate = !$blocked && $mode === 'mathematical_reference';
-			$result = (new Items_Service_MachineStage())->evaluate($machine->record, $request, function($component, $point, $context) use ($graph, $mode, $canCalculate) {
-				$profile = $graph[$this->key('itemtechnicalprofile', $component->profile_key, $component->profile_revision)]['payload']->record;
-				$node = $graph[$this->key('technicaldataset', $profile->dataset_ref->dataset_key, $profile->dataset_ref->revision)];
-				$record = $node['payload']->record;
-				if($record->dataset_type === 'component_spec') {
-					$ref = $record->data->specification->polynomial_ref;
-					if($ref === null) return ['status' => 'review_required', 'eligible' => false, 'calculation' => null, 'reasons' => ['compressor_polynomial_missing']];
-					$node = $graph[$this->key('technicaldataset', $ref->dataset_key, $ref->revision)];
-				}
-				$r = $node['row']; $input = (object)['point' => $point];
-				if($context !== null) $input->context = $context;
-				$evaluation = $this->compressorEvaluation((int)$r['id'], (int)$r['revision'], $r['payload_sha256'], $input, $mode);
-				if(!$canCalculate) { $evaluation['calculation'] = null; $evaluation['status'] = 'review_required'; $evaluation['reasons'][] = 'machine_dependency_or_release_blocks_calculation'; }
-				return $evaluation;
-			});
+			$result = (new Items_Service_MachineStage())->evaluate($machine->record, $request, $this->machineCompressor($graph, $mode, $canCalculate));
 			$result['evaluation_mode'] = $mode;
 			$result['machine'] = $this->identity('technicaldataset', $row) + ['article' => $machine->items->{$machine->record->data->machine_item_ref}, 'article_ref' => $machine->record->data->machine_item_ref];
 			$result['dependencies'] = $provenance;
 			$result['reasons'] = array_values(array_unique(array_merge($result['reasons'], $reasons, $mode === 'mathematical_reference' ? ['mathematical_reference_only'] : ['machine_release_required_for_technical_inputs'])));
 			return $result;
 		});
+	}
+
+	public function evaluateThermalCircuit(int $id, int $revision, string $expectedHash, stdClass $request, string $mode = 'technical'): array
+	{
+		if(!in_array($mode, ['technical', 'synthetic_reference'], true)) throw new InvalidArgumentException('Unknown thermal evaluation mode');
+		$this->context('view');
+		if($mode === 'synthetic_reference') $this->context('import');
+		$this->schema->fields((object)['id' => $id, 'revision' => $revision, 'hash' => $expectedHash], ['id' => 'int', 'revision' => 'int', 'hash' => 'hash']);
+		return $this->transaction(function() use ($id, $revision, $expectedHash, $request, $mode) {
+			extract($this->machineSnapshot($id, $revision, $expectedHash), EXTR_SKIP);
+			$resolve = function(string $table, string $key, int $revision) use ($graph): stdClass {
+				return $graph[$this->key($table, $key, $revision)]['payload']->record ?? throw new RuntimeException('Unpinned thermal dependency');
+			};
+			$blocker = $blocked ? 'machine_dependency_blocks_thermal_calculation' : ($mode === 'synthetic_reference' ? null : 'released_real_thermal_model_not_available');
+			$result = (new Items_Service_ThermalCircuit())->evaluate($machine->record, $request, $resolve, $this->machineCompressor($graph, 'mathematical_reference', !$blocked), $blocker);
+			$result['evaluation_mode'] = $mode;
+			$result['machine'] = $this->identity('technicaldataset', $row) + ['article' => $machine->items->{$machine->record->data->machine_item_ref}, 'article_ref' => $machine->record->data->machine_item_ref];
+			$result['dependencies'] = $provenance;
+			$result['dependency_reasons'] = $reasons;
+			return $result;
+		});
+	}
+
+	private function machineSnapshot(int $id, int $revision, string $expectedHash): array
+	{
+		$row = $this->db->fetchRow('SELECT * FROM technicaldataset WHERE id = ? AND clientid = ? AND revision = ? FOR UPDATE', [$id, $this->owner, $revision]);
+		if(!$row || !hash_equals($row['payload_sha256'], $expectedHash)) throw new RuntimeException('Technical revision is unavailable');
+		$graph = [];
+		$root = $this->machineDependency('technicaldataset', $row, $graph, []);
+		$machine = $graph[$root]['payload'];
+		if($machine->record->dataset_type !== 'machine_configuration') throw new InvalidArgumentException('A machine configuration is required');
+		$this->machineGraphBindings($graph);
+		$reasons = array_values(array_unique($this->readiness('technicaldataset', $row, [], false)));
+		$blocked = (bool)array_intersect($reasons, ['article_identity_changed', 'option_identity_changed', 'variant_signature_changed']);
+		$provenance = [];
+		foreach($graph as $key => $node) {
+			$r = $node['row']; $p = $node['payload']; $table = $node['table'];
+			if($r['status'] === 'withdrawn') { $blocked = true; $reasons[] = 'dependency_withdrawn'; }
+			$sources = $table === 'technicaldataset' ? $this->sourcesOf($p->record) : $this->sourcesOf($graph[$this->key('technicaldataset', $p->record->dataset_ref->dataset_key, $p->record->dataset_ref->revision)]['payload']->record);
+			if($table === 'itemtechnicalprofile' && isset($p->record->binding->source)) $sources[] = $p->record->binding->source;
+			$approval = $this->revisionApproval($r, $p->record, $sources);
+			if($r['status'] === 'approved') {
+				$proof = Items_Service_TechnicalJson::decode($r['approval_json']);
+				$references = [];
+				foreach($proof->references as $released) {
+					$released = $this->schema->fields($released, ['revision' => 'object', 'status' => ['approved'], 'approved' => 'text', 'approvedby' => 'int', 'approval_sha256' => 'hash']);
+					$ref = $this->schema->fields($released->revision, ['table' => ['technicaldataset', 'itemtechnicalprofile'], 'id' => 'int', 'key' => 'key', 'revision' => 'int', 'sha256' => 'hash']);
+					$references[] = $ref;
+					$child = $graph[$this->key($ref->table, $ref->key, $ref->revision)]['row'] ?? null;
+					if(!$child || $released->approved !== $child['approved'] || $released->approvedby !== (int)$child['approvedby'] || !hash_equals($released->approval_sha256, hash('sha256', (string)$child['approval_json']))) throw new RuntimeException('Technical dependency approval integrity failure');
+				}
+				if(Items_Service_TechnicalJson::encode($references) !== Items_Service_TechnicalJson::encode($p->references)) throw new RuntimeException('Technical approval reference integrity failure');
+			}
+			$provenance[$key] = $this->identity($table, $r) + ['schema_version' => $table === 'technicaldataset' ? $p->record->schema_version : 1,
+				'normalization_version' => $p->normalization_version, 'status' => $r['status'], 'approved' => $r['approved'], 'approvedby' => $r['approvedby'] === null ? null : (int)$r['approvedby'],
+				'withdrawn' => $r['withdrawn'], 'approval_sha256' => $approval, 'sources' => $sources, 'references' => $p->references, 'items' => $p->items, 'options' => $p->options];
+		}
+		return compact('row', 'graph', 'machine', 'reasons', 'blocked', 'provenance');
+	}
+
+	private function machineCompressor(array $graph, string $mode, bool $canCalculate): callable
+	{
+		$snapshots = [];
+		return function($component, $point, $context) use ($graph, $mode, $canCalculate, &$snapshots) {
+			$profile = $graph[$this->key('itemtechnicalprofile', $component->profile_key, $component->profile_revision)]['payload']->record;
+			$node = $graph[$this->key('technicaldataset', $profile->dataset_ref->dataset_key, $profile->dataset_ref->revision)];
+			$record = $node['payload']->record;
+			if($record->dataset_type === 'component_spec') {
+				$ref = $record->data->specification->polynomial_ref;
+				if($ref === null) return ['status' => 'review_required', 'eligible' => false, 'calculation' => null, 'reasons' => ['compressor_polynomial_missing']];
+				$node = $graph[$this->key('technicaldataset', $ref->dataset_key, $ref->revision)];
+			}
+			$r = $node['row']; $input = (object)['point' => $point];
+			if($context !== null) $input->context = $context;
+			$cacheKey = (int)$r['id'];
+			if(!isset($snapshots[$cacheKey])) $snapshots[$cacheKey] = $this->compressorSnapshot($cacheKey, (int)$r['revision'], $r['payload_sha256']);
+			$evaluation = $this->compressorPoint($snapshots[$cacheKey], $input, $mode);
+			if(!$canCalculate) { $evaluation['calculation'] = null; $evaluation['status'] = 'review_required'; $evaluation['reasons'][] = 'machine_dependency_or_release_blocks_calculation'; }
+			return $evaluation;
+		};
 	}
 
 	private function machineDependency(string $table, array $row, array &$graph, array $path): string
@@ -592,6 +654,7 @@ class Items_Service_TechnicalDataset
 				$actual = array_map(fn($ref) => $this->key($ref->table, $ref->key, $ref->revision), $p->references);
 				$expected = array_values(array_unique($dependencies)); sort($actual); sort($expected);
 				if($actual !== $expected || count($this->plan) !== count($graph)) throw new RuntimeException('Unpinned technical dependency');
+				if($node['table'] === 'technicaldataset' && $r->dataset_type === 'component_spec') $this->exchangerBinding($r);
 				$binding = ['items' => array_map(fn($item) => (array)$item, (array)$p->items), 'dependencies' => $dependencies];
 				if($node['table'] === 'itemtechnicalprofile') {
 					$target = $graph[$this->key('technicaldataset', $r->dataset_ref->dataset_key, $r->dataset_ref->revision)];
@@ -687,6 +750,10 @@ class Items_Service_TechnicalDataset
 				if(in_array(null, (array)$d->temperature_basis, true)) $reasons[] = 'temperature_basis_missing';
 				if(in_array(null, (array)$d->electrical, true)) $reasons[] = 'electrical_execution_missing';
 				if($d->conditions->frequency_Hz === null || $d->conditions->speed_rpm === null || $d->conditions->subcooling_K === null) $reasons[] = 'reference_conditions_missing';
+				break;
+			case 'heat_exchanger_map': case 'thermal_balance_model':
+				$reasons[] = 'synthetic_model_not_releasable';
+				$reasons = array_merge($reasons, $r->data->missing_evidence);
 				break;
 			case 'machine_family':
 				foreach($r->data->chassis as $chassis) if(in_array(null, (array)$chassis->dimensions, true)) $reasons[] = 'chassis_dimensions_missing';

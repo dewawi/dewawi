@@ -3,7 +3,7 @@
 class Items_Service_TechnicalSchema
 {
 	public const ROLES = ['compressor', 'evaporator', 'air_condenser', 'water_condenser', 'pump', 'fan', 'recovery_exchanger', 'tank', 'technical_option', 'machine'];
-	public const TYPES = ['compressor_polynomial', 'machine_configuration', 'machine_family', 'component_spec', 'reference_points'];
+	public const TYPES = ['compressor_polynomial', 'machine_configuration', 'machine_family', 'component_spec', 'reference_points', 'heat_exchanger_map', 'thermal_balance_model'];
 	public const QUANTITIES = ['cooling_capacity' => ['W', 'kW'], 'power_input' => ['W', 'kW'], 'current' => ['A'], 'refrigerant_mass_flow' => ['kg/h', 'kg/s'], 'discharge_temperature' => ['degC']];
 
 	public function fields($value, array $required, array $optional = []): stdClass
@@ -78,6 +78,8 @@ class Items_Service_TechnicalSchema
 			case 'machine_configuration': $d->data = $this->machine($d->data); break;
 			case 'component_spec': $d->data = $this->component($d->data); break;
 			case 'reference_points': $d->data = $this->references($d->data); break;
+			case 'heat_exchanger_map': $d->data = $this->heatExchangerMap($d->data); break;
+			case 'thermal_balance_model': $d->data = $this->thermalBalanceModel($d->data); break;
 		}
 		if(strlen(Items_Service_TechnicalJson::encode($d)) > 1048576 || $this->entries($d) > 5000) throw new InvalidArgumentException('Technical package budget exceeded');
 		return $d;
@@ -176,6 +178,64 @@ class Items_Service_TechnicalSchema
 		return $d;
 	}
 
+	private function thermalRange($value, string $unit, bool $positive = false): stdClass
+	{
+		$r = $this->fields($value, ['min' => $positive ? 'positive' : 'number', 'max' => $positive ? 'positive' : 'number', 'unit' => [$unit]]);
+		if(Items_Service_TechnicalJson::compareDecimal($r->min, $r->max) > 0 || ($unit === 'degC' && (float)$r->min <= -273.15)) throw new InvalidArgumentException('Invalid thermal range');
+		return $r;
+	}
+
+	private function heatExchangerMap($data): stdClass
+	{
+		$d = $this->fields($data, ['contract_version' => 'int', 'usage' => ['synthetic_test_only'], 'component_key' => 'key', 'model' => 'text', 'role' => ['evaporator', 'air_condenser', 'water_condenser'],
+			'exchanger_type' => ['plate', 'shell_tube', 'finned_coil'], 'refrigerant' => 'key', 'temperature_basis' => ['dew', 'bubble', 'midpoint', 'pure_saturation'],
+			'model_id' => ['synthetic_evaporator_effectiveness_v1', 'synthetic_air_condenser_effectiveness_v1', 'synthetic_water_condenser_effectiveness_v1'],
+			'measurement_boundary' => ['secondary_stream_only_no_external_heat_v1'], 'interpolation' => ['none_analytic'], 'variables' => 'object',
+			'refrigerant_sections_are_isolated' => 'bool', 'media' => 'list:object', 'sections' => 'list:object', 'fan_condition' => '?object', 'restrictions' => 'list:key', 'missing_evidence' => 'list:key']);
+		if($d->contract_version !== 1 || $d->model_id !== 'synthetic_'.$d->role.'_effectiveness_v1') throw new InvalidArgumentException('Unsupported exchanger model contract');
+		$d->variables = $this->fields($d->variables, ['saturation_temperature' => ['degC'], 'secondary_inlet' => ['degC'], 'secondary_outlet' => ['degC'], 'volume_flow' => ['m3/h'], 'heat_flow' => ['kW'], 'pressure_drop' => ['kPa']]);
+		$seen = [];
+		foreach($d->media as &$medium) {
+			$medium = $this->fields($medium, ['medium_key' => 'key', 'phase' => ['single_phase_liquid', 'dry_gas'], 'composition' => 'text', 'properties' => 'object']);
+			if(isset($seen[$medium->medium_key]) || ($medium->phase === 'dry_gas') !== ($d->role === 'air_condenser')) throw new InvalidArgumentException('Invalid exchanger medium');
+			$seen[$medium->medium_key] = true;
+			$medium->properties = $this->fields($medium->properties, ['model_id' => ['synthetic_constant_cp_density_v1'], 'density_kg_m3' => '?positive', 'specific_heat_kJ_kg_K' => '?positive', 'temperature_range' => 'object', 'source_locator' => 'text']);
+			$medium->properties->temperature_range = $this->thermalRange($medium->properties->temperature_range, 'degC');
+		}
+		unset($medium); $seen = [];
+		foreach($d->sections as &$section) {
+			$section = $this->fields($section, ['section_key' => 'key', 'effectiveness' => 'positive', 'limits' => 'object', 'pressure_drop_kPa' => '?nonnegative']);
+			if(isset($seen[$section->section_key]) || (float)$section->effectiveness >= 1.0) throw new InvalidArgumentException('Invalid exchanger section');
+			$seen[$section->section_key] = true;
+			$section->limits = $this->fields($section->limits, ['saturation_temperature' => 'object', 'secondary_inlet' => 'object', 'secondary_outlet' => 'object', 'volume_flow' => 'object']);
+			foreach(['saturation_temperature', 'secondary_inlet', 'secondary_outlet'] as $key) $section->limits->$key = $this->thermalRange($section->limits->$key, 'degC');
+			$section->limits->volume_flow = $this->thermalRange($section->limits->volume_flow, 'm3/h', true);
+		}
+		if(!$d->sections || !$d->media || (count($d->sections) > 1 && !$d->refrigerant_sections_are_isolated)) throw new InvalidArgumentException('Missing or nonisolated exchanger sections');
+		if($d->fan_condition !== null) $d->fan_condition = $this->fields($d->fan_condition, ['execution_code' => 'text', 'speed_rpm' => 'positive']);
+		if($d->role !== 'air_condenser' && $d->fan_condition !== null) throw new InvalidArgumentException('Liquid exchanger cannot define air fan conditions');
+		return $d;
+	}
+
+	private function thermalBalanceModel($data): stdClass
+	{
+		$d = $this->fields($data, ['contract_version' => 'int', 'usage' => ['synthetic_test_only'], 'circuit_key' => 'key', 'energy_balance' => 'object', 'search_bounds' => 'object', 'numerics' => 'object', 'missing_evidence' => 'list:key']);
+		if($d->contract_version !== 1) throw new InvalidArgumentException('Unsupported thermal balance contract');
+		$d->energy_balance = $this->fields($d->energy_balance, ['model_id' => ['synthetic_hermetic_no_external_losses_v1'], 'boundary' => ['evaporator_plus_electrical_input_to_condenser_v1'], 'motor_heat_to_refrigerant_fraction' => 'number', 'external_heat_loss_kW' => 'number', 'transient_storage_kW' => 'number', 'other_heat_input_kW' => 'number']);
+		$b = $d->energy_balance;
+		if($b->motor_heat_to_refrigerant_fraction !== '1' || $b->external_heat_loss_kW !== '0' || $b->transient_storage_kW !== '0' || $b->other_heat_input_kW !== '0') throw new InvalidArgumentException('Contradictory synthetic energy balance');
+		$d->search_bounds = $this->fields($d->search_bounds, ['Te' => 'object', 'Tc' => 'object']);
+		foreach(['Te', 'Tc'] as $key) {
+			$d->search_bounds->$key = $this->thermalRange($d->search_bounds->$key, 'degC');
+			if((float)$d->search_bounds->$key->min >= (float)$d->search_bounds->$key->max) throw new InvalidArgumentException('Empty thermal search interval');
+		}
+		if((float)$d->search_bounds->Te->max >= (float)$d->search_bounds->Tc->min) throw new InvalidArgumentException('Thermal search temperatures overlap');
+		$d->numerics = $this->fields($d->numerics, ['heat_tolerance_kW' => 'positive', 'temperature_tolerance_K' => 'positive', 'max_outer_iterations' => 'int', 'max_inner_iterations' => 'int']);
+		foreach(['heat_tolerance_kW', 'temperature_tolerance_K'] as $key) if((float)$d->numerics->$key < 1e-9 || (float)$d->numerics->$key > 1e-3) throw new InvalidArgumentException('Unsupported thermal tolerance');
+		foreach(['max_outer_iterations', 'max_inner_iterations'] as $key) if($d->numerics->$key > 80) throw new InvalidArgumentException('Thermal iteration budget exceeds contract');
+		return $d;
+	}
+
 	public function reference($point): stdClass
 	{
 		$p = $this->fields($point, ['reference_key' => 'key', 'dataset_ref' => 'ref', 'reference_kind' => ['mathematical_polynomial', 'manufacturer_component', 'manufacturer_machine', 'measurement'], 'inputs' => 'object', 'quantity' => array_keys(self::QUANTITIES), 'expected_value' => 'number', 'unit' => 'text', 'absolute_tolerance' => '?nonnegative', 'relative_tolerance' => '?nonnegative', 'tolerance_origin' => 'text', 'source' => 'object', 'revision' => 'int', 'engineering_approval' => '?text'], ['machine_profile_ref' => '?object', 'stage_key' => '?key', 'mode' => ['cooling', 'partial_heat_recovery', 'full_heat_recovery', 'reversible_heating']]);
@@ -212,7 +272,7 @@ class Items_Service_TechnicalSchema
 
 	private function machine($data): stdClass
 	{
-		$d = $this->fields($data, ['family_ref' => 'ref', 'chassis_key' => 'key', 'machine_item_ref' => 'key', 'base_item_ref' => '?key', 'refrigerant' => 'key', 'circuit_count' => 'int', 'installation_kind' => ['indoor', 'outdoor', 'split'], 'cooling_kind' => ['air', 'water'], 'components' => 'list:object', 'circuits' => 'list:object', 'shared_components' => 'list:object', 'hydraulic_loops' => 'list:object', 'air_paths' => 'list:object', 'stages' => 'list:object', 'approved_stage_keys' => 'list:key', 'mode_topologies' => 'list:object', 'selected_equipment' => 'list:object', 'variant_signature' => 'object', 'approximation' => 'object']);
+		$d = $this->fields($data, ['family_ref' => 'ref', 'chassis_key' => 'key', 'machine_item_ref' => 'key', 'base_item_ref' => '?key', 'refrigerant' => 'key', 'circuit_count' => 'int', 'installation_kind' => ['indoor', 'outdoor', 'split'], 'cooling_kind' => ['air', 'water'], 'components' => 'list:object', 'circuits' => 'list:object', 'shared_components' => 'list:object', 'hydraulic_loops' => 'list:object', 'air_paths' => 'list:object', 'stages' => 'list:object', 'approved_stage_keys' => 'list:key', 'mode_topologies' => 'list:object', 'selected_equipment' => 'list:object', 'variant_signature' => 'object', 'approximation' => 'object'], ['thermal_model_ref' => '?ref']);
 		$instances = $ports = [];
 		foreach($d->components as &$component) {
 			$component = $this->fields($component, ['instance_key' => 'key', 'role' => array_values(array_diff(self::ROLES, ['machine'])), 'component_key' => 'key', 'profile_key' => 'key', 'profile_revision' => 'int', 'ports' => 'object']);

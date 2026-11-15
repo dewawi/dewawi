@@ -91,6 +91,22 @@ class Items_Service_TechnicalJson
 		return $result;
 	}
 
+	public static function compareDecimal(string $a, string $b): int
+	{
+		$a = self::decimal($a); $b = self::decimal($b);
+		if($a === $b) return 0;
+		$negativeA = str_starts_with($a, '-'); $negativeB = str_starts_with($b, '-');
+		if($negativeA !== $negativeB) return $negativeA ? -1 : 1;
+		$sign = $negativeA ? -1 : 1;
+		if($a === '0' || $b === '0') return ($a === '0' ? -1 : 1) * $sign;
+		[$mantissaA, $exponentA] = array_pad(explode('e', ltrim($a, '-')), 2, '0');
+		[$mantissaB, $exponentB] = array_pad(explode('e', ltrim($b, '-')), 2, '0');
+		if((int)$exponentA !== (int)$exponentB) return ((int)$exponentA <=> (int)$exponentB) * $sign;
+		$digitsA = str_replace('.', '', $mantissaA); $digitsB = str_replace('.', '', $mantissaB);
+		$length = max(strlen($digitsA), strlen($digitsB));
+		return (strcmp(str_pad($digitsA, $length, '0'), str_pad($digitsB, $length, '0')) <=> 0) * $sign;
+	}
+
 	public static function encode($value): string
 	{
 		if(is_object($value)) {
