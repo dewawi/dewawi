@@ -3,6 +3,7 @@
 class Items_Service_ThermohydraulicCircuit
 {
 	public const VERSION = 'synthetic_two_liquid_loops_interval_bisection_v1';
+	public const DYNAMIC_VERSION = 'synthetic_polynomial_two_liquid_loops_interval_newton_v1';
 	private Items_Service_ThermalCircuit $interval;
 	private Items_Service_FluidProperties $fluid;
 	private Items_Service_FluidHydraulics $hydraulic;
@@ -25,19 +26,21 @@ class Items_Service_ThermohydraulicCircuit
 			$resolveSynthetic = function($table, $key, $revision) use($resolve) { $v = $resolve($table, $key, $revision); if(isset($v->dataset_type) && ($v->import_context->production_import_allowed ?? null) !== false) throw new DomainException('coupled_synthetic_provenance_required'); return $v; };
 			if(($machine->import_context->production_import_allowed ?? null) !== false) throw new DomainException('coupled_synthetic_provenance_required');
 			$contracts = (new Items_Service_OperatingModeSchema())->machineBinding($machine->data, $resolveSynthetic); $model = $contracts[$q->operating_mode] ?? null;
-			if($model === null || $model->data->contract_version !== 2) throw new DomainException('coupled_operating_model_required'); $d = $model->data; $r['model'] = $model;
+			if($model === null || !in_array($model->data->contract_version, [2, 3], true)) throw new DomainException('coupled_operating_model_required'); $d = $model->data; $r['model'] = $model; $dynamic = $d->contract_version === 3;
+			if($dynamic) { $r['calculation_version'] = self::DYNAMIC_VERSION; $r['assumptions'][0] = 'temperature_dependent_compressor_polynomials_at_each_trial'; }
 			if(!in_array($q->stage_key, $d->stage_keys, true)) throw new DomainException('coupled_stage_unavailable');
 			$states = function($list) { $a = []; foreach($list as $v) { if(isset($a[$v->instance_key])) throw new InvalidArgumentException('Conflicting coupled valve states'); $a[$v->instance_key] = $v->state_key; } ksort($a); return $a; };
 			if($states($q->valve_states) !== $states($d->valve_states)) throw new DomainException('coupled_valve_state_mismatch');
 			$binding = (new Items_Service_OperatingModeSchema())->binding($machine->data, $d, $resolveSynthetic); $bounds = $binding['boundary']->data->search_bounds;
-			$stage = array_values(array_filter($machine->data->stages, fn($v) => $v->stage_key === $q->stage_key))[0]; $sourceHeat = ['cooling_capacity' => [0.0,0.0], 'power_input' => [0.0,0.0]];
+			$stage = array_values(array_filter($machine->data->stages, fn($v) => $v->stage_key === $q->stage_key))[0]; $sourceHeat = ['cooling_capacity' => [0.0,0.0], 'power_input' => [0.0,0.0]]; $curves = [];
 			foreach($stage->active_compressors as $key) {
 				$c = $binding['components'][$key]; $profile = $s->profile($resolveSynthetic('itemtechnicalprofile', $c->profile_key, $c->profile_revision));
 				if($profile->profile_key !== $c->profile_key || $profile->revision !== $c->profile_revision || $profile->item_ref !== $c->component_key || $profile->role !== 'compressor') throw new InvalidArgumentException('Coupled compressor profile identity mismatch');
 				$curve = $s->dataset($resolveSynthetic('technicaldataset', $profile->dataset_ref->dataset_key, $profile->dataset_ref->revision));
 				if($curve->dataset_type === 'component_spec') { $ref = $curve->data->specification->polynomial_ref; if($ref === null) throw new DomainException('coupled_compressor_curve_missing'); $curve = $this->hydraulic->resolve($resolveSynthetic, $ref, 'compressor_polynomial'); }
 				if($curve->dataset_type !== 'compressor_polynomial' || $curve->data->refrigerant !== $machine->data->refrigerant || $curve->data->temperature_basis->Te !== 'pure_saturation' || $curve->data->temperature_basis->Tc !== 'pure_saturation') throw new DomainException('coupled_compressor_basis_not_supported');
-				foreach(['cooling_capacity', 'power_input'] as $quantity) if(!isset($curve->data->quantities->$quantity) || array_filter(array_slice($curve->data->quantities->$quantity->coefficients_C0_to_C9, 1), fn($v) => $v !== '0')) throw new DomainException('coupled_constant_compressor_certificate_required');
+				foreach(['cooling_capacity', 'power_input'] as $quantity) if(!isset($curve->data->quantities->$quantity) || (!$dynamic && array_filter(array_slice($curve->data->quantities->$quantity->coefficients_C0_to_C9, 1), fn($v) => $v !== '0'))) throw new DomainException($dynamic ? 'dynamic_compressor_quantities_required' : 'coupled_constant_compressor_certificate_required');
+				$curves[$key] = $curve;
 				foreach(array_keys($sourceHeat) as $quantity) $sourceHeat[$quantity] = $this->interval->add($sourceHeat[$quantity], $this->interval->polynomialBounds($curve->data->quantities->$quantity, [(float)$bounds->Te->min,(float)$bounds->Te->max], [(float)$bounds->Tc->min,(float)$bounds->Tc->max], false)[0]);
 				$envelope = $curve->data->operating_envelope; if($envelope === null || count($envelope->vertices) !== 4 || count(array_unique(array_column($envelope->vertices, 'Te'))) !== 2 || count(array_unique(array_column($envelope->vertices, 'Tc'))) !== 2) throw new DomainException('coupled_rectangular_compressor_envelope_required');
 				foreach(['min','max'] as $te) foreach(['min','max'] as $tc) if((new Items_Service_CompressorPolynomial())->operatingRegion($envelope, $this->point((float)$bounds->Te->$te, (float)$bounds->Tc->$tc))['status'] !== 'inside') throw new DomainException('coupled_search_outside_compressor_envelope');
@@ -49,10 +52,11 @@ class Items_Service_ThermohydraulicCircuit
 			$sides = [];
 			foreach(['evaporator' => 'Te', 'condenser' => 'Tc'] as $side => $axis) {
 				$sides[$side] = $this->prepare($machine, $d->$side, $binding, $q->secondary_boundaries->$side->inlet_degC, $bounds->$axis, $side === 'evaporator' ? $cold : $cold+$power, $side === 'evaporator' ? $sourceHeat['cooling_capacity'] : $this->interval->add($sourceHeat['cooling_capacity'],$sourceHeat['power_input']), $side, $resolveSynthetic);
-				$solved = $this->solve($sides[$side], $d->numerics, $r['convergence'][$side]);
-				if($solved === null) throw new DomainException('coupled_solution_not_certified_or_converged'); $solutions[$side] = $solved;
+				if(!$dynamic) { $solved = $this->solve($sides[$side], $d->numerics, $r['convergence'][$side]); if($solved === null) throw new DomainException('coupled_solution_not_certified_or_converged'); $solutions[$side] = $solved; }
 			}
+			if($dynamic) { $solutions = $this->solveDynamic($sides, $curves, $bounds, $d->numerics, $compress, $r['convergence']['joint']); if($solutions === null) throw new DomainException('dynamic_solution_not_certified_or_converged'); }
 			$point = $this->point($solutions['evaporator']['saturation_degC'], $solutions['condenser']['saturation_degC']); $final = $compress($point);
+			$cold = $final['stage_compressor_sums']['cooling_capacity']['value']; $power = $final['stage_compressor_sums']['power_input']['value'];
 			$thermal = ['evaporator_kW' => $final['stage_compressor_sums']['cooling_capacity']['value'] - $solutions['evaporator']['heat_flow_kW'], 'condenser_kW' => $final['stage_compressor_sums']['cooling_capacity']['value'] + $final['stage_compressor_sums']['power_input']['value'] - $solutions['condenser']['heat_flow_kW']];
 			$thermal['refrigerant_energy_kW'] = $solutions['evaporator']['heat_flow_kW'] + $power - $solutions['condenser']['heat_flow_kW'];
 			foreach($thermal as $residual) if(abs($residual) > (float)$d->numerics->heat_tolerance_kW) throw new DomainException('coupled_final_energy_residual');
@@ -65,6 +69,7 @@ class Items_Service_ThermohydraulicCircuit
 			}
 			$r['solution'] = ['point' => $point, 'compressor_stage' => $final, 'evaporator_heat_kW' => $cold, 'condenser_heat_kW' => $cold+$power, 'compressor_input_kW' => $power, 'useful_heat_kW' => $q->operating_mode === 'heat_pump' ? $cold+$power : 0.0, 'secondary_sides' => $solutions, 'hydraulics' => $hydraulics['solution'], 'thermal_residuals_kW' => $thermal,
 				'energy_boundary' => $binding['boundary'], 'secondary_heat_boundary' => $d->coupling, 'pump_heat_removed_to_external_thermostats_W' => array_sum(array_map(fn($v) => $v['pump']['electrical_input_W'], $hydraulics['solution']['loops'])), 'eligible' => false, 'fully_coupled' => true];
+			if($dynamic) { $r['solution']['compressor_curve_revisions'] = array_map(fn($curve) => ['dataset_key' => $curve->dataset_key, 'revision' => $curve->revision], $curves); $r['solution']['compressor_cop'] = $final['stage_compressor_sums']['compressor_cop'] + ['scope' => 'compressor_cooling_capacity_over_compressor_input_only']; $r['solution']['numerics'] = $d->numerics; }
 			$this->fluid->finite($r['solution']); $r['mathematical_converged'] = true; $r['fully_coupled'] = true; $r['reasons'] = array_values(array_unique(array_merge($r['reasons'], $d->missing_evidence)));
 		} catch(DomainException|OverflowException $e) { $r['reasons'][] = $e->getMessage(); $r['solution'] = null; }
 		return $r;
@@ -105,10 +110,10 @@ class Items_Service_ThermohydraulicCircuit
 		return compact('machine','assignment','binding','inlet','heat','heatBox','map','loop','fluid','composition','path','losses','locations','pump','pumpSpec','external','epsilon','domain','resolve','side');
 	}
 
-	private function sample(array $a, float $outlet): array
+	private function sample(array $a, float $outlet, ?float $saturation = null): array
 	{
 		$f = $this->fluid; $tin = $a['inlet']; $tout = $f::decimal($outlet); $m = $a['heat']*1000/abs($f->enthalpyDifference($a['fluid']->data,$a['composition'],$tin,$tout));
-		$saturation = (float)$tin+($outlet-(float)$tin)/$a['epsilon']; $states = [];
+		$saturation = $saturation ?? ((float)$tin+($outlet-(float)$tin)/$a['epsilon']); $states = [];
 		$flow = function($temperature) use($a,$f,$m) { $p = $f->state($a['fluid']->data,$a['composition'],$temperature); return $f::decimal(3600*$m/$p['density_kg_m3']); };
 		foreach($a['losses'] as $key => $record) { $t = $a['locations'][$key] ? $tout : $tin; $states[] = (object)['instance_key' => $key, 'sections' => [(object)['section_key' => $record->data->sections[0]->section_key, 'temperature_degC' => $t, 'volume_flow_m3_h' => $flow($t)]]]; }
 		$pumpTemperature = $a['locations'][$a['path']->data->pump_instance] ? $tout : $tin; $p = $a['pumpSpec']->data->specification;
@@ -120,6 +125,140 @@ class Items_Service_ThermohydraulicCircuit
 		$secondaryHeat = abs($m*$f->enthalpyDifference($a['fluid']->data,$a['composition'],$tin,$f::decimal($hx['secondary_outlet_degC']))/1000);
 		$roundoff = 256*PHP_FLOAT_EPSILON*max(1.0,abs($a['heat']),$m*$hx['inlet_state']['specific_heat_J_kg_K']*max(abs((float)$tin),abs($outlet))/1000);
 		return ['pump_revision' => ['dataset_key' => $a['pump']->dataset_key, 'revision' => $a['pump']->revision], 'hydraulic_path_revision' => ['dataset_key' => $a['path']->dataset_key, 'revision' => $a['path']->revision], 'secondary_energy_residual_kW' => $a['heat']-$secondaryHeat, 'heat_roundoff_allowance_kW' => $roundoff, 'outlet_degC' => $outlet, 'saturation_degC' => $saturation, 'mass_flow_kg_s' => $m, 'heat_flow_kW' => $hx['heat_flow_kW'], 'heat_residual_kW' => $a['heat']-$hx['heat_flow_kW'], 'pressure_residual_Pa' => $loop['pump']['reserve_Pa'], 'exchanger' => $hx, 'hydraulic_input' => $input, 'hydraulic_trial' => $loop];
+	}
+
+	private function solveDynamic(array $sides, array $curves, stdClass $bounds, stdClass $n, callable $compress, ?array &$diagnostics): ?array
+	{
+		$domain = [[(float)$bounds->Te->min,(float)$bounds->Te->max],[(float)$bounds->Tc->min,(float)$bounds->Tc->max]];
+		$diagnostics = ['status' => 'certifying', 'certification_cells' => 64, 'iterations' => 0, 'trial_count' => 0, 'trace' => [], 'numerics' => $n];
+		$trial = function(array $point, string $phase) use($sides,$curves,$compress,&$diagnostics): array {
+			$stage = $compress($this->point($point[0],$point[1])); $sum = $stage['stage_compressor_sums'];
+			$q = $sum['cooling_capacity']['value']; $p = $sum['power_input']['value']; if(!is_finite($q+$p) || min($q,$p) <= 0) throw new DomainException('dynamic_compressor_nonpositive_heat');
+			$box = $this->dynamicBounds($sides,$curves,[$point[0],$point[0]],[$point[1],$point[1]]);
+			foreach(['cooling_capacity' => $q, 'power_input' => $p] as $quantity => $value) if($value < $box['compressor'][$quantity][0][0] || $value > $box['compressor'][$quantity][0][1]) throw new DomainException('dynamic_compressor_source_interval_mismatch');
+			$values = []; $residual = [];
+			foreach(['evaporator','condenser'] as $i => $side) {
+				$a = $sides[$side]; $a['heat'] = $i === 0 ? $q : $q+$p;
+				$outlet = (float)$a['inlet']+$a['epsilon']*($point[$i]-(float)$a['inlet']); $values[$side] = $this->sample($a,$outlet,$point[$i]);
+				$residual[$i] = $values[$side]['pressure_residual_Pa'];
+				if($residual[$i] < $box['residual'][$i][0] || $residual[$i] > $box['residual'][$i][1]) throw new DomainException('dynamic_pressure_interval_consistency_failure');
+			}
+			$diagnostics['trial_count']++;
+			$diagnostics['trace'][] = ['phase' => $phase, 'point' => $this->point($point[0],$point[1]), 'compressor_cooling_kW' => $q, 'compressor_input_kW' => $p, 'compressor_cop' => $sum['compressor_cop']['value'], 'pressure_residuals_Pa' => $residual];
+			return ['point' => $point, 'sides' => $values, 'residual' => $residual, 'bounds' => $box];
+		};
+		$jacobian = null;
+		for($i=0;$i<8;$i++) for($j=0;$j<8;$j++) {
+			$te = [$domain[0][0]+($domain[0][1]-$domain[0][0])*$i/8,$domain[0][0]+($domain[0][1]-$domain[0][0])*($i+1)/8];
+			$tc = [$domain[1][0]+($domain[1][1]-$domain[1][0])*$j/8,$domain[1][0]+($domain[1][1]-$domain[1][0])*($j+1)/8];
+			$cell = $this->dynamicBounds($sides,$curves,$te,$tc); $trial([($te[0]+$te[1])/2,($tc[0]+$tc[1])/2],'certificate');
+			if($jacobian === null) $jacobian = $cell['jacobian'];
+			else foreach([0,1] as $row) foreach([0,1] as $column) $jacobian[$row][$column] = $this->interval->bound(array_merge($jacobian[$row][$column],$cell['jacobian'][$row][$column]));
+		}
+		$diagonal = function(array $v): float { return $v[0] > 0 || $v[1] < 0 ? min(array_map('abs',$v)) : 0.0; };
+		$a = $diagonal($jacobian[0][0]); $d = $diagonal($jacobian[1][1]); $b = max(array_map('abs',$jacobian[0][1])); $c = max(array_map('abs',$jacobian[1][0]));
+		$margin = $this->interval->add($this->interval->multiply([$a,$a],[$d,$d]),$this->interval->multiply([-$b,-$b],[$c,$c]));
+		$diagnostics['global_jacobian_enclosure_Pa_K'] = $jacobian; $diagnostics['diagonal_product_margin'] = $margin;
+		// Integrating both rows along a line segment proves injectivity when a*d > b*c on the entire rectangle.
+		if($a <= 0 || $d <= 0 || $margin[0] <= 0) { $diagnostics['status'] = 'ambiguous_or_uniqueness_not_certified'; return null; }
+		$diagnostics['uniqueness'] = 'global_interval_jacobian_weighted_diagonal_dominance';
+		$current = $trial([($domain[0][0]+$domain[0][1])/2,($domain[1][0]+$domain[1][1])/2],'iteration');
+		for($iteration=1;$iteration<=$n->max_iterations;$iteration++) {
+			$diagnostics['iterations'] = $iteration;
+			$thermal = max(array_map(fn($v) => max(abs($v['heat_residual_kW']),abs($v['secondary_energy_residual_kW']))+$v['heat_roundoff_allowance_kW'],$current['sides']));
+			$pressure = max(array_map(fn($v) => max(array_map('abs',$v)),$current['bounds']['residual']));
+			if($thermal <= (float)$n->heat_tolerance_kW && $pressure <= (float)$n->pressure_tolerance_Pa) {
+				$proof = $this->dynamicExistence($sides,$curves,$domain,$current,(float)$n->temperature_tolerance_K);
+				if($proof !== null) { $diagnostics['existence'] = $proof; $diagnostics['pressure_residual_enclosures_Pa'] = $current['bounds']['residual']; $diagnostics['status'] = 'converged'; return $current['sides']; }
+			}
+			$inverse = $this->inverseJacobian($current['bounds']['jacobian']);
+			if($inverse === null) { $diagnostics['status'] = 'singular_or_unresolved_jacobian'; return null; }
+			$step = []; foreach([0,1] as $row) $step[$row] = $inverse[$row][0]*$current['residual'][0]+$inverse[$row][1]*$current['residual'][1];
+			$accepted = false; $norm = max(array_map('abs',$current['residual']));
+			for($backtrack=0;$backtrack<12;$backtrack++) {
+				$weight = 2.0**(-$backtrack); $next = [$current['point'][0]-$weight*$step[0],$current['point'][1]-$weight*$step[1]];
+				if(!is_finite($next[0]) || !is_finite($next[1]) || $next[0] <= $domain[0][0] || $next[0] >= $domain[0][1] || $next[1] <= $domain[1][0] || $next[1] >= $domain[1][1]) continue;
+				$sample = $trial($next,'line_search');
+				if(max(array_map('abs',$sample['residual'])) < $norm*(1-1e-4*$weight)) { $current = $sample; $accepted = true; break; }
+			}
+			if(!$accepted) { $diagnostics['status'] = 'stagnation_or_precision_unconfirmed'; return null; }
+		}
+		$diagnostics['status'] = 'not_converged'; return null;
+	}
+
+	private function dynamicBounds(array $sides, array $curves, array $te, array $tc): array
+	{
+		$compressor = ['cooling_capacity' => [[0.0,0.0],[0.0,0.0],[0.0,0.0]], 'power_input' => [[0.0,0.0],[0.0,0.0],[0.0,0.0]]];
+		foreach($curves as $curve) foreach(array_keys($compressor) as $quantity) {
+			$polynomial = $this->interval->polynomialBounds($curve->data->quantities->$quantity,$te,$tc);
+			if($polynomial[0][0] <= 0) throw new DomainException('dynamic_individual_compressor_range_unconfirmed');
+			foreach([0,1,2] as $i) $compressor[$quantity][$i] = $this->interval->add($compressor[$quantity][$i],$polynomial[$i]);
+		}
+		if($compressor['cooling_capacity'][0][0] <= 0 || $compressor['power_input'][0][0] <= 0) throw new DomainException('dynamic_positive_compressor_range_unconfirmed');
+		$axes = [$te,$tc]; $residual = $jacobian = [];
+		foreach(['evaporator','condenser'] as $i => $side) {
+			$a = $sides[$side]; $heat = $compressor['cooling_capacity'];
+			if($i === 1) foreach([0,1,2] as $k) $heat[$k] = $this->interval->add($heat[$k],$compressor['power_input'][$k]);
+			$outlet = $this->plus($this->constant((float)$a['inlet']),$this->times($this->constant($a['epsilon']),$this->plus([$axes[$i],[0.0,0.0]],$this->constant(-(float)$a['inlet']))))[0];
+			foreach([0,1] as $axis) {
+				$derivative = $axis === $i ? $this->constant($a['epsilon'])[0] : [0.0,0.0];
+				$box = $this->residualBox($a,$outlet,[$heat[0],$heat[$axis+1]],[$outlet,$derivative]);
+				$residual[$i] = $box[0]; $jacobian[$i][$axis] = $box[1];
+			}
+		}
+		return compact('residual','jacobian','compressor');
+	}
+
+	private function dynamicDomain(array $a, array $temperature, callable $volume): void
+	{
+		$hx = new Items_Service_HeatExchangerMap(); $limits = $a['map']->data->sections[0]->limits;
+		foreach($temperature[0] as $end) {
+			$this->fluid->state($a['fluid']->data,$a['composition'],$this->fluid::decimal($end));
+			if(!$hx->inside($this->fluid::decimal($end),$limits->secondary_outlet)) throw new DomainException('dynamic_secondary_outlet_range_unconfirmed');
+		}
+		$inlet = $this->constant((float)$a['inlet']); $inletFlow = $volume($inlet)[0];
+		if(!$hx->inside($a['inlet'],$limits->secondary_inlet)) throw new DomainException('dynamic_secondary_inlet_range_unconfirmed');
+		foreach($a['locations'] as $key => $after) {
+			$range = $volume($after ? $temperature : $inlet)[0]; $spec = $a['binding']['specs'][$key]->data->specification;
+			if((isset($spec->flow_min_m3_h) && $range[0] < (float)$spec->flow_min_m3_h) || (isset($spec->flow_max_m3_h) && $range[1] > (float)$spec->flow_max_m3_h)) throw new DomainException('dynamic_component_flow_range_unconfirmed');
+		}
+		foreach($inletFlow as $end) if(!$hx->inside($this->fluid::decimal($end),$limits->volume_flow)) throw new DomainException('dynamic_exchanger_flow_range_unconfirmed');
+		if((isset($a['loop']->flow_min_m3_h) && $inletFlow[0] < (float)$a['loop']->flow_min_m3_h) || (isset($a['loop']->flow_max_m3_h) && $inletFlow[1] > (float)$a['loop']->flow_max_m3_h)) throw new DomainException('dynamic_loop_flow_range_unconfirmed');
+		$pumpTemperature = $a['locations'][$a['path']->data->pump_instance] ? $temperature : $inlet; $pump = $a['pump']->data;
+		$ranges = ['temperature_degC' => $pumpTemperature[0], 'density_kg_m3' => $this->property($a,$pumpTemperature,'density_kg_m3')[0], 'dynamic_viscosity_Pa_s' => $this->property($a,$pumpTemperature,'dynamic_viscosity_Pa_s')[0]];
+		foreach($ranges as $key => $range) if($range[0] < (float)$pump->limits->$key->min || $range[1] > (float)$pump->limits->$key->max) throw new DomainException('dynamic_pump_fluid_range_unconfirmed');
+	}
+
+	private function inverseJacobian(array $jacobian): ?array
+	{
+		$j = []; foreach([0,1] as $row) foreach([0,1] as $column) $j[$row][$column] = ($jacobian[$row][$column][0]+$jacobian[$row][$column][1])/2;
+		$left = $j[0][0]*$j[1][1]; $right = $j[0][1]*$j[1][0]; $determinant = $left-$right;
+		if(!is_finite($determinant) || abs($determinant) <= 64*PHP_FLOAT_EPSILON*(abs($left)+abs($right))) return null;
+		$value = [[$j[1][1]/$determinant,-$j[0][1]/$determinant],[-$j[1][0]/$determinant,$j[0][0]/$determinant]]; $this->fluid->finite($value); return $value;
+	}
+
+	private function dynamicExistence(array $sides, array $curves, array $domain, array $trial, float $tolerance): ?array
+	{
+		$point = $trial['point']; $local = [];
+		foreach([0,1] as $axis) {
+			$local[$axis] = [max($domain[$axis][0],$point[$axis]-$tolerance/2),min($domain[$axis][1],$point[$axis]+$tolerance/2)];
+			if($local[$axis][0] >= $point[$axis] || $local[$axis][1] <= $point[$axis]) return null;
+		}
+		$inverse = $this->inverseJacobian($trial['bounds']['jacobian']); if($inverse === null) return null;
+		$jacobian = $this->dynamicBounds($sides,$curves,$local[0],$local[1])['jacobian']; $image = []; $errors = [];
+		foreach([0,1] as $row) {
+			$value = $this->constant($point[$row])[0];
+			foreach([0,1] as $column) $value = $this->interval->add($value,$this->interval->multiply($this->constant(-$inverse[$row][$column])[0],$trial['bounds']['residual'][$column]));
+			foreach([0,1] as $column) {
+				$matrix = [$row === $column ? 1.0 : 0.0,$row === $column ? 1.0 : 0.0];
+				foreach([0,1] as $k) $matrix = $this->interval->add($matrix,$this->interval->multiply($this->constant(-$inverse[$row][$k])[0],$jacobian[$k][$column]));
+				$delta = $this->interval->add($local[$column],$this->constant(-$point[$column])[0]); $value = $this->interval->add($value,$this->interval->multiply($matrix,$delta));
+			}
+			if($value[0] <= $local[$row][0] || $value[1] >= $local[$row][1]) return null;
+			$image[$row] = $value; $errors[$row] = $this->interval->bound([max(abs($point[$row]-$value[0]),abs($point[$row]-$value[1]))])[1];
+			if($errors[$row] > $tolerance) return null;
+		}
+		return ['method' => 'krawczyk_strict_interior_inclusion', 'search_box_degC' => $local, 'root_image_degC' => $image, 'temperature_error_bounds_K' => $errors];
 	}
 
 	private function solve(array $a, stdClass $n, ?array &$diagnostics): ?array
@@ -163,13 +302,16 @@ class Items_Service_ThermohydraulicCircuit
 	private function residualDerivative(array $a, array $outlet): array { return $this->residualBox($a,$outlet)[1]; }
 
 	// Interval automatic differentiation certifies every temperature in the declared domain, including table corners.
-	private function residualBox(array $a, array $outlet): array
+	private function residualBox(array $a, array $outlet, ?array $heatDual = null, ?array $outletDual = null): array
 	{
-		$t = [$outlet,[1.0,1.0]]; $tin = $this->constant((float)$a['inlet']); $delta = $this->enthalpyBox($a,$outlet);
+		$t = $outletDual ?? [$outlet,[1.0,1.0]]; $tin = $this->constant((float)$a['inlet']); $delta = $this->enthalpyBox($a,$outlet);
 		$cp = $this->property($a,$t,'specific_heat_J_kg_K'); $direction = $outlet[1] < (float)$a['inlet'] ? -1 : 1;
-		$energy = [$delta,$this->interval->multiply([$direction,$direction],$cp[0])];
-		$mass = $this->divide([$this->interval->multiply($a['heatBox'],[1000.0,1000.0]),[0.0,0.0]],$energy);
+		$derivative = $this->interval->multiply([$direction,$direction],$cp[0]); if($outletDual !== null) $derivative = $this->interval->multiply($derivative,$t[1]);
+		$energy = [$delta,$derivative];
+		$heat = $heatDual === null ? [$this->interval->multiply($a['heatBox'],[1000.0,1000.0]),[0.0,0.0]] : $this->times($heatDual,$this->constant(1000));
+		$mass = $this->divide($heat,$energy);
 		$volume = function($temp) use($a,$mass) { return $this->divide($this->times($this->constant(3600),$mass),$this->property($a,$temp,'density_kg_m3')); };
+		if($heatDual !== null) $this->dynamicDomain($a,$t,$volume);
 		$total = $this->constant(0);
 		foreach($a['losses'] as $key => $record) { $temp = $a['locations'][$key] ? $t : $tin; $total = $this->plus($total,$this->pressureBox($record,$a['composition'],$temp,$volume($temp))); }
 		$total = $this->plus($total,$this->pressureBox($a['external'],$a['composition'],$t,$volume($t)));
