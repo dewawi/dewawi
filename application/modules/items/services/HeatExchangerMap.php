@@ -80,4 +80,27 @@ class Items_Service_HeatExchangerMap
 	{
 		return Items_Service_TechnicalJson::compareDecimal($value, $range->min) >= 0 && Items_Service_TechnicalJson::compareDecimal($value, $range->max) <= 0;
 	}
+
+	public function atFluidPoint(stdClass $record, string $sectionKey, string $saturation, string $inlet, string $mass, stdClass $fluid, string $operatingRole): array
+	{
+		$s = new Items_Service_TechnicalSchema(); if(!in_array($operatingRole, ['evaporator', 'condenser'], true)) throw new InvalidArgumentException('Invalid liquid operating role'); $record = $s->dataset($record); $fluid = $s->dataset($fluid); $d = $record->data;
+		if($record->dataset_type !== 'heat_exchanger_map' || $d->contract_version !== 3) throw new InvalidArgumentException('Coupled liquid map required');
+		(new Items_Service_FluidHydraulics())->sameFluid($d->fluid_ref, $fluid);
+		$sections = array_values(array_filter($d->sections, fn($v) => $v->section_key === $sectionKey)); if(count($sections) !== 1) throw new InvalidArgumentException('Unknown liquid section'); $section = clone $sections[0]; $section->pressure_drop_kPa = null;
+		$f = new Items_Service_FluidProperties(); $a = $f->state($fluid->data, $d->fluid_composition, $inlet);
+		$outlet = (float)$inlet + (float)$section->effectiveness * ((float)$saturation - (float)$inlet);
+		$delta = $outlet - (float)$inlet; if($delta === 0.0 || !is_finite($outlet) || (float)$mass <= 0 || !is_finite((float)$mass)) throw new DomainException('coupled_exchanger_numeric_range');
+		$enthalpy = $f->enthalpyDifference($fluid->data, $d->fluid_composition, $inlet, $f::decimal($outlet));
+		$capacity = (float)$mass * $enthalpy / $delta / 1000;
+		$flow = 3600 * (float)$mass / $a['density_kg_m3'];
+		if(!is_finite($capacity) || !is_finite($flow) || min($capacity,(float)$section->effectiveness*$capacity,$flow) <= 0) throw new DomainException('coupled_exchanger_numeric_range');
+		if(!$this->inside($inlet, $section->limits->secondary_inlet) || !$this->inside($f::decimal($flow), $section->limits->volume_flow)) throw new DomainException('coupled_exchanger_inlet_or_flow_limit');
+		// The D4 effectiveness law uses the D5 enthalpy secant, not a constant-cp approximation.
+		$prepared = ['status' => 'review_required', 'reasons' => $d->missing_evidence, 'section' => $section, 'role' => $operatingRole, 'inputs' => (object)['inlet_degC' => $inlet],
+			'capacity_rate_kW_K' => $capacity, 'conductance_kW_K' => (float)$section->effectiveness * $capacity, 'medium' => (object)['properties' => (object)['temperature_range' => (object)['min' => $fluid->data->temperatures_degC[0], 'max' => end($fluid->data->temperatures_degC)]]]];
+		$r = $this->atPoint($prepared, $saturation);
+		$r['map_revision'] = ['dataset_key' => $record->dataset_key, 'revision' => $record->revision]; $r['fluid_revision'] = $d->fluid_ref; $r['inlet_state'] = $a; $r['outlet_state'] = $f->state($fluid->data, $d->fluid_composition, $f::decimal($outlet));
+		$r['mass_flow_kg_s'] = (float)$mass; $r['inlet_volume_flow_m3_h'] = $flow; $r['enthalpy_difference_J_kg'] = $enthalpy;
+		$r['model_id'] = $d->model_id; $f->finite($r); return $r;
+	}
 }

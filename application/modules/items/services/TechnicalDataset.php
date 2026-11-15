@@ -346,11 +346,11 @@ class Items_Service_TechnicalDataset
 
 	private function hydraulicArticle(stdClass $r): bool
 	{
-		if($r->dataset_type === 'heat_exchanger_map' && $r->data->contract_version === 2) return true;
+		if($r->dataset_type === 'heat_exchanger_map' && $r->data->contract_version >= 2) return true;
 		if($r->dataset_type === 'component_spec') {
 			if(isset($r->data->specification->refrigerant_valve)) return true;
 			$ref = $r->data->specification->thermal_map_ref ?? null;
-			if($ref !== null && $this->recordOf($this->key('technicaldataset', $ref->dataset_key, $ref->revision))->data->contract_version === 2) return true;
+			if($ref !== null && $this->recordOf($this->key('technicaldataset', $ref->dataset_key, $ref->revision))->data->contract_version >= 2) return true;
 		}
 		return $r->dataset_type === 'pump_curve' || ($r->dataset_type === 'pressure_loss_map' && $r->data->role !== 'external') || ($r->dataset_type === 'component_spec' && (isset($r->data->specification->pressure_loss_ref) || isset($r->data->specification->curve_ref)));
 	}
@@ -360,12 +360,12 @@ class Items_Service_TechnicalDataset
 		$core = new Items_Service_FluidHydraulics();
 		$resolve = function($table, $key, $revision) { return $this->recordOf($this->key($table, $key, $revision)); };
 		$d = $record->data;
-		if($record->dataset_type === 'heat_exchanger_map' && $d->contract_version === 2) (new Items_Service_FluidProperties())->composition($core->resolve($resolve, $d->fluid_ref, 'fluid_properties')->data, $d->fluid_composition);
+		if($record->dataset_type === 'heat_exchanger_map' && $d->contract_version >= 2) (new Items_Service_FluidProperties())->composition($core->resolve($resolve, $d->fluid_ref, 'fluid_properties')->data, $d->fluid_composition);
 		if($record->dataset_type === 'heat_exchanger_map' && $d->contract_version === 1) foreach($d->media as $medium) if(isset($medium->fluid_ref, $medium->fluid_composition)) (new Items_Service_FluidProperties())->composition($core->resolve($resolve, $medium->fluid_ref, 'fluid_properties')->data, $medium->fluid_composition);
 		if($record->dataset_type === 'component_spec') {
 			foreach(['pressure_loss_ref', 'curve_ref', 'thermal_map_ref'] as $field) if(isset($d->specification->$field)) {
 				$ref = $d->specification->$field;
-				if($field === 'thermal_map_ref' && $this->recordOf($this->key('technicaldataset', $ref->dataset_key, $ref->revision))->data->contract_version !== 2) continue;
+				if($field === 'thermal_map_ref' && $this->recordOf($this->key('technicaldataset', $ref->dataset_key, $ref->revision))->data->contract_version < 2) continue;
 				$node = $this->plan[$this->key('technicaldataset', $ref->dataset_key, $ref->revision)];
 				$items = isset($node['existing']) ? (array)$this->verifyRow('technicaldataset', $node['existing'])->items : $node['items'];
 				$identity = (array)($items[$d->component_key] ?? []);
@@ -679,15 +679,26 @@ class Items_Service_TechnicalDataset
 
 	public function evaluateOperatingMode(int $id, int $revision, string $hash, stdClass $request, string $mode = 'technical'): array
 	{
+		return $this->operatingEvaluation($id, $revision, $hash, $request, $mode, false);
+	}
+
+	public function evaluateThermohydraulic(int $id, int $revision, string $hash, stdClass $request, string $mode = 'technical'): array
+	{
+		return $this->operatingEvaluation($id, $revision, $hash, $request, $mode, true);
+	}
+
+	private function operatingEvaluation(int $id, int $revision, string $hash, stdClass $request, string $mode, bool $coupled): array
+	{
 		if(!in_array($mode, ['technical', 'synthetic_reference'], true)) throw new InvalidArgumentException('Unknown operating evaluation mode');
 		$this->context('view'); if($mode === 'synthetic_reference') $this->context('import');
 		$this->schema->fields((object)['id' => $id, 'revision' => $revision, 'hash' => $hash], ['id' => 'int', 'revision' => 'int', 'hash' => 'hash']);
-		return $this->transaction(function() use ($id, $revision, $hash, $request, $mode) {
+		return $this->transaction(function() use ($id, $revision, $hash, $request, $mode, $coupled) {
 			extract($this->machineSnapshot($id, $revision, $hash), EXTR_SKIP);
 			$resolve = function($table, $key, $revision) use ($graph) { return $graph[$this->key($table, $key, $revision)]['payload']->record ?? throw new RuntimeException('Unpinned operating dependency'); };
 			$blocker = $blocked ? 'operating_dependency_unavailable' : ($mode === 'technical' ? 'released_real_operating_mode_model_not_available' : null);
 			if(($machine->record->data->configuration_version ?? 1) === 2 && $mode === 'synthetic_reference') foreach($graph as $node) if($node['table'] === 'technicaldataset' && ($node['payload']->record->import_context->production_import_allowed ?? null) !== false) $blocker = 'synthetic_operating_provenance_required';
-			$result = (new Items_Service_MachineOperatingMode())->evaluate($machine->record, $request, $resolve, $this->machineCompressor($graph, 'mathematical_reference', $blocker === null), $blocker);
+			$evaluator = $coupled ? new Items_Service_ThermohydraulicCircuit() : new Items_Service_MachineOperatingMode();
+			$result = $evaluator->evaluate($machine->record, $request, $resolve, $this->machineCompressor($graph, 'mathematical_reference', $blocker === null), $blocker);
 			$result['evaluation_mode'] = $mode; $result['dependencies'] = $provenance; $result['dependency_reasons'] = $reasons;
 			$result['machine'] = $this->identity('technicaldataset', $row) + ['article' => $machine->items->{$machine->record->data->machine_item_ref}];
 			return $result;

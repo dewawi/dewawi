@@ -327,7 +327,7 @@ class Items_Service_ThermalCircuit
 		return [$teError, $tcError];
 	}
 
-	private function polynomialBounds(stdClass $quantity, array $te, array $tc, bool $derivatives = true): array
+	public function polynomialBounds(stdClass $quantity, array $te, array $tc, bool $derivatives = true): array
 	{
 		$one = [1.0, 1.0]; $zero = [0.0, 0.0];
 		$te2 = $this->multiply($te, $te); $tc2 = $this->multiply($tc, $tc); $tet = $this->multiply($te, $tc);
@@ -348,9 +348,9 @@ class Items_Service_ThermalCircuit
 		return $result;
 	}
 
-	private function add(array $a, array $b): array { return $this->bound([$a[0] + $b[0], $a[1] + $b[1]]); }
-	private function multiply(array $a, array $b): array { return $this->bound([$a[0] * $b[0], $a[0] * $b[1], $a[1] * $b[0], $a[1] * $b[1]]); }
-	private function bound(array $values): array
+	public function add(array $a, array $b): array { return $this->bound([$a[0] + $b[0], $a[1] + $b[1]]); }
+	public function multiply(array $a, array $b): array { return $this->bound([$a[0] * $b[0], $a[0] * $b[1], $a[1] * $b[0], $a[1] * $b[1]]); }
+	public function bound(array $values): array
 	{
 		foreach($values as $value) if(!is_finite($value)) throw new OverflowException('thermal_numeric_out_of_range');
 		$lo = -$this->nextUp(-min($values)); $hi = $this->nextUp(max($values));

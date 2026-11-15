@@ -191,6 +191,7 @@ class Items_Service_TechnicalSchema
 
 	private function heatExchangerMap($data): stdClass
 	{
+		if(isset($data->contract_version) && (string)$data->contract_version === '3') return (new Items_Service_OperatingModeSchema())->coupledExchanger($data);
 		if(isset($data->contract_version) && (string)$data->contract_version === '2') return (new Items_Service_OperatingModeSchema())->exchanger($data);
 		$d = $this->fields($data, ['contract_version' => 'int', 'usage' => ['synthetic_test_only'], 'component_key' => 'key', 'model' => 'text', 'role' => ['evaporator', 'air_condenser', 'water_condenser'],
 			'exchanger_type' => ['plate', 'shell_tube', 'finned_coil'], 'refrigerant' => 'key', 'temperature_basis' => ['dew', 'bubble', 'midpoint', 'pure_saturation'],

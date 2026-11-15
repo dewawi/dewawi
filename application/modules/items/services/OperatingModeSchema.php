@@ -7,19 +7,27 @@ class Items_Service_OperatingModeSchema
 
 	public function model(stdClass $value): stdClass
 	{
-		$s = $this->schema;
+		$s = $this->schema; $coupled = (string)($value->contract_version ?? '') === '2';
 		$d = $s->fields($value, ['contract_version' => 'int', 'usage' => ['synthetic_test_only'], 'mode' => Items_Service_TechnicalSchema::OPERATING_MODES, 'circuit_key' => 'key',
 			'topology_kind' => ['evaporator_condenser_v1', 'desuperheater_before_condenser_v1'], 'enabled_components' => 'list:key', 'isolated_components' => 'list:key', 'stage_keys' => 'list:key',
 			'evaporator' => 'object', 'condenser' => 'object', 'recovery' => '?object', 'expansion' => 'object', 'valve_states' => 'list:object', 'energy_boundary_ref' => 'ref',
-			'pipe_model' => ['synthetic_zero_refrigerant_pipe_pressure_heat_loss_v1'], 'inactive_compressor_model' => ['synthetic_no_refrigerant_flow_v1'], 'points' => 'list:object',
+			'pipe_model' => ['synthetic_zero_refrigerant_pipe_pressure_heat_loss_v1'], 'inactive_compressor_model' => ['synthetic_no_refrigerant_flow_v1']] + ($coupled ? ['coupling' => 'object'] : ['points' => 'list:object']) + [
 			'numerics' => 'object', 'missing_evidence' => 'list:key']);
-		if($d->contract_version !== 1 || !$d->stage_keys || !$d->points) throw new InvalidArgumentException('Unsupported or incomplete operating model');
+		if(!in_array($d->contract_version, [1, 2], true) || !$d->stage_keys || (!$coupled && !$d->points)) throw new InvalidArgumentException('Unsupported or incomplete operating model');
 		foreach(['enabled_components', 'isolated_components', 'stage_keys'] as $key) $this->unique($d->$key);
 		if(array_intersect($d->enabled_components, $d->isolated_components)) throw new InvalidArgumentException('Contradictory component states');
 		foreach(['evaporator', 'condenser', 'recovery'] as $side) if($d->$side !== null) $d->$side = $s->fields($d->$side, ['instance_key' => 'key', 'section_key' => 'key', 'inlet_port' => 'key', 'outlet_port' => 'key', 'loop_key' => 'key']);
 		if(($d->mode === 'partial_heat_recovery') !== ($d->recovery !== null) || ($d->mode === 'partial_heat_recovery') !== ($d->topology_kind === 'desuperheater_before_condenser_v1')) throw new InvalidArgumentException('Recovery topology mismatch');
 		$d->expansion = $s->fields($d->expansion, ['model_id' => ['synthetic_isenthalpic_no_external_heat_v1'], 'inlet_port' => 'key', 'outlet_port' => 'key']);
 		$seen = []; foreach($d->valve_states as &$state) { $state = $s->fields($state, ['instance_key' => 'key', 'state_key' => 'key']); if(isset($seen[$state->instance_key])) throw new InvalidArgumentException('Conflicting valve states'); $seen[$state->instance_key] = true; }
+		if($coupled) {
+			if(!in_array($d->mode, ['cooling', 'heat_pump'], true) || $d->recovery !== null) throw new InvalidArgumentException('Recovery coupling is not supported');
+			$d->coupling = $s->fields($d->coupling, ['model_id' => ['synthetic_constant_compressor_two_liquid_loops_v1'], 'secondary_heat_boundary' => ['synthetic_pump_and_dissipation_heat_removed_by_external_thermostats_v1'], 'source_locator' => 'text']);
+			$d->numerics = $s->fields($d->numerics, ['heat_tolerance_kW' => 'positive', 'pressure_tolerance_Pa' => 'positive', 'temperature_tolerance_K' => 'positive', 'max_iterations' => 'int']);
+			foreach(['heat_tolerance_kW', 'pressure_tolerance_Pa', 'temperature_tolerance_K'] as $key) if((float)$d->numerics->$key < 1e-9 || (float)$d->numerics->$key > 1e-4) throw new InvalidArgumentException('Unsupported coupled tolerance');
+			if($d->numerics->max_iterations > 80) throw new InvalidArgumentException('Coupled iteration budget exceeded');
+			return $d;
+		}
 		$seen = [];
 		foreach($d->points as &$point) {
 			$point = $s->fields($point, ['point_key' => 'key', 'stage_key' => 'key', 'Te_degC' => 'number', 'Tc_degC' => 'number', 'power_boundary' => 'object']);
@@ -60,6 +68,21 @@ class Items_Service_OperatingModeSchema
 				foreach(['inlet_state', 'outlet_state'] as $side) if($point->$side !== null) $point->$side = $s->fields($point->$side, ['temperature_degC' => 'number', 'pressure_kPa' => 'positive', 'enthalpy_kJ_kg' => 'number', 'phase' => ['superheated_vapor', 'liquid', 'two_phase']]);
 				$point->secondary = $s->fields($point->secondary, ['inlet_degC' => 'number', 'outlet_degC' => 'number', 'volume_flow_m3_h' => 'positive']);
 			}
+		}
+		return $d;
+	}
+
+	public function coupledExchanger(stdClass $value): stdClass
+	{
+		$s = $this->schema;
+		$d = $s->fields($value, ['contract_version' => 'int', 'usage' => ['synthetic_test_only'], 'component_key' => 'key', 'model' => 'text', 'role' => ['evaporator', 'water_condenser'], 'exchanger_type' => ['plate', 'shell_tube'], 'refrigerant' => 'key', 'temperature_basis' => ['pure_saturation'], 'model_id' => ['synthetic_fluid_enthalpy_effectiveness_v1'], 'measurement_boundary' => ['secondary_stream_only_no_external_heat_v1'], 'refrigerant_sections_are_isolated' => 'bool', 'fluid_ref' => 'ref', 'fluid_composition' => 'object', 'sections' => 'list:object', 'missing_evidence' => 'list:key']);
+		if($d->contract_version !== 3 || count($d->sections) !== 1) throw new InvalidArgumentException('Coupled liquid exchanger requires one section');
+		$d->fluid_composition = $this->composition($d->fluid_composition);
+		foreach($d->sections as &$section) {
+			$section = $s->fields($section, ['section_key' => 'key', 'effectiveness' => 'positive', 'limits' => 'object']);
+			if((float)$section->effectiveness >= 1) throw new InvalidArgumentException('Invalid coupled effectiveness');
+			$section->limits = $s->fields($section->limits, ['saturation_temperature' => 'object', 'secondary_inlet' => 'object', 'secondary_outlet' => 'object', 'volume_flow' => 'object']);
+			foreach($section->limits as $key => &$range) $range = $s->thermalRange($range, $key === 'volume_flow' ? 'm3/h' : 'degC', $key === 'volume_flow');
 		}
 		return $d;
 	}
@@ -128,7 +151,7 @@ class Items_Service_OperatingModeSchema
 			if(isset($usedLoops[$a->loop_key])) throw new InvalidArgumentException('Serial thermally coupled operating exchangers are not supported'); $usedLoops[$a->loop_key] = true;
 			if(isset($spec->specification->thermal_map_ref)) {
 				$map = $h->resolve($resolve, $spec->specification->thermal_map_ref, 'heat_exchanger_map'); $this->schema->exchangerBinding($spec, $map->data);
-				if($map->data->contract_version === 2) {
+				if($map->data->contract_version >= 2) {
 					if($loops[0]->fluid_dataset === null) throw new InvalidArgumentException('Operating liquid revision required');
 					$h->sameFluid($map->data->fluid_ref, $h->resolve($resolve, $loops[0]->fluid_dataset, 'fluid_properties'));
 				}
@@ -153,7 +176,8 @@ class Items_Service_OperatingModeSchema
 		if($model->expansion->inlet_port === $model->expansion->outlet_port) throw new InvalidArgumentException('Expansion flow direction missing');
 		$stages = []; foreach($machine->stages as $stage) $stages[$stage->stage_key] = $stage;
 		foreach($model->stage_keys as $key) if(!isset($stages[$key]) || array_diff($stages[$key]->active_compressors, $model->enabled_components)) throw new InvalidArgumentException('Stage not supported by operating topology');
-		foreach($model->points as $point) {
+		if($model->contract_version === 2) foreach($model->stage_keys as $key) $this->topology($machine, $model, $specs, $stages[$key]->active_compressors);
+		foreach($model->points ?? [] as $point) {
 			$expected = array_values(array_diff(array_merge(array_keys($components), [$exp->device_key]), $stages[$point->stage_key]->active_compressors)); $actual = array_map(fn($p) => $p->instance_key, $point->power_boundary->inputs); sort($actual); sort($expected);
 			if($actual !== $expected) throw new InvalidArgumentException('Electrical boundary must cover auxiliary and inactive inputs explicitly');
 			$this->topology($machine, $model, $specs, $stages[$point->stage_key]->active_compressors);

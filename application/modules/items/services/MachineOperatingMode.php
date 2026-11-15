@@ -23,7 +23,7 @@ class Items_Service_MachineOperatingMode
 		try {
 			$contracts = (new Items_Service_OperatingModeSchema())->machineBinding($machine->data, $resolve);
 			if(!isset($contracts[$input->operating_mode])) throw new DomainException('operating_mode_not_available');
-			$model = $contracts[$input->operating_mode]; $d = $model->data; $result['model'] = $model;
+			$model = $contracts[$input->operating_mode]; if($model->data->contract_version !== 1) throw new DomainException('coupled_model_requires_thermohydraulic_evaluator'); $d = $model->data; $result['model'] = $model;
 			if(!$this->synthetic($machine) || !$this->synthetic($model)) throw new DomainException('real_use_of_synthetic_operating_model_forbidden');
 			$expected = []; foreach($d->valve_states as $state) $expected[$state->instance_key] = $state->state_key; ksort($expected); ksort($states);
 			if($expected !== $states) throw new DomainException('requested_valve_state_mismatch');

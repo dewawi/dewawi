@@ -132,7 +132,7 @@ class Items_Service_FluidHydraulics
 		return $result;
 	}
 
-	private function loop(stdClass $machine, stdClass $loop, stdClass $input, callable $resolve): array
+	public function loop(stdClass $machine, stdClass $loop, stdClass $input, callable $resolve): array
 	{
 		if($loop->fluid_dataset===null || $loop->pressure_loss_dataset===null) throw new DomainException('fluid_or_hydraulic_path_missing');
 		$f=new Items_Service_FluidProperties();$s=new Items_Service_TechnicalSchema();$fluid=$this->resolve($resolve,$loop->fluid_dataset,'fluid_properties'); $path=$this->resolve($resolve,$loop->pressure_loss_dataset,'hydraulic_path'); $this->pathBinding($machine,$loop,$path);
