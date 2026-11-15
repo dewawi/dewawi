@@ -91,6 +91,27 @@ class Items_Service_TechnicalJson
 		return $result;
 	}
 
+	public static function addNonnegativeDecimals(string $a, string $b): string
+	{
+		$parts = [];
+		foreach([$a, $b] as $value) {
+			$value = self::decimal($value);
+			if(str_starts_with($value, '-')) throw new InvalidArgumentException('Nonnegative decimal sum required');
+			[$mantissa, $exponent] = array_pad(explode('e', $value), 2, '0');
+			$digits = str_replace('.', '', $mantissa); $parts[] = [$digits, (int)$exponent - strlen($digits) + 1];
+		}
+		$scale = min($parts[0][1], $parts[1][1]);
+		$x = $parts[0][0].str_repeat('0', $parts[0][1] - $scale); $y = $parts[1][0].str_repeat('0', $parts[1][1] - $scale);
+		$length = max(strlen($x), strlen($y)); $x = str_pad($x, $length, '0', STR_PAD_LEFT); $y = str_pad($y, $length, '0', STR_PAD_LEFT);
+		$sum = ''; $carry = 0;
+		for($i = $length - 1; $i >= 0; $i--) { $digit = (int)$x[$i] + (int)$y[$i] + $carry; $sum = ($digit % 10).$sum; $carry = intdiv($digit, 10); }
+		if($carry) $sum = $carry.$sum;
+		$sum = ltrim($sum, '0');
+		if($sum === '') return '0';
+		$exponent = $scale + strlen($sum) - 1; $sum = rtrim($sum, '0');
+		return self::decimal($sum[0].(strlen($sum) > 1 ? '.'.substr($sum, 1) : '').'e'.$exponent);
+	}
+
 	public static function compareDecimal(string $a, string $b): int
 	{
 		$a = self::decimal($a); $b = self::decimal($b);

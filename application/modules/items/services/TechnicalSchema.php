@@ -219,6 +219,7 @@ class Items_Service_TechnicalSchema
 
 	private function thermalBalanceModel($data): stdClass
 	{
+		if(isset($data->contract_version) && (string)$data->contract_version === '2') return $this->parallelThermalModel($data);
 		$d = $this->fields($data, ['contract_version' => 'int', 'usage' => ['synthetic_test_only'], 'circuit_key' => 'key', 'energy_balance' => 'object', 'search_bounds' => 'object', 'numerics' => 'object', 'missing_evidence' => 'list:key']);
 		if($d->contract_version !== 1) throw new InvalidArgumentException('Unsupported thermal balance contract');
 		$d->energy_balance = $this->fields($d->energy_balance, ['model_id' => ['synthetic_hermetic_no_external_losses_v1'], 'boundary' => ['evaporator_plus_electrical_input_to_condenser_v1'], 'motor_heat_to_refrigerant_fraction' => 'number', 'external_heat_loss_kW' => 'number', 'transient_storage_kW' => 'number', 'other_heat_input_kW' => 'number']);
@@ -234,6 +235,93 @@ class Items_Service_TechnicalSchema
 		foreach(['heat_tolerance_kW', 'temperature_tolerance_K'] as $key) if((float)$d->numerics->$key < 1e-9 || (float)$d->numerics->$key > 1e-3) throw new InvalidArgumentException('Unsupported thermal tolerance');
 		foreach(['max_outer_iterations', 'max_inner_iterations'] as $key) if($d->numerics->$key > 80) throw new InvalidArgumentException('Thermal iteration budget exceeds contract');
 		return $d;
+	}
+
+	private function parallelThermalModel($data): stdClass
+	{
+		$d = $this->fields($data, ['contract_version' => 'int', 'usage' => ['synthetic_test_only'], 'model_id' => ['synthetic_fixed_inlet_parallel_sections_v1'], 'circuits' => 'list:object', 'secondary_groups' => 'list:object',
+			'inactive_section_model_id' => ['synthetic_zero_heat_pass_through_v1'], 'variables' => 'object', 'numerics' => 'object', 'missing_evidence' => 'list:key']);
+		if($d->contract_version !== 2 || !$d->circuits || !$d->secondary_groups) throw new InvalidArgumentException('Incomplete parallel thermal model');
+		$d->variables = $this->fields($d->variables, ['temperature' => ['degC'], 'volume_flow' => ['m3/h'], 'heat_flow' => ['kW'], 'capacity_rate' => ['kW/K']]);
+		$d->numerics = $this->fields($d->numerics, ['heat_tolerance_kW' => 'positive', 'temperature_tolerance_K' => 'positive']);
+		foreach($d->numerics as $tolerance) if((float)$tolerance < 1e-9 || (float)$tolerance > 1e-3) throw new InvalidArgumentException('Unsupported parallel thermal tolerance');
+		$seen = [];
+		foreach($d->circuits as &$circuit) {
+			$circuit = $this->fields($circuit, ['circuit_key' => 'key', 'circuit_model_ref' => 'ref']);
+			if(isset($seen[$circuit->circuit_key])) throw new InvalidArgumentException('Duplicate thermal circuit assignment');
+			$seen[$circuit->circuit_key] = true;
+		}
+		unset($circuit); $seen = [];
+		foreach($d->secondary_groups as &$group) {
+			$group = $this->fields($group, ['group_key' => 'key', 'topology_kind' => ['single_section_boundary_v1', 'parallel_sections_common_inlet_v1'], 'mixing_model_id' => ['synthetic_constant_properties_parallel_v1'],
+				'side' => ['evaporator', 'condenser'], 'instance_key' => 'key', 'hydraulic_loop_key' => 'key', 'inlet_port' => 'key', 'outlet_port' => 'key', 'medium_key' => 'key', 'total_volume_flow_m3_h' => '?positive', 'branches' => 'list:object', 'limits' => 'object']);
+			if(isset($seen[$group->group_key]) || count($group->branches) !== ($group->topology_kind === 'single_section_boundary_v1' ? 1 : 2)) throw new InvalidArgumentException('Invalid parallel secondary group');
+			$seen[$group->group_key] = true;
+			$group->limits = $this->fields($group->limits, ['secondary_inlet' => 'object', 'mixed_outlet' => 'object', 'total_volume_flow' => 'object']);
+			foreach(['secondary_inlet', 'mixed_outlet'] as $key) $group->limits->$key = $this->thermalRange($group->limits->$key, 'degC');
+			$group->limits->total_volume_flow = $this->thermalRange($group->limits->total_volume_flow, 'm3/h', true);
+			$sum = '0'; $complete = $group->total_volume_flow_m3_h !== null; $sections = [];
+			foreach($group->branches as &$branch) {
+				$branch = $this->fields($branch, ['circuit_key' => 'key', 'section_key' => 'key', 'volume_flow_m3_h' => '?positive']);
+				if(isset($sections[$branch->section_key])) throw new InvalidArgumentException('Duplicate secondary section');
+				$sections[$branch->section_key] = true;
+				if($branch->volume_flow_m3_h === null) $complete = false;
+				else $sum = Items_Service_TechnicalJson::addNonnegativeDecimals($sum, $branch->volume_flow_m3_h);
+			}
+			unset($branch);
+			if($complete && $sum !== $group->total_volume_flow_m3_h) throw new InvalidArgumentException('Secondary branch flows do not equal the declared total');
+		}
+		return $d;
+	}
+
+	public function exchangerBinding(stdClass $data, stdClass $map): void
+	{
+		foreach(['component_key', 'model', 'role', 'refrigerant'] as $key) if($map->$key !== $data->$key) throw new InvalidArgumentException('Exchanger map component binding mismatch');
+		$sections = array_map(fn($section) => $section->section_key, $map->sections); $expected = $data->specification->sections;
+		sort($sections); sort($expected);
+		if($sections !== $expected || $map->exchanger_type !== $data->specification->exchanger_type) throw new InvalidArgumentException('Exchanger map section or construction mismatch');
+	}
+
+	public function secondarySectionBinding(stdClass $group, array $sections): void
+	{
+		$expected = array_map(fn($branch) => $branch->section_key, $group->branches); sort($expected); sort($sections);
+		if($sections !== $expected) throw new InvalidArgumentException('Secondary map section coverage mismatch');
+	}
+
+	public function thermalMachineBinding(stdClass $data, stdClass $model): void
+	{
+		$circuits = []; $components = []; $loops = [];
+		foreach($data->circuits as $circuit) $circuits[$circuit->circuit_key] = $circuit;
+		if($model->contract_version === 1) {
+			if(!isset($circuits[$model->circuit_key])) throw new InvalidArgumentException('Thermal model circuit binding mismatch');
+			return;
+		}
+		$actual = array_map(fn($c) => $c->circuit_key, $model->circuits); $expected = array_keys($circuits); sort($actual); sort($expected);
+		if($actual !== $expected) throw new InvalidArgumentException('Thermal model circuit coverage mismatch');
+		foreach($data->components as $component) $components[$component->instance_key] = $component;
+		foreach($data->hydraulic_loops as $loop) $loops[$loop->loop_key] = $loop;
+		$assignments = $devices = $usedLoops = [];
+		foreach($model->secondary_groups as $group) {
+			$component = $components[$group->instance_key] ?? null; $loop = $loops[$group->hydraulic_loop_key] ?? null;
+			$role = $group->side === 'evaporator' ? 'evaporator' : 'water_condenser';
+			if(!$component || $component->role !== $role || !$loop || isset($devices[$group->instance_key]) || isset($usedLoops[$group->hydraulic_loop_key])) throw new InvalidArgumentException('Unproven independent secondary group');
+			$devices[$group->instance_key] = $usedLoops[$group->hydraulic_loop_key] = true;
+			foreach(['inlet_port' => 'liquid_in', 'outlet_port' => 'liquid_out'] as $key => $type) {
+				$prefix = $group->instance_key.'.'; $port = substr($group->$key, strlen($prefix));
+				if(!str_starts_with($group->$key, $prefix) || ($component->ports->$port ?? null) !== $type || !in_array($group->$key, array_merge(...$loop->edges), true)) throw new InvalidArgumentException('Secondary boundary port mismatch');
+			}
+			$users = [];
+			foreach($circuits as $key => $circuit) if(($group->side === 'evaporator' ? $circuit->evaporator_section->instance_key : $circuit->condenser_instance) === $group->instance_key) $users[] = $key;
+			$declared = array_map(fn($b) => $b->circuit_key, $group->branches); sort($declared); sort($users);
+			if($declared !== $users) throw new InvalidArgumentException('Secondary section user coverage mismatch');
+			foreach($group->branches as $branch) {
+				$circuit = $circuits[$branch->circuit_key] ?? null; $assignment = $branch->circuit_key.':'.$group->side;
+				$section = $group->side === 'evaporator' ? ($circuit->evaporator_section->section_key ?? null) : ($circuit->condenser_section_key ?? $branch->section_key);
+				if(!$circuit || isset($assignments[$assignment]) || $section !== $branch->section_key) throw new InvalidArgumentException('Thermal section assignment mismatch');
+				$assignments[$assignment] = true;
+			}
+		}
+		if(count($assignments) !== count($circuits) * 2) throw new InvalidArgumentException('Incomplete thermal secondary assignment');
 	}
 
 	public function reference($point): stdClass
@@ -283,7 +371,7 @@ class Items_Service_TechnicalSchema
 		}
 		$circuits = $assigned = $usedPorts = $users = [];
 		foreach($d->circuits as &$circuit) {
-			$circuit = $this->fields($circuit, ['circuit_key' => 'key', 'refrigerant' => 'key', 'compressor_instances' => 'list:key', 'topology_kind' => ['parallel_compressors_single_evaporator_single_condenser_v1'], 'refrigerant_groups' => 'list:object', 'expansion_device' => 'object', 'evaporator_section' => 'object', 'condenser_instance' => 'key', 'control_dataset' => '?ref']);
+			$circuit = $this->fields($circuit, ['circuit_key' => 'key', 'refrigerant' => 'key', 'compressor_instances' => 'list:key', 'topology_kind' => ['parallel_compressors_single_evaporator_single_condenser_v1'], 'refrigerant_groups' => 'list:object', 'expansion_device' => 'object', 'evaporator_section' => 'object', 'condenser_instance' => 'key', 'control_dataset' => '?ref'], ['condenser_section_key' => 'key']);
 			$key = $circuit->circuit_key;
 			if(isset($circuits[$key]) || $circuit->refrigerant !== $d->refrigerant || !$circuit->compressor_instances) throw new InvalidArgumentException('Invalid refrigerant circuit');
 			$circuits[$key] = $circuit;
@@ -291,9 +379,10 @@ class Items_Service_TechnicalSchema
 			$evap = $circuit->evaporator_section->instance_key;
 			$section = $circuit->evaporator_section->section_key;
 			$cond = $circuit->condenser_instance;
+			$condPort = $cond.'.'.(isset($circuit->condenser_section_key) ? $circuit->condenser_section_key.'_' : '');
 			if(($instances[$evap]->role ?? '') !== 'evaporator' || ($instances[$cond]->role ?? '') !== ($d->cooling_kind === 'air' ? 'air_condenser' : 'water_condenser')) throw new InvalidArgumentException('Invalid circuit heat exchanger role');
 			$users[$evap][] = $users[$cond][] = $key;
-			foreach([$evap.'.'.$section.'_in' => 'refrigerant_in', $evap.'.'.$section.'_out' => 'refrigerant_out', $cond.'.in' => 'refrigerant_in', $cond.'.out' => 'refrigerant_out'] as $port => $type) if(($ports[$port] ?? null) !== $type) throw new InvalidArgumentException('Heat exchanger port direction mismatch');
+			foreach([$evap.'.'.$section.'_in' => 'refrigerant_in', $evap.'.'.$section.'_out' => 'refrigerant_out', $condPort.'in' => 'refrigerant_in', $condPort.'out' => 'refrigerant_out'] as $port => $type) if(($ports[$port] ?? null) !== $type) throw new InvalidArgumentException('Heat exchanger port direction mismatch');
 			$circuit->expansion_device = $this->fields($circuit->expansion_device, ['device_key' => 'key', 'kind' => ['unconfirmed', 'electronic', 'thermostatic', 'fixed'], 'component_key' => '?key', 'profile_key' => '?key', 'ports' => 'object'], ['profile_revision' => 'int']);
 			$exp = $circuit->expansion_device;
 			if(isset($instances[$exp->device_key]) || isset($assigned[$exp->device_key])) throw new InvalidArgumentException('Duplicate expansion device');
@@ -301,7 +390,7 @@ class Items_Service_TechnicalSchema
 			$exp->ports = $this->fields($exp->ports, ['in' => ['refrigerant_in'], 'out' => ['refrigerant_out']]);
 			foreach($exp->ports as $port => $type) $ports[$exp->device_key.'.'.$port] = $type;
 			if(($exp->profile_key === null) !== ($exp->component_key === null) || ($exp->profile_key !== null && !isset($exp->profile_revision))) throw new InvalidArgumentException('Incomplete expansion profile reference');
-			$expected = ['suction' => [$evap.'.'.$section.'_out'], 'discharge' => [$cond.'.in'], 'liquid' => [$cond.'.out', $exp->device_key.'.in'], 'expanded' => [$exp->device_key.'.out', $evap.'.'.$section.'_in']];
+			$expected = ['suction' => [$evap.'.'.$section.'_out'], 'discharge' => [$condPort.'in'], 'liquid' => [$condPort.'out', $exp->device_key.'.in'], 'expanded' => [$exp->device_key.'.out', $evap.'.'.$section.'_in']];
 			foreach($circuit->compressor_instances as $compressor) {
 				if(($instances[$compressor]->role ?? '') !== 'compressor' || isset($assigned[$compressor])) throw new InvalidArgumentException('Compressor must belong to exactly one circuit');
 				if(($ports[$compressor.'.suction'] ?? null) !== 'refrigerant_in' || ($ports[$compressor.'.discharge'] ?? null) !== 'refrigerant_out') throw new InvalidArgumentException('Compressor port direction mismatch');
@@ -413,7 +502,7 @@ class Items_Service_TechnicalSchema
 				sort($expected); sort($actual);
 				if($actual !== $expected || count($actual) < 2) throw new InvalidArgumentException('Shared component users mismatch');
 			}
-			if($instances[$key]->role === 'evaporator' && count($users[$key] ?? []) > 1 && ($component->refrigerant_sections_are_isolated ?? false) !== true) throw new InvalidArgumentException('Shared evaporator sections must be isolated');
+			if(in_array($instances[$key]->role, ['evaporator', 'air_condenser', 'water_condenser'], true) && count($users[$key] ?? []) > 1 && ($component->refrigerant_sections_are_isolated ?? false) !== true) throw new InvalidArgumentException('Shared exchanger sections must be isolated');
 			if(isset($component->hydraulic_loop_key) && !isset($loops[$component->hydraulic_loop_key])) throw new InvalidArgumentException('Unknown shared hydraulic loop');
 			if(isset($component->air_path_key) && !isset($airPaths[$component->air_path_key])) throw new InvalidArgumentException('Unknown shared air path');
 			$shared[$key] = true;

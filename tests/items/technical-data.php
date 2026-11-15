@@ -343,3 +343,4 @@ echo "PASS: 54 D2B matrix cases covered; $checks assertions, isolated fresh inst
 require __DIR__.'/compressor-polynomial-db.php';
 require __DIR__.'/machine-stage-db.php';
 require __DIR__.'/thermal-circuit-db.php';
+require __DIR__.'/thermal-machine-db.php';

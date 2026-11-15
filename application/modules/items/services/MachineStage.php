@@ -7,6 +7,16 @@ class Items_Service_MachineStage
 	// The callback supplies D3 results from an already authorized, pinned dependency graph.
 	public function evaluate(stdClass $record, stdClass $request, callable $compressor): array
 	{
+		return $this->evaluateSelected($record, $request, $compressor, null);
+	}
+
+	public function evaluateCircuit(stdClass $record, string $circuitKey, stdClass $request, callable $compressor): array
+	{
+		return $this->evaluateSelected($record, $request, $compressor, $circuitKey);
+	}
+
+	private function evaluateSelected(stdClass $record, stdClass $request, callable $compressor, ?string $circuitKey): array
+	{
 		$schema = new Items_Service_TechnicalSchema();
 		$record = $schema->dataset($record);
 		if($record->dataset_type !== 'machine_configuration') throw new InvalidArgumentException('A machine configuration is required');
@@ -21,11 +31,13 @@ class Items_Service_MachineStage
 			if(isset($points[$entry->circuit_key])) throw new InvalidArgumentException('Duplicate circuit operating point');
 			$points[$entry->circuit_key] = (new Items_Service_CompressorPolynomial())->point($entry->point);
 		}
-		$expected = array_map(fn($c) => $c->circuit_key, $data->circuits);
+		$selectedCircuits = array_values(array_filter($data->circuits, fn($c) => $circuitKey === null || $c->circuit_key === $circuitKey));
+		if(!$selectedCircuits) throw new InvalidArgumentException('Machine circuit unavailable');
+		$expected = array_map(fn($c) => $c->circuit_key, $selectedCircuits);
 		$actual = array_keys($points); sort($actual); sort($expected);
 		if($expected !== $actual) throw new InvalidArgumentException('Explicit operating points required for every circuit');
 		$contexts = (array)($input->compressor_contexts ?? new stdClass());
-		if(array_diff(array_keys($contexts), $stage->active_compressors)) throw new InvalidArgumentException('Operating context requires an active compressor instance');
+		if(array_diff(array_keys($contexts), array_intersect($stage->active_compressors, array_merge(...array_map(fn($c) => $c->compressor_instances, $selectedCircuits))))) throw new InvalidArgumentException('Operating context requires an active compressor instance');
 		foreach($contexts as $context) if(!$context instanceof stdClass) throw new InvalidArgumentException('Invalid compressor operating context');
 		$inventory = []; $owners = [];
 		foreach($data->circuits as $circuit) foreach($circuit->compressor_instances as $key) $owners[$key] = $circuit->circuit_key;
@@ -35,14 +47,15 @@ class Items_Service_MachineStage
 		foreach($data->components as $component) {
 			$inventory[$component->instance_key] = $component;
 			if($component->role !== 'compressor') continue;
-			$key = $component->instance_key; $circuitKey = $owners[$key];
+			$key = $component->instance_key; $ownerKey = $owners[$key];
+			if($circuitKey !== null && $circuitKey !== $ownerKey) continue;
 			$active = in_array($key, $stage->active_compressors, true);
-			$evaluation = $active ? $compressor($component, $points[$circuitKey], $contexts[$key] ?? null) : null;
-			$instances[$key] = ['instance_key' => $key, 'circuit_key' => $circuitKey, 'active' => $active, 'profile_key' => $component->profile_key, 'profile_revision' => $component->profile_revision, 'evaluation' => $evaluation];
+			$evaluation = $active ? $compressor($component, $points[$ownerKey], $contexts[$key] ?? null) : null;
+			$instances[$key] = ['instance_key' => $key, 'circuit_key' => $ownerKey, 'active' => $active, 'profile_key' => $component->profile_key, 'profile_revision' => $component->profile_revision, 'evaluation' => $evaluation];
 			if($active) foreach($evaluation['reasons'] as $reason) $reasons[] = $key.':'.$reason;
 		}
 		$violations = [];
-		foreach($data->circuits as $circuit) {
+		foreach($selectedCircuits as $circuit) {
 			$active = array_values(array_filter($circuit->compressor_instances, fn($key) => $instances[$key]['active']));
 			$evaluations = array_map(fn($key) => $instances[$key]['evaluation'], $active);
 			$missing = ['heat_exchanger_performance_missing', 'expansion_system_evidence_missing'];
@@ -62,7 +75,7 @@ class Items_Service_MachineStage
 		$sums = $this->aggregate(array_column($active, 'evaluation'));
 		foreach($circuits as $key => $circuit) foreach($circuit['compressor_sums']['reasons'] as $reason) $reasons[] = $key.':'.$reason;
 		return ['result_version' => 1, 'calculation_version' => self::VERSION, 'compressor_calculation_version' => Items_Service_CompressorPolynomial::VERSION,
-			'scope' => 'selected_stage_compressor_contributions_only', 'status' => $violations ? 'unsuitable' : 'review_required', 'eligible' => false,
+			'scope' => $circuitKey === null ? 'selected_stage_compressor_contributions_only' : 'selected_circuit_compressor_contributions_only', 'status' => $violations ? 'unsuitable' : 'review_required', 'eligible' => false,
 			'original_request' => json_decode(json_encode($request, JSON_THROW_ON_ERROR), false, 512, JSON_THROW_ON_ERROR), 'operating_mode' => $input->operating_mode, 'stage_key' => $stage->stage_key, 'stage_release_status' => $stage->release_status,
 			'components' => $inventory, 'physical_component_count' => count($inventory), 'shared_components' => $data->shared_components,
 			'compressors' => $instances, 'circuits' => $circuits, 'stage_compressor_sums' => $sums,

@@ -66,6 +66,15 @@ class Items_Service_HeatExchangerMap
 			'secondary_delta_T_K' => $delta, 'approach_K' => $evaporating ? $outlet - $sat : $sat - $outlet]);
 	}
 
+	public function parked(array $prepared): array
+	{
+		$result = ['calculation_version' => self::VERSION, 'model_id' => 'synthetic_zero_heat_pass_through_v1', 'scope' => 'synthetic_parked_section_only', 'eligible' => false, 'status' => 'review_required', 'mathematical_status' => 'not_available',
+			'heat_flow_kW' => null, 'secondary_outlet_degC' => null, 'secondary_delta_T_K' => null, 'saturation_degC' => null, 'approach_K' => null, 'reasons' => $prepared['reasons']];
+		if($prepared['conductance_kW_K'] === null) return $result;
+		if(!$this->inside($prepared['inputs']->inlet_degC, $prepared['section']->limits->secondary_outlet)) { $result['status'] = 'unsuitable'; $result['reasons'][] = 'parked_outlet_outside_map'; return $result; }
+		return array_replace($result, ['mathematical_status' => 'calculated', 'heat_flow_kW' => 0.0, 'secondary_outlet_degC' => (float)$prepared['inputs']->inlet_degC, 'secondary_delta_T_K' => 0.0]);
+	}
+
 	public function inside(string $value, stdClass $range): bool
 	{
 		return Items_Service_TechnicalJson::compareDecimal($value, $range->min) >= 0 && Items_Service_TechnicalJson::compareDecimal($value, $range->max) <= 0;

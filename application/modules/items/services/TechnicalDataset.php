@@ -209,7 +209,7 @@ class Items_Service_TechnicalDataset
 	{
 		if($value instanceof stdClass && isset($value->dataset_key, $value->revision) && count(get_object_vars($value)) === 2) {
 			$record = $this->recordOf($this->key('technicaldataset', $value->dataset_key, $value->revision));
-			$required = ['family_ref' => 'machine_family', 'polynomial_ref' => 'compressor_polynomial', 'effect_dataset_ref' => 'component_spec', 'thermal_map_ref' => 'heat_exchanger_map', 'thermal_model_ref' => 'thermal_balance_model'];
+			$required = ['family_ref' => 'machine_family', 'polynomial_ref' => 'compressor_polynomial', 'effect_dataset_ref' => 'component_spec', 'thermal_map_ref' => 'heat_exchanger_map', 'thermal_model_ref' => 'thermal_balance_model', 'circuit_model_ref' => 'thermal_balance_model'];
 			if(isset($required[$field]) && ($record->dataset_type !== $required[$field] || ($field === 'effect_dataset_ref' && ($record->data->role ?? '') !== 'technical_option'))) throw new InvalidArgumentException('Technical reference type mismatch');
 			if(!isset($required[$field]) && $field !== 'dataset_ref') throw new InvalidArgumentException('Referenced map schema is not implemented in D2B');
 			if($field === 'dataset_ref' && !in_array($record->dataset_type, ['compressor_polynomial', 'machine_configuration', 'component_spec'], true)) throw new InvalidArgumentException('Invalid reference-point target');
@@ -297,7 +297,11 @@ class Items_Service_TechnicalDataset
 		if(isset($data->thermal_model_ref)) {
 			$ref = $data->thermal_model_ref;
 			$model = $this->recordOf($this->key('technicaldataset', $ref->dataset_key, $ref->revision));
-			if(!in_array($model->data->circuit_key, array_map(fn($circuit) => $circuit->circuit_key, $data->circuits), true)) throw new InvalidArgumentException('Thermal model circuit binding mismatch');
+			$this->schema->thermalMachineBinding($data, $model->data);
+			foreach($model->data->circuits ?? [] as $assignment) {
+				$ref = $assignment->circuit_model_ref; $single = $this->recordOf($this->key('technicaldataset', $ref->dataset_key, $ref->revision));
+				if($single->data->contract_version !== 1 || $single->data->circuit_key !== $assignment->circuit_key) throw new InvalidArgumentException('Parallel thermal circuit model mismatch');
+			}
 		}
 		foreach($data->selected_equipment as $equipment) {
 			$option = $node['options'][$equipment->option_ref] ?? null;
@@ -320,6 +324,11 @@ class Items_Service_TechnicalDataset
 			if(isset($dataset->data->refrigerant) && $dataset->data->refrigerant !== null && $dataset->data->refrigerant !== $data->refrigerant) throw new InvalidArgumentException('Component refrigerant mismatch');
 			if(isset($dataset->data->ports) && Items_Service_TechnicalJson::encode($dataset->data->ports) !== Items_Service_TechnicalJson::encode($component->ports)) throw new InvalidArgumentException('Component profile ports mismatch');
 			if($component->role === 'evaporator' && isset($dataset->data->specification->sections)) foreach($data->circuits as $c) if($c->evaporator_section->instance_key === $component->instance_key && !in_array($c->evaporator_section->section_key, $dataset->data->specification->sections, true)) throw new InvalidArgumentException('Unknown evaporator section');
+			foreach($model->data->secondary_groups ?? [] as $group) if($group->instance_key === $component->instance_key) {
+				if($dataset->dataset_type !== 'component_spec') throw new InvalidArgumentException('Secondary component specification required');
+				$this->schema->secondarySectionBinding($group, $dataset->data->specification->sections);
+			}
+			foreach($data->circuits as $c) if($c->condenser_instance === $component->instance_key && isset($c->condenser_section_key) && !in_array($c->condenser_section_key, $dataset->data->specification->sections ?? [], true)) throw new InvalidArgumentException('Unknown condenser section');
 		}
 		foreach($data->circuits as $circuit) {
 			$expansion = $circuit->expansion_device;
@@ -337,11 +346,7 @@ class Items_Service_TechnicalDataset
 		$ref = $record->data->specification->thermal_map_ref ?? null;
 		if($ref === null) return;
 		$map = $this->recordOf($this->key('technicaldataset', $ref->dataset_key, $ref->revision))->data;
-		foreach(['component_key', 'model', 'role', 'refrigerant'] as $key) if($map->$key !== $record->data->$key) throw new InvalidArgumentException('Exchanger map component binding mismatch');
-		$spec = $record->data->specification;
-		$sections = array_map(fn($section) => $section->section_key, $map->sections); $expected = $spec->sections;
-		sort($sections); sort($expected);
-		if($sections !== $expected || $map->exchanger_type !== $spec->exchanger_type) throw new InvalidArgumentException('Exchanger map section or construction mismatch');
+		$this->schema->exchangerBinding($record->data, $map);
 	}
 
 	private function sourcesOf(stdClass $record): array
@@ -537,17 +542,28 @@ class Items_Service_TechnicalDataset
 
 	public function evaluateThermalCircuit(int $id, int $revision, string $expectedHash, stdClass $request, string $mode = 'technical'): array
 	{
+		return $this->thermalEvaluation($id, $revision, $expectedHash, $request, $mode, false);
+	}
+
+	public function evaluateThermalMachine(int $id, int $revision, string $expectedHash, stdClass $request, string $mode = 'technical'): array
+	{
+		return $this->thermalEvaluation($id, $revision, $expectedHash, $request, $mode, true);
+	}
+
+	private function thermalEvaluation(int $id, int $revision, string $expectedHash, stdClass $request, string $mode, bool $multi): array
+	{
 		if(!in_array($mode, ['technical', 'synthetic_reference'], true)) throw new InvalidArgumentException('Unknown thermal evaluation mode');
 		$this->context('view');
 		if($mode === 'synthetic_reference') $this->context('import');
 		$this->schema->fields((object)['id' => $id, 'revision' => $revision, 'hash' => $expectedHash], ['id' => 'int', 'revision' => 'int', 'hash' => 'hash']);
-		return $this->transaction(function() use ($id, $revision, $expectedHash, $request, $mode) {
+		return $this->transaction(function() use ($id, $revision, $expectedHash, $request, $mode, $multi) {
 			extract($this->machineSnapshot($id, $revision, $expectedHash), EXTR_SKIP);
 			$resolve = function(string $table, string $key, int $revision) use ($graph): stdClass {
 				return $graph[$this->key($table, $key, $revision)]['payload']->record ?? throw new RuntimeException('Unpinned thermal dependency');
 			};
 			$blocker = $blocked ? 'machine_dependency_blocks_thermal_calculation' : ($mode === 'synthetic_reference' ? null : 'released_real_thermal_model_not_available');
-			$result = (new Items_Service_ThermalCircuit())->evaluate($machine->record, $request, $resolve, $this->machineCompressor($graph, 'mathematical_reference', !$blocked), $blocker);
+			$core = $multi ? new Items_Service_ThermalMachine() : new Items_Service_ThermalCircuit();
+			$result = $core->evaluate($machine->record, $request, $resolve, $this->machineCompressor($graph, 'mathematical_reference', !$blocked), $blocker);
 			$result['evaluation_mode'] = $mode;
 			$result['machine'] = $this->identity('technicaldataset', $row) + ['article' => $machine->items->{$machine->record->data->machine_item_ref}, 'article_ref' => $machine->record->data->machine_item_ref];
 			$result['dependencies'] = $provenance;

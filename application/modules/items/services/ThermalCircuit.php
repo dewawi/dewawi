@@ -7,6 +7,17 @@ class Items_Service_ThermalCircuit
 	// Resolution and compressor callbacks must use the same authorized, pinned snapshot.
 	public function evaluate(stdClass $machine, stdClass $request, callable $resolve, callable $compressor, ?string $calculationBlocker = null): array
 	{
+		return $this->evaluateModel($machine, $request, $resolve, $compressor, $calculationBlocker, null, null);
+	}
+
+	// A section-pair result is not a complete shared-component solution; ThermalMachine verifies the junctions.
+	public function evaluateAssignedCircuit(stdClass $machine, stdClass $request, stdClass $model, string $circuitKey, callable $resolve, callable $compressor, ?string $calculationBlocker = null): array
+	{
+		return $this->evaluateModel($machine, $request, $resolve, $compressor, $calculationBlocker, $model, $circuitKey);
+	}
+
+	private function evaluateModel(stdClass $machine, stdClass $request, callable $resolve, callable $compressor, ?string $calculationBlocker, ?stdClass $assignedModel, ?string $circuitKey): array
+	{
 		$schema = new Items_Service_TechnicalSchema(); $machine = $schema->dataset($machine);
 		if($machine->dataset_type !== 'machine_configuration') throw new InvalidArgumentException('A machine configuration is required');
 		$input = $schema->fields($request, ['stage_key' => 'key', 'operating_mode' => ['cooling'], 'evaporator' => 'object', 'condenser' => 'object'], ['compressor_contexts' => 'object', 'temperature_offset_probe' => 'object']);
@@ -21,18 +32,22 @@ class Items_Service_ThermalCircuit
 			'assumptions' => ['synthetic_models_only', 'constant_explicit_cp_and_density', 'steady_state_no_external_compressor_heat_loss', 'no_auxiliary_power_estimate'],
 			'reasons' => ['synthetic_models_only', 'machine_physics_not_released', 'expansion_system_evidence_missing', 'control_release_missing', 'auxiliary_power_unknown']];
 		if(isset($input->temperature_offset_probe)) $result['temperature_offset_probe'] = $this->offsetProbe($input->temperature_offset_probe, $data->cooling_kind);
-		if($data->circuit_count !== 1) {
+		if($circuitKey === null && $data->circuit_count !== 1) {
 			$result['reasons'][] = 'multiple_circuit_thermal_coupling_not_supported';
 			foreach($data->shared_components as $shared) if(count($shared->shared_by_circuits ?? []) > 1) $result['reasons'][] = 'shared_exchanger_air_or_liquid_coupling_not_supported';
 			return $result;
 		}
-		if(($data->thermal_model_ref ?? null) === null) { $result['reasons'][] = 'thermal_balance_model_missing'; return $result; }
-		$model = $this->dataset($resolve, $data->thermal_model_ref, 'thermal_balance_model');
+		if($assignedModel === null && ($data->thermal_model_ref ?? null) === null) { $result['reasons'][] = 'thermal_balance_model_missing'; return $result; }
+		$model = $assignedModel === null ? $this->dataset($resolve, $data->thermal_model_ref, 'thermal_balance_model') : $schema->dataset($assignedModel);
+		if($model->dataset_type !== 'thermal_balance_model' || $model->data->contract_version !== 1) throw new InvalidArgumentException('A single-circuit thermal model is required');
 		$result['model'] = $model;
 		if(!$this->synthetic($machine) || !$this->synthetic($model)) { $result['reasons'][] = 'real_machine_use_of_synthetic_models_forbidden'; return $result; }
-		$circuit = $data->circuits[0]; $contract = $model->data;
+		$selected = array_values(array_filter($data->circuits, fn($c) => $circuitKey === null || $c->circuit_key === $circuitKey));
+		if(count($selected) !== 1) throw new InvalidArgumentException('Thermal circuit unavailable');
+		$circuit = $selected[0]; $contract = $model->data;
+		if($circuitKey !== null) $result['scope'] = 'synthetic_thermal_section_pair_only';
 		if($contract->circuit_key !== $circuit->circuit_key) throw new InvalidArgumentException('Thermal model circuit mismatch');
-		foreach($data->shared_components as $shared) if(in_array($shared->instance_key, [$circuit->evaporator_section->instance_key, $circuit->condenser_instance], true)) { $result['reasons'][] = 'shared_exchanger_coupling_not_supported'; return $result; }
+		if($circuitKey === null) foreach($data->shared_components as $shared) if(in_array($shared->instance_key, [$circuit->evaporator_section->instance_key, $circuit->condenser_instance], true)) { $result['reasons'][] = 'shared_exchanger_coupling_not_supported'; return $result; }
 		foreach($data->hydraulic_loops as $loop) {
 			$uses = [];
 			foreach($loop->edges as $edge) foreach($edge as $port) foreach([$circuit->evaporator_section->instance_key, $circuit->condenser_instance] as $instance) if(str_starts_with($port, $instance.'.')) $uses[$instance] = true;
@@ -40,7 +55,7 @@ class Items_Service_ThermalCircuit
 		}
 		$curves = []; $maps = []; $sections = [];
 		foreach($data->components as $component) {
-			$active = in_array($component->instance_key, $stage[0]->active_compressors, true);
+			$active = in_array($component->instance_key, $stage[0]->active_compressors, true) && in_array($component->instance_key, $circuit->compressor_instances, true);
 			$side = $component->instance_key === $circuit->evaporator_section->instance_key ? 'evaporator' : ($component->instance_key === $circuit->condenser_instance ? 'condenser' : null);
 			if(!$active && $side === null) continue;
 			$profile = $schema->profile($resolve('itemtechnicalprofile', $component->profile_key, $component->profile_revision));
@@ -65,8 +80,8 @@ class Items_Service_ThermalCircuit
 				foreach(['component_key', 'model', 'role', 'refrigerant'] as $key) if($map->data->$key !== $record->data->$key) throw new InvalidArgumentException('Thermal exchanger binding mismatch');
 				if($map->data->refrigerant !== $circuit->refrigerant) throw new InvalidArgumentException('Thermal exchanger refrigerant mismatch');
 				if(!$this->synthetic($map)) { $result['reasons'][] = 'synthetic_map_provenance_required'; return $result; }
-				if(count($map->data->sections) !== 1) { $result['reasons'][] = 'multiple_exchanger_sections_coupling_not_supported'; return $result; }
-				$sections[$side] = $side === 'evaporator' ? $circuit->evaporator_section->section_key : $map->data->sections[0]->section_key;
+				if($circuitKey === null && count($map->data->sections) !== 1) { $result['reasons'][] = 'multiple_exchanger_sections_coupling_not_supported'; return $result; }
+				$sections[$side] = $side === 'evaporator' ? $circuit->evaporator_section->section_key : ($circuit->condenser_section_key ?? $map->data->sections[0]->section_key);
 				$maps[$side] = $map;
 				$result['exchangers'][$side] = ['instance_key' => $component->instance_key, 'profile_key' => $component->profile_key, 'profile_revision' => $component->profile_revision, 'map' => $map, 'section_key' => $sections[$side]];
 			}
@@ -106,11 +121,11 @@ class Items_Service_ThermalCircuit
 			$stageRequest = (object)['stage_key' => $input->stage_key, 'operating_mode' => $input->operating_mode];
 			if(isset($input->compressor_contexts)) $stageRequest->compressor_contexts = $input->compressor_contexts;
 			$failure = null;
-			$evaluate = function(float $te, float $tc) use ($machine, $stageRequest, $circuit, $compressor, $prepared, $hx, $curves, $certificate, $contract, &$result, &$failure): ?array {
+			$evaluate = function(float $te, float $tc) use ($machine, $stageRequest, $circuit, $circuitKey, $compressor, $prepared, $hx, $curves, $certificate, $contract, &$result, &$failure): ?array {
 				$result['convergence']['evaluations']++;
 				$point = (object)['Te_degC' => json_encode($te, JSON_THROW_ON_ERROR), 'Tc_degC' => json_encode($tc, JSON_THROW_ON_ERROR), 'temperature_unit' => 'degC'];
 				$stageRequest->circuit_points = [(object)['circuit_key' => $circuit->circuit_key, 'point' => $point]];
-				$stage = (new Items_Service_MachineStage())->evaluate($machine, $stageRequest, $compressor);
+				$stage = $circuitKey === null ? (new Items_Service_MachineStage())->evaluate($machine, $stageRequest, $compressor) : (new Items_Service_MachineStage())->evaluateCircuit($machine, $circuitKey, $stageRequest, $compressor);
 				$sum = $stage['stage_compressor_sums'];
 				$evap = $hx->atPoint($prepared['evaporator'], $point->Te_degC); $cond = $hx->atPoint($prepared['condenser'], $point->Tc_degC);
 				if($sum['cooling_capacity']['value'] === null || $sum['power_input']['value'] === null || $evap['mathematical_status'] !== 'calculated' || $cond['mathematical_status'] !== 'calculated') {
@@ -139,6 +154,62 @@ class Items_Service_ThermalCircuit
 			else $result['reasons'][] = 'thermal_solution_not_converged';
 		} catch(OverflowException $e) { $result['convergence']['status'] = 'numeric_failure'; $result['reasons'][] = 'thermal_numeric_out_of_range'; }
 		return $result;
+	}
+
+	public function mixParallel(array $branches, string $inlet, string $totalFlow, string $side, stdClass $numerics): array
+	{
+		$result = ['scope' => 'synthetic_secondary_junction_only', 'eligible' => false, 'status' => 'review_required', 'mathematical_status' => 'not_available', 'mixed_outlet_degC' => null, 'reasons' => []];
+		try {
+			$capacity = $weighted = $heat = $compressorHeat = 0.0; $cBox = $wBox = $hBox = $rBox = [0.0, 0.0]; $flow = '0'; $outlets = [];
+			foreach($branches as $key => $branch) {
+				$p = $branch['prepared']; $value = $branch['result']; $c = $p['capacity_rate_kW_K'];
+				if($c === null || $value['mathematical_status'] !== 'calculated') { $result['reasons'][] = 'secondary_branch_incomplete'; return $result; }
+				$flow = Items_Service_TechnicalJson::addNonnegativeDecimals($flow, $p['inputs']->volume_flow_m3_h);
+				$outlets[$key] = $value['secondary_outlet_degC']; $capacity += $c; $heat += $value['heat_flow_kW']; $compressorHeat += $branch['compressor_heat_kW'];
+				$cBox = $this->add($cBox, $this->bound([$c])); $hBox = $this->add($hBox, $this->bound([$value['heat_flow_kW']]));
+				$rBox = $this->add($rBox, $branch['residual_enclosure_kW']);
+				$delta = $value['secondary_outlet_degC'] - (float)$inlet;
+				$weighted += $c * $delta;
+				// The registered parked branch is exactly pass-through; no heat/standby estimate is made.
+				$outletError = $this->nextUp($branch['outlet_error_bound_K']);
+				$outletBox = $this->add($this->bound([$value['secondary_outlet_degC']]), [-$outletError, $outletError]);
+				$deltaBox = $branch['active'] ? $this->add($outletBox, $this->bound([-(float)$inlet])) : [0.0, 0.0];
+				$wBox = $this->add($wBox, $this->multiply($this->bound([$c]), $deltaBox));
+			}
+			if($flow !== Items_Service_TechnicalJson::decimal($totalFlow)) { $result['reasons'][] = 'secondary_flow_total_mismatch'; return $result; }
+			if($capacity <= 0.0 || $cBox[0] <= 0.0 || !is_finite($capacity) || !is_finite($weighted) || !is_finite($heat) || !is_finite($compressorHeat)) throw new OverflowException('thermal_numeric_out_of_range');
+			$mix = (float)$inlet + $weighted / $capacity;
+			$deltaBox = $this->multiply($wBox, $this->bound([1.0 / $cBox[1], 1.0 / $cBox[0]]));
+			$mixBox = $this->add($this->bound([(float)$inlet]), $deltaBox);
+			$temperatureError = max(abs($mix - $mixBox[0]), abs($mix - $mixBox[1]));
+			$direction = $side === 'evaporator' ? -1.0 : 1.0;
+			$secondary = $direction * $capacity * ($mix - (float)$inlet);
+			$secondaryBox = $this->multiply([$direction, $direction], $this->multiply($cBox, $this->add($this->bound([$mix]), $this->bound([-(float)$inlet]))));
+			$residualBox = $this->add($secondaryBox, [-$hBox[1], -$hBox[0]]);
+			if(!is_finite($mix) || !is_finite($secondary)) throw new OverflowException('thermal_numeric_out_of_range');
+			if($temperatureError > (float)$numerics->temperature_tolerance_K || max(array_map('abs', array_merge($residualBox, $rBox))) > (float)$numerics->heat_tolerance_kW) { $result['reasons'][] = 'shared_secondary_balance_or_precision_unconfirmed'; return $result; }
+			return array_replace($result, ['mathematical_status' => 'calculated', 'inlet_degC' => $inlet, 'total_volume_flow_m3_h' => $totalFlow, 'branch_volume_flow_sum_m3_h' => $flow, 'volume_flow_residual_m3_h' => '0',
+				'capacity_rate_kW_K' => $capacity, 'mixed_outlet_degC' => $mix, 'mixed_outlet_error_bound_K' => $temperatureError, 'section_outlets_degC' => $outlets, 'heat_flow_sum_kW' => $heat,
+				'secondary_heat_kW' => $secondary, 'compressor_heat_sum_kW' => $compressorHeat, 'secondary_heat_residual_kW' => $secondary - $heat, 'compressor_heat_residual_kW' => $compressorHeat - $heat,
+				'secondary_heat_residual_enclosure_kW' => $residualBox, 'compressor_heat_residual_enclosure_kW' => $rBox]);
+		} catch(OverflowException $e) { $result['reasons'][] = 'shared_secondary_numeric_out_of_range'; return $result; }
+	}
+
+	public function sumThermalBalances(array $circuits, stdClass $numerics): array
+	{
+		$result = ['scope' => 'synthetic_thermal_balances_only', 'eligible' => false, 'mathematical_status' => 'not_available', 'reasons' => []];
+		try {
+			$totals = array_fill_keys(['compressor_cooling_kW', 'compressor_power_kW', 'evaporator_heat_kW', 'condenser_heat_kW'], 0.0); $boxes = array_fill_keys(array_keys($totals), [0.0, 0.0]);
+			foreach($circuits as $circuit) {
+				$values = ['compressor_cooling_kW' => $circuit['energy_balance']['compressor_cooling_kW'], 'compressor_power_kW' => $circuit['energy_balance']['compressor_power_kW'], 'evaporator_heat_kW' => $circuit['evaporator']['heat_flow_kW'], 'condenser_heat_kW' => $circuit['condenser']['heat_flow_kW']];
+				foreach($values as $key => $value) { $totals[$key] += $value; $boxes[$key] = $this->add($boxes[$key], $this->bound([$value])); }
+			}
+			foreach($totals as $value) if(!is_finite($value)) throw new OverflowException('thermal_numeric_out_of_range');
+			$residual = $totals['condenser_heat_kW'] - $totals['evaporator_heat_kW'] - $totals['compressor_power_kW'];
+			$box = $this->add($this->add($boxes['condenser_heat_kW'], [-$boxes['evaporator_heat_kW'][1], -$boxes['evaporator_heat_kW'][0]]), [-$boxes['compressor_power_kW'][1], -$boxes['compressor_power_kW'][0]]);
+			if(max(array_map('abs', $box)) > (float)$numerics->heat_tolerance_kW) { $result['reasons'][] = 'global_thermal_balance_unconfirmed'; return $result; }
+			return array_replace($result, $totals, ['energy_residual_kW' => $residual, 'energy_residual_enclosure_kW' => $box, 'mathematical_status' => 'calculated']);
+		} catch(OverflowException $e) { $result['reasons'][] = 'global_thermal_numeric_out_of_range'; return $result; }
 	}
 
 	private function solve(stdClass $model, callable $evaluate, int $sign, array &$convergence): ?array
