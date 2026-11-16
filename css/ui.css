@@ -2577,3 +2577,21 @@ cursor: default;
 @media (max-width: 600px) {
   #inquiry-technical .dw-form-row > label { grid-column: span 12; }
 }
+
+#inquiry-technical-comparison .dw-alert { display: block; }
+#inquiry-technical-comparison .dw-alert > strong { display: block; }
+#inquiry-technical-comparison .comparison-table { width: 100%; table-layout: fixed; }
+#inquiry-technical-comparison .comparison-table th,
+#inquiry-technical-comparison .comparison-table td { vertical-align: top; overflow-wrap: anywhere; min-width: 0; }
+#inquiry-technical-comparison ul { padding-left: 1.2em; }
+#inquiry-technical-comparison pre { font-size: .85em; }
+@media (max-width: 767px) {
+  #inquiry-technical-comparison .comparison-table,
+  #inquiry-technical-comparison .comparison-table tbody,
+  #inquiry-technical-comparison .comparison-table tr,
+  #inquiry-technical-comparison .comparison-table th,
+  #inquiry-technical-comparison .comparison-table td { display: block; width: auto; }
+  #inquiry-technical-comparison .comparison-table thead { display: none; }
+  #inquiry-technical-comparison .comparison-table tr { margin-bottom: 1.2rem; }
+  #inquiry-technical-comparison .comparison-table td::before { content: attr(data-candidate); display: block; font-weight: bold; margin-bottom: .5rem; }
+}

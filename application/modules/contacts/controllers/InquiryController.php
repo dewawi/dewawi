@@ -87,6 +87,9 @@ class Contacts_InquiryController extends DEEC_Controller_Action
 		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
 		$input = $request->isPost() ? (array)$request->getPost() : (array)$request->getQuery();
 		$this->view->technical = null;
+		$this->view->technicalComparisonRequested = isset($input['compare']) || isset($input['candidates']);
+		$this->view->technicalComparison = null;
+		$this->view->technicalCanCompare = false;
 		$this->view->technicalError = null;
 		$this->view->technicalInput = $input;
 		$this->view->technicalReview = null;
@@ -103,6 +106,12 @@ class Contacts_InquiryController extends DEEC_Controller_Action
 			};
 			foreach(['q', 'hash', 'calculation'] as $name) if(isset($input[$name]) && !is_string($input[$name])) throw new InvalidArgumentException('CONTACT_TECH_INPUT');
 			$id = $integer($this->_getParam('id'));
+			if($this->view->technicalComparisonRequested) {
+				if(!in_array($request->getMethod(), ['GET', 'HEAD'], true)) throw new RuntimeException('CONTACT_TECH_DENIED', 405);
+				if(($input['compare'] ?? null) !== '1' || !is_array($input['candidates'] ?? [])) throw new InvalidArgumentException('CONTACT_COMPARE_INPUT');
+				$this->view->technicalComparison = (new Contacts_Service_InquiryTechnicalComparison())->compare($id, $input['candidates'] ?? [], $input['q'] ?? '');
+				return;
+			}
 			$service = new Contacts_Service_InquiryTechnical();
 			$reviews = new Contacts_Service_InquiryTechnicalReview();
 			$reviewId = $integer($input['reviewid'] ?? null);
@@ -115,6 +124,7 @@ class Contacts_InquiryController extends DEEC_Controller_Action
 			$this->view->technical = $service->open($id, (string)($input['q'] ?? ''), $integer($input['itemid'] ?? null), $integer($input['datasetid'] ?? null), $integer($input['revision'] ?? null), (string)($input['hash'] ?? ''));
 			$this->view->technicalReviewEnabled = $reviews->internalEnabled();
 			$this->view->technicalCanSave = $reviews->canSave();
+			$this->view->technicalCanCompare = $reviews->canCompare();
 			if($reviews->internalEnabled()) $this->view->technicalHistory = $reviews->history($id, $integer($input['beforeversion'] ?? null));
 			$session = new Zend_Session_Namespace('InquiryTechnical');
 			if(!isset($session->token)) $session->token = bin2hex(random_bytes(32));

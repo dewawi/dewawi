@@ -1,0 +1,131 @@
+<?php
+$t = fn($key) => $this->escape($this->translate($key));
+$e = fn($value) => $this->escape((string)$value);
+$json = fn($value) => $e(json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+$state = fn($value) => $t('CONTACT_COMPARE_STATE_'.strtoupper($value));
+$v = $this->comparison;
+$this->headTitle($this->translate('CONTACT_COMPARE_TITLE'));
+?>
+<section id="inquiry-technical-comparison">
+<h2><?php echo $t('CONTACT_COMPARE_TITLE'); ?></h2>
+<?php if($this->technicalError): ?><p class="dw-alert dw-alert--warning" role="alert"><?php echo $t($this->technicalError); ?></p><?php endif; ?>
+<?php if(!$v) { echo '</section>'; return; } ?>
+<?php
+$base = $this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'select', 'id' => (int)$v['inquiry']['id']], null, true);
+$selections = array_column($v['candidates'], 'selection');
+$link = fn($candidates, $extra = []) => $base.'?'.http_build_query(['compare' => '1', 'candidates' => array_values($candidates)] + $extra);
+$replace = function(int $index, array $selection) use($selections, $link): string { $next = $selections; $next[$index] = $selection; return $link($next); };
+$hidden = function(array $candidates) use($e): void {
+	echo '<input type="hidden" name="compare" value="1">';
+	foreach($candidates as $i => $selection) foreach($selection as $name => $value) echo '<input type="hidden" name="candidates['.$i.']['.$e($name).']" value="'.$e($value).'">';
+};
+$row = function(string $label, callable $render, string $area = '') use($v, $e): void {
+	echo '<tr data-area="'.$e($area).'"><th scope="row">'.$label.'</th>';
+	foreach($v['candidates'] as $i => $candidate) { echo '<td data-candidate="'.$e($candidate['article']['sku'].' (#'.$candidate['article']['id'].')').'">'; $render($candidate, $i); echo '</td>'; }
+	echo '</tr>';
+};
+$missing = fn() => $t('CONTACT_TECH_MISSING');
+?>
+<p><?php echo $t('CONTACT_INQUIRIES_REQUEST'); ?> #<?php echo (int)$v['inquiry']['id']; ?> · <?php echo $t('CONTACT_COMPARE_CONTRACT'); ?> v<?php echo (int)$v['comparison_version']; ?></p>
+<p><a class="dw-btn" href="<?php echo $e($this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'view', 'id' => (int)$v['inquiry']['id']], null, true)); ?>"><?php echo $t('CONTACT_TECH_BACK'); ?></a></p>
+<p class="dw-alert dw-alert--warning"><?php echo $t('CONTACT_COMPARE_BOUNDARY'); ?> <strong>review_required · eligible=false</strong></p>
+<p><?php echo $t('CONTACT_COMPARE_TEMPORARY'); ?> <?php echo count($selections).' / '.(int)$v['max_candidates']; ?></p>
+<?php if(count($selections) < $v['max_candidates']): ?>
+<form id="inquiry-comparison-search" method="get" action="<?php echo $e($base); ?>" class="dw-form-layout" data-autosave="false">
+	<?php $hidden($selections); ?>
+	<div class="dw-form-row"><label><?php echo $t('CONTACT_TECH_SEARCH'); ?><input type="search" name="q" minlength="2" maxlength="100" value="<?php echo $e($v['search']); ?>" required></label><button type="submit" class="dw-btn"><?php echo $t('CONTACT_TECH_FIND'); ?></button></div>
+</form>
+<ul id="inquiry-comparison-matches">
+<?php foreach($v['matches'] as $match): ?>
+	<li><a class="comparison-add" href="<?php echo $e($link(array_merge($selections, [['itemid' => (int)$match['id']]]))); ?>"><?php echo $t('CONTACT_COMPARE_ADD').' · '.$e($match['sku'].' · '.$match['title'].' (#'.$match['id'].')'); ?></a></li>
+<?php endforeach; ?>
+</ul>
+<?php if($v['search'] !== '' && !$v['matches']): ?><p><?php echo $t('CONTACT_TECH_NO_MATCH'); ?></p><?php endif; ?>
+<?php else: ?><p><?php echo $t('CONTACT_COMPARE_LIMIT'); ?></p><?php endif; ?>
+<?php if(!$selections): ?><p><?php echo $t('CONTACT_COMPARE_EMPTY'); ?></p><?php endif; ?>
+<?php if($selections): ?>
+<table class="dw-table comparison-table"><thead><tr><th scope="col"><?php echo $t('CONTACT_COMPARE_FEATURE'); ?></th>
+<?php foreach($v['candidates'] as $c): ?><th scope="col"><?php echo $e($c['article']['sku'].' · '.$c['article']['title']); ?> (#<?php echo (int)$c['article']['id']; ?>)</th><?php endforeach; ?>
+</tr></thead><tbody>
+<?php
+$row($t('CONTACT_COMPARE_SELECTION'), function($c, $i) use($base, $selections, $link, $e, $t, $replace) {
+	$open = $c['selection']; unset($open['reviewid']);
+	if(isset($c['selection']['reviewid'])) $open = ['reviewid' => $c['selection']['reviewid']];
+	?>
+	<p><strong><?php echo $e($c['article']['title']); ?></strong></p>
+	<p><a class="dw-btn comparison-open" href="<?php echo $e($base.'?'.http_build_query($open)); ?>"><?php echo $t('CONTACT_COMPARE_OPEN'); ?></a></p>
+	<p><a class="comparison-remove" href="<?php echo $e($link(array_filter($selections, fn($n) => $n !== $i, ARRAY_FILTER_USE_KEY))); ?>"><?php echo $t('CONTACT_COMPARE_REMOVE'); ?></a></p>
+	<details <?php if(!$c['configuration']) echo 'open'; ?>><summary><?php echo $t('CONTACT_TECH_REVISIONS'); ?></summary><ul>
+	<?php foreach($c['revisions'] as $r): ?>
+	<li><a class="comparison-revision" href="<?php echo $e($replace($i, ['itemid' => $c['article']['id'], 'datasetid' => $r['id'], 'revision' => $r['revision'], 'hash' => $r['sha256']])); ?>"><?php echo $e($r['key'].' @'.$r['revision'].' · '.$r['status']); ?></a></li>
+	<?php endforeach; ?>
+	</ul><?php if(!$c['revisions']) echo $t('CONTACT_TECH_NO_CONFIG'); ?></details>
+	<details><summary><?php echo $t('CONTACT_TECH_REVIEW_HISTORY'); ?> (<?php echo $t('CONTACT_COMPARE_HISTORY_LIMIT'); ?>)</summary><ul>
+	<?php foreach($c['history'] as $r): ?>
+	<li><a class="comparison-history" href="<?php echo $e($replace($i, ['itemid' => $c['article']['id'], 'reviewid' => $r['id']])); ?>">#<?php echo (int)$r['id']; ?> · v<?php echo (int)$r['version']; ?> · <?php echo $e($r['created']); ?></a></li>
+	<?php endforeach; ?></ul><?php if(!$c['history']) echo $t('CONTACT_TECH_REVIEW_EMPTY'); ?></details>
+	<?php
+});
+$row($t('CONTACT_TECH_REVISION_LABEL').' / '.$t('CONTACT_TECH_FAMILY'), function($c) use($e, $missing) {
+	$d = $c['configuration']; if(!$d) { echo $missing(); return; }
+	echo $e($d['identity']['key'].' @'.$d['identity']['revision']).'<br><small>'.$e($d['identity']['sha256']).'</small><br>'.$e($d['family']->dataset_key.' @'.$d['family']->revision);
+});
+$row($t('CONTACT_TECH_VARIANT'), function($c) use($e, $json, $t, $missing) {
+	echo $t('CONTACT_TECH_PARENT').': '.($c['article']['parentid'] ? '#'.(int)$c['article']['parentid'] : $t('CONTACT_TECH_NONE'));
+	if(!$c['configuration']) { echo '<p>'.$missing().'</p>'; return; }
+	$d = $c['configuration']; echo '<pre>'.$json(['signature' => $d['variant_signature'], 'equipment' => $d['equipment'], 'option_bindings' => $d['options']]).'</pre>';
+});
+$row($t('CONTACT_COMPARE_TOPOLOGY'), function($c) use($e, $t, $missing) {
+	$d = $c['configuration']; if(!$d) { echo $missing(); return; }
+	echo $t('CONTACT_COMPARE_COOLING_'.strtoupper($d['cooling_kind'])).' · '.$t('CONTACT_COMPARE_INSTALLATION_'.strtoupper($d['installation_kind'])).'<br>'.$e($d['refrigerant']).'<br>'.$t('CONTACT_TECH_COMPRESSORS').': '.(int)$d['compressors'].' · '.$t('CONTACT_TECH_CIRCUITS').': '.(int)$d['circuits'];
+	echo '<ul>'; foreach($d['modes'] as $mode) echo '<li>'.$t('CONTACT_TECH_MODE_'.strtoupper($mode->mode)).' · '.$e($mode->release_status).'</li>'; echo '</ul>';
+});
+$row($t('CONTACT_TECH_COMPONENTS'), function($c) use($e, $json, $missing, $t) {
+	if(!$c['components']) { echo $missing(); return; }
+	echo '<ul>'; foreach($c['components'] as $component) {
+		echo '<li>'.$e($component['instance'].' · '.$component['role'].' · '.$component['article']['sku'].' · '.$component['article']['title'].' (#'.$component['article']['id'].')').'<br>'.$e($component['profile']['key'].' @'.$component['profile']['revision'].' → '.$component['dataset']['key'].' @'.$component['dataset']['revision']).'<br>'.$e($component['dataset']['status']);
+		if($component['refrigerant'] !== null) echo ' · '.$e($component['refrigerant']);
+		if($component['electrical'] !== null) { $electrical = $component['electrical']; echo '<p>'.($electrical->voltage_V === null ? $missing() : $e($electrical->voltage_V).' V').' · '.($electrical->phases === null ? $missing() : $e($electrical->phases).' ~').' · '.($electrical->execution_code === null ? $missing() : $e($electrical->execution_code)).'</p>'; }
+		echo '</li>';
+	} echo '</ul>';
+});
+$row($t('CONTACT_COMPARE_PACKAGES'), function($c) use($e, $json, $missing, $t) {
+	if(!$c['packages']) { echo $missing(); return; }
+	echo '<details><summary>'.count($c['packages']).' · '.$t('CONTACT_COMPARE_PACKAGES').'</summary><ul>';
+	foreach($c['packages'] as $p) echo '<li>'.$e($p['table'].':'.$p['key'].' @'.$p['revision'].' · '.$p['status']).'<br><small>'.$e($p['sha256']).'</small><pre>'.$json(array_intersect_key($p, array_flip(['approved', 'approvedby', 'withdrawn', 'approval_sha256']))).'</pre></li>';
+	echo '</ul></details>';
+});
+$row($t('CONTACT_TECH_CALCULATION'), function($c) use($e, $t, $state) {
+	foreach(['compressor', 'stage', 'thermal', 'hydraulic', 'operating', 'coupled'] as $kind) {
+		$available = $c['calculations'][$kind]['available'] ?? false;
+		echo '<p>'.$t('CONTACT_COMPARE_CALC_'.strtoupper($kind)).': '.$state($available ? 'calculation_present' : 'calculation_unavailable');
+		if($available && $c['calculations'][$kind]['blocked']) echo ' · '.$t('CONTACT_COMPARE_BLOCKED');
+		echo '</p>';
+	}
+});
+foreach($v['requirements'] as $req) $row($t($req['label']).($req['unit'] ? ' ('.$e($req['unit']).')' : '').'<p>'.($req['value'] === '' ? $missing() : ($req['translate_value'] ? $t($req['value']) : nl2br($e($req['value'])))).'</p><small>'.$state($req['state']).'</small>', function($c) use($req, $state, $e) {
+	$a = $c['assessments'][$req['name']]; echo $state($a['state']); if($a['detail'] !== null) echo '<br>'.$e($a['detail']);
+}, 'requirement:'.$req['name']);
+foreach(Contacts_Service_InquiryTechnicalComparison::AREAS as $area) $row($t('CONTACT_COMPARE_AREA_'.strtoupper($area)), function($c) use($area, $t, $e, $state) {
+	$a = $c['coverage'][$area]; echo '<strong>'.$state($a['state']).'</strong><p>'.$t($a['gap']).'</p><ul>';
+	foreach($a['references'] as $ref) echo '<li>'.$e($ref['key'].' @'.$ref['revision'].' · '.$ref['status']).'</li>'; echo '</ul>';
+}, $area);
+$row($t('CONTACT_TECH_BLOCKERS'), function($c) use($e, $t) {
+	echo '<ul>'; foreach($c['blockers'] as $reason) { $key = 'CONTACT_TECH_REASON_'.strtoupper($reason); $label = $this->translate($key); echo '<li>'.$e($label === $key ? $reason : $label.' ('.$reason.')').'</li>'; } echo '</ul>';
+});
+$row($t('CONTACT_COMPARE_HISTORICAL'), function($c) use($e, $t, $json, $state) {
+	$h = $c['historical']; if(!$h) { echo $t('CONTACT_COMPARE_CHOOSE_HISTORY'); return; }
+	echo '<p>#'.(int)$h['id'].' · v'.(int)$h['version'].' · '.$e($h['created']).'</p><p>'.$t('CONTACT_TECH_REVIEW_HISTORICAL').'</p>';
+	echo '<p>'.$t('CONTACT_TECH_REVIEW_STATE_'.strtoupper($h['result']['status'])).' · '.$e($h['result']['scope']).' · eligible=false</p>';
+	if(in_array($h['calculation']['evaluation_mode'], ['synthetic_reference', 'mathematical_reference'], true)) echo '<p class="dw-alert dw-alert--warning">'.$t('CONTACT_TECH_DEMO').'</p>';
+	if($h['result']['status'] === 'unsuitable') echo '<p class="dw-alert dw-alert--warning">'.$state('historical_limit_violation').'</p>';
+	echo '<p>'.$t('CONTACT_COMPARE_HISTORICAL_LIMIT').'</p><details><summary>'.$t('CONTACT_TECH_VARIANT').' · '.$t('CONTACT_COMPARE_HISTORICAL').'</summary><pre>'.$json(array_intersect_key($h, array_flip(['article', 'machine', 'variant', 'components']))).'</pre></details><ul>';
+	foreach($h['result']['metrics'] as $metric) echo '<li>'.$e($metric['name']).': '.($metric['value'] === null ? $t('CONTACT_TECH_MISSING') : $e($metric['value'].' '.$metric['unit'])).'</li>'; echo '</ul>';
+	echo '<details><summary>'.$t('CONTACT_COMPARE_POINT').'</summary><pre>'.$json($h['calculation']).'</pre><ul>'; foreach($h['result']['reasons'] as $reason) echo '<li>'.$e($reason).'</li>'; echo '</ul></details>';
+	echo '<h4>'.$t('CONTACT_TECH_REVIEW_CURRENT').'</h4><p>'.$t('CONTACT_TECH_REVIEW_STATE_'.strtoupper($h['current']['status'])).'</p><ul>'; foreach($h['current']['reasons'] as $reason) echo '<li>'.$e($reason).'</li>'; echo '</ul>';
+}, 'historical');
+?>
+</tbody></table>
+<?php endif; ?>
+<p><?php echo $t('CONTACT_COMPARE_EVIDENCE_BOUNDARY'); ?></p>
+</section>

@@ -112,6 +112,7 @@ with (work / 'd7a-http.log').open('w') as log:
             print(str(width) + 'px: ' + marker)
             check(result.returncode == 0 and marker.startswith('PASS:'), 'D7A browser workflow failed: ' + marker)
         subprocess.run(['python3', str(root / 'tests/ui/inquiry-technical-review.py'), str(work), address], check=True)
+        subprocess.run(['python3', str(root / 'tests/ui/inquiry-technical-comparison.py'), str(work), address], check=True)
         check(request('/state')[1] == before, 'HTTP/browser workflow changed business or technical state')
         check('PHP Warning' not in (work / 'd7a-http.log').read_text() and 'PHP Fatal' not in (work / 'd7a-http.log').read_text(), 'PHP warnings during browser workflow')
         print('PASS: private HTTP GET/POST/AJAX denial, CSRF, revision conflicts and unchanged inquiry/sales state')

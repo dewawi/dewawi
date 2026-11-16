@@ -17,7 +17,7 @@ spl_autoload_register(static function(string $class) use($root): void {
 Zend_Session::start(['save_path' => $work]);
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 if($path === '/css/ui.css') { header('Content-Type: text/css'); readfile($root.'/css/ui.css'); return; }
-if(in_array($path, ['/browser', '/browser-review'], true)) { header('Content-Type: text/html; charset=utf-8'); readfile($work.($path === '/browser' ? '/browser.html' : '/browser-review.html')); return; }
+if(in_array($path, ['/browser', '/browser-review', '/browser-comparison'], true)) { header('Content-Type: text/html; charset=utf-8'); readfile($work.$path.'.html'); return; }
 $db = Zend_Db::factory('Pdo_Mysql', ['host' => 'localhost', 'unix_socket' => $socket, 'username' => 'root', 'password' => '', 'dbname' => 'technical_fresh', 'charset' => 'utf8']);
 Zend_Db_Table::setDefaultAdapter($db);
 Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_NonPersistent());

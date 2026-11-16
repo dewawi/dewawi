@@ -238,6 +238,7 @@ class Items_Service_TechnicalDataset
 	private function options(int $itemId, array $included, array $extra): array
 	{
 		$item = $this->db->fetchRow('SELECT parentid FROM item WHERE id = ? AND clientid = ? AND deleted = 0 FOR UPDATE', [$itemId, $this->owner]);
+		if(!$item) throw new InvalidArgumentException('Unknown or inaccessible technical article');
 		$base = (int)($item['parentid'] ?: $itemId);
 		$seen = $ids = [];
 		foreach(array_merge($included, $extra) as $symbol) {

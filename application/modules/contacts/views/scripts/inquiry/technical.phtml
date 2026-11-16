@@ -25,6 +25,9 @@ if($identity) $params += ['datasetid' => $identity['id'], 'revision' => $identit
 $hidden = function(array $values) use($e): void { foreach($values as $name => $val) echo '<input type="hidden" name="'.$e($name).'" value="'.$e($val).'">'; };
 ?>
 <p><a class="dw-btn" href="<?php echo $e($this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'view', 'id' => (int)$v['inquiry']['id']], null, true)); ?>"><?php echo $t('CONTACT_TECH_BACK'); ?></a> · <?php echo $t('CONTACT_INQUIRIES_REQUEST'); ?> #<?php echo (int)$v['inquiry']['id']; ?></p>
+<?php if($this->technicalCanCompare): $candidate = $v['item'] ? [$params] : []; ?>
+<p><a class="dw-btn" id="inquiry-technical-compare" href="<?php echo $e($base.'?'.http_build_query(['compare' => '1', 'candidates' => array_map(fn($c) => array_diff_key($c, ['fromreview' => true]), $candidate)])); ?>"><?php echo $t('CONTACT_COMPARE_TITLE'); ?></a></p>
+<?php endif; ?>
 <p><?php echo $t('CONTACT_TECH_REVIEW_UNSAVED'); ?></p>
 <p class="dw-alert dw-alert--warning"><?php echo $t('CONTACT_TECH_RELEASE'); ?></p>
 <details open>

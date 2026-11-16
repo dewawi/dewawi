@@ -6,4 +6,7 @@ if(!$permission->hasPermission('contacts', 'contact', 'view') || !$permission->h
 	<h3><?php echo $this->escape($this->translate('CONTACT_TECH_TITLE')); ?></h3>
 	<p><?php echo $this->escape($this->translate('CONTACT_TECH_REVIEW_ENTRY')); ?></p>
 	<a class="dw-btn" href="<?php echo $this->escape($this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'select', 'id' => (int)$this->inquiry['id']], null, true)); ?>"><?php echo $this->escape($this->translate('CONTACT_TECH_OPEN')); ?></a>
+	<?php if((new Contacts_Service_InquiryTechnicalReview())->canCompare()): ?>
+	<a class="dw-btn" href="<?php echo $this->escape($this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'select', 'id' => (int)$this->inquiry['id']], null, true).'?compare=1'); ?>"><?php echo $this->escape($this->translate('CONTACT_COMPARE_TITLE')); ?></a>
+	<?php endif; ?>
 </section>

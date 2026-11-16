@@ -41,6 +41,7 @@ $base = $this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' 
 	<ul><?php foreach($saved['current']['reasons'] as $reason): ?><li><?php echo $e($reason); ?></li><?php endforeach; ?></ul>
 	<details><summary><?php echo $t('CONTACT_TECH_REVIEW_CURRENT_DETAILS'); ?></summary><pre><?php echo $json($saved['current']); ?></pre></details>
 	<details><summary><?php echo $t('CONTACT_TECH_REVIEW_PROOF'); ?></summary><pre><?php echo $json($p); ?></pre></details>
+	<?php if($this->technicalCanCompare): ?><p><a class="dw-btn" href="<?php echo $e($base.'?'.http_build_query(['compare' => '1', 'candidates' => [['itemid' => $p['article']['id'], 'reviewid' => (int)$r['id']]]])); ?>"><?php echo $t('CONTACT_COMPARE_TITLE'); ?></a></p><?php endif; ?>
 	<?php if($this->technicalCanSave): ?><a class="dw-btn" id="inquiry-technical-reuse" href="<?php echo $e($base.'?'.http_build_query(['fromreview' => (int)$r['id']])); ?>"><?php echo $t('CONTACT_TECH_REVIEW_REUSE'); ?></a><?php endif; ?>
 </section>
 <?php endif; ?>

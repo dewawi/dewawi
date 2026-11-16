@@ -89,6 +89,7 @@ if(($argv[3] ?? '') === '--inquiry-technical-only') {
 	require __DIR__.'/fixtures/thermohydraulic-polynomial.php';
 	require __DIR__.'/inquiry-technical-db.php';
 	require __DIR__.'/inquiry-technical-review-db.php';
+	require __DIR__.'/inquiry-technical-comparison-db.php';
 	exit;
 }
 $bundle = technicalBundle();
@@ -365,3 +366,4 @@ require __DIR__.'/thermohydraulic-circuit-db.php';
 require __DIR__.'/thermohydraulic-polynomial-db.php';
 require __DIR__.'/inquiry-technical-db.php';
 require __DIR__.'/inquiry-technical-review-db.php';
+require __DIR__.'/inquiry-technical-comparison-db.php';

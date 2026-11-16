@@ -49,6 +49,18 @@ class Contacts_Service_InquiryTechnicalReview
 		return $p->hasPermission('contacts', 'contact', 'edit') && $p->hasPermission('items', 'technicaldataset', 'review');
 	}
 
+	public function canCompare(): bool
+	{
+		return $this->internalEnabled() && (new DEEC_Permission((array)Zend_Registry::get('User')))->hasPermission('items', 'technicaldataset', 'review');
+	}
+
+	public function comparisonContext(int $inquiryId): array
+	{
+		$view = $this->context($inquiryId);
+		if(!$this->canCompare()) throw new RuntimeException('CONTACT_TECH_DENIED', 403);
+		return $view;
+	}
+
 	public function calculate(array $view, array $post, int $previousId = 0): array
 	{
 		$this->context((int)$view['inquiry']['id'], true);
