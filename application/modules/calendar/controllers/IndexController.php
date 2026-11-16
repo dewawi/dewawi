@@ -42,7 +42,9 @@ class Calendar_IndexController extends Zend_Controller_Action
 			$this->events->authorize('view');
 			$period = $this->period();
 			$ownerid = $this->id('ownerid', true);
-			$this->view->assign(['period' => $period, 'ownerid' => $ownerid, 'members' => $this->events->members(), 'events' => $this->events->events($period, $ownerid), 'canAdd' => $this->events->can('add')]);
+			$scope = $this->_getParam('scope', 'team');
+			if (!is_string($scope)) throw new InvalidArgumentException('CALENDAR_INVALID_INPUT');
+			$this->view->assign(['period' => $period, 'ownerid' => $ownerid, 'scope' => $scope, 'members' => $this->events->members(), 'events' => $this->events->events($period, $ownerid, $scope), 'canAdd' => $this->events->can('add')]);
 		} catch (InvalidArgumentException | RuntimeException $e) { $this->failure($e); }
 	}
 
@@ -50,7 +52,9 @@ class Calendar_IndexController extends Zend_Controller_Action
 	{
 		try {
 			$this->events->authorize('view');
-			$this->json(['ok' => true, 'events' => $this->_getParam('id') !== null ? [$this->events->getEvent($this->id())] : $this->events->events($this->period(), $this->id('ownerid', true))]);
+			$scope = $this->_getParam('scope', 'team');
+			if (!is_string($scope)) throw new InvalidArgumentException('CALENDAR_INVALID_INPUT');
+			$this->json(['ok' => true, 'events' => $this->_getParam('id') !== null ? [$this->events->getEvent($this->id())] : $this->events->events($this->period(), $this->id('ownerid', true), $scope)]);
 		} catch (InvalidArgumentException | RuntimeException $e) { $this->failure($e, true); }
 	}
 
@@ -58,12 +62,102 @@ class Calendar_IndexController extends Zend_Controller_Action
 	{
 		try {
 			$event = $this->events->getEvent($this->id());
-			$this->view->assign(['event' => $event, 'canEdit' => $event['own'] && $this->events->can('edit'), 'canDelete' => $event['own'] && $this->events->can('delete')]);
+			$canEdit = $event['own'] && $this->events->can('edit');
+			$participants = $event['own'] || $event['participation'] !== null ? $this->events->participants($event['id']) : [];
+			$this->view->assign(['event' => $event, 'participants' => $participants, 'canEdit' => $canEdit && !$event['cancelled'], 'canManage' => $canEdit, 'canMail' => $canEdit && $this->events->can('add'), 'canDelete' => $event['own'] && $this->events->can('delete')]);
+			if ($canEdit && !$event['cancelled']) {
+				foreach (['internal' => true, 'external' => false] as $key => $internal) {
+					$form = new Calendar_Form_Participant($internal ? $this->events->participantUsers($event['id']) : [], $internal);
+					$form->setValues(['sequence' => $event['sequence'], 'csrf_token' => $this->calendarSession->csrf]);
+					$this->view->{$key . 'ParticipantForm'} = $form;
+				}
+			}
 		} catch (InvalidArgumentException | RuntimeException $e) { $this->failure($e); }
 	}
 
 	public function addAction() { $this->editEvent(false); }
 	public function editAction() { $this->editEvent(true); }
+
+	public function participantsAction()
+	{
+		try {
+			$this->requirePost(); $this->checkCsrf();
+			$input = $this->getRequest()->getPost();
+			$sequence = $this->sequence($input);
+			if (array_diff(array_keys($input), ['csrf_token', 'sequence', 'operation', 'kind', 'userid', 'name', 'email', 'contactemailid', 'participantid', 'status'])) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+			if (($input['operation'] ?? '') === 'add') $this->events->addParticipant($this->id(), array_intersect_key($input, array_flip(['kind', 'userid', 'name', 'email', 'contactemailid'])), $sequence);
+			elseif (($input['operation'] ?? '') === 'remove') $this->events->removeParticipant($this->id(), $this->positive($input['participantid'] ?? null), $sequence);
+			elseif (($input['operation'] ?? '') === 'status') {
+				if (!is_string($input['status'] ?? null)) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+				$this->events->respond($this->id(), $input['status'], $sequence, $this->positive($input['participantid'] ?? null));
+			} else throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+			$this->participantResult();
+		} catch (InvalidArgumentException | RuntimeException $e) { $this->failure($e); }
+	}
+
+	public function respondAction()
+	{
+		try {
+			$this->requirePost(); $this->checkCsrf();
+			$input = $this->getRequest()->getPost();
+			if (array_diff(array_keys($input), ['csrf_token', 'sequence', 'status']) || !is_string($input['status'] ?? null)) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+			$this->events->respond($this->id(), $input['status'], $this->sequence($input));
+			$this->participantResult();
+		} catch (InvalidArgumentException | RuntimeException $e) { $this->failure($e); }
+	}
+
+	public function contactsAction()
+	{
+		try {
+			$keyword = $this->getRequest()->getQuery('keyword', '');
+			if (!is_string($keyword)) throw new InvalidArgumentException('CALENDAR_CONTACT_SEARCH');
+			$this->json(['ok' => true, 'contacts' => $this->events->contactEmails($this->id(), $keyword)]);
+		} catch (InvalidArgumentException | RuntimeException $e) { $this->failure($e, true); }
+	}
+
+	public function cancelAction()
+	{
+		try {
+			$this->requirePost(); $this->checkCsrf(); $input = $this->getRequest()->getPost();
+			if (array_diff(array_keys($input), ['csrf_token', 'sequence'])) throw new InvalidArgumentException('CALENDAR_INVALID_INPUT');
+			$this->events->cancelEvent($this->id(), $this->sequence($input)); $this->participantResult();
+		} catch (InvalidArgumentException | RuntimeException $e) { $this->failure($e); }
+	}
+
+	public function sendAction()
+	{
+		try {
+			$this->requirePost(); $this->checkCsrf(); $input = $this->getRequest()->getPost();
+			if (array_diff(array_keys($input), ['csrf_token', 'sequence', 'recipients', 'locale']) || !is_array($input['recipients'] ?? null) || !is_string($input['locale'] ?? null)) throw new InvalidArgumentException('CALENDAR_MAIL_SELECTION');
+			$result = (new Calendar_Model_Invitation())->send($this->id(), $input['recipients'], $this->sequence($input), $input['locale']);
+			$this->json(['ok' => $result['failed'] === 0, 'result' => $result, 'message' => $this->view->translate($result['failed'] ? 'CALENDAR_MAIL_UNKNOWN' : 'CALENDAR_MAIL_COMPLETE')]);
+		} catch (InvalidArgumentException | RuntimeException $e) { $this->failure($e, true); }
+	}
+
+	private function positive($value): int
+	{
+		$id = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+		if (!$id) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+		return $id;
+	}
+
+	private function sequence(array $input): int
+	{
+		$sequence = filter_var($input['sequence'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+		if ($sequence === false) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+		return $sequence;
+	}
+
+	private function requirePost(): void
+	{
+		if (!$this->getRequest()->isPost()) throw new RuntimeException('CALENDAR_POST_REQUIRED', 405);
+	}
+
+	private function participantResult(): void
+	{
+		if ($this->getRequest()->isXmlHttpRequest()) { $this->json(['ok' => true, 'event' => $this->events->getEvent($this->id()), 'participants' => $this->events->participants($this->id())]); return; }
+		$this->_helper->redirector->gotoSimple('view', 'index', 'calendar', ['id' => $this->id()]);
+	}
 
 	public function remindersAction()
 	{

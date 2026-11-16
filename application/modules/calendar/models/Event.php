@@ -98,7 +98,8 @@ class Calendar_Model_Event
 	public static function present(array $row, int $actor, DateTimeZone $displayZone): array
 	{
 		$own = (int)$row['ownerid'] === $actor;
-		$private = !$own && $row['visibility'] !== 'team';
+		$participation = $row['participation'] ?? null;
+		$private = !$own && $participation === null && $row['visibility'] !== 'team';
 		$zone = self::timezone($row['timezone'] ?: $displayZone->getName());
 		// Old records retain their original tenant-local wall times until explicitly edited.
 		$start = $row['startutc'] ? new DateTimeImmutable($row['startutc'], new DateTimeZone('UTC')) : self::localTime(str_replace(' ', 'T', $row['start']), $zone, 'earlier');
@@ -106,10 +107,11 @@ class Calendar_Model_Event
 		$result = [
 			'id' => (int)$row['id'], 'ownerid' => (int)$row['ownerid'], 'owner' => (string)($row['owner'] ?? ''),
 			'own' => $own, 'private' => $private, 'allday' => (bool)$row['allday'],
+			'participation' => $participation,
 			'start' => $start->setTimezone($row['allday'] ? $zone : $displayZone)->format(DateTimeInterface::ATOM),
 			'end' => $end->setTimezone($row['allday'] ? $zone : $displayZone)->format(DateTimeInterface::ATOM),
 		];
-		if (!$private) $result += ['title' => (string)$row['title'], 'description' => (string)$row['description'], 'location' => (string)$row['location'], 'visibility' => $row['visibility'], 'timezone' => $zone->getName()];
+		if (!$private) $result += ['title' => (string)$row['title'], 'description' => (string)$row['description'], 'location' => (string)$row['location'], 'visibility' => $row['visibility'], 'timezone' => $zone->getName(), 'sequence' => (int)$row['icalsequence'], 'cancelled' => (bool)$row['cancelled']];
 		if ($own) {
 			$result['reminderminutes'] = $row['reminderminutes'] === null ? 'none' : (string)$row['reminderminutes'];
 			foreach (['start' => $start, 'end' => $end] as $field => $instant) {

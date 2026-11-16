@@ -43,6 +43,8 @@ class DEEC_Permission
 			'upload',
 		],
 		'edit' => [
+			'participants',
+			'contacts',
 			'edit',
 			'originalreview',
 			'import',
@@ -61,6 +63,7 @@ class DEEC_Permission
 			'createquote',
 		],
 		'view' => [
+			'respond',
 			'reminders',
 			'view',
 			'get',

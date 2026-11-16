@@ -8,7 +8,11 @@ $deadline = microtime(true) + 10;
 while (!file_exists($work . '/go-' . $batch)) { if (microtime(true) > $deadline) exit(1); usleep(1000); }
 try {
 	$model = new Calendar_Model_DbTable_Event();
-	if ($argv[5] === 'edit') $model->saveEvent(json_decode(file_get_contents($work . '/reminder-edit.json'), true), $id);
+	if ($argv[5] === 'mail') {
+		$pid = (int)$model->participants($id)[0]['id'];
+		echo json_encode((new Calendar_Model_Invitation())->send($id, [$pid], $revision, 'en_US')); exit;
+	}
+	elseif ($argv[5] === 'edit') $model->saveEvent(json_decode(file_get_contents($work . '/reminder-edit.json'), true), $id);
 	else $model->updateReminder($id, $revision, $argv[5] === 'snooze' ? 5 : null);
 	echo json_encode(['code' => 200]);
 } catch (RuntimeException $e) { echo json_encode(['code' => $e->getCode()]); }

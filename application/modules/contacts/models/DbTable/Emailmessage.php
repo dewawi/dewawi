@@ -10,6 +10,20 @@ class Contacts_Model_DbTable_Emailmessage extends DEEC_Model_DbTable_Entity
 		parent::init();
 	}
 
+	protected function fetchById(int $id, bool $forUpdate): ?array
+	{
+		$row = parent::fetchById($id, $forUpdate);
+		return $row && $this->canReadCalendarMessage($row) ? $row : null;
+	}
+
+	private function canReadCalendarMessage(array $row): bool
+	{
+		if (($row['module'] ?? '') !== 'calendar') return true;
+		$user = Zend_Registry::get('User');
+		if (!Zend_Auth::getInstance()->hasIdentity() || (int)$row['clientid'] !== (int)$user['clientid'] || !(new DEEC_Permission((array)$user))->hasPermission('calendar', 'index', 'view')) return false;
+		return (bool)$this->getAdapter()->fetchOne($this->getAdapter()->select()->from('calendarevent', ['id'])->where('id = ?', (int)$row['calendareventid'])->where('clientid = ?', (int)$user['clientid'])->where('ownerid = ?', (int)$user['id'])->where('deleted = ?', 0));
+	}
+
 	public function getEmailmessage($id)
 	{
 		$id = (int)$id;
@@ -18,7 +32,7 @@ class Contacts_Model_DbTable_Emailmessage extends DEEC_Model_DbTable_Entity
 		$where[] = $this->getAdapter()->quoteInto('clientid = ?', $this->_client['id']);
 		$where[] = $this->getAdapter()->quoteInto('deleted = ?', 0);
 		$data = $this->fetchRow($where);
-		if(!$data) {
+		if(!$data || !$this->canReadCalendarMessage($data->toArray())) {
 			throw new Exception("Could not find row $id");
 		}
 		return $data->toArray();
@@ -27,6 +41,7 @@ class Contacts_Model_DbTable_Emailmessage extends DEEC_Model_DbTable_Entity
 	public function getEmailmessages($contactid = NULL, $campaignid = NULL, $module = NULL, $controller = NULL)
 	{
 		$where = array();
+		$where[] = "(module IS NULL OR module <> 'calendar')";
 		if($contactid) $where[] = $this->getAdapter()->quoteInto('contactid = ?', $contactid);
 		if($campaignid) $where[] = $this->getAdapter()->quoteInto('campaignid = ?', $campaignid);
 		if($module) $where[] = $this->getAdapter()->quoteInto('module = ?', $module);

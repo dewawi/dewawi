@@ -3,7 +3,7 @@ $e = fn($value) => $this->escape((string)$value);
 $t = fn($key) => $e($this->translate($key));
 $p = $this->period;
 $calendarUrl = $this->url(['module' => 'calendar', 'controller' => 'index', 'action' => 'index'], 'default', true);
-$url = fn($params) => $e($calendarUrl . '?' . http_build_query($params + ['date' => $p['date'], 'mode' => $p['mode'], 'ownerid' => $this->ownerid]));
+$url = fn($params) => $e($calendarUrl . '?' . http_build_query($params + ['date' => $p['date'], 'mode' => $p['mode'], 'ownerid' => $this->ownerid, 'scope' => $this->scope]));
 $days = [];
 for ($date = new DateTimeImmutable($p['first'], new DateTimeZone('UTC')); $date->format('Y-m-d') < $p['until']; $date = $date->modify('+1 day')) $days[$date->format('Y-m-d')] = [];
 foreach ($this->events as $event) {
@@ -34,6 +34,7 @@ foreach ($this->events as $event) {
 	<form class="dw-calendar-toolbar" method="get" action="<?php echo $e($calendarUrl); ?>" data-autosave="false">
 		<label><?php echo $t('CALENDAR_DATE'); ?><input class="dw-input" type="date" name="date" value="<?php echo $e($p['date']); ?>" required></label>
 		<input type="hidden" name="mode" value="<?php echo $e($p['mode']); ?>">
+		<label><?php echo $t('CALENDAR_SCOPE'); ?><select class="dw-select" name="scope"><?php foreach (['team' => 'CALENDAR_SCOPE_TEAM', 'mine' => 'CALENDAR_SCOPE_MINE', 'invitations' => 'CALENDAR_SCOPE_INVITATIONS'] as $scope => $label): ?><option value="<?php echo $scope; ?>" <?php echo $this->scope === $scope ? 'selected' : ''; ?>><?php echo $t($label); ?></option><?php endforeach; ?></select></label>
 		<label><?php echo $t('CALENDAR_MEMBER'); ?><select class="dw-select" name="ownerid">
 			<option value="0"><?php echo $t('CALENDAR_ALL_MEMBERS'); ?></option>
 			<?php foreach ($this->members as $id => $name): ?><option value="<?php echo (int)$id; ?>" <?php echo (int)$id === $this->ownerid ? 'selected' : ''; ?>><?php echo $e($name ?: '#' . $id); ?></option><?php endforeach; ?>
@@ -51,6 +52,8 @@ foreach ($this->events as $event) {
 					<a class="dw-calendar-event<?php echo $event['private'] ? ' dw-calendar-event--private' : ''; ?>" href="<?php echo $e($this->url(['module' => 'calendar', 'controller' => 'index', 'action' => 'view', 'id' => $event['id']], 'default', true)); ?>">
 						<span class="dw-calendar-event-time"><?php echo $event['allday'] ? $t('CALENDAR_ALLDAY') : $e((new DateTimeImmutable($event['start']))->format('d.m. H:i P') . ' – ' . (new DateTimeImmutable($event['end']))->format('d.m. H:i P')); ?></span>
 						<strong><?php echo $event['private'] ? $t('CALENDAR_BUSY') : $e($event['title']); ?></strong>
+						<?php if ($event['participation'] !== null): ?><span><?php echo $t('CALENDAR_INVITATION') . ' · ' . $t('CALENDAR_' . strtoupper($event['participation'])); ?></span><?php endif; ?>
+						<?php if (!empty($event['cancelled'])): ?><span><?php echo $t('CALENDAR_CANCELLED'); ?></span><?php endif; ?>
 						<span><?php echo $e($event['owner'] ?: '#' . $event['ownerid']); ?></span>
 					</a>
 				<?php endforeach; ?>

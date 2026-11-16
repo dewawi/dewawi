@@ -54,6 +54,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				if($messageid) {
 					$emailmessage = $emailmessageDb->getById((int)$messageid);
 					if(!$emailmessage) throw new RuntimeException('Email message is not available');
+					if (($emailmessage['module'] ?? '') === 'calendar') throw new RuntimeException('Calendar invitations must use the calendar send action');
 					$contactid = (int)($emailmessage['contactid'] ?? 0);
 					$documentid = (int)($emailmessage['documentid'] ?? 0);
 					$campaignid = (int)($emailmessage['campaignid'] ?? 0);
@@ -436,7 +437,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 		return rtrim($request->getScheme() . '://' . $request->getHttpHost() . $basePath, '/');
 	}
 
-	private function getEmailConfig($module): array
+	public function getEmailConfig($module): array
 	{
 		if($module === 'shops') {
 			$shop = Zend_Registry::get('Shop');

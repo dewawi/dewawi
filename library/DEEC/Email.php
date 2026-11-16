@@ -119,6 +119,7 @@ class DEEC_Email {
 		$mail->Password = (string)($smtp['password'] ?? '');
 		$mail->SMTPSecure = (string)($smtp['secure'] ?? '');
 		$mail->Port = (int)($smtp['port'] ?? 465);
+		if (isset($smtp['timeout'])) $mail->Timeout = max(1, min(60, (int)$smtp['timeout']));
 
 		$mail->setFrom((string)($message['fromEmail'] ?? ''), (string)($message['fromName'] ?? ''));
 
@@ -153,6 +154,10 @@ class DEEC_Email {
 		$mail->Body = (string)($message['body'] ?? '');
 
 		if(array_key_exists('altBody', $message)) $mail->AltBody = (string)$message['altBody'];
+		if (isset($message['ical'])) {
+			if (!is_string($message['ical']) || !str_starts_with($message['ical'], "BEGIN:VCALENDAR\r\n") || !preg_match('/\r\nMETHOD:(REQUEST|CANCEL)\r\n/', $message['ical'])) throw new InvalidArgumentException('Invalid calendar email');
+			$mail->Ical = $message['ical'];
+		}
 
 		$mail->CharSet = (string)($message['charset'] ?? 'UTF-8');
 		$mail->Encoding = (string)($message['encoding'] ?? 'base64');

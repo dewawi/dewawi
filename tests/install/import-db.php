@@ -143,6 +143,8 @@ $db->query('CREATE TABLE client LIKE install_success.client');
 $db->query('CREATE TABLE item LIKE install_success.item');
 preg_match('/CREATE TABLE IF NOT EXISTS `calendarevent` .*?;/s', file_get_contents($root . '/install/config/update-1.1.2-1.1.3.sql'), $legacyCalendar);
 $db->query($legacyCalendar[0]);
+preg_match('/CREATE TABLE IF NOT EXISTS `emailmessage` .*?;/s', file_get_contents($root . '/install/config/structure.sql'), $legacyCalendarMail);
+$db->query(preg_replace('/^  `calendar(?:eventid|participantid|generation|sequence|method)`.*\n|^  UNIQUE KEY `calendar_delivery`.*\n/m', '', $legacyCalendarMail[0]));
 $db->query("INSERT INTO calendarevent (id, title, start, end, clientid, createdby) VALUES (1, 'Legacy event', '2026-11-16 09:00:00', '2026-11-16 10:00:00', 7, 42)");
 $db->query('CREATE TABLE contactperson (id INT PRIMARY KEY, name1 VARCHAR(255) NULL, name2 VARCHAR(255) NULL) ENGINE=InnoDB');
 $db->query('CREATE TABLE contact (id INT PRIMARY KEY, type VARCHAR(255), clientid INT NOT NULL, created DATETIME NULL, createdby INT NOT NULL DEFAULT 0, modified DATETIME NULL, modifiedby INT NOT NULL DEFAULT 0, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');

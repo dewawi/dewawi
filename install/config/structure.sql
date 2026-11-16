@@ -88,6 +88,10 @@ CREATE TABLE IF NOT EXISTS `calendarevent` (
   `reminderdue` datetime DEFAULT NULL,
   `reminderdone` datetime DEFAULT NULL,
   `reminderrevision` int unsigned NOT NULL DEFAULT 0,
+  `icaluid` varchar(64) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
+  `icalsequence` int unsigned NOT NULL DEFAULT 0,
+  `organizeremail` varchar(254) DEFAULT NULL,
+  `cancelled` tinyint(1) NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,
@@ -95,9 +99,30 @@ CREATE TABLE IF NOT EXISTS `calendarevent` (
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
+  UNIQUE KEY `icaluid` (`icaluid`),
   KEY `clientid_deleted_startutc` (`clientid`, `deleted`, `startutc`),
   KEY `clientid_ownerid_deleted` (`clientid`, `ownerid`, `deleted`),
   KEY `client_owner_reminder_due` (`clientid`, `ownerid`, `deleted`, `reminderdone`, `reminderdue`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `calendarparticipant` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `eventid` int(11) NOT NULL,
+  `userid` int(11) DEFAULT NULL,
+  `name` varchar(255) NOT NULL,
+  `email` varchar(254) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL,
+  `contactemailid` int(11) DEFAULT NULL,
+  `status` varchar(16) NOT NULL DEFAULT 'invited',
+  `removed` tinyint(1) NOT NULL DEFAULT 0,
+  `generation` int unsigned NOT NULL DEFAULT 1,
+  `clientid` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `modified` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `client_event_user` (`clientid`, `eventid`, `userid`),
+  UNIQUE KEY `client_event_email` (`clientid`, `eventid`, `email`),
+  KEY `client_user_invitation` (`clientid`, `userid`, `removed`, `eventid`),
+  CONSTRAINT `calendarparticipant_event` FOREIGN KEY (`eventid`) REFERENCES `calendarevent` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `campaign` (
@@ -940,6 +965,11 @@ CREATE TABLE IF NOT EXISTS `emailmessage` (
   `subject` varchar(255) DEFAULT NULL,
   `body` longtext DEFAULT NULL,
   `attachment` text DEFAULT NULL,
+  `calendareventid` int(11) DEFAULT NULL,
+  `calendarparticipantid` int(11) DEFAULT NULL,
+  `calendargeneration` int unsigned DEFAULT NULL,
+  `calendarsequence` int unsigned DEFAULT NULL,
+  `calendarmethod` varchar(8) DEFAULT NULL,
   `clientid` int(11) NOT NULL,
   `messagesent` datetime DEFAULT NULL,
   `messagesentby` int(11) NOT NULL DEFAULT 0,
@@ -950,6 +980,7 @@ CREATE TABLE IF NOT EXISTS `emailmessage` (
   `deliveryresponse` text DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
+  UNIQUE KEY `calendar_delivery` (`clientid`, `calendareventid`, `calendarparticipantid`, `calendargeneration`, `calendarsequence`, `calendarmethod`),
   KEY `campaignid_clientid_deleted_module_controller` (campaignid, clientid, deleted, module, controller),
   KEY `providermessageid` (providermessageid),
   KEY (`feedbackid`)

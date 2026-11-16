@@ -1,0 +1,60 @@
+<?php
+$e = fn($value) => $this->escape((string)$value);
+$t = fn($key) => $e($this->translate($key));
+$event = $this->event;
+$url = fn($action) => $e($this->url(['module' => 'calendar', 'controller' => 'index', 'action' => $action, 'id' => $event['id']], 'default', true));
+$hidden = function () use ($event, $e) { echo '<input type="hidden" name="csrf_token" value="' . $e($this->calendarCsrf) . '"><input type="hidden" name="sequence" value="' . (int)$event['sequence'] . '">'; };
+$statuses = ['invited' => 'CALENDAR_INVITED', 'accepted' => 'CALENDAR_ACCEPTED', 'declined' => 'CALENDAR_DECLINED'];
+?>
+<section class="dw-calendar-participants" data-calendar-participants>
+	<h4><?php echo $t('CALENDAR_PARTICIPANTS'); ?></h4>
+	<?php if ($event['participation'] !== null && !$event['cancelled']): ?>
+		<form method="post" action="<?php echo $url('respond'); ?>" data-autosave="false" data-calendar-response>
+			<?php $hidden(); ?>
+			<label><?php echo $t('CALENDAR_MY_RESPONSE'); ?> <select class="dw-select" name="status"><?php foreach ($statuses as $value => $label): ?><option value="<?php echo $value; ?>" <?php echo $event['participation'] === $value ? 'selected' : ''; ?>><?php echo $t($label); ?></option><?php endforeach; ?></select></label>
+			<button class="dw-btn" type="submit"><?php echo $t('CALENDAR_RESPONSE_SAVE'); ?></button><p role="status" data-calendar-result></p>
+		</form>
+	<?php endif; ?>
+	<div class="dw-table-wrap"><table class="dw-table"><thead><tr><th><?php echo $t('CALENDAR_PARTICIPANT_NAME'); ?></th><th><?php echo $t('CALENDAR_PARTICIPANT_STATUS'); ?></th><?php if ($this->canManage): ?><th><?php echo $t('CALENDAR_PARTICIPANT_ACTIONS'); ?></th><?php endif; ?></tr></thead><tbody>
+	<?php foreach ($this->participants as $participant): ?>
+		<tr data-participant-id="<?php echo (int)$participant['id']; ?>"><td><?php echo $e($participant['name']); ?><?php if ($event['own']): ?><br><?php echo $e($participant['email'] ?? ''); ?><?php endif; ?></td><td><span data-participant-status><?php echo $t($participant['removed'] ? 'CALENDAR_REMOVED' : $statuses[$participant['status']]); ?></span></td>
+		<?php if ($this->canManage): ?><td>
+			<?php if (!$participant['removed'] && !$event['cancelled']): ?>
+				<form method="post" action="<?php echo $url('participants'); ?>" data-autosave="false">
+					<?php $hidden(); ?><input type="hidden" name="operation" value="remove"><input type="hidden" name="participantid" value="<?php echo (int)$participant['id']; ?>"><button class="dw-btn" type="submit"><?php echo $t('CALENDAR_REMOVE'); ?></button>
+				</form>
+				<?php if (!$participant['userid']): ?><form method="post" action="<?php echo $url('participants'); ?>" data-autosave="false" data-calendar-response>
+					<?php $hidden(); ?><input type="hidden" name="operation" value="status"><input type="hidden" name="participantid" value="<?php echo (int)$participant['id']; ?>">
+					<select class="dw-select" name="status" aria-label="<?php echo $t('CALENDAR_PARTICIPANT_STATUS'); ?>"><?php foreach ($statuses as $value => $label): ?><option value="<?php echo $value; ?>" <?php echo $participant['status'] === $value ? 'selected' : ''; ?>><?php echo $t($label); ?></option><?php endforeach; ?></select><button class="dw-btn" type="submit"><?php echo $t('CALENDAR_EXTERNAL_RESPONSE'); ?></button><p role="status" data-calendar-result></p>
+				</form><?php endif; ?>
+			<?php endif; ?>
+		</td><?php endif; ?></tr>
+	<?php endforeach; ?>
+	</tbody></table></div>
+	<?php if ($this->canEdit): ?>
+		<h4><?php echo $t('CALENDAR_ADD_INTERNAL'); ?></h4>
+		<form method="post" action="<?php echo $url('participants'); ?>" data-autosave="false" data-calendar-add-internal><?php echo $this->internalParticipantForm->render(); ?><button class="dw-btn" type="submit"><?php echo $t('CALENDAR_ADD'); ?></button></form>
+		<h4><?php echo $t('CALENDAR_ADD_EXTERNAL'); ?></h4>
+		<form method="post" action="<?php echo $url('participants'); ?>" data-autosave="false" data-calendar-add-external>
+			<?php if ((new DEEC_Permission((array)$this->user))->hasPermission('contacts', 'contact', 'view')): ?>
+				<div data-calendar-contact-search data-url="<?php echo $url('contacts'); ?>"><label><?php echo $t('CALENDAR_CONTACT_SEARCH_LABEL'); ?><input class="dw-input" type="search" data-calendar-contact-query maxlength="100"></label><button class="dw-btn" type="button" data-calendar-contact-button><?php echo $t('CALENDAR_CONTACT_FIND'); ?></button>
+				<select class="dw-select" name="contactemailid" aria-label="<?php echo $t('CALENDAR_CONTACT_CHOOSE'); ?>"><option value="0"><?php echo $t('CALENDAR_CONTACT_MANUAL'); ?></option></select><p role="status" data-calendar-contact-result></p></div>
+			<?php endif; ?>
+			<?php echo $this->externalParticipantForm->render(); ?><button class="dw-btn" type="submit"><?php echo $t('CALENDAR_ADD'); ?></button>
+		</form>
+		<form method="post" action="<?php echo $url('cancel'); ?>" data-autosave="false" data-calendar-cancel="<?php echo $t('CALENDAR_CANCEL_CONFIRM'); ?>"><?php $hidden(); ?><button class="dw-btn" type="submit"><?php echo $t('CALENDAR_CANCEL'); ?></button></form>
+	<?php endif; ?>
+	<?php if ($this->canMail && $this->participants): ?>
+		<h4><?php echo $t('CALENDAR_SEND_INVITATIONS'); ?></h4><p><?php echo $t('CALENDAR_MAIL_HELP'); ?></p>
+		<form method="post" action="<?php echo $url('send'); ?>" data-autosave="false" data-calendar-mail>
+			<?php $hidden(); ?>
+			<?php foreach ($this->participants as $participant): ?>
+				<?php if (!$participant['email']) continue; ?>
+				<label class="dw-checkbox"><input type="checkbox" name="recipients[]" value="<?php echo (int)$participant['id']; ?>"><span><?php echo $e($participant['name'] . ' <' . $participant['email'] . '>') . ' — ' . $t($participant['removed'] || $event['cancelled'] ? 'CALENDAR_MAIL_CANCEL' : 'CALENDAR_MAIL_REQUEST'); ?></span></label>
+			<?php endforeach; ?>
+			<label><?php echo $t('CALENDAR_MAIL_LANGUAGE'); ?><select class="dw-select" name="locale"><option value="de_DE">Deutsch</option><option value="en_US" <?php echo (string)Zend_Registry::get('Zend_Locale') === 'en_US' ? 'selected' : ''; ?>>English</option></select></label>
+			<button class="dw-btn" type="submit"><?php echo $t('CALENDAR_MAIL_SEND_SELECTED'); ?></button><p role="status" data-calendar-result></p>
+		</form>
+	<?php endif; ?>
+	<?php if ($event['own']): ?><p><?php echo $t('CALENDAR_DELETE_MAIL_HELP'); ?></p><?php endif; ?>
+</section>

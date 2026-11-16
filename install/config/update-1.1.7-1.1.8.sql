@@ -350,3 +350,41 @@ ALTER TABLE `calendarevent`
   ADD `reminderdone` datetime DEFAULT NULL AFTER `reminderdue`,
   ADD `reminderrevision` int unsigned NOT NULL DEFAULT 0 AFTER `reminderdone`,
   ADD INDEX `client_owner_reminder_due` (`clientid`, `ownerid`, `deleted`, `reminderdone`, `reminderdue`);
+
+-- K3 participants and explicit calendar email delivery using the existing email history.
+ALTER TABLE `calendarevent`
+  ADD `icaluid` varchar(64) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL AFTER `reminderrevision`,
+  ADD `icalsequence` int unsigned NOT NULL DEFAULT 0 AFTER `icaluid`,
+  ADD `organizeremail` varchar(254) DEFAULT NULL AFTER `icalsequence`,
+  ADD `cancelled` tinyint(1) NOT NULL DEFAULT 0 AFTER `organizeremail`,
+  ADD UNIQUE KEY `icaluid` (`icaluid`);
+
+UPDATE `calendarevent` SET `icaluid` = CONCAT(UUID(), '@dewawi') WHERE `icaluid` IS NULL;
+
+CREATE TABLE IF NOT EXISTS `calendarparticipant` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `eventid` int(11) NOT NULL,
+  `userid` int(11) DEFAULT NULL,
+  `name` varchar(255) NOT NULL,
+  `email` varchar(254) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL,
+  `contactemailid` int(11) DEFAULT NULL,
+  `status` varchar(16) NOT NULL DEFAULT 'invited',
+  `removed` tinyint(1) NOT NULL DEFAULT 0,
+  `generation` int unsigned NOT NULL DEFAULT 1,
+  `clientid` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `modified` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `client_event_user` (`clientid`, `eventid`, `userid`),
+  UNIQUE KEY `client_event_email` (`clientid`, `eventid`, `email`),
+  KEY `client_user_invitation` (`clientid`, `userid`, `removed`, `eventid`),
+  CONSTRAINT `calendarparticipant_event` FOREIGN KEY (`eventid`) REFERENCES `calendarevent` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `emailmessage`
+  ADD `calendareventid` int(11) DEFAULT NULL AFTER `attachment`,
+  ADD `calendarparticipantid` int(11) DEFAULT NULL AFTER `calendareventid`,
+  ADD `calendargeneration` int unsigned DEFAULT NULL AFTER `calendarparticipantid`,
+  ADD `calendarsequence` int unsigned DEFAULT NULL AFTER `calendargeneration`,
+  ADD `calendarmethod` varchar(8) DEFAULT NULL AFTER `calendarsequence`,
+  ADD UNIQUE KEY `calendar_delivery` (`clientid`, `calendareventid`, `calendarparticipantid`, `calendargeneration`, `calendarsequence`, `calendarmethod`);

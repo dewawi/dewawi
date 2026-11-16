@@ -14,27 +14,50 @@ preg_match('/CREATE TABLE IF NOT EXISTS `calendarevent` .*?;/s', file_get_conten
 $pdo->exec(str_replace('`calendarevent`', 'calendar_fresh.`calendarevent`', $fresh[0]));
 preg_match('/CREATE TABLE IF NOT EXISTS `calendarevent` .*?;/s', file_get_contents($root . '/install/config/update-1.1.2-1.1.3.sql'), $old);
 $pdo->exec($old[0]);
+preg_match('/CREATE TABLE IF NOT EXISTS `emailmessage` .*?;/s', file_get_contents($root . '/install/config/structure.sql'), $mailSchema);
+$legacyMail = preg_replace('/^  `calendar(?:eventid|participantid|generation|sequence|method)`.*\n|^  UNIQUE KEY `calendar_delivery`.*\n/m', '', $mailSchema[0]);
+$pdo->exec($legacyMail);
 $pdo->exec("INSERT INTO calendarevent (id,title,description,start,end,clientid,createdby) VALUES (1,'Legacy private','Legacy secret','2026-03-28 09:00:00','2026-03-28 10:00:00',1,1)");
 $sql = explode('-- K1 team calendar:', file_get_contents($root . '/install/config/update-1.1.7-1.1.8.sql'), 2)[1];
 $sql = substr($sql, strpos($sql, 'ALTER TABLE'));
 foreach (explode(';', $sql) as $query) if (trim($query)) $pdo->exec($query);
+foreach (['emailmessage', 'calendarparticipant'] as $table) {
+	preg_match('/CREATE TABLE IF NOT EXISTS `' . $table . '` .*?;/s', file_get_contents($root . '/install/config/structure.sql'), $freshTable);
+	$pdo->exec(str_replace(['`' . $table . '`', '`calendarevent`'], ['calendar_fresh.`' . $table . '`', 'calendar_fresh.`calendarevent`'], $freshTable[0]));
+	check($db->fetchAll('SHOW FULL COLUMNS FROM ' . $table) === $db->fetchAll('SHOW FULL COLUMNS FROM calendar_fresh.' . $table), 'K3 fresh/upgrade schema differs: ' . $table);
+}
 $columns = $db->fetchAll('SHOW FULL COLUMNS FROM calendarevent');
 check($columns === $db->fetchAll('SHOW FULL COLUMNS FROM calendar_fresh.calendarevent'), 'Upgrade/fresh columns differ');
 $index = static function ($rows) { foreach ($rows as &$row) { unset($row['Cardinality']); } unset($row); return $rows; };
 check($index($db->fetchAll('SHOW INDEX FROM calendarevent')) === $index($db->fetchAll('SHOW INDEX FROM calendar_fresh.calendarevent')), 'Upgrade/fresh indexes differ');
+foreach (['emailmessage', 'calendarparticipant'] as $table) check($index($db->fetchAll('SHOW INDEX FROM ' . $table)) === $index($db->fetchAll('SHOW INDEX FROM calendar_fresh.' . $table)), 'K3 upgrade/fresh indexes differ: ' . $table);
 $legacy = $db->fetchRow('SELECT * FROM calendarevent WHERE id=1');
 check($legacy['start'] === '2026-03-28 09:00:00' && $legacy['startutc'] === null && $legacy['visibility'] === 'private' && (int)$legacy['ownerid'] === 1, 'Legacy data changed or exposed');
 // A site with K1 already installed needs only the new official K2 block.
 $pdo->exec('CREATE DATABASE calendar_k1');
 $pdo->exec(str_replace('`calendarevent`', 'calendar_k1.`calendarevent`', $old[0]));
+$pdo->exec(str_replace('`emailmessage`', 'calendar_k1.`emailmessage`', $legacyMail));
 [$k1, $k2] = explode('-- K2 calendar reminders:', $sql, 2);
 foreach (explode(';', $k1) as $query) if (trim($query)) $pdo->exec(str_replace('`calendarevent`', 'calendar_k1.`calendarevent`', $query));
 $pdo->exec("INSERT INTO calendar_k1.calendarevent (title,start,end,startutc,endutc,timezone,ownerid,clientid,visibility) VALUES ('K1 record','2026-11-16 10:00:17','2026-11-16 11:00:29','2026-11-16 09:00:17','2026-11-16 10:00:29','Europe/Berlin',1,1,'team')");
 $k2 = substr($k2, strpos($k2, 'ALTER TABLE'));
-foreach (explode(';', $k2) as $query) if (trim($query)) $pdo->exec(str_replace('`calendarevent`', 'calendar_k1.`calendarevent`', $query));
+foreach (explode(';', $k2) as $query) if (trim($query)) $pdo->exec(str_replace(['`calendarevent`', '`calendarparticipant`', '`emailmessage`'], ['calendar_k1.`calendarevent`', 'calendar_k1.`calendarparticipant`', 'calendar_k1.`emailmessage`'], $query));
 check($columns === $db->fetchAll('SHOW FULL COLUMNS FROM calendar_k1.calendarevent'), 'K2-only upgrade differs from fresh schema');
 $k1row = $db->fetchRow('SELECT * FROM calendar_k1.calendarevent');
 check($k1row['startutc'] === '2026-11-16 09:00:17' && $k1row['reminderminutes'] === null && $k1row['reminderdue'] === null && $k1row['reminderdone'] === null && (int)$k1row['reminderrevision'] === 0, 'K2 silently changed existing appointments or enabled reminders');
+[$beforeK3, $k3] = explode('-- K3 participants', $sql, 2);
+$pdo->exec('CREATE DATABASE calendar_k2');
+$pdo->exec(str_replace('`calendarevent`', 'calendar_k2.`calendarevent`', $old[0]));
+$pdo->exec(str_replace('`emailmessage`', 'calendar_k2.`emailmessage`', $legacyMail));
+$qualify = fn($query) => str_replace(['`calendarevent`', '`calendarparticipant`', '`emailmessage`'], ['calendar_k2.`calendarevent`', 'calendar_k2.`calendarparticipant`', 'calendar_k2.`emailmessage`'], $query);
+foreach (explode(';', $beforeK3) as $query) if (trim($query)) $pdo->exec($qualify($query));
+$pdo->exec("INSERT INTO calendar_k2.calendarevent (title,start,end,startutc,endutc,timezone,ownerid,clientid,reminderminutes,reminderdue,reminderdone,reminderrevision) VALUES ('K2 record','2026-11-16 10:00:00','2026-11-16 11:00:00','2026-11-16 09:00:00','2026-11-16 10:00:00','Europe/Berlin',1,1,15,'2026-11-16 08:45:00','2026-11-16 08:46:00',7)");
+$k3 = substr($k3, strpos($k3, 'ALTER TABLE'));
+foreach (explode(';', $k3) as $query) if (trim($query)) $pdo->exec($qualify($query));
+foreach (['calendarevent', 'calendarparticipant', 'emailmessage'] as $table) check($db->fetchAll('SHOW FULL COLUMNS FROM calendar_k2.' . $table) === $db->fetchAll('SHOW FULL COLUMNS FROM calendar_fresh.' . $table), 'K3-only upgrade schema differs: ' . $table);
+foreach (['calendarevent', 'calendarparticipant', 'emailmessage'] as $table) check($index($db->fetchAll('SHOW INDEX FROM calendar_k2.' . $table)) === $index($db->fetchAll('SHOW INDEX FROM calendar_fresh.' . $table)), 'K3-only upgrade indexes differ: ' . $table);
+$k2row = $db->fetchRow('SELECT * FROM calendar_k2.calendarevent');
+check($k2row['icaluid'] !== '' && (int)$k2row['icalsequence'] === 0 && (int)$k2row['reminderrevision'] === 7 && $k2row['reminderdone'] === '2026-11-16 08:46:00', 'K3 migration changed K2 reminder state');
 // Real user and permission tables, using only the official fresh schema.
 foreach (['user', 'permission'] as $table) {
 	preg_match('/CREATE TABLE IF NOT EXISTS `' . $table . '` .*?;/s', file_get_contents($root . '/install/config/structure.sql'), $match);

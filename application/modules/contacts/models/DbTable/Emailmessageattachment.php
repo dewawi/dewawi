@@ -89,6 +89,10 @@ class Contacts_Model_DbTable_Emailmessageattachment extends DEEC_Model_DbTable_E
 	{
 		$module = (string)($message['module'] ?? '');
 		$controller = (string)($message['controller'] ?? '');
+		if ($module === 'calendar' && $controller === 'index') {
+			$user = Zend_Registry::get('User');
+			return (int)$message['clientid'] === (int)$user['clientid'] && (new Contacts_Model_DbTable_Emailmessage())->setClientId((int)$user['clientid'])->getById((int)$message['id']) !== null;
+		}
 		$parentId = $module === 'contacts' ? (int)($message['contactid'] ?? 0) : ((int)($message['campaignid'] ?? 0) ?: (int)($message['documentid'] ?? 0));
 		return $parentId > 0 && (new Contacts_Model_DbTable_Emailattachment())->getParentContext($parentId, $module, $controller) !== null;
 	}

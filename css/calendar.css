@@ -14,6 +14,11 @@
 .dw-calendar-description { white-space: pre-wrap; }
 .dw-calendar-detail dd { margin: .3rem 0 1rem; overflow-wrap: anywhere; }
 .dw-calendar-editor input, .dw-calendar-editor select, .dw-calendar-editor textarea { max-width: 100%; min-width: 0; }
+.dw-calendar-participants form { margin: .6rem 0 1rem; }
+.dw-calendar-participants .dw-checkbox { display: flex; align-items: flex-start; white-space: normal; overflow-wrap: anywhere; }
+.dw-calendar-participants select, .dw-calendar-participants input { max-width: 100%; box-sizing: border-box; }
+.dw-calendar-participants td { overflow-wrap: anywhere; }
+.dw-calendar-participants label { max-width: 100%; }
 @media (max-width: 760px) {
 	.dw-calendar-grid--month, .dw-calendar-grid--week { grid-template-columns: minmax(0, 1fr); }
 	.dw-calendar-day { min-height: 4rem; }

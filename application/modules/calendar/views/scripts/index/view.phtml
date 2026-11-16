@@ -6,6 +6,7 @@ $format = $event['allday'] ? 'Y-m-d' : 'Y-m-d H:i P';
 <article class="dw-calendar-detail dw-card">
 	<p><a href="<?php echo $e($this->url(['module' => 'calendar', 'controller' => 'index', 'action' => 'index'], 'default', true)); ?>"><?php echo $e($this->translate('CALENDAR_BACK')); ?></a></p>
 	<h3><?php echo $event['private'] ? $e($this->translate('CALENDAR_BUSY')) : $e($event['title']); ?></h3>
+	<?php if (!empty($event['cancelled'])): ?><p class="dw-alert" role="status"><?php echo $e($this->translate('CALENDAR_CANCELLED')); ?></p><?php endif; ?>
 	<dl>
 		<dt><?php echo $e($this->translate('CALENDAR_OWNER')); ?></dt><dd><?php echo $e($event['owner'] ?: '#' . $event['ownerid']); ?></dd>
 		<dt><?php echo $e($this->translate('CALENDAR_START')); ?></dt><dd><?php echo $e((new DateTimeImmutable($event['start']))->format($format)); ?></dd>
@@ -17,6 +18,7 @@ $format = $event['allday'] ? 'Y-m-d' : 'Y-m-d H:i P';
 			<dt><?php echo $e($this->translate('CALENDAR_LOCATION')); ?></dt><dd><?php echo $e($event['location']); ?></dd>
 		<?php endif; ?>
 	</dl>
+	<?php if ($event['own'] || $event['participation'] !== null) echo $this->partial('index/participants.phtml', ['event' => $event, 'participants' => $this->participants, 'calendarCsrf' => $this->calendarCsrf, 'canEdit' => $this->canEdit, 'canManage' => $this->canManage, 'canMail' => $this->canMail, 'internalParticipantForm' => $this->internalParticipantForm, 'externalParticipantForm' => $this->externalParticipantForm, 'user' => $this->user]); ?>
 	<div class="dw-calendar-toolbar">
 		<?php if ($this->canEdit): ?><a class="dw-btn" href="<?php echo $e($this->url(['module' => 'calendar', 'controller' => 'index', 'action' => 'edit', 'id' => $event['id']], 'default', true)); ?>"><?php echo $e($this->translate('CALENDAR_EDIT')); ?></a><?php endif; ?>
 		<?php if ($this->canDelete): ?>
