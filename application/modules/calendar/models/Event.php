@@ -46,7 +46,7 @@ class Calendar_Model_Event
 
 	public static function validate(array $input): array
 	{
-		$allowed = ['title', 'description', 'start', 'end', 'allday', 'location', 'visibility', 'timezone', 'startfold', 'endfold', 'csrf_token'];
+		$allowed = ['title', 'description', 'start', 'end', 'allday', 'location', 'visibility', 'timezone', 'startfold', 'endfold', 'reminderminutes', 'csrf_token'];
 		if (array_diff(array_keys($input), $allowed)) throw new InvalidArgumentException('CALENDAR_INVALID_INPUT');
 		foreach ($input as $value) if (!is_string($value) || !mb_check_encoding($value, 'UTF-8') || str_contains($value, "\0")) throw new InvalidArgumentException('CALENDAR_INVALID_INPUT');
 		$title = trim($input['title'] ?? '');
@@ -64,7 +64,12 @@ class Calendar_Model_Event
 			if ($dates[$field]->format('Y') < '1000' || $dates[$field]->format('Y') > '9999') throw new InvalidArgumentException('CALENDAR_INVALID_DATE');
 		}
 		if ($dates['end'] <= $dates['start']) throw new InvalidArgumentException('CALENDAR_INVALID_RANGE');
-		return [
+		$reminder = [];
+		if (array_key_exists('reminderminutes', $input)) {
+			if (!in_array($input['reminderminutes'], ['none', '0', '5', '15', '30', '60', '1440'], true)) throw new InvalidArgumentException('CALENDAR_REMINDER_INVALID');
+			$reminder['reminderminutes'] = $input['reminderminutes'] === 'none' ? null : (int)$input['reminderminutes'];
+		}
+		return $reminder + [
 			'title' => $title, 'description' => $description, 'location' => $location,
 			'visibility' => $visibility, 'allday' => $allday, 'timezone' => $zone->getName(),
 			'start' => $dates['start']->setTimezone($zone)->format('Y-m-d H:i:s'),
@@ -106,6 +111,7 @@ class Calendar_Model_Event
 		];
 		if (!$private) $result += ['title' => (string)$row['title'], 'description' => (string)$row['description'], 'location' => (string)$row['location'], 'visibility' => $row['visibility'], 'timezone' => $zone->getName()];
 		if ($own) {
+			$result['reminderminutes'] = $row['reminderminutes'] === null ? 'none' : (string)$row['reminderminutes'];
 			foreach (['start' => $start, 'end' => $end] as $field => $instant) {
 				$local = $instant->setTimezone($zone)->format((int)$instant->format('s') ? 'Y-m-d\TH:i:s' : 'Y-m-d\TH:i');
 				$result[$field . 'local'] = $row['allday'] ? substr($local, 0, 10) : $local;

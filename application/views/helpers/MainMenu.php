@@ -11,7 +11,9 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 		$menu = array_filter($menu, static fn($item) => ($item['module'] ?? '') !== 'calendar' || $permission->hasPermission('calendar', 'index', 'view'));
 
 		//echo $this->renderMobileDrawer($menu);
-		echo $this->renderDesktopTopbar($menu);
+		$reminders = Zend_Auth::getInstance()->hasIdentity() && $permission->hasPermission('calendar', 'index', 'view')
+			? $this->view->partial('partials/calendar-reminders.phtml', ['reminderUser' => Zend_Registry::get('User')]) : '';
+		echo $this->renderDesktopTopbar($menu, $reminders);
 	}
 
 	protected function getMenuConfig(): array
@@ -339,7 +341,7 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 		return $html;
 	}
 
-	protected function renderDesktopTopbar(array $menu): string
+	protected function renderDesktopTopbar(array $menu, string $reminders = ''): string
 	{
 		$html = '';
 		$html .= '<div class="dw-topbar-wrap">';
@@ -372,6 +374,7 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 		}
 
 		$html .= '</nav>';
+		$html .= $reminders;
 		$html .= '</header>';
 		$html .= '</div>';
 

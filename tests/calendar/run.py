@@ -23,6 +23,7 @@ try:
     subprocess.run(['mariadb', '--no-defaults', '--socket='+str(work/'mysql.sock'), '-uroot', '-e', 'CREATE DATABASE calendar_test'], check=True)
     env = dict(os.environ, DEWAWI_CALENDAR_TEST=str(work))
     subprocess.run(['php', str(root/'tests/calendar/integration.php')], check=True, env=env)
+    subprocess.run(['php', str(root/'tests/calendar/reminders.php')], check=True, env=env)
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
         port = sock.getsockname()[1]
@@ -30,10 +31,11 @@ try:
     with (work/'http.log').open('w') as log:
         web = subprocess.Popen(['php', '-S', f'127.0.0.1:{port}', str(root/'tests/calendar/router.php')], env=env, stdout=log, stderr=log)
         time.sleep(.3)
-        result = subprocess.run(['python3', str(root/'tests/calendar/workflow.py'), str(work), address])
-        if result.returncode:
-            print((work/'http.log').read_text())
-            raise SystemExit(result.returncode)
+        for script in ['workflow.py', 'reminders-workflow.py']:
+            result = subprocess.run(['python3', str(root/'tests/calendar'/script), str(work), address])
+            if result.returncode:
+                print('\n'.join(line for line in (work/'http.log').read_text().splitlines() if not any(noise in line for noise in ['Accepted', 'Closing', 'Closed without sending'])))
+                raise SystemExit(result.returncode)
 finally:
     for service in [web, server]:
         if service:

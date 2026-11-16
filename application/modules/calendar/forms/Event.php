@@ -15,5 +15,6 @@ class Calendar_Form_Event extends DEEC_Form
 		$this->addElement(['name' => 'timezone', 'type' => 'select', 'label' => 'CALENDAR_TIMEZONE', 'options' => array_combine(DateTimeZone::listIdentifiers(), DateTimeZone::listIdentifiers()), 'required' => true, 'col' => 6]);
 		$this->addElement(['name' => 'visibility', 'type' => 'select', 'label' => 'CALENDAR_VISIBILITY', 'options' => ['team' => 'CALENDAR_TEAM', 'private' => 'CALENDAR_PRIVATE'], 'required' => true, 'col' => 6]);
 		$this->addElement(['name' => 'location', 'type' => 'text', 'label' => 'CALENDAR_LOCATION', 'col' => 12, 'attribs' => ['maxlength' => 255]]);
+		$this->addElement(['name' => 'reminderminutes', 'type' => 'select', 'label' => 'CALENDAR_REMINDER', 'default' => 'none', 'options' => ['none' => 'CALENDAR_REMINDER_NONE', '0' => 'CALENDAR_REMINDER_START', '5' => 'CALENDAR_REMINDER_5', '15' => 'CALENDAR_REMINDER_15', '30' => 'CALENDAR_REMINDER_30', '60' => 'CALENDAR_REMINDER_60', '1440' => 'CALENDAR_REMINDER_DAY'], 'description' => 'CALENDAR_REMINDER_HELP', 'col' => 12]);
 	}
 }

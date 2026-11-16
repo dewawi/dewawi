@@ -24,6 +24,17 @@ $index = static function ($rows) { foreach ($rows as &$row) { unset($row['Cardin
 check($index($db->fetchAll('SHOW INDEX FROM calendarevent')) === $index($db->fetchAll('SHOW INDEX FROM calendar_fresh.calendarevent')), 'Upgrade/fresh indexes differ');
 $legacy = $db->fetchRow('SELECT * FROM calendarevent WHERE id=1');
 check($legacy['start'] === '2026-03-28 09:00:00' && $legacy['startutc'] === null && $legacy['visibility'] === 'private' && (int)$legacy['ownerid'] === 1, 'Legacy data changed or exposed');
+// A site with K1 already installed needs only the new official K2 block.
+$pdo->exec('CREATE DATABASE calendar_k1');
+$pdo->exec(str_replace('`calendarevent`', 'calendar_k1.`calendarevent`', $old[0]));
+[$k1, $k2] = explode('-- K2 calendar reminders:', $sql, 2);
+foreach (explode(';', $k1) as $query) if (trim($query)) $pdo->exec(str_replace('`calendarevent`', 'calendar_k1.`calendarevent`', $query));
+$pdo->exec("INSERT INTO calendar_k1.calendarevent (title,start,end,startutc,endutc,timezone,ownerid,clientid,visibility) VALUES ('K1 record','2026-11-16 10:00:17','2026-11-16 11:00:29','2026-11-16 09:00:17','2026-11-16 10:00:29','Europe/Berlin',1,1,'team')");
+$k2 = substr($k2, strpos($k2, 'ALTER TABLE'));
+foreach (explode(';', $k2) as $query) if (trim($query)) $pdo->exec(str_replace('`calendarevent`', 'calendar_k1.`calendarevent`', $query));
+check($columns === $db->fetchAll('SHOW FULL COLUMNS FROM calendar_k1.calendarevent'), 'K2-only upgrade differs from fresh schema');
+$k1row = $db->fetchRow('SELECT * FROM calendar_k1.calendarevent');
+check($k1row['startutc'] === '2026-11-16 09:00:17' && $k1row['reminderminutes'] === null && $k1row['reminderdue'] === null && $k1row['reminderdone'] === null && (int)$k1row['reminderrevision'] === 0, 'K2 silently changed existing appointments or enabled reminders');
 // Real user and permission tables, using only the official fresh schema.
 foreach (['user', 'permission'] as $table) {
 	preg_match('/CREATE TABLE IF NOT EXISTS `' . $table . '` .*?;/s', file_get_contents($root . '/install/config/structure.sql'), $match);
@@ -137,6 +148,7 @@ calendarActor();
 // The existing header adds the calendar only when its view permission is present.
 require_once $root . '/application/views/helpers/MainMenu.php';
 $menuView = new Zend_View();
+$menuView->addScriptPath($root . '/application/views/scripts');
 $menuView->assign(['module' => 'default', 'controller' => 'index']);
 $front = Zend_Controller_Front::getInstance();
 $front->setControllerDirectory(['default' => $root . '/application/controllers', 'calendar' => $root . '/application/modules/calendar/controllers']);

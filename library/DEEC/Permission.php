@@ -61,6 +61,7 @@ class DEEC_Permission
 			'createquote',
 		],
 		'view' => [
+			'reminders',
 			'view',
 			'get',
 			'index',

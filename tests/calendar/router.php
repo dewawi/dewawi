@@ -13,7 +13,7 @@ calendarActor((int)($_GET['actor'] ?? $_COOKIE['actor'] ?? 1), (int)($_GET['tena
 if (isset($_GET['actor'])) setcookie('actor', (string)(int)$_GET['actor'], 0, '/');
 if (isset($_GET['tenant'])) setcookie('tenant', (string)(int)$_GET['tenant'], 0, '/');
 if (!empty($_GET['guest'])) Zend_Auth::getInstance()->clearIdentity();
-if (!preg_match('#^/calendar(?:/index)?(?:/(index|get|view|add|edit|delete))?(?:/id/(\d+))?/?$#', $path, $parts)) { http_response_code(404); exit; }
+if (!preg_match('#^/calendar(?:/index)?(?:/(index|get|view|add|edit|delete|reminders))?(?:/id/(\d+))?/?$#', $path, $parts)) { http_response_code(404); exit; }
 $action = ($parts[1] ?? '') ?: 'index';
 $request = new Zend_Controller_Request_Http();
 $request->setModuleName('calendar')->setControllerName('index')->setActionName($action)->setParams(['module' => 'calendar', 'controller' => 'index', 'action' => $action]);
@@ -26,12 +26,15 @@ Zend_Controller_Action_HelperBroker::getStaticHelper('redirector')->setExit(fals
 $view = new Zend_View(['scriptPath' => $root . '/application/views/scripts']);
 $view->addScriptPath($root . '/application/modules/calendar/views/scripts');
 $view->addHelperPath($root . '/application/views/helpers', 'Zend_View_Helper');
-$tr = new DEEC_Translate('de_DE');
-$tr->loadDir('default', $root . '/languages/de_DE/default');
-$tr->loadDir('calendar', $root . '/languages/de_DE/calendar');
+$locale = $_GET['locale'] ?? $_COOKIE['locale'] ?? 'de_DE';
+if (!in_array($locale, ['de_DE', 'en_US'], true)) $locale = 'de_DE';
+if (isset($_GET['locale'])) setcookie('locale', $locale, 0, '/');
+$tr = new DEEC_Translate($locale);
+$tr->loadDir('default', $root . '/languages/' . $locale . '/default');
+$tr->loadDir('calendar', $root . '/languages/' . $locale . '/calendar');
 Zend_Registry::set('DEEC_Translate', $tr);
-Zend_Registry::set('Zend_Locale', new Zend_Locale('de_DE'));
-$view->language = 'de_DE';
+Zend_Registry::set('Zend_Locale', new Zend_Locale($locale));
+$view->language = $locale;
 $renderer = Zend_Controller_Action_HelperBroker::getStaticHelper('viewRenderer');
 $renderer->setView($view);
 Zend_Layout::startMvc(['layoutPath' => $root . '/application/layouts/scripts', 'layout' => 'layout']);

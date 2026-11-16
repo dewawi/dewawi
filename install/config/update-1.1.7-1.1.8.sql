@@ -342,3 +342,11 @@ ALTER TABLE `calendarevent`
   ADD INDEX `clientid_ownerid_deleted` (`clientid`, `ownerid`, `deleted`);
 
 UPDATE `calendarevent` SET `ownerid` = `createdby` WHERE `ownerid` = 0 AND `createdby` > 0;
+
+-- K2 calendar reminders: one persistent reminder state per appointment, all due times in UTC.
+ALTER TABLE `calendarevent`
+  ADD `reminderminutes` smallint unsigned DEFAULT NULL AFTER `endutc`,
+  ADD `reminderdue` datetime DEFAULT NULL AFTER `reminderminutes`,
+  ADD `reminderdone` datetime DEFAULT NULL AFTER `reminderdue`,
+  ADD `reminderrevision` int unsigned NOT NULL DEFAULT 0 AFTER `reminderdone`,
+  ADD INDEX `client_owner_reminder_due` (`clientid`, `ownerid`, `deleted`, `reminderdone`, `reminderdue`);

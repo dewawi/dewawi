@@ -48,6 +48,7 @@ class Calendar_Model_DbTable_Event extends Zend_Db_Table_Abstract
 		// Private content never leaves SQL for another owner, including single-record reads.
 		$visible = '(e.ownerid = ' . $db->quote($this->actor) . " OR e.visibility = 'team')";
 		$columns = ['id', 'ownerid', 'allday', 'start', 'end', 'startutc', 'endutc', 'timezone', 'visibility'];
+		$columns['reminderminutes'] = new Zend_Db_Expr('CASE WHEN e.ownerid = ' . $db->quote($this->actor) . ' THEN e.reminderminutes ELSE NULL END');
 		foreach (['title', 'description', 'location'] as $field) $columns[$field] = new Zend_Db_Expr('CASE WHEN ' . $visible . ' THEN e.' . $field . ' ELSE NULL END');
 		return $db->select()->from(['e' => $this->_name], $columns)
 			->joinLeft(['u' => 'user'], 'u.id = e.ownerid', ['owner' => 'name'])
@@ -87,10 +88,68 @@ class Calendar_Model_DbTable_Event extends Zend_Db_Table_Abstract
 		$data = Calendar_Model_Event::validate($input);
 		$now = gmdate('Y-m-d H:i:s');
 		if (!$id) {
-			return (int)$this->insert($data + ['clientid' => $this->clientid, 'ownerid' => $this->actor, 'created' => $now, 'createdby' => $this->actor, 'modified' => $now, 'modifiedby' => $this->actor]);
+			$data['reminderminutes'] = $data['reminderminutes'] ?? null;
+			return (int)$this->insert($data + ['reminderdue' => $this->reminderDue($data), 'reminderrevision' => 1, 'clientid' => $this->clientid, 'ownerid' => $this->actor, 'created' => $now, 'createdby' => $this->actor, 'modified' => $now, 'modifiedby' => $this->actor]);
 		}
-		$this->update($data + ['modified' => $now, 'modifiedby' => $this->actor], $this->ownedWhere($id));
+		$db = $this->getAdapter();
+		$db->beginTransaction();
+		try {
+			$row = $db->fetchRow($this->select()->where('id = ?', $id)->where('clientid = ?', $this->clientid)->where('ownerid = ?', $this->actor)->where('deleted = ?', 0)->forUpdate());
+			if (!$row) throw new RuntimeException('CALENDAR_NOT_FOUND', 404);
+			if (!array_key_exists('reminderminutes', $data)) $data['reminderminutes'] = $row['reminderminutes'];
+			$changed = false;
+			foreach (['startutc', 'endutc', 'timezone', 'allday', 'reminderminutes'] as $field) if ((string)$data[$field] !== (string)$row[$field]) $changed = true;
+			if ($changed) $data += ['reminderdue' => $this->reminderDue($data), 'reminderdone' => null];
+			$data['reminderrevision'] = (int)$row['reminderrevision'] + 1;
+			$this->update($data + ['modified' => $now, 'modifiedby' => $this->actor], $this->ownedWhere($id));
+			$db->commit();
+		} catch (Exception $e) { $db->rollBack(); throw $e; }
 		return $id;
+	}
+
+	private function reminderDue(array $data): ?string
+	{
+		if ($data['reminderminutes'] === null) return null;
+		$due = (new DateTimeImmutable($data['startutc'], new DateTimeZone('UTC')))->modify('-' . (int)$data['reminderminutes'] . ' minutes');
+		if ($due->format('Y') < '1000') throw new InvalidArgumentException('CALENDAR_INVALID_DATE');
+		return $due->format('Y-m-d H:i:s');
+	}
+
+	private function dueWhere(string $now): array
+	{
+		return ['reminderminutes IS NOT NULL', 'reminderdone IS NULL', 'startutc IS NOT NULL', $this->getAdapter()->quoteInto('reminderdue <= ?', $now)];
+	}
+
+	public function dueReminders(): array
+	{
+		$this->authorize('view');
+		$db = $this->getAdapter();
+		$select = $this->select()->where('clientid = ?', $this->clientid)->where('ownerid = ?', $this->actor)->where('deleted = ?', 0);
+		foreach ($this->dueWhere(gmdate('Y-m-d H:i:s')) as $where) $select->where($where);
+		$db->beginTransaction();
+		try {
+			$count = (int)$db->fetchOne((clone $select)->from($this->_name, [new Zend_Db_Expr('COUNT(*)')]));
+			$rows = $db->fetchAll($select->order(['reminderdue', 'id'])->limit(20));
+			$db->commit();
+		} catch (Exception $e) { $db->rollBack(); throw $e; }
+		$items = [];
+		foreach ($rows as $row) {
+			$event = Calendar_Model_Event::present($row, $this->actor, $this->zone);
+			$items[] = ['id' => $event['id'], 'revision' => (int)$row['reminderrevision'], 'title' => $event['title'], 'start' => $event['start'], 'allday' => $event['allday']];
+		}
+		return ['count' => $count, 'reminders' => $items];
+	}
+
+	public function updateReminder(int $id, int $revision, ?int $snooze): void
+	{
+		$this->authorize('view');
+		if ($id <= 0 || $revision <= 0 || ($snooze !== null && !in_array($snooze, [5, 15, 60], true))) throw new InvalidArgumentException('CALENDAR_REMINDER_INVALID');
+		$now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+		$data = ['reminderrevision' => new Zend_Db_Expr('reminderrevision + 1')];
+		if ($snooze === null) $data['reminderdone'] = $now->format('Y-m-d H:i:s');
+		else $data['reminderdue'] = $now->modify('+' . $snooze . ' minutes')->format('Y-m-d H:i:s');
+		$where = array_merge($this->ownedWhere($id), $this->dueWhere($now->format('Y-m-d H:i:s')), [$this->getAdapter()->quoteInto('reminderrevision = ?', $revision)]);
+		if ($this->update($data, $where) !== 1) throw new RuntimeException('CALENDAR_REMINDER_CHANGED', 409);
 	}
 
 	public function deleteEvent(int $id): void

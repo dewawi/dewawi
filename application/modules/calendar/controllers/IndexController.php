@@ -65,6 +65,27 @@ class Calendar_IndexController extends Zend_Controller_Action
 	public function addAction() { $this->editEvent(false); }
 	public function editAction() { $this->editEvent(true); }
 
+	public function remindersAction()
+	{
+		try {
+			$this->events->authorize('view');
+			$user = Zend_Registry::get('User');
+			$context = $user['id'] . ':' . $user['clientid'];
+			if ($this->getRequest()->getQuery('context') !== $context) throw new RuntimeException('CALENDAR_REMINDER_CONTEXT', 403);
+			if ($this->getRequest()->isPost()) {
+				$this->checkCsrf();
+				$post = $this->getRequest()->getPost();
+				if (array_diff(array_keys($post), ['csrf_token', 'id', 'revision', 'operation', 'minutes']) || !is_string($post['operation'] ?? null) || !in_array($post['operation'], ['done', 'snooze'], true)) throw new InvalidArgumentException('CALENDAR_REMINDER_INVALID');
+				$id = filter_var($post['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+				$revision = filter_var($post['revision'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+				$minutes = $post['operation'] === 'snooze' ? filter_var($post['minutes'] ?? null, FILTER_VALIDATE_INT) : null;
+				if (!$id || !$revision || $minutes === false || ($post['operation'] === 'done' && isset($post['minutes']))) throw new InvalidArgumentException('CALENDAR_REMINDER_INVALID');
+				$this->events->updateReminder($id, $revision, $minutes);
+			} elseif (!$this->getRequest()->isGet()) throw new RuntimeException('CALENDAR_POST_REQUIRED', 405);
+			$this->json(['ok' => true, 'context' => $context, 'timezone' => $this->zone->getName(), 'csrf_token' => $this->calendarSession->csrf] + $this->events->dueReminders());
+		} catch (InvalidArgumentException | RuntimeException $e) { $this->failure($e, true); }
+	}
+
 	private function editEvent(bool $existing): void
 	{
 		try {
@@ -74,7 +95,7 @@ class Calendar_IndexController extends Zend_Controller_Action
 			$form = new Calendar_Form_Event();
 			$start = (new DateTimeImmutable('now', $this->zone))->modify('+1 hour');
 			$start = $start->setTime((int)$start->format('H'), 0);
-			$values = $event ? array_intersect_key($event, array_flip(['title', 'description', 'location', 'visibility', 'timezone', 'allday', 'startfold', 'endfold'])) + ['start' => $event['startlocal'], 'end' => $event['endlocal']] : ['start' => $start->format('Y-m-d\TH:i'), 'end' => $start->modify('+1 hour')->format('Y-m-d\TH:i'), 'timezone' => $this->zone->getName(), 'visibility' => 'team'];
+			$values = $event ? array_intersect_key($event, array_flip(['title', 'description', 'location', 'visibility', 'timezone', 'allday', 'startfold', 'endfold', 'reminderminutes'])) + ['start' => $event['startlocal'], 'end' => $event['endlocal']] : ['start' => $start->format('Y-m-d\TH:i'), 'end' => $start->modify('+1 hour')->format('Y-m-d\TH:i'), 'timezone' => $this->zone->getName(), 'visibility' => 'team'];
 			if ($this->getRequest()->isPost()) {
 				$this->checkCsrf();
 				$input = $this->getRequest()->getPost();
@@ -87,7 +108,7 @@ class Calendar_IndexController extends Zend_Controller_Action
 					if ($this->getRequest()->isXmlHttpRequest()) { $this->failure($e, true); return; }
 					$this->getResponse()->setHttpResponseCode(422);
 					$this->view->calendarError = $this->message($e);
-					$values = array_filter(array_intersect_key($input, array_flip(['title', 'description', 'location', 'visibility', 'timezone', 'allday', 'start', 'end', 'startfold', 'endfold'])), 'is_string');
+					$values = array_filter(array_intersect_key($input, array_flip(['title', 'description', 'location', 'visibility', 'timezone', 'allday', 'start', 'end', 'startfold', 'endfold', 'reminderminutes'])), 'is_string');
 				}
 			}
 			$values['csrf_token'] = $this->calendarSession->csrf;
@@ -124,9 +145,9 @@ class Calendar_IndexController extends Zend_Controller_Action
 
 	private function failure(Exception $e, bool $json = false): void
 	{
-		$code = $e instanceof InvalidArgumentException ? 422 : (in_array($e->getCode(), [403, 404, 405], true) ? $e->getCode() : 500);
+		$code = $e instanceof InvalidArgumentException ? 422 : (in_array($e->getCode(), [403, 404, 405, 409], true) ? $e->getCode() : 500);
 		$this->getResponse()->setHttpResponseCode($code);
-		if ($code === 405) $this->getResponse()->setHeader('Allow', 'POST', true);
+		if ($code === 405) $this->getResponse()->setHeader('Allow', $this->getRequest()->getActionName() === 'reminders' ? 'GET, POST' : 'POST', true);
 		if ($json || $this->getRequest()->isXmlHttpRequest()) { $this->json(['ok' => false, 'message' => $this->message($e)]); return; }
 		$this->view->calendarError = $this->message($e);
 		$this->_helper->viewRenderer->setRender('error');

@@ -1983,11 +1983,24 @@ span.editable {
 
 /* Main menu */
 
+.dw-reminders { flex-shrink: 0; align-self: flex-start; }
+.dw-reminders-toggle { border: 1px solid transparent; gap: 5px; cursor: pointer; }
+.dw-reminders-toggle.has-reminders { color: #244f8a; background: #e4efff; border-color: #9bb9de; }
+.dw-reminders-panel { position: absolute; right: 8px; top: calc(100% + 8px); box-sizing: border-box; width: min(370px, calc(100% - 16px)); max-height: min(65vh, 540px); overflow: auto; z-index: 100; padding: 14px; background: var(--dw-color-surface); border: 1px solid var(--dw-color-border); border-radius: var(--dw-radius-md); box-shadow: var(--dw-shadow-sm); }
+.dw-reminders [hidden] { display: none !important; }
+.dw-reminders-list { list-style: none; padding: 0; margin: 0; }
+.dw-reminders-list li { border-top: 1px solid var(--dw-color-border); padding: 12px 0; overflow-wrap: anywhere; }
+.dw-reminders-list a, .dw-reminders-list time { display: block; margin-bottom: 6px; }
+.dw-reminder-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+.dw-reminder-actions .dw-select { width: auto; max-width: 100%; }
+.dw-reminders-panel p { margin: 8px 0; }
+
 .dw-topbar-wrap {
   margin-bottom: var(--dw-space-4);
 }
 
 .dw-topbar {
+  position: relative;
   display: flex;
   align-items: center;
   min-height: 48px;

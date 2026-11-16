@@ -1,0 +1,21 @@
+<?php
+$e = fn($value) => $this->escape((string)$value);
+$user = $this->reminderUser;
+$context = $user['id'] . ':' . $user['clientid'];
+$endpoint = $this->url(['module' => 'calendar', 'controller' => 'index', 'action' => 'reminders'], 'default', true) . '?context=' . rawurlencode($context);
+$eventUrl = $this->url(['module' => 'calendar', 'controller' => 'index', 'action' => 'view'], 'default', true);
+$texts = [];
+foreach (['title', 'empty', 'done', 'snooze', '5', '15', '60', 'more', 'failed', 'stopped', 'changed'] as $key) $texts[$key] = $this->translate('CALENDAR_REMINDERS_' . strtoupper($key));
+$texts['allday'] = $this->translate('CALENDAR_ALLDAY');
+?>
+<div class="dw-reminders" data-calendar-reminders data-endpoint="<?php echo $e($endpoint); ?>" data-context="<?php echo $e($context); ?>" data-event-url="<?php echo $e($eventUrl); ?>" data-texts="<?php echo $e(json_encode($texts, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)); ?>">
+	<button class="dw-nav-link dw-reminders-toggle" type="button" aria-expanded="false" aria-controls="calendar-reminders-panel" aria-label="<?php echo $e($texts['title']); ?>">
+		<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+		<span data-reminder-count hidden>0</span>
+	</button>
+	<section id="calendar-reminders-panel" class="dw-reminders-panel" aria-label="<?php echo $e($texts['title']); ?>" hidden>
+		<strong><?php echo $e($texts['title']); ?></strong>
+		<p data-reminder-status role="status"></p>
+		<ul class="dw-reminders-list" data-reminder-list></ul>
+	</section>
+</div>

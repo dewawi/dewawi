@@ -84,6 +84,10 @@ CREATE TABLE IF NOT EXISTS `calendarevent` (
   `timezone` varchar(64) DEFAULT NULL,
   `startutc` datetime DEFAULT NULL,
   `endutc` datetime DEFAULT NULL,
+  `reminderminutes` smallint unsigned DEFAULT NULL,
+  `reminderdue` datetime DEFAULT NULL,
+  `reminderdone` datetime DEFAULT NULL,
+  `reminderrevision` int unsigned NOT NULL DEFAULT 0,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,
@@ -92,7 +96,8 @@ CREATE TABLE IF NOT EXISTS `calendarevent` (
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   KEY `clientid_deleted_startutc` (`clientid`, `deleted`, `startutc`),
-  KEY `clientid_ownerid_deleted` (`clientid`, `ownerid`, `deleted`)
+  KEY `clientid_ownerid_deleted` (`clientid`, `ownerid`, `deleted`),
+  KEY `client_owner_reminder_due` (`clientid`, `ownerid`, `deleted`, `reminderdone`, `reminderdue`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `campaign` (

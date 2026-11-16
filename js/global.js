@@ -47,6 +47,7 @@ var Dewawi = {
 };
 
 $.ajaxPrefilter(function (options, originalOptions, jqXHR) {
+	if (options.dewawiBackground) return;
 	jqXHR.statusCode({
 		401: function () {
 			Dewawi.handleSessionExpired();
