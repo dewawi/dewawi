@@ -1,0 +1,13 @@
+<?php
+$t = fn($key) => $this->escape($this->translate($key));
+$this->headTitle($this->translate('CONTACT_TECH_REVIEW_SAVE'));
+?>
+<section id="inquiry-technical">
+<h2><?php echo $t('CONTACT_TECH_REVIEW_SAVE'); ?></h2>
+<?php if($this->technicalSaveError): ?>
+<p class="dw-alert dw-alert--warning" role="alert"><?php echo $t($this->technicalSaveError); ?></p>
+<?php else: ?>
+<p><?php echo $t('CONTACT_TECH_REVIEW_SAVED'); ?> #<?php echo (int)$this->technicalSavedId; ?>. <?php echo $t('CONTACT_TECH_REVIEW_SAVE_INFO'); ?></p>
+<a class="dw-btn" id="inquiry-technical-open-saved" href="<?php echo $this->escape($this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'select', 'id' => (int)$this->technicalInquiryId], null, true).'?'.http_build_query(['reviewid' => (int)$this->technicalSavedId])); ?>"><?php echo $t('CONTACT_TECH_REVIEW_OPEN'); ?></a>
+<?php endif; ?>
+</section>

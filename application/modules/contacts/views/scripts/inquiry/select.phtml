@@ -1,3 +1,4 @@
 <section id="inquiry-technical">
 <?php echo $this->partial('inquiry/technical.phtml', ['technical' => $this->technical, 'technicalInput' => $this->technicalInput, 'technicalError' => $this->technicalError, 'technicalToken' => $this->technicalToken]); ?>
+<?php echo $this->partial('inquiry/technical-reviews.phtml', ['technical' => $this->technical, 'technicalReview' => $this->technicalReview, 'technicalHistory' => $this->technicalHistory, 'technicalReviewEnabled' => $this->technicalReviewEnabled, 'technicalCanSave' => $this->technicalCanSave, 'technicalToken' => $this->technicalToken]); ?>
 </section>

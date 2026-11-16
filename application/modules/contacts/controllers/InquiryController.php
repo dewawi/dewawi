@@ -4,7 +4,7 @@ class Contacts_InquiryController extends DEEC_Controller_Action
 {
 	protected function shouldPrepareAttachmentDirectory(): bool
 	{
-		return $this->getRequest()->getActionName() !== 'select';
+		return !in_array($this->getRequest()->getActionName(), ['select', 'save'], true);
 	}
 
 	protected function buildIndexView(): void
@@ -89,8 +89,13 @@ class Contacts_InquiryController extends DEEC_Controller_Action
 		$this->view->technical = null;
 		$this->view->technicalError = null;
 		$this->view->technicalInput = $input;
+		$this->view->technicalReview = null;
+		$this->view->technicalHistory = [];
+		$this->view->technicalCanSave = false;
+		$this->view->technicalReviewEnabled = false;
 		$this->view->toolbar = null;
 		try {
+			if(strlen(json_encode($input, JSON_THROW_ON_ERROR)) > 65536) throw new InvalidArgumentException('CONTACT_TECH_INPUT');
 			$integer = static function($value): int {
 				if($value === null || $value === '') return 0;
 				if(!is_scalar($value) || !filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) throw new InvalidArgumentException('CONTACT_TECH_INPUT');
@@ -99,23 +104,59 @@ class Contacts_InquiryController extends DEEC_Controller_Action
 			foreach(['q', 'hash', 'calculation'] as $name) if(isset($input[$name]) && !is_string($input[$name])) throw new InvalidArgumentException('CONTACT_TECH_INPUT');
 			$id = $integer($this->_getParam('id'));
 			$service = new Contacts_Service_InquiryTechnical();
+			$reviews = new Contacts_Service_InquiryTechnicalReview();
+			$reviewId = $integer($input['reviewid'] ?? null);
+			$previousId = $integer($input['fromreview'] ?? null);
+			if($previousId && !$request->isPost()) {
+				$input += $reviews->startingInput($id, $previousId);
+				$this->view->technicalInput = $input;
+			}
+			if($reviewId) $this->view->technicalReview = $reviews->open($id, $reviewId);
 			$this->view->technical = $service->open($id, (string)($input['q'] ?? ''), $integer($input['itemid'] ?? null), $integer($input['datasetid'] ?? null), $integer($input['revision'] ?? null), (string)($input['hash'] ?? ''));
+			$this->view->technicalReviewEnabled = $reviews->internalEnabled();
+			$this->view->technicalCanSave = $reviews->canSave();
+			if($reviews->internalEnabled()) $this->view->technicalHistory = $reviews->history($id, $integer($input['beforeversion'] ?? null));
 			$session = new Zend_Session_Namespace('InquiryTechnical');
 			if(!isset($session->token)) $session->token = bin2hex(random_bytes(32));
 			$this->view->technicalToken = $session->token;
 			if($request->isPost()) {
 				if(!is_string($input['technical_csrf'] ?? null) || !hash_equals($session->token, $input['technical_csrf'])) throw new RuntimeException('CONTACT_TECH_DENIED', 403);
-				$this->view->technical = $service->calculate($this->view->technical, $input);
+				$this->view->technical = $reviews->canSave() ? $reviews->calculate($this->view->technical, $input, $previousId) : $service->calculate($this->view->technical, $input);
 			} elseif(!in_array($request->getMethod(), ['GET', 'HEAD'], true)) {
 				throw new RuntimeException('CONTACT_TECH_DENIED', 405);
 			}
-		} catch(InvalidArgumentException $e) {
+			if(!$request->isPost() && !$reviewId && $reviews->canSave() && $this->view->technical['machine']) $this->view->technical = $reviews->inspect($this->view->technical, $previousId, $input['calculation'] ?? null);
+		} catch(InvalidArgumentException|JsonException $e) {
 			$this->getResponse()->setHttpResponseCode(422);
 			$this->view->technicalError = $e->getMessage() === 'CONTACT_TECH_SYNTHETIC_REQUIRED' ? $e->getMessage() : 'CONTACT_TECH_INPUT';
 		} catch(RuntimeException $e) {
 			$code = in_array($e->getCode(), [403, 405, 409], true) ? $e->getCode() : 403;
 			$this->getResponse()->setHttpResponseCode($code);
-			$this->view->technicalError = $code === 409 ? 'CONTACT_TECH_REVISION' : 'CONTACT_TECH_DENIED';
+			$this->view->technicalError = in_array($e->getMessage(), ['CONTACT_TECH_REVIEW_ROLLOUT', 'CONTACT_TECH_REVIEW_INTEGRITY'], true) ? $e->getMessage() : ($code === 409 ? 'CONTACT_TECH_REVISION' : 'CONTACT_TECH_DENIED');
+		}
+	}
+
+	public function saveAction()
+	{
+		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
+		$this->view->technicalSaveError = null;
+		$this->view->technicalSavedId = null;
+		$this->view->toolbar = null;
+		try {
+			if(!$this->getRequest()->isPost()) throw new RuntimeException('CONTACT_TECH_DENIED', 405);
+			$id = filter_var($this->_getParam('id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+			$post = (array)$this->getRequest()->getPost();
+			if(!$id || array_diff(array_keys($post), ['technical_csrf', 'review_token']) || !is_string($post['review_token'] ?? null) || strlen($post['review_token']) !== 64) throw new InvalidArgumentException('CONTACT_TECH_INPUT');
+			$session = new Zend_Session_Namespace('InquiryTechnical');
+			if(!isset($session->token) || !is_string($post['technical_csrf'] ?? null) || !hash_equals($session->token, $post['technical_csrf'])) throw new RuntimeException('CONTACT_TECH_DENIED', 403);
+			$this->view->technicalSavedId = (new Contacts_Service_InquiryTechnicalReview())->save((int)$id, $post['review_token']);
+			$this->view->technicalInquiryId = (int)$id;
+		} catch(InvalidArgumentException $e) {
+			$this->getResponse()->setHttpResponseCode(422);
+			$this->view->technicalSaveError = 'CONTACT_TECH_INPUT';
+		} catch(RuntimeException $e) {
+			$this->getResponse()->setHttpResponseCode(in_array($e->getCode(), [403, 405, 409], true) ? $e->getCode() : 409);
+			$this->view->technicalSaveError = in_array($e->getMessage(), ['CONTACT_TECH_REVIEW_ROLLOUT', 'CONTACT_TECH_REVIEW_STALE', 'CONTACT_TECH_REVIEW_EXPIRED', 'CONTACT_TECH_REVIEW_INTEGRITY'], true) ? $e->getMessage() : 'CONTACT_TECH_DENIED';
 		}
 	}
 

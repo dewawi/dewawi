@@ -1,0 +1,54 @@
+<?php
+$v = $this->technical;
+if(!$v) return;
+$t = fn($key) => $this->escape($this->translate($key));
+$e = fn($value) => $this->escape((string)$value);
+$json = fn($value) => $e(json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+$base = $this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'select', 'id' => (int)$v['inquiry']['id']], null, true);
+?>
+<section id="inquiry-technical-reviews">
+<h3><?php echo $t('CONTACT_TECH_REVIEW_HISTORY'); ?></h3>
+<p class="dw-alert dw-alert--warning"><?php echo $t('CONTACT_TECH_REVIEW_ROLLOUT'); ?></p>
+<?php if(!$this->technicalReviewEnabled) { echo '</section>'; return; } ?>
+<?php if(!empty($v['review_unavailable'])): ?><p class="dw-alert dw-alert--warning"><?php echo $t('CONTACT_TECH_REVIEW_BASE_ONLY'); ?></p><?php endif; ?>
+<?php if(!empty($v['review_token']) && $this->technicalCanSave): ?>
+<form method="post" action="<?php echo $e($this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'save', 'id' => (int)$v['inquiry']['id']], null, true)); ?>" class="dw-form-layout" data-autosave="false" id="inquiry-technical-save">
+	<input type="hidden" name="technical_csrf" value="<?php echo $e($this->technicalToken); ?>">
+	<input type="hidden" name="review_token" value="<?php echo $e($v['review_token']); ?>">
+	<p><?php echo $t($v['result'] ? 'CONTACT_TECH_REVIEW_SAVE_INFO' : 'CONTACT_TECH_REVIEW_SAVE_INSPECTION_INFO'); ?></p>
+	<button type="submit" class="dw-btn"><?php echo $t($v['result'] ? 'CONTACT_TECH_REVIEW_SAVE' : 'CONTACT_TECH_REVIEW_SAVE_INSPECTION'); ?></button>
+</form>
+<?php endif; ?>
+<?php $saved = $this->technicalReview; if($saved): $p = $saved['proof']; $r = $saved['row']; ?>
+<section id="inquiry-technical-historical">
+	<h3><?php echo $t('CONTACT_TECH_REVIEW_SAVED'); ?> #<?php echo (int)$r['id']; ?> · v<?php echo (int)$r['version']; ?></h3>
+	<p><?php echo $e($r['created']); ?> · <?php echo $t('CONTACT_TECH_REVIEW_ACTOR'); ?> #<?php echo (int)$r['createdby']; ?> · <?php echo $t('CONTACT_TECH_REVIEW_PREVIOUS'); ?>: <?php echo $r['previousid'] ? '#'.(int)$r['previousid'] : $t('CONTACT_TECH_NONE'); ?></p>
+	<p><?php echo $t('CONTACT_TECH_ARTICLE'); ?> #<?php echo (int)$p['article']['id']; ?> · <?php echo $e($p['machine']['key'].' @'.$p['machine']['revision']); ?></p>
+	<p><?php echo $t('CONTACT_TECH_REVIEW_HISTORICAL'); ?></p>
+	<dl class="view">
+		<dt><?php echo $t('CONTACT_TECH_MATH_STATUS'); ?></dt><dd><?php echo $t('CONTACT_TECH_REVIEW_STATE_'.strtoupper($p['result']['mathematical_status'])); ?></dd>
+		<dt><?php echo $t('CONTACT_TECH_TECH_STATUS'); ?></dt><dd><?php echo $t('CONTACT_TECH_REVIEW_STATE_'.strtoupper($p['result']['status'])); ?> · eligible=false</dd>
+		<dt><?php echo $t('CONTACT_TECH_REVIEW_CURRENT'); ?></dt><dd><?php echo $t('CONTACT_TECH_REVIEW_STATE_'.strtoupper($saved['current']['status'])); ?> · eligible=false</dd>
+		<dt><?php echo $t('CONTACT_TECH_COMMERCIAL_STATUS'); ?></dt><dd><?php echo $t('CONTACT_TECH_REVIEW_ROLLOUT'); ?></dd>
+		<dt><?php echo $t('CONTACT_TECH_MODES'); ?> / <?php echo $t('CONTACT_TECH_STAGE_KEY'); ?></dt><dd><?php echo $e(($p['calculation']['mode'] ?? '—').' / '.($p['calculation']['stage'] ?? '—')); ?></dd>
+		<dt><?php echo $t('CONTACT_TECH_SCOPE'); ?></dt><dd><?php echo $e($p['result']['scope'].' / '.($p['calculation']['version'] ?? '—')); ?></dd>
+	</dl>
+	<?php if(in_array($p['calculation']['evaluation_mode'], ['synthetic_reference', 'mathematical_reference'], true)): ?><p class="dw-alert dw-alert--warning"><?php echo $t('CONTACT_TECH_DEMO'); ?></p><?php endif; ?>
+	<div class="dw-table-wrap"><table class="dw-table"><thead><tr><th><?php echo $t('CONTACT_TECH_REVIEW_METRIC'); ?></th><th><?php echo $t('CONTACT_TECH_REVIEW_VALUE'); ?></th><th><?php echo $t('CONTACT_TECH_REVIEW_UNIT'); ?></th></tr></thead><tbody>
+	<?php foreach($p['result']['metrics'] as $metric): ?><tr><td><?php echo $e($metric['name']); ?></td><td><?php echo $e($metric['value']); ?></td><td><?php echo $e($metric['unit']); ?></td></tr><?php endforeach; ?>
+	</tbody></table></div>
+	<h4><?php echo $t('CONTACT_TECH_REVIEW_CURRENT'); ?></h4>
+	<ul><?php foreach($saved['current']['reasons'] as $reason): ?><li><?php echo $e($reason); ?></li><?php endforeach; ?></ul>
+	<details><summary><?php echo $t('CONTACT_TECH_REVIEW_CURRENT_DETAILS'); ?></summary><pre><?php echo $json($saved['current']); ?></pre></details>
+	<details><summary><?php echo $t('CONTACT_TECH_REVIEW_PROOF'); ?></summary><pre><?php echo $json($p); ?></pre></details>
+	<?php if($this->technicalCanSave): ?><a class="dw-btn" id="inquiry-technical-reuse" href="<?php echo $e($base.'?'.http_build_query(['fromreview' => (int)$r['id']])); ?>"><?php echo $t('CONTACT_TECH_REVIEW_REUSE'); ?></a><?php endif; ?>
+</section>
+<?php endif; ?>
+<?php if(!$this->technicalHistory): ?><p><?php echo $t('CONTACT_TECH_REVIEW_EMPTY'); ?></p><?php endif; ?>
+<ul id="inquiry-technical-history-list">
+<?php foreach($this->technicalHistory as $row): ?>
+	<li><a href="<?php echo $e($base.'?'.http_build_query(['reviewid' => (int)$row['id']])); ?>">#<?php echo (int)$row['id']; ?> · v<?php echo (int)$row['version']; ?> · <?php echo $e($row['created']); ?></a> · <?php echo $t('CONTACT_TECH_REVIEW_STATE_'.strtoupper($row['status'])); ?></li>
+<?php endforeach; ?>
+</ul>
+<?php if(count($this->technicalHistory) === 50): $last = $this->technicalHistory[49]; ?><a class="dw-btn" href="<?php echo $e($base.'?'.http_build_query(['beforeversion' => (int)$last['version']])); ?>"><?php echo $t('CONTACT_TECH_REVIEW_OLDER'); ?></a><?php endif; ?>
+</section>

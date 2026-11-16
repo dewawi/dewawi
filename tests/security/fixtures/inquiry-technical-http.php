@@ -17,7 +17,7 @@ spl_autoload_register(static function(string $class) use($root): void {
 Zend_Session::start(['save_path' => $work]);
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 if($path === '/css/ui.css') { header('Content-Type: text/css'); readfile($root.'/css/ui.css'); return; }
-if($path === '/browser') { header('Content-Type: text/html; charset=utf-8'); readfile($work.'/browser.html'); return; }
+if(in_array($path, ['/browser', '/browser-review'], true)) { header('Content-Type: text/html; charset=utf-8'); readfile($work.($path === '/browser' ? '/browser.html' : '/browser-review.html')); return; }
 $db = Zend_Db::factory('Pdo_Mysql', ['host' => 'localhost', 'unix_socket' => $socket, 'username' => 'root', 'password' => '', 'dbname' => 'technical_fresh', 'charset' => 'utf8']);
 Zend_Db_Table::setDefaultAdapter($db);
 Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_NonPersistent());
@@ -25,11 +25,12 @@ $user = $db->fetchRow('SELECT * FROM user WHERE id = 10');
 Zend_Registry::set('User', $user);
 Zend_Registry::set('Client', $db->fetchRow('SELECT * FROM client WHERE id = 100'));
 if(empty($_GET['guest'])) Zend_Auth::getInstance()->getStorage()->write((object)['id' => 10]);
+if($path === '/review-count') { header('Content-Type: application/json'); echo json_encode(['count' => (int)$db->fetchOne('SELECT COUNT(*) FROM inquirytechnicalreview')]); return; }
 if($path === '/state') {
 	$state = []; foreach(['item','quote','quotepos','shopinquiryform','shopinquirydata','technicaldataset','itemtechnicalprofile'] as $table) $state[$table] = $db->fetchAll('SELECT * FROM '.$table.' ORDER BY id');
 	header('Content-Type: application/json'); echo json_encode($state); return;
 }
-if(!preg_match('#^/contacts/inquiry/(select|view)/id/([0-9]+)$#D', $path, $route)) { http_response_code(404); return; }
+if(!preg_match('#^/contacts/inquiry/(select|view|save)/id/([0-9]+)$#D', $path, $route)) { http_response_code(404); return; }
 require_once $root.'/application/modules/contacts/controllers/InquiryController.php';
 class InquiryTechnicalHttpController extends Contacts_InquiryController
 {
@@ -43,6 +44,7 @@ $controller = new InquiryTechnicalHttpController($request, $response);
 $view = $controller->view; $view->setScriptPath($root.'/application/modules/contacts/views/scripts');
 Zend_Registry::set('Zend_Translate', new Zend_Translate('array', require $root.'/languages/de_DE/contacts/inquiry.php', 'de'));
 if($route[1] === 'select') { $controller->selectAction(); $html = $view->render('inquiry/select.phtml'); }
+elseif($route[1] === 'save') { $controller->saveAction(); $html = $view->render('inquiry/save.phtml'); }
 else {
 	$v = (new Contacts_Service_InquiryTechnical())->open((int)$route[2]);
 	$html = $view->partial('inquiry/detail.phtml', ['inquiry' => $v['inquiry']]);

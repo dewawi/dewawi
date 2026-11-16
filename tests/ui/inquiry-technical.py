@@ -82,7 +82,7 @@ def check(value, message):
     if not value:
         raise AssertionError(message)
 with (work / 'd7a-http.log').open('w') as log:
-    server = subprocess.Popen(['php', '-S', '127.0.0.1:' + str(port), '-t', str(work), str(root / 'tests/security/fixtures/inquiry-technical-http.php')], env=dict(os.environ, DEWAWI_TECHNICAL_TEST_SOCKET=sys.argv[2]), stdout=log, stderr=log)
+    server = subprocess.Popen(['php', '-S', '127.0.0.1:' + str(port), '-t', str(work), str(root / 'tests/security/fixtures/inquiry-technical-http.php')], env=dict(os.environ, DEWAWI_TECHNICAL_TEST_SOCKET=sys.argv[2], DEWAWI_SELECTION_INTERNAL_CLIENTS='100,101'), stdout=log, stderr=log)
     try:
         for _ in range(100):
             try:
@@ -111,6 +111,7 @@ with (work / 'd7a-http.log').open('w') as log:
             marker = html.unescape(result.stdout.split('<pre id="result">', 1)[-1].split('</pre>', 1)[0])
             print(str(width) + 'px: ' + marker)
             check(result.returncode == 0 and marker.startswith('PASS:'), 'D7A browser workflow failed: ' + marker)
+        subprocess.run(['python3', str(root / 'tests/ui/inquiry-technical-review.py'), str(work), address], check=True)
         check(request('/state')[1] == before, 'HTTP/browser workflow changed business or technical state')
         check('PHP Warning' not in (work / 'd7a-http.log').read_text() and 'PHP Fatal' not in (work / 'd7a-http.log').read_text(), 'PHP warnings during browser workflow')
         print('PASS: private HTTP GET/POST/AJAX denial, CSRF, revision conflicts and unchanged inquiry/sales state')

@@ -17,14 +17,15 @@ $json = static fn($value) => json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCA
 <?php if(!$v) return; ?>
 <?php
 $base = $this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'select', 'id' => (int)$v['inquiry']['id']], null, true);
-$link = fn($params) => $base.'?'.http_build_query($params);
+$context = !empty($input['fromreview']) && is_scalar($input['fromreview']) ? ['fromreview' => (int)$input['fromreview']] : [];
+$link = fn($params) => $base.'?'.http_build_query($params + $context);
 $identity = $v['machine']['identity'] ?? null;
-$params = ['itemid' => (int)($v['item']['id'] ?? 0)];
+$params = ['itemid' => (int)($v['item']['id'] ?? 0)] + $context;
 if($identity) $params += ['datasetid' => $identity['id'], 'revision' => $identity['revision'], 'hash' => $identity['sha256']];
 $hidden = function(array $values) use($e): void { foreach($values as $name => $val) echo '<input type="hidden" name="'.$e($name).'" value="'.$e($val).'">'; };
 ?>
 <p><a class="dw-btn" href="<?php echo $e($this->url(['module' => 'contacts', 'controller' => 'inquiry', 'action' => 'view', 'id' => (int)$v['inquiry']['id']], null, true)); ?>"><?php echo $t('CONTACT_TECH_BACK'); ?></a> · <?php echo $t('CONTACT_INQUIRIES_REQUEST'); ?> #<?php echo (int)$v['inquiry']['id']; ?></p>
-<p><?php echo $t('CONTACT_TECH_READONLY'); ?></p>
+<p><?php echo $t('CONTACT_TECH_REVIEW_UNSAVED'); ?></p>
 <p class="dw-alert dw-alert--warning"><?php echo $t('CONTACT_TECH_RELEASE'); ?></p>
 <details open>
 	<summary><?php echo $t('CONTACT_TECH_REQUIREMENTS'); ?></summary>
@@ -36,6 +37,7 @@ $hidden = function(array $values) use($e): void { foreach($values as $name => $v
 	</dl>
 </details>
 <form method="get" action="<?php echo $e($base); ?>" class="dw-form-layout" data-autosave="false">
+	<?php $hidden($context); ?>
 	<div class="dw-form-row">
 		<label><?php echo $t('CONTACT_TECH_SEARCH'); ?><input type="search" name="q" minlength="2" maxlength="100" value="<?php echo $e($v['search']); ?>" required></label>
 		<button class="dw-btn" type="submit"><?php echo $t('CONTACT_TECH_FIND'); ?></button>

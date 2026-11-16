@@ -523,10 +523,10 @@ class Items_Service_TechnicalDataset
 		return $result;
 	}
 
-	public function inspectMachine(int $itemId, int $id, int $revision, string $hash): array
+	public function inspectMachine(int $itemId, int $id, int $revision, string $hash, ?callable $consume = null): array
 	{
 		$this->context('view');
-		return $this->transaction(function() use ($itemId, $id, $revision, $hash) {
+		return $this->transaction(function() use ($itemId, $id, $revision, $hash, $consume) {
 			$snapshot = $this->machineSnapshot($id, $revision, $hash);
 			$p = $snapshot['machine'];
 			if($itemId <= 0 || (int)($p->items->{$p->record->data->machine_item_ref}->id ?? 0) !== $itemId) throw new RuntimeException('Technical article binding mismatch');
@@ -538,8 +538,10 @@ class Items_Service_TechnicalDataset
 					$items->$ref = $binding;
 				}
 			}
-			return ['identity' => $this->identity('technicaldataset', $snapshot['row']), 'record' => $p->record, 'items' => $items, 'options' => $p->options,
+			$inspection = ['identity' => $this->identity('technicaldataset', $snapshot['row']), 'record' => $p->record, 'items' => $items, 'options' => $p->options,
 				'records' => $records, 'dependencies' => $snapshot['provenance'], 'reasons' => array_values(array_unique($snapshot['reasons'])), 'blocked' => $snapshot['blocked']];
+			// Persist a bounded review under the same owner lock and graph transaction.
+			return $consume ? $consume($inspection) : $inspection;
 		});
 	}
 

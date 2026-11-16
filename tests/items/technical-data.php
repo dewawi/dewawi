@@ -31,6 +31,7 @@ $db->query('CREATE DATABASE technical_fresh'); $db->query('USE technical_fresh')
 executeTechnicalSql(file_get_contents($root.'/install/config/structure.sql'));
 $schemas = [];
 foreach(['technicaldataset', 'itemtechnicalprofile'] as $table) $schemas[$table] = $db->fetchRow('SHOW CREATE TABLE '.$table)['Create Table'];
+$reviewSchema = $db->fetchRow('SHOW CREATE TABLE inquirytechnicalreview')['Create Table'];
 coverTechnical(10);
 $db->query('CREATE DATABASE technical_partial');$db->query('USE technical_partial');
 $db->query('CREATE TABLE client LIKE technical_fresh.client');$db->query('CREATE TABLE item LIKE technical_fresh.item');
@@ -39,12 +40,18 @@ $technicalCreates=array_values(array_filter($partialQueries,fn($q)=>preg_match('
 checkTechnical(count($technicalCreates)===2,'Expected exactly two targeted additive DDL statements');
 $db->query($technicalCreates[0]['query']);foreach($technicalCreates as $q)$db->query($q['query']);
 foreach($schemas as $table=>$definition)checkTechnical($db->fetchRow('SHOW CREATE TABLE '.$table)['Create Table']===$definition,'Partial technical migration differs from new installation');
+$reviewCreates = array_values(array_filter($partialQueries, fn($q) => preg_match('/CREATE TABLE IF NOT EXISTS `inquirytechnicalreview`/', trim($q['query']))));
+checkTechnical(count($reviewCreates) === 1, 'Expected one purpose-specific review table');
+$db->query('CREATE TABLE shopinquirydata LIKE technical_fresh.shopinquirydata');
+$db->query($reviewCreates[0]['query']); $db->query($reviewCreates[0]['query']);
+checkTechnical($db->fetchRow('SHOW CREATE TABLE inquirytechnicalreview')['Create Table'] === $reviewSchema, 'Partial/repeated review DDL differs from fresh install');
 $db->query('CREATE DATABASE technical_upgrade'); $db->query('USE technical_upgrade');
 executeTechnicalSql(file_get_contents($work.'/structure-1.1.7.sql'));
 $db->insert('client', ['id' => 100, 'company' => 'Preserved fixture']);
 $db->insert('item', ['id' => 1, 'catid' => 0, 'shopid' => 0, 'clientid' => 100, 'sku' => 'PRESERVED', 'price' => '123.4567']);
 executeTechnicalSql(file_get_contents($root.'/install/config/update-1.1.7-1.1.8.sql'));
 foreach($schemas as $table => $schema) checkTechnical($db->fetchRow('SHOW CREATE TABLE '.$table)['Create Table'] === $schema, 'Fresh and actual 1.1.7 upgrade schema differ: '.$table);
+checkTechnical($db->fetchRow('SHOW CREATE TABLE inquirytechnicalreview')['Create Table'] === $reviewSchema, 'Review upgrade differs from fresh install');
 checkTechnical($db->fetchOne('SELECT price FROM item WHERE id = 1') === '123.4567', 'Upgrade changed existing item price'); coverTechnical(11);
 $queries = []; PMA_splitSqlFile($queries, file_get_contents($root.'/install/config/update-1.1.7-1.1.8.sql'));
 foreach($queries as $q) if(preg_match('/CREATE TABLE IF NOT EXISTS `(technicaldataset|itemtechnicalprofile)`/', trim($q['query']))) $db->query($q['query']);
@@ -81,6 +88,7 @@ $encode = static fn($v) => Items_Service_TechnicalJson::encode($v);
 if(($argv[3] ?? '') === '--inquiry-technical-only') {
 	require __DIR__.'/fixtures/thermohydraulic-polynomial.php';
 	require __DIR__.'/inquiry-technical-db.php';
+	require __DIR__.'/inquiry-technical-review-db.php';
 	exit;
 }
 $bundle = technicalBundle();
@@ -356,3 +364,4 @@ require __DIR__.'/operating-mode-db.php';
 require __DIR__.'/thermohydraulic-circuit-db.php';
 require __DIR__.'/thermohydraulic-polynomial-db.php';
 require __DIR__.'/inquiry-technical-db.php';
+require __DIR__.'/inquiry-technical-review-db.php';

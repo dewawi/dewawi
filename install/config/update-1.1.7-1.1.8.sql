@@ -293,3 +293,38 @@ CREATE TABLE IF NOT EXISTS `itemtechnicalprofile` (
   CONSTRAINT `itemtechnicalprofile_dataset` FOREIGN KEY (`clientid`, `datasetid`) REFERENCES `technicaldataset` (`clientid`, `id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `itemtechnicalprofile_previous` FOREIGN KEY (`clientid`, `supersedesid`) REFERENCES `itemtechnicalprofile` (`clientid`, `id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Internal immutable inquiry reviews; this table grants no machine or commercial release.
+CREATE TABLE IF NOT EXISTS `inquirytechnicalreview` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `clientid` int(11) NOT NULL,
+  `inquiryid` int(11) NOT NULL,
+  `itemsclientid` int(11) NOT NULL,
+  `itemid` int(11) NOT NULL,
+  `datasetid` int(11) NOT NULL,
+  `dataset_revision` int(11) NOT NULL,
+  `dataset_sha256` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `previousid` int(11) DEFAULT NULL,
+  `version` int(11) NOT NULL,
+  `request_key` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `status` varchar(32) NOT NULL,
+  `mathematical_status` varchar(32) NOT NULL,
+  `payload_json` mediumtext NOT NULL,
+  `payload_sha256` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `record_sha256` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `client_inquiry_id` (`clientid`, `inquiryid`, `id`),
+  UNIQUE KEY `client_inquiry_version` (`clientid`, `inquiryid`, `version`),
+  UNIQUE KEY `client_actor_request` (`clientid`, `createdby`, `request_key`),
+  KEY `client_previous` (`clientid`, `inquiryid`, `previousid`),
+  KEY `items_revision` (`itemsclientid`, `datasetid`, `dataset_revision`),
+  KEY `itemid` (`itemid`),
+  KEY `inquiryid` (`inquiryid`),
+  CONSTRAINT `inquirytechnicalreview_client` FOREIGN KEY (`clientid`) REFERENCES `client` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `inquirytechnicalreview_inquiry` FOREIGN KEY (`inquiryid`) REFERENCES `shopinquirydata` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `inquirytechnicalreview_item` FOREIGN KEY (`itemid`) REFERENCES `item` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `inquirytechnicalreview_dataset` FOREIGN KEY (`itemsclientid`, `datasetid`) REFERENCES `technicaldataset` (`clientid`, `id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `inquirytechnicalreview_previous` FOREIGN KEY (`clientid`, `inquiryid`, `previousid`) REFERENCES `inquirytechnicalreview` (`clientid`, `inquiryid`, `id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
