@@ -77,13 +77,22 @@ CREATE TABLE IF NOT EXISTS `calendarevent` (
   `start` datetime NOT NULL,
   `end` datetime NOT NULL,
   `description` text DEFAULT NULL,
+  `ownerid` int(11) NOT NULL DEFAULT 0,
+  `allday` tinyint(1) NOT NULL DEFAULT 0,
+  `location` varchar(255) DEFAULT NULL,
+  `visibility` varchar(16) NOT NULL DEFAULT 'private',
+  `timezone` varchar(64) DEFAULT NULL,
+  `startutc` datetime DEFAULT NULL,
+  `endutc` datetime DEFAULT NULL,
   `clientid` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
   `createdby` int(11) NOT NULL DEFAULT 0,
   `modified` datetime DEFAULT NULL,
   `modifiedby` int(11) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  KEY `clientid_deleted_startutc` (`clientid`, `deleted`, `startutc`),
+  KEY `clientid_ownerid_deleted` (`clientid`, `ownerid`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `campaign` (

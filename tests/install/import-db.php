@@ -64,6 +64,7 @@ check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'path'")->fetch_assoc()['T
 check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'status'")->fetch_assoc()['Default'] === 'redirect', 'Fresh installation has no redirect response status default');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'slugredirect' AND index_name = 'clientid_shopid_pathhash' AND non_unique = 0")->fetch_row()[0] === 3, 'Fresh installation redirect uniqueness is not tenant- and shop-scoped');
 checkCheckoutTokenSchema($db, 'Fresh installation');
+check(json_decode($db->query('SELECT calendar FROM permission WHERE userid = 1')->fetch_row()[0], true) === ['index' => ['add', 'edit', 'view', 'delete']], 'Fresh installation calendar permissions are missing');
 
 $structure = 'CREATE TABLE import_before (id INT);';
 $data = 'INSERT INTO import_before VALUES (1);';
@@ -140,6 +141,9 @@ $db->query('CREATE DATABASE contact_role_upgrade');
 $db->select_db('contact_role_upgrade');
 $db->query('CREATE TABLE client LIKE install_success.client');
 $db->query('CREATE TABLE item LIKE install_success.item');
+preg_match('/CREATE TABLE IF NOT EXISTS `calendarevent` .*?;/s', file_get_contents($root . '/install/config/update-1.1.2-1.1.3.sql'), $legacyCalendar);
+$db->query($legacyCalendar[0]);
+$db->query("INSERT INTO calendarevent (id, title, start, end, clientid, createdby) VALUES (1, 'Legacy event', '2026-11-16 09:00:00', '2026-11-16 10:00:00', 7, 42)");
 $db->query('CREATE TABLE contactperson (id INT PRIMARY KEY, name1 VARCHAR(255) NULL, name2 VARCHAR(255) NULL) ENGINE=InnoDB');
 $db->query('CREATE TABLE contact (id INT PRIMARY KEY, type VARCHAR(255), clientid INT NOT NULL, created DATETIME NULL, createdby INT NOT NULL DEFAULT 0, modified DATETIME NULL, modifiedby INT NOT NULL DEFAULT 0, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query('CREATE TABLE shopinquiryform (id INT PRIMARY KEY, shopid INT NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
@@ -157,6 +161,9 @@ $db->query("INSERT INTO shoporder (id, shopid, orderid, clientid) VALUES (1, '41
 $roleQueries = [];
 PMA_splitSqlFile($roleQueries, file_get_contents($root . '/install/config/update-1.1.7-1.1.8.sql'));
 foreach ($roleQueries as $query) $db->query($query['query']);
+check($db->query('SHOW FULL COLUMNS FROM calendarevent')->fetch_all(MYSQLI_ASSOC) === $db->query('SHOW FULL COLUMNS FROM install_success.calendarevent')->fetch_all(MYSQLI_ASSOC), 'Calendar upgrade and fresh schema differ');
+$calendar = $db->query('SELECT * FROM calendarevent WHERE id = 1')->fetch_assoc();
+check($calendar['title'] === 'Legacy event' && $calendar['start'] === '2026-11-16 09:00:00' && $calendar['end'] === '2026-11-16 10:00:00' && $calendar['startutc'] === null && $calendar['endutc'] === null && $calendar['visibility'] === 'private' && (int)$calendar['ownerid'] === 42, 'Calendar upgrade changed historical values or exposed legacy events');
 check($db->query('SELECT GROUP_CONCAT(id ORDER BY clientid) FROM uom WHERE `default` = 1')->fetch_row()[0] === '23,31,41,60', 'UOM upgrade did not preserve and normalize tenant defaults by ordering and ID');
 check((int)$db->query('SELECT COUNT(*) FROM uom WHERE deleted != 0 AND `default` != 0')->fetch_row()[0] === 0, 'UOM upgrade retained a deleted default');
 $uoms = $db->query('SELECT * FROM uom ORDER BY id')->fetch_all(MYSQLI_ASSOC);

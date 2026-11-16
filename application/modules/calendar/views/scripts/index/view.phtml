@@ -1,0 +1,29 @@
+<?php
+$e = fn($value) => $this->escape((string)$value);
+$event = $this->event;
+$format = $event['allday'] ? 'Y-m-d' : 'Y-m-d H:i P';
+?>
+<article class="dw-calendar-detail dw-card">
+	<p><a href="<?php echo $e($this->url(['module' => 'calendar', 'controller' => 'index', 'action' => 'index'], 'default', true)); ?>"><?php echo $e($this->translate('CALENDAR_BACK')); ?></a></p>
+	<h3><?php echo $event['private'] ? $e($this->translate('CALENDAR_BUSY')) : $e($event['title']); ?></h3>
+	<dl>
+		<dt><?php echo $e($this->translate('CALENDAR_OWNER')); ?></dt><dd><?php echo $e($event['owner'] ?: '#' . $event['ownerid']); ?></dd>
+		<dt><?php echo $e($this->translate('CALENDAR_START')); ?></dt><dd><?php echo $e((new DateTimeImmutable($event['start']))->format($format)); ?></dd>
+		<dt><?php echo $e($this->translate('CALENDAR_END')); ?></dt><dd><?php echo $e((new DateTimeImmutable($event['end']))->format($format)); ?><?php if ($event['allday']) echo ' ' . $e($this->translate('CALENDAR_END_EXCLUSIVE')); ?></dd>
+		<?php if (!$event['allday']): ?><dt><?php echo $e($this->translate('CALENDAR_TIMEZONE')); ?></dt><dd><?php echo $e($this->calendarZone); ?></dd><?php endif; ?>
+		<?php if (!$event['private']): ?>
+			<dt><?php echo $e($this->translate('CALENDAR_VISIBILITY')); ?></dt><dd><?php echo $e($this->translate($event['visibility'] === 'team' ? 'CALENDAR_TEAM' : 'CALENDAR_PRIVATE')); ?></dd>
+			<dt><?php echo $e($this->translate('CALENDAR_DESCRIPTION')); ?></dt><dd class="dw-calendar-description"><?php echo $e($event['description']); ?></dd>
+			<dt><?php echo $e($this->translate('CALENDAR_LOCATION')); ?></dt><dd><?php echo $e($event['location']); ?></dd>
+		<?php endif; ?>
+	</dl>
+	<div class="dw-calendar-toolbar">
+		<?php if ($this->canEdit): ?><a class="dw-btn" href="<?php echo $e($this->url(['module' => 'calendar', 'controller' => 'index', 'action' => 'edit', 'id' => $event['id']], 'default', true)); ?>"><?php echo $e($this->translate('CALENDAR_EDIT')); ?></a><?php endif; ?>
+		<?php if ($this->canDelete): ?>
+			<form method="post" data-autosave="false" data-calendar-delete="<?php echo $e($this->translate('CALENDAR_DELETE_CONFIRM')); ?>" action="<?php echo $e($this->url(['module' => 'calendar', 'controller' => 'index', 'action' => 'delete', 'id' => $event['id']], 'default', true)); ?>">
+				<input type="hidden" name="csrf_token" value="<?php echo $e($this->calendarCsrf); ?>">
+				<button class="dw-btn dw-btn--danger" type="submit"><?php echo $e($this->translate('CALENDAR_DELETE')); ?></button>
+			</form>
+		<?php endif; ?>
+	</div>
+</article>

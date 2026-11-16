@@ -7,6 +7,8 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 	public function MainMenu()
 	{
 		$menu = $this->getMenuConfig();
+		$permission = new DEEC_Permission((array)Zend_Registry::get('User'));
+		$menu = array_filter($menu, static fn($item) => ($item['module'] ?? '') !== 'calendar' || $permission->hasPermission('calendar', 'index', 'view'));
 
 		//echo $this->renderMobileDrawer($menu);
 		echo $this->renderDesktopTopbar($menu);
@@ -96,6 +98,14 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 						'action' => 'index',
 					],
 				],
+			],
+			[
+				'type' => 'link',
+				'label' => 'CALENDAR',
+				'module' => 'calendar',
+				'controller' => 'index',
+				'action' => 'index',
+				'active' => function () { return $this->isActive('calendar', 'index'); },
 			],
 			[
 				'type' => 'link',

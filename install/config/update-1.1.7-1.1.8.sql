@@ -328,3 +328,17 @@ CREATE TABLE IF NOT EXISTS `inquirytechnicalreview` (
   CONSTRAINT `inquirytechnicalreview_dataset` FOREIGN KEY (`itemsclientid`, `datasetid`) REFERENCES `technicaldataset` (`clientid`, `id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `inquirytechnicalreview_previous` FOREIGN KEY (`clientid`, `inquiryid`, `previousid`) REFERENCES `inquirytechnicalreview` (`clientid`, `inquiryid`, `id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- K1 team calendar: retain legacy wall times; new events also store UTC instants.
+ALTER TABLE `calendarevent`
+  ADD `ownerid` int(11) NOT NULL DEFAULT 0 AFTER `description`,
+  ADD `allday` tinyint(1) NOT NULL DEFAULT 0 AFTER `ownerid`,
+  ADD `location` varchar(255) DEFAULT NULL AFTER `allday`,
+  ADD `visibility` varchar(16) NOT NULL DEFAULT 'private' AFTER `location`,
+  ADD `timezone` varchar(64) DEFAULT NULL AFTER `visibility`,
+  ADD `startutc` datetime DEFAULT NULL AFTER `timezone`,
+  ADD `endutc` datetime DEFAULT NULL AFTER `startutc`,
+  ADD INDEX `clientid_deleted_startutc` (`clientid`, `deleted`, `startutc`),
+  ADD INDEX `clientid_ownerid_deleted` (`clientid`, `ownerid`, `deleted`);
+
+UPDATE `calendarevent` SET `ownerid` = `createdby` WHERE `ownerid` = 0 AND `createdby` > 0;

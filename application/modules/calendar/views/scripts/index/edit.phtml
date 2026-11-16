@@ -1,0 +1,11 @@
+<?php $e = fn($value) => $this->escape((string)$value); ?>
+<section class="dw-calendar-editor dw-card">
+	<p><a href="<?php echo $e($this->url(['module' => 'calendar', 'controller' => 'index', 'action' => 'index'], 'default', true)); ?>"><?php echo $this->translate('CALENDAR_BACK'); ?></a></p>
+	<?php if ($this->calendarError): ?><p class="dw-alert dw-alert--danger" role="alert"><?php echo $e($this->calendarError); ?></p><?php endif; ?>
+	<p><?php echo $e($this->translate('CALENDAR_OWNER')); ?>: <?php echo $e($this->ownerName); ?></p>
+	<p><?php echo $e($this->translate('CALENDAR_EDIT_HELP')); ?></p>
+	<form id="calendar-event" method="post" data-autosave="false" data-calendar-form action="<?php echo $e($this->url(['module' => 'calendar', 'controller' => 'index', 'action' => $this->event ? 'edit' : 'add', 'id' => $this->event['id'] ?? null], 'default', true)); ?>">
+		<?php echo $this->eventForm->render(); ?>
+		<button class="dw-btn dw-btn--primary" type="submit"><?php echo $e($this->translate('CALENDAR_SAVE')); ?></button>
+	</form>
+</section>

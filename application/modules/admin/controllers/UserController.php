@@ -128,6 +128,9 @@ class Admin_UserController extends DEEC_Controller_AdminAction
 				'index' => ['view'],
 				'comment' => ['add', 'edit', 'view', 'delete'],
 			],
+			'calendar' => [
+				'index' => ['add', 'edit', 'view', 'delete'],
+			],
 			'contacts' => [
 				'contact' => ['add', 'edit', 'view', 'delete'],
 				'email' => ['add', 'edit', 'view', 'delete'],

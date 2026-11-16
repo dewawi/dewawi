@@ -1,0 +1,22 @@
+.dw-calendar-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; margin-bottom: 1rem; }
+.dw-calendar-toolbar label { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; }
+.dw-calendar-toolbar .is-active { background: #e4efff; border-color: #3570b9; }
+.dw-calendar-grid { display: grid; gap: 1px; background: #dce2e8; border: 1px solid #dce2e8; }
+.dw-calendar-grid--month, .dw-calendar-grid--week { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.dw-calendar-grid--day, .dw-calendar-grid--agenda { grid-template-columns: minmax(0, 1fr); }
+.dw-calendar-day { background: #fff; padding: .5rem; min-width: 0; min-height: 9rem; }
+.dw-calendar-day.is-today { background: #f0f6ff; }
+.dw-calendar-day h3 { font-size: .85rem; margin: 0 0 .6rem; overflow-wrap: anywhere; }
+.dw-calendar-event { display: flex; flex-direction: column; gap: .2rem; padding: .5rem; margin-bottom: .4rem; background: #e4efff; border-left: 3px solid #3570b9; border-radius: 4px; color: #213c5c; overflow-wrap: anywhere; }
+.dw-calendar-event--private { background: #eef0f3; border-color: #697586; color: #465363; }
+.dw-calendar-event-time, .dw-calendar-empty, .dw-calendar-help { font-size: .8rem; }
+.dw-calendar-editor, .dw-calendar-detail { padding: 1rem; max-width: 60rem; }
+.dw-calendar-description { white-space: pre-wrap; }
+.dw-calendar-detail dd { margin: .3rem 0 1rem; overflow-wrap: anywhere; }
+.dw-calendar-editor input, .dw-calendar-editor select, .dw-calendar-editor textarea { max-width: 100%; min-width: 0; }
+@media (max-width: 760px) {
+	.dw-calendar-grid--month, .dw-calendar-grid--week { grid-template-columns: minmax(0, 1fr); }
+	.dw-calendar-day { min-height: 4rem; }
+	.dw-calendar-toolbar > *, .dw-calendar-toolbar label, .dw-calendar-toolbar select { max-width: 100%; min-width: 0; }
+	.dw-calendar-editor .dw-field { flex-basis: 100%; max-width: 100%; }
+}

@@ -1,0 +1,60 @@
+<?php
+$e = fn($value) => $this->escape((string)$value);
+$t = fn($key) => $e($this->translate($key));
+$p = $this->period;
+$calendarUrl = $this->url(['module' => 'calendar', 'controller' => 'index', 'action' => 'index'], 'default', true);
+$url = fn($params) => $e($calendarUrl . '?' . http_build_query($params + ['date' => $p['date'], 'mode' => $p['mode'], 'ownerid' => $this->ownerid]));
+$days = [];
+for ($date = new DateTimeImmutable($p['first'], new DateTimeZone('UTC')); $date->format('Y-m-d') < $p['until']; $date = $date->modify('+1 day')) $days[$date->format('Y-m-d')] = [];
+foreach ($this->events as $event) {
+	foreach ($days as $date => &$items) {
+		if ($event['allday']) $overlap = substr($event['start'], 0, 10) <= $date && substr($event['end'], 0, 10) > $date;
+		else {
+			$zone = new DateTimeZone($this->calendarZone);
+			$start = Calendar_Model_Event::dayStart($date, $zone);
+			$end = Calendar_Model_Event::dayStart((new DateTimeImmutable($date, new DateTimeZone('UTC')))->modify('+1 day')->format('Y-m-d'), $zone);
+			$overlap = new DateTimeImmutable($event['start']) < $end && new DateTimeImmutable($event['end']) > $start;
+		}
+		if ($overlap) $items[] = $event;
+	}
+	unset($items);
+}
+?>
+<section class="dw-calendar" aria-label="<?php echo $t('CALENDAR'); ?>">
+	<nav class="dw-calendar-toolbar" aria-label="<?php echo $t('CALENDAR_NAVIGATION'); ?>">
+		<a class="dw-btn" href="<?php echo $url(['date' => $p['previous']]); ?>" aria-label="<?php echo $t('CALENDAR_PREVIOUS'); ?>">&#8592;</a>
+		<a class="dw-btn" href="<?php echo $url(['date' => (new DateTimeImmutable('now', new DateTimeZone($this->calendarZone)))->format('Y-m-d')]); ?>"><?php echo $t('CALENDAR_TODAY'); ?></a>
+		<a class="dw-btn" href="<?php echo $url(['date' => $p['next']]); ?>" aria-label="<?php echo $t('CALENDAR_NEXT'); ?>">&#8594;</a>
+		<strong><?php echo $e($p['mode'] === 'month' ? substr($p['date'], 0, 7) : $p['first'] . ' – ' . (new DateTimeImmutable($p['until']))->modify('-1 day')->format('Y-m-d')); ?></strong>
+		<?php foreach (['month', 'week', 'day', 'agenda'] as $mode): ?>
+			<a class="dw-btn<?php echo $p['mode'] === $mode ? ' is-active' : ''; ?>" <?php echo $p['mode'] === $mode ? 'aria-current="page"' : ''; ?> href="<?php echo $url(['mode' => $mode]); ?>"><?php echo $t('CALENDAR_' . strtoupper($mode)); ?></a>
+		<?php endforeach; ?>
+		<?php if ($this->canAdd): ?><a class="dw-btn dw-btn--primary" href="<?php echo $e($this->url(['module' => 'calendar', 'controller' => 'index', 'action' => 'add'], 'default', true)); ?>"><?php echo $t('CALENDAR_NEW'); ?></a><?php endif; ?>
+	</nav>
+	<form class="dw-calendar-toolbar" method="get" action="<?php echo $e($calendarUrl); ?>" data-autosave="false">
+		<label><?php echo $t('CALENDAR_DATE'); ?><input class="dw-input" type="date" name="date" value="<?php echo $e($p['date']); ?>" required></label>
+		<input type="hidden" name="mode" value="<?php echo $e($p['mode']); ?>">
+		<label><?php echo $t('CALENDAR_MEMBER'); ?><select class="dw-select" name="ownerid">
+			<option value="0"><?php echo $t('CALENDAR_ALL_MEMBERS'); ?></option>
+			<?php foreach ($this->members as $id => $name): ?><option value="<?php echo (int)$id; ?>" <?php echo (int)$id === $this->ownerid ? 'selected' : ''; ?>><?php echo $e($name ?: '#' . $id); ?></option><?php endforeach; ?>
+		</select></label>
+		<button class="dw-btn" type="submit"><?php echo $t('CALENDAR_APPLY'); ?></button>
+		<span><?php echo $t('CALENDAR_TIMEZONE'); ?>: <?php echo $e($this->calendarZone); ?></span>
+	</form>
+	<p class="dw-calendar-help"><?php echo $t('CALENDAR_PRIVACY_HELP'); ?></p>
+	<div class="dw-calendar-grid dw-calendar-grid--<?php echo $e($p['mode']); ?>">
+		<?php foreach ($days as $date => $items): ?>
+			<section class="dw-calendar-day<?php echo $date === (new DateTimeImmutable('now', new DateTimeZone($this->calendarZone)))->format('Y-m-d') ? ' is-today' : ''; ?>">
+				<h3><a href="<?php echo $url(['date' => $date, 'mode' => 'day']); ?>"><time datetime="<?php echo $e($date); ?>"><?php echo $t('CALENDAR_WEEKDAY_' . (new DateTimeImmutable($date))->format('N')) . ' ' . $e($date); ?></time></a></h3>
+				<?php if (!$items): ?><p class="dw-calendar-empty"><?php echo $t('CALENDAR_EMPTY'); ?></p><?php endif; ?>
+				<?php foreach ($items as $event): ?>
+					<a class="dw-calendar-event<?php echo $event['private'] ? ' dw-calendar-event--private' : ''; ?>" href="<?php echo $e($this->url(['module' => 'calendar', 'controller' => 'index', 'action' => 'view', 'id' => $event['id']], 'default', true)); ?>">
+						<span class="dw-calendar-event-time"><?php echo $event['allday'] ? $t('CALENDAR_ALLDAY') : $e((new DateTimeImmutable($event['start']))->format('d.m. H:i P') . ' – ' . (new DateTimeImmutable($event['end']))->format('d.m. H:i P')); ?></span>
+						<strong><?php echo $event['private'] ? $t('CALENDAR_BUSY') : $e($event['title']); ?></strong>
+						<span><?php echo $e($event['owner'] ?: '#' . $event['ownerid']); ?></span>
+					</a>
+				<?php endforeach; ?>
+			</section>
+		<?php endforeach; ?>
+	</div>
+</section>

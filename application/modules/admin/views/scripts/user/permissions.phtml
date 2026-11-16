@@ -15,6 +15,7 @@ $permissionId = (int)($this->permission['id'] ?? 0);
 		<?php foreach ($this->modules as $module): ?>
 			<?php
 			$controllers = $this->permission[$module] ?? [];
+			if ($module === 'calendar' && !array_key_exists('index', $controllers)) $controllers['index'] = [];
 
 			if($module === 'statistics' && !array_key_exists('reporting', $controllers)) $controllers['reporting'] = [];
 

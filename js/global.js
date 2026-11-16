@@ -57,7 +57,7 @@ $.ajaxPrefilter(function (options, originalOptions, jqXHR) {
 $(document).ready(function(){
 	//Keep alive
 	setInterval(function(){
-		if(action == 'edit') {
+		if(action == 'edit' && module !== 'calendar') {
 			$.get(baseUrl+'/'+module+'/'+controller+'/keepalive/id/'+id);
 		} else if(action == 'index') {
 			//Keep alive editable elements
