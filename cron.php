@@ -124,53 +124,7 @@ foreach ($campaigns as $campaign) {
 
 require_once(BASE_PATH.'/library/DEEC/Address.php');
 $Address = new DEEC_Address(BASE_PATH, DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME);
-$address = $Address->getLatestAddress();
-
-// Test cron for geodata
-//print_r($address);
-$geodata = array();
-if($address['street']) {
-	if(strtotime($address['geoupdated']) <= strtotime($address['modified'])) {
-		$location = urlencode($address['street'].' '.$address['postcode'].' '.$address['city']);
-		$opts = array('http'=>array('header'=>"User-Agent: DEWAWI\r\n"));
-		$context = stream_context_create($opts);
-		$url = 'https://nominatim.openstreetmap.org/search?addressdetails=1&q='.$location.'&format=jsonv2&limit=1';
-		//print_r($url);
-		$json = file_get_contents($url, false, $context);
-		//print_r($json);
-		if($json) {
-			$geocode = json_decode($json);
-			//print_r($geocode);
-			if(isset($geocode[0]->lat) && isset($geocode[0]->lon)) {
-				$geodata['latitude'] = $geocode[0]->lat;
-				$geodata['longitude'] = $geocode[0]->lon;
-				$geodata['geoupdated'] = date('Y-m-d H:i:s');
-				$Address->updateAddress($address['id'], $geodata);
-			} else {
-				$geodata['latitude'] = 'NULL';
-				$geodata['longitude'] = 'NULL';
-				$geodata['geoupdated'] = date('Y-m-d H:i:s');
-				$Address->updateAddress($address['id'], $geodata);
-			}
-		} else {
-			$geodata['latitude'] = 'NULL';
-			$geodata['longitude'] = 'NULL';
-			$geodata['geoupdated'] = date('Y-m-d H:i:s');
-			$Address->updateAddress($address['id'], $geodata);
-		}
-	} else {
-		$geodata['latitude'] = 'NULL';
-		$geodata['longitude'] = 'NULL';
-		$geodata['geoupdated'] = date('Y-m-d H:i:s');
-		$Address->updateAddress($address['id'], $geodata);
-	}
-} else {
-	$geodata['latitude'] = 'NULL';
-	$geodata['longitude'] = 'NULL';
-	$geodata['geoupdated'] = date('Y-m-d H:i:s');
-	$Address->updateAddress($address['id'], $geodata);
-}
-//print_r($geodata);
+$Address->geocodeLatestAddress();
 
 function isBetween($from, $till, $input) {
 	$f = DateTime::createFromFormat('!H:i', $from);
