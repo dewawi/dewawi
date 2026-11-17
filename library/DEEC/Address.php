@@ -4,7 +4,9 @@ class DEEC_Address {
 
 	// Public Nominatim is restricted to explicitly reviewed single addresses.
 	private const GEOCODING_CLIENT_ID = 100;
-	private array $geocoding = [];
+	protected array $geocoding = [];
+	private ?array $batchContext = null;
+	private bool $geocodingRequested = false;
 
 	protected $basePath;
 
@@ -20,10 +22,14 @@ class DEEC_Address {
 	public function getAddress($id) {
 		$id = filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 		if ($id === false) return false;
-		$statement = $this->connection->prepare("SELECT a.* FROM address a JOIN contact c ON c.id = a.parentid AND c.clientid = a.clientid AND c.deleted = 0 WHERE a.id = ? AND a.clientid = ? AND a.deleted = 0 AND a.module = 'contacts' AND a.controller = 'contact' AND a.type = 'billing'");
+		$query = "SELECT a.* FROM address a JOIN contact c ON c.id = a.parentid AND c.clientid = a.clientid AND c.deleted = 0 WHERE a.id = ? AND a.clientid = ? AND a.deleted = 0 AND a.module = 'contacts' AND a.controller = 'contact' AND a.type = 'billing'";
+		if ($this->batchContext !== null) $query .= " AND c.id = ? AND BINARY c.created <=> BINARY ? AND a.id = (SELECT billing.id FROM address billing WHERE billing.parentid = c.id AND billing.clientid = c.clientid AND billing.module = 'contacts' AND billing.controller = 'contact' AND billing.type = 'billing' AND billing.deleted = 0 ORDER BY billing.ordering, billing.id LIMIT 1)";
+		$statement = $this->connection->prepare($query);
 		$client = self::GEOCODING_CLIENT_ID;
 		try {
-			$statement->bind_param('ii', $id, $client);
+			$values = [$id, $client];
+			if ($this->batchContext !== null) $values = array_merge($values, [$this->batchContext['id'], $this->batchContext['created']]);
+			$statement->bind_param($this->batchContext === null ? 'ii' : 'iiis', ...$values);
 			$statement->execute();
 			return $statement->get_result()->fetch_assoc() ?: false;
 		} finally { $statement->close(); }
@@ -60,6 +66,7 @@ class DEEC_Address {
 	}
 
 	public function geocodeAddress(int $id, string $publicAddressFingerprint, bool $confirmedPostalChange = false): array {
+		$this->geocodingRequested = false;
 		$review = $this->inspectGeocoding($id);
 		if (in_array($review['status'], ['unchanged', 'existing_coordinates'], true) && !($review['status'] === 'existing_coordinates' && $confirmedPostalChange)) return $review;
 		if (!isset($review['fingerprint']) || !hash_equals($review['fingerprint'], $publicAddressFingerprint)) return ['status' => 'public_review_required'];
@@ -82,19 +89,29 @@ class DEEC_Address {
 			$now = $this->geocodingTime();
 			$cached = ($entry['status'] ?? '') === 'success';
 			if (!$cached) {
-				if (in_array($entry['status'] ?? '', ['review', 'blocked'], true) || ($state['blocked_endpoint'] ?? '') === $this->geocoding['endpoint']) return ['status' => 'manual_review_required'];
-				$next = max((int)($entry['next_attempt_at'] ?? 0), (int)$state['next_request_at']);
-				if ($next > $now) return ['status' => 'backoff', 'retry_after' => $next - $now];
+				if (($state['blocked_endpoint'] ?? '') === $this->geocoding['endpoint']) return ['status' => 'manual_review_required'] + ($this->batchContext === null ? [] : ['scope' => 'provider']);
+				if (in_array($entry['status'] ?? '', ['review', 'blocked'], true)) return ['status' => 'manual_review_required'];
+				$providerNext = (int)$state['next_request_at'];
+				if ($this->batchContext !== null) $providerNext = max($providerNext, ($state['last_request_at'] ?? max(0, $providerNext - 15)) + 60);
+				$next = max((int)($entry['next_attempt_at'] ?? 0), $providerNext);
+				if ($next > $now) return ['status' => 'backoff', 'retry_after' => $next - $now] + ($this->batchContext === null ? [] : ['scope' => $providerNext >= ($entry['next_attempt_at'] ?? 0) ? 'provider' : 'address']);
 				$day = gmdate('Y-m-d', $now);
-				if (($state['day'] ?? '') !== $day) { $state['day'] = $day; $state['requests_today'] = 0; }
-				if ($state['requests_today'] >= 50) return ['status' => 'daily_limit'];
+				if (($state['day'] ?? '') !== $day) { $state['day'] = $day; $state['requests_today'] = 0; $state['manual_requests_today'] = 0; }
+				$state['manual_requests_today'] = $state['manual_requests_today'] ?? $state['requests_today'];
+				if ($this->batchContext !== null) { $state['batch_day'] = $day; $state['batch_daily_limit'] = $this->batchContext['daily_limit']; }
+				$batchDay = ($state['batch_day'] ?? '') === $day;
+				if ($state['requests_today'] >= ($batchDay ? $state['batch_daily_limit'] : 50) || ($this->batchContext === null && $state['manual_requests_today'] >= 50)) return ['status' => 'daily_limit'];
 				$attempts = (int)($entry['attempts'] ?? 0) + 1;
+				$this->authorizeGeocodingRequest();
 				// Persist quota and a crash backoff before any network I/O.
-				$state['next_request_at'] = $now + 15;
+				$state['next_request_at'] = $now + ($batchDay ? 60 : 15);
+				$state['last_request_at'] = $now;
 				$state['requests_today']++;
+				if ($this->batchContext === null) $state['manual_requests_today']++;
 				$state['entries'][$key] = ['status' => 'retry', 'attempts' => $attempts, 'next_attempt_at' => $now + 3600];
 				$this->writeGeocodingState($state);
 				$query = http_build_query(['street' => $postal['fields']['street'], 'postalcode' => $postal['fields']['postcode'], 'city' => $postal['fields']['city'], 'countrycodes' => $postal['fields']['country'], 'format' => 'jsonv2', 'addressdetails' => 1, 'limit' => 3, 'layer' => 'address'], '', '&', PHP_QUERY_RFC3986);
+				$this->geocodingRequested = true;
 				try { [$body, $headers] = $this->requestGeocode($query); }
 				catch (Throwable $error) { $body = false; $headers = []; }
 				preg_match('~^HTTP/\S+ (\d{3})(?:\s|$)~', $headers[0] ?? '', $status);
@@ -127,8 +144,16 @@ class DEEC_Address {
 	}
 
 	protected function geocodingTime(): int { return time(); }
+	protected function authorizeGeocodingRequest(): void {}
 
-	private function review(int $id, $address, array $state): array {
+	protected function geocodeBatchAddress(int $id, string $fingerprint, array $selection, int $dailyLimit): array {
+		if ($dailyLimit < 1 || $dailyLimit > 500 || empty($selection['id']) || !array_key_exists('created', $selection)) throw new InvalidArgumentException('Invalid batch scope');
+		$this->batchContext = ['id' => (int)$selection['id'], 'created' => $selection['created'], 'daily_limit' => $dailyLimit];
+		try { return $this->geocodeAddress($id, $fingerprint) + ['external_requested' => $this->geocodingRequested]; }
+		finally { $this->batchContext = null; }
+	}
+
+	protected function review(int $id, $address, array $state): array {
 		if (!$address) return ['status' => 'ineligible'];
 		$postal = $this->postalAddress($address);
 		if ($postal === null) return ['status' => 'incomplete_or_unreviewable'];
@@ -137,7 +162,7 @@ class DEEC_Address {
 		$status = 'needs_geocoding';
 		if ($this->validCoordinates($address)) {
 			$status = 'existing_coordinates';
-			if (isset($last['point']) && $this->samePoint($last['point'], $address)) $status = ($last['key'] ?? '') === $key ? 'unchanged' : 'postal_address_changed';
+			if ($this->batchContext === null && isset($last['point']) && $this->samePoint($last['point'], $address)) $status = ($last['key'] ?? '') === $key ? 'unchanged' : 'postal_address_changed';
 		}
 		$snapshot = array_intersect_key($address, array_flip(['street', 'postcode', 'city', 'country', 'parentid', 'type', 'modified', 'geoupdated', 'latitude', 'longitude']));
 		return ['status' => $status, 'fingerprint' => hash('sha256', $id.':'.$key.':'.json_encode($snapshot))];
@@ -214,7 +239,7 @@ class DEEC_Address {
 		return $now;
 	}
 
-	private function validateGeocodingOptions(): void {
+	protected function validateGeocodingOptions(): void {
 		$url = parse_url($this->geocoding['endpoint'] ?? '');
 		$agent = $this->geocoding['user_agent'] ?? '';
 		$directory = $this->geocoding['state_dir'] ?? '';
@@ -232,6 +257,7 @@ class DEEC_Address {
 		if (is_link($file) || !is_readable($file)) throw new RuntimeException('Unsafe geocoding state');
 		$state = json_decode(file_get_contents($file), true, 512, JSON_THROW_ON_ERROR);
 		if (!is_array($state) || ($state['version'] ?? 0) !== 1 || !is_array($state['entries'] ?? null) || !is_array($state['addresses'] ?? null) || !is_int($state['next_request_at'] ?? null) || $state['next_request_at'] < 0 || !is_int($state['requests_today'] ?? null) || $state['requests_today'] < 0) throw new RuntimeException('Invalid geocoding state');
+		foreach (['last_request_at', 'manual_requests_today', 'batch_daily_limit'] as $field) if (isset($state[$field]) && (!is_int($state[$field]) || $state[$field] < 0 || ($field === 'batch_daily_limit' && ($state[$field] < 1 || $state[$field] > 500)))) throw new RuntimeException('Invalid shared geocoding quota');
 		foreach ($state['entries'] as $key => $entry) {
 			if (!preg_match('/^[a-f0-9]{64}$/D', (string)$key) || !is_array($entry) || !in_array($entry['status'] ?? '', ['success', 'retry', 'no_match', 'review', 'blocked'], true)) throw new RuntimeException('Invalid geocoding cache entry');
 			if ($entry['status'] === 'success') {
@@ -242,13 +268,13 @@ class DEEC_Address {
 		return $state;
 	}
 
-	private function writeGeocodingState(array $state): void {
+	protected function writeGeocodingState(array $state, string $name = 'manual.json'): void {
 		$directory = $this->geocoding['state_dir'];
 		$file = tempnam($directory, '.manual-');
 		if (!$file) throw new RuntimeException('Cannot write geocoding state');
 		try {
 			$encoded = json_encode($state, JSON_THROW_ON_ERROR);
-			if (file_put_contents($file, $encoded) !== strlen($encoded) || !chmod($file, 0600) || !rename($file, $directory.'/manual.json')) throw new RuntimeException('Cannot persist geocoding state');
+			if (file_put_contents($file, $encoded) !== strlen($encoded) || !chmod($file, 0600) || !rename($file, $directory.'/'.$name)) throw new RuntimeException('Cannot persist geocoding state');
 		} finally { if (is_file($file)) unlink($file); }
 	}
 
@@ -268,9 +294,15 @@ class DEEC_Address {
 		$id = filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 		if ($id === false || !$this->validCoordinates($data)) return false;
 
-		$query = "UPDATE address a JOIN contact c ON c.id = a.parentid AND c.clientid = a.clientid AND c.deleted = 0 SET a.latitude = ?, a.longitude = ?, a.geoupdated = ? WHERE a.id = ? AND a.clientid = ? AND a.deleted = 0 AND a.module = 'contacts' AND a.controller = 'contact' AND a.type = 'billing'";
+		$earlier = $this->batchContext === null ? '' : " LEFT JOIN address earlier ON earlier.parentid = c.id AND earlier.clientid = c.clientid AND earlier.module = 'contacts' AND earlier.controller = 'contact' AND earlier.type = 'billing' AND earlier.deleted = 0 AND (earlier.ordering < a.ordering OR (earlier.ordering = a.ordering AND earlier.id < a.id))";
+		$query = "UPDATE address a JOIN contact c ON c.id = a.parentid AND c.clientid = a.clientid AND c.deleted = 0".$earlier." SET a.latitude = ?, a.longitude = ?, a.geoupdated = ? WHERE a.id = ? AND a.clientid = ? AND a.deleted = 0 AND a.module = 'contacts' AND a.controller = 'contact' AND a.type = 'billing'";
 		$values = [(float)$data['latitude'], (float)$data['longitude'], $data['geoupdated'], $id, self::GEOCODING_CLIENT_ID];
 		$types = 'ddsii';
+		if ($this->batchContext !== null) {
+			$query .= ' AND earlier.id IS NULL AND c.id = ? AND BINARY c.created <=> BINARY ? AND (a.latitude IS NULL OR a.longitude IS NULL OR a.latitude NOT BETWEEN -90 AND 90 OR a.longitude NOT BETWEEN -180 AND 180)';
+			$values = array_merge($values, [$this->batchContext['id'], $this->batchContext['created']]);
+			$types .= 'is';
+		}
 
 		// Compare address text byte-for-byte, including changes within the same second.
 		if ($expected) {
