@@ -122,9 +122,7 @@ foreach ($campaigns as $campaign) {
 	//}
 }*/
 
-require_once(BASE_PATH.'/library/DEEC/Address.php');
-$Address = new DEEC_Address(BASE_PATH, DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME);
-$Address->geocodeLatestAddress();
+// Public Nominatim requires a manually reviewed single address; see application/cli/contact-geocode.php.
 
 function isBetween($from, $till, $input) {
 	$f = DateTime::createFromFormat('!H:i', $from);

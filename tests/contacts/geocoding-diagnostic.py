@@ -1,4 +1,4 @@
-"""Test read-only geocoding diagnosis against a disposable local database only."""
+"""Test diagnosis and the manual geocoding CLI against a disposable database only."""
 from pathlib import Path
 import os
 import subprocess
@@ -27,6 +27,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-contact-map-') as directory:
         (work / 'cache/contact').mkdir(parents=True)
         subprocess.run(['php', str(root / 'tests/contacts/map.php')], check=True, env=env)
         subprocess.run(['php', str(Path(__file__).with_suffix('.php'))], check=True, env=env)
+        subprocess.run(['php', str(root / 'tests/contacts/geocoding-manual-cli.php')], check=True, env=env)
     finally:
         if server is not None:
             server.terminate()
