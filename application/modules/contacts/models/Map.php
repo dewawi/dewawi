@@ -41,14 +41,14 @@ class Contacts_Model_Map extends DEEC_List_Query
 		return $bounds;
 	}
 
-	protected function locations(array $params, array $options): Zend_Db_Select
+	protected function locations(array $params, array $options, array $addressColumns = ['latitude', 'longitude'], array $contactColumns = ['id', 'contactid', 'name1']): Zend_Db_Select
 	{
 		$this->authorize();
 		$params = $this->filters($params, $options);
 		$config = Contacts_Model_Entity_Contact::listConfig();
-		$config['columns'] = ['id', 'contactid', 'name1'];
-		$config['group'] = ['c.id', 'c.contactid', 'c.name1', 'a.latitude', 'a.longitude'];
-		foreach ($config['joins'] as &$join) $join['columns'] = $join['alias'] === 'a' ? ['latitude', 'longitude'] : [];
+		$config['columns'] = $contactColumns;
+		$config['group'] = array_merge(array_map(static fn($column) => 'c.'.$column, $contactColumns), array_map(static fn($column) => 'a.'.$column, array_values($addressColumns)));
+		foreach ($config['joins'] as &$join) $join['columns'] = $join['alias'] === 'a' ? $addressColumns : [];
 		unset($join);
 		if ($params['keyword'] === '') $config['joins'] = [$config['joins'][0]];
 		$table = new Contacts_Model_DbTable_Contact();
