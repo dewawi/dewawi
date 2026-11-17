@@ -63,6 +63,8 @@ class DEEC_Permission
 			'createquote',
 		],
 		'view' => [
+			'map',
+			'mapdata',
 			'endtime',
 			'respond',
 			'reminders',

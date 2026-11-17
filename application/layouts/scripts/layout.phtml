@@ -58,6 +58,7 @@ $currentDate = $date->get(Zend_Date::WEEKDAY) . ', '
 	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/simpletreemenu.js"></script>
 	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/global.js"></script>
 	<script type="text/javascript" src="<?php echo $this->baseUrl(); ?>/js/contacts.js"></script>
+	<?php if ($this->module === 'contacts' && $this->controller === 'contact'): ?><script src="<?php echo $this->baseUrl(); ?>/js/contacts-map.js"></script><?php endif; ?>
 	<?php if (isset($this->user)): ?><script src="<?php echo $this->baseUrl(); ?>/js/calendar-reminders.js"></script><?php endif; ?>
 	<?php echo $this->headScript(); ?>
 </head>

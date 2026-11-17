@@ -1,0 +1,33 @@
+<?php
+$this->title = $this->translate('CONTACTS_MAP_TITLE');
+$this->headTitle($this->title);
+$listUrl = $this->url(['module' => 'contacts', 'controller' => 'contact', 'action' => 'index'], null, true);
+$messages = [];
+foreach (['LOADING', 'ERROR', 'EMPTY', 'NO_POSITIONS', 'MORE', 'OPEN', 'ZOOM', 'RETRY'] as $key) $messages[strtolower($key)] = $this->translate('CONTACTS_MAP_'.$key);
+?>
+<section class="dw-contact-map" data-contact-map
+	data-page-url="<?php echo $this->escape($this->url(['module' => 'contacts', 'controller' => 'contact', 'action' => 'map'], null, true)); ?>"
+	data-url="<?php echo $this->escape($this->url(['module' => 'contacts', 'controller' => 'contact', 'action' => 'mapdata'], null, true)); ?>"
+	data-messages="<?php echo $this->escape(json_encode($messages)); ?>">
+	<div class="dw-contact-map__navigation">
+		<a class="dw-btn dw-btn--action" data-contact-map-list data-url="<?php echo $this->escape($listUrl); ?>" href="<?php echo $this->escape($listUrl.'?'.http_build_query($this->mapFilters)); ?>"><?php echo $this->translate('CONTACTS_MAP_LIST'); ?></a>
+		<button type="button" class="dw-btn dw-btn--action" data-contact-map-fit><?php echo $this->translate('CONTACTS_MAP_FIT'); ?></button>
+	</div>
+	<details class="dw-contact-map__filter-panel" data-map-filters open>
+		<summary><?php echo $this->translate('CONTACTS_MAP_FILTERS'); ?></summary>
+		<form class="dw-contact-map__filters" data-autosave="false" method="get">
+			<?php foreach (['keyword' => 'CONTACTS_MAP_SEARCH', 'role' => 'CONTACTS_ROLES', 'catid' => 'CONTACTS_CATEGORY', 'tagid' => 'CONTACTS_TAGS', 'country' => 'CONTACTS_COUNTRY'] as $name => $label): ?>
+				<div class="dw-contact-map__field"><?php echo $this->mapToolbar->renderElementWithAttribs($name, ['class' => 'dw-input', 'aria-label' => $this->translate($label), 'maxlength' => $name === 'keyword' ? 200 : null]); ?></div>
+			<?php endforeach; ?>
+			<button type="submit" class="dw-btn dw-btn--action"><?php echo $this->translate('CONTACTS_MAP_APPLY'); ?></button>
+		</form>
+	</details>
+	<div class="dw-contact-map__counts" aria-live="polite">
+		<?php foreach (['total' => 'TOTAL', 'visible' => 'VISIBLE', 'missing' => 'MISSING', 'invalid' => 'INVALID'] as $name => $key): ?>
+			<span><?php echo $this->translate('CONTACTS_MAP_'.$key); ?>: <strong data-map-count="<?php echo $name; ?>">–</strong></span>
+		<?php endforeach; ?>
+	</div>
+	<div class="dw-contact-map__status" role="status" aria-live="polite" data-map-status></div>
+	<button type="button" class="dw-btn dw-btn--action" data-contact-map-retry hidden><?php echo $this->translate('CONTACTS_MAP_RETRY'); ?></button>
+	<div class="dw-contact-map__canvas" data-map-canvas role="region" aria-label="<?php echo $this->escape($this->title); ?>"></div>
+</section>

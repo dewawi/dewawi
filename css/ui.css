@@ -2352,12 +2352,30 @@ a.dw-nav-link {
 /* 5. Feature-specific components                                             */
 /* -------------------------------------------------------------------------- */
 
- /* Map */
-#map {
-  height: 500px;
+/* Contact map */
+.dw-contact-map { min-width: 0; }
+.dw-contact-map [hidden] { display: none; }
+.dw-contact-map__filter-panel { margin-bottom: 12px; }
+.dw-contact-map__filter-panel > summary { cursor: pointer; margin-bottom: 10px; font-weight: bold; }
+.dw-contact-map__navigation, .dw-contact-map__counts { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.dw-contact-map__filters { display: grid; grid-template-columns: 2fr repeat(4, minmax(110px, 1fr)) auto; gap: 12px; align-items: end; margin-bottom: 16px; }
+.dw-contact-map__field { display: grid; gap: 4px; min-width: 0; }
+.dw-contact-map__filters .dw-input { width: 100%; min-width: 0; }
+.dw-contact-map__canvas { height: 65vh; min-height: 360px; width: 100%; border: 1px solid #d5dde5; border-radius: 8px; z-index: 0; }
+.dw-contact-map__canvas .leaflet-marker-icon { background: none; }
+.dw-contact-map__canvas .dw-contact-map__cluster { background: #17668d; border: 3px solid #fff; border-radius: 50%; color: #fff; text-align: center; line-height: 32px; font-weight: bold; box-shadow: 0 1px 5px #52616b; }
+.dw-contact-map__status { min-height: 24px; margin-bottom: 6px; }
+.dw-contact-map__status.is-error { color: #a12424; }
+.dw-contact-map__popup { min-width: 170px; max-width: 270px; overflow-wrap: anywhere; }
+.dw-contact-map__popup ul { max-height: 220px; overflow-y: auto; padding-left: 18px; }
+.dw-contact-map__popup li { margin: 8px 0; }
+@media (max-width: 1000px) {
+	.dw-contact-map__filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-#map .leaflet-marker-icon { 
-  background: none;
+@media (max-width: 480px) {
+	.dw-contact-map__filters { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+	.dw-contact-map__canvas { height: 60vh; min-height: 320px; }
+	.dw-contact-map__counts { gap: 6px 12px; }
 }
 
 /*CSS for Simple Tree Menu*/

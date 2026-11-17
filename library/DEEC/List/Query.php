@@ -343,7 +343,7 @@ class DEEC_List_Query
 
 			$value = $params[$name];
 
-			if ($value === '' || $value === null || $value === 'all' || $value === '0') {
+			if ($value === '' || $value === null || $value === 'all' || ($value === '0' && ($filter['type'] ?? $name) !== 'category')) {
 				continue;
 			}
 

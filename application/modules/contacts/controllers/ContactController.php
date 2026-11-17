@@ -60,6 +60,8 @@ class Contacts_ContactController extends DEEC_Controller_Action
 		}
 		$options['contactRoles'] = $contactRoleDb->getForContacts($contactIds);
 		$list->setOptions($options);
+		$mapFilters = array_intersect_key($this->view->toolbar->getValues(), Contacts_Model_Map::FILTERS);
+		$this->view->contactMapUrl = $this->view->url(['module' => 'contacts', 'controller' => 'contact', 'action' => 'map'], null, true).'?'.http_build_query($mapFilters);
 
 		if ($this->getRequest()->getActionName() === 'export') {
 			$service = new Contacts_Service_ContactExportService();
@@ -69,6 +71,80 @@ class Contacts_ContactController extends DEEC_Controller_Action
 				'contactRoles' => $options['contactRoles'],
 			]);
 		}
+	}
+
+	public function mapAction()
+	{
+		try {
+			$map = new Contacts_Model_Map();
+			$map->authorize();
+			$this->prepareMapFilters($map);
+			$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
+		} catch (Exception $e) {
+			$this->mapFailure($e);
+		}
+	}
+
+	public function mapdataAction()
+	{
+		$this->disableView();
+		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
+		try {
+			$map = new Contacts_Model_Map();
+			$map->authorize();
+			if (!$this->getRequest()->isGet()) {
+				$this->getResponse()->setHttpResponseCode(405)->setHeader('Allow', 'GET', true);
+				return $this->_helper->json(['ok' => false]);
+			}
+			[$params, $options] = $this->prepareMapFilters($map);
+			$input = $this->_getAllParams();
+			switch ($input['mode'] ?? 'summary') {
+				case 'summary': $data = $map->summary($params, $options); break;
+				case 'markers': $data = $map->markers($params, $options, $input); break;
+				case 'contacts': $data = $map->contacts($params, $options, $input); break;
+				default: throw new InvalidArgumentException('Invalid map mode');
+			}
+			foreach (['groups', 'contacts'] as $key) {
+				if (!isset($data[$key])) continue;
+				foreach ($data[$key] as &$item) {
+					if ($item['id']) $item['url'] = $this->view->url(['module' => 'contacts', 'controller' => 'contact', 'action' => !empty($this->view->permissions['edit']) ? 'edit' : 'view', 'id' => (int)$item['id']], null, true);
+				}
+				unset($item);
+			}
+			return $this->_helper->json(['ok' => true] + $data);
+		} catch (Exception $e) {
+			$this->mapFailure($e);
+		}
+	}
+
+	private function prepareMapFilters(Contacts_Model_Map $map): array
+	{
+		$toolbar = new Contacts_Form_Toolbar();
+		$options = $this->_helper->Options->getOptions($toolbar);
+		$params = $map->filters($this->_helper->Params->getParams($toolbar, $options), $options);
+		$toolbar->setValues($params);
+		$toolbar->setElementData('keyword', ['label' => 'CONTACTS_MAP_SEARCH']);
+		$toolbar->setElementData('catid', ['label' => 'CONTACTS_CATEGORY']);
+		$this->view->mapToolbar = $toolbar;
+		$this->view->mapFilters = $params;
+		return [$params, $options];
+	}
+
+	private function mapFailure(Exception $error): void
+	{
+		$this->disableView();
+		$status = $error instanceof InvalidArgumentException ? 400 : ($error->getCode() === 403 ? 403 : 500);
+		if ($status === 500) error_log((string)$error);
+		$this->getResponse()->setHttpResponseCode($status)->setHeader('Cache-Control', 'private, no-store', true);
+		$this->_helper->json(['ok' => false, 'message' => $this->view->translate('CONTACTS_MAP_ERROR')]);
+	}
+
+	protected function buildViewForm(array $row)
+	{
+		$form = parent::buildViewForm($row);
+		$form->setValue('roles', (new Contacts_Model_DbTable_Contactrole())->setClientId((int)$row['clientid'])->getForContact((int)$row['id']));
+		$this->_helper->MultiEntityLoader->populate($form, (int)$row['id'], 'contacts', 'contact', (int)$row['clientid']);
+		return $form;
 	}
 
 	public function exportAction()

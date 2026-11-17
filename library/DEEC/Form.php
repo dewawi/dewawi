@@ -1898,6 +1898,7 @@ class DEEC_Form
 			);
 		}
 
+		$form->setMode($this->getMode());
 		return $form;
 	}
 
@@ -2169,6 +2170,7 @@ class DEEC_Form
 		string $action,
 		array $attribs = []
 	): string {
+		if ($this->isReadonly()) return '';
 		$attribs = array_merge(
 			[
 				'type' => 'button',

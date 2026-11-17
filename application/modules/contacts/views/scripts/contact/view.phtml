@@ -1,0 +1,12 @@
+<?php
+$this->title = $this->form->getValue('name1');
+$this->headTitle($this->title);
+echo $this->Messages();
+echo $this->form->renderForm([
+	'id' => 'contact',
+	'tabs' => [
+		'overview' => ['title' => 'TABS_OVERVIEW'],
+		'contactperson' => ['title' => 'TABS_CONTACT_PERSONS'],
+		'payment' => ['title' => 'TABS_PAYMENT'],
+	],
+]);

@@ -110,6 +110,7 @@ class Contacts_Form_Toolbar extends DEEC_Form
 			'default' => 'all',
 			'options' => [
 				'all' => 'CATEGORIES_ALL',
+				'0' => 'CONTACTS_NOT_CATEGORIZED',
 			],
 			'source' => 'category:contact',
 			'filter' => true,

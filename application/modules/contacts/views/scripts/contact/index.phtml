@@ -6,6 +6,10 @@ echo $this->Messages();
 echo $this->Pagination();
 ?>
 
+<?php if ($this->contextAction !== 'select' && !empty($this->permissions['view'])): ?>
+	<p><a class="dw-btn dw-btn--action" data-contact-map-open href="<?php echo $this->escape($this->contactMapUrl); ?>"><?php echo $this->translate('CONTACTS_MAP'); ?></a></p>
+<?php endif; ?>
+
 <div class="dw-list-page">
 	<?php echo $this->contacts->render(); ?>
 
@@ -54,48 +58,4 @@ echo $this->Pagination();
 			</div>
 		<?php endif; ?>
 	</div>
-<?php endif; ?>
-
-<?php if ($this->contextAction !== 'select') : ?>
-	<div class="dw-map-section" id="contactsmap">
-		<div id="map"></div>
-	</div>
-
-	<script type="text/javascript">
-		$(document).ready(function(){
-			contactsMap();
-		});
-		function contactsMap() {
-			document.getElementById('contactsmap').innerHTML = '<div id="map"></div>';
-			var map = L.map('map').setView([51.2254018,6.7763137], 5);
-			map.attributionControl.setPrefix('Leaflet')
-			L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-				maxZoom: 19,
-				attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-			}).addTo(map);
-			var startmarkers = [
-			<?php foreach($this->contacts as $contact) : ?>
-				<?php $url = $this->baseUrl().'contact/edit/id/'.$contact->id; ?>
-				<?php if($contact->latitude) : ?>
-					['<?php echo addslashes($contact->name1); ?>', <?php echo $contact->latitude; ?>, <?php echo $contact->longitude; ?>, '<?php echo $url; ?>', '<?php echo $contact->contactid; ?>'],
-				<?php endif; ?>
-			<?php endforeach; ?>
-			];
-			let arrayOfMarkers = [];
-			for (let i = 0; i < startmarkers.length; i++) {
-			  marker = new L.marker([startmarkers[i][1], startmarkers[i][2]])
-				.bindPopup('<a href=\"' + startmarkers[i][3] + '\">' + startmarkers[i][0] + '<br>' + startmarkers[i][4])
-				.addTo(map);
-
-			  arrayOfMarkers.push([startmarkers[i][1], startmarkers[i][2]])
-			}
-
-			if(arrayOfMarkers.length) {
-				console.log(arrayOfMarkers);
-				var bounds = new L.LatLngBounds(arrayOfMarkers);
-				map.fitBounds(bounds);
-				console.log(234);
-			}
-		}
-	</script>
 <?php endif; ?>

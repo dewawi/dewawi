@@ -35,7 +35,9 @@ class Contacts_Model_Entity_Contact
 					'table' => 'address',
 					'clientModule' => 'contacts',
 					'alias' => 'a',
-					'on' => "c.id = a.parentid AND a.module = 'contacts' AND a.controller = 'contact' AND a.type = 'billing' AND a.deleted = 0",
+					'on' => "c.id = a.parentid AND a.module = 'contacts' AND a.controller = 'contact' AND a.type = 'billing' AND a.deleted = 0"
+						. " AND a.id = (SELECT billing.id FROM address billing WHERE billing.parentid = c.id AND billing.clientid = c.clientid"
+						. " AND billing.module = 'contacts' AND billing.controller = 'contact' AND billing.type = 'billing' AND billing.deleted = 0 ORDER BY billing.ordering ASC, billing.id ASC LIMIT 1)",
 					'columns' => [
 						'street',
 						'address_department' => 'department',
