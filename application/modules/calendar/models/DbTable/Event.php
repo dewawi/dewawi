@@ -199,11 +199,21 @@ class Calendar_Model_DbTable_Event extends Zend_Db_Table_Abstract
 		return $this->getAdapter()->fetchPairs($this->getAdapter()->select()->from('user', ['id', 'name'])->where('clientid = ?', $this->clientid)->where('activated = ?', 1)->where('deleted = ?', 0)->where('id <> ?', $this->actor)->order('name'));
 	}
 
-	public function contactEmails(int $id, string $keyword = '', int $emailid = 0): array
+	public function participantEmailAvailability(int $id): array
+	{
+		$this->ownedEvent($id);
+		$emails = [];
+		foreach ($this->getAdapter()->fetchAll($this->getAdapter()->select()->from('user', ['id', 'email'])->where('clientid = ?', $this->clientid)->where('activated = ?', 1)->where('deleted = ?', 0)->where('id <> ?', $this->actor)) as $row) {
+			try { Calendar_Model_Icalendar::email((string)$row['email']); $emails[(int)$row['id']] = true; } catch (InvalidArgumentException $e) { $emails[(int)$row['id']] = false; }
+		}
+		return $emails;
+	}
+
+	public function contactEmails(int $id, string $keyword = '', int $emailid = 0, ?string $address = null): array
 	{
 		$this->ownedEvent($id);
 		if (!$this->permission->hasPermission('contacts', 'contact', 'view')) throw new RuntimeException('CALENDAR_DENIED', 403);
-		if (!$emailid && (mb_strlen(trim($keyword)) < 2 || mb_strlen($keyword) > 100)) throw new InvalidArgumentException('CALENDAR_CONTACT_SEARCH');
+		if (!$emailid && $address === null && (mb_strlen(trim($keyword)) < 2 || mb_strlen($keyword) > 100)) throw new InvalidArgumentException('CALENDAR_CONTACT_SEARCH');
 		$client = Zend_Registry::get('Client');
 		$contactClient = (int)($client['modules']['contacts'] ?? $this->clientid);
 		$db = $this->getAdapter();
@@ -211,6 +221,7 @@ class Calendar_Model_DbTable_Event extends Zend_Db_Table_Abstract
 			->join(['c' => 'contact'], 'c.id = e.parentid AND c.clientid = e.clientid', ['name' => new Zend_Db_Expr("TRIM(CONCAT(COALESCE(c.name1, ''), ' ', COALESCE(c.name2, '')))" )])
 			->where('e.clientid = ?', $contactClient)->where('e.module = ?', 'contacts')->where('e.controller = ?', 'contact')->where('e.deleted = ?', 0)->where('e.suppressed = ?', 0)->where('c.deleted = ?', 0)->order('c.name1')->limit(20);
 		if ($emailid) $select->where('e.id = ?', $emailid);
+		elseif ($address !== null) $select->where('LOWER(TRIM(e.email)) = ?', $address);
 		else {
 			$like = '%' . addcslashes(trim($keyword), '%_\\') . '%';
 			$select->where(implode(' OR ', array_map(fn($field) => $db->quoteInto($field . ' LIKE ?', $like), ['c.name1', 'c.name2', 'e.email'])));
@@ -218,16 +229,20 @@ class Calendar_Model_DbTable_Event extends Zend_Db_Table_Abstract
 		return array_values(array_filter($db->fetchAll($select), fn($row) => DEEC_Filter::isValidEmail($row['email'])));
 	}
 
-	public function addParticipant(int $id, array $input, int $sequence): void
+	public function addParticipant(int $id, array $input, int $sequence): array
 	{
 		$this->ownedEvent($id);
 		if (array_diff(array_keys($input), ['kind', 'userid', 'name', 'email', 'contactemailid'])) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
-		foreach ($input as $value) if (!is_string($value) || !mb_check_encoding($value, 'UTF-8') || preg_match('/[\x00-\x1f\x7f]/', $value)) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+		foreach ($input as $field => $value) {
+			if (!is_string($value) || !mb_check_encoding($value, 'UTF-8')) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+			if (preg_match('/[\x00-\x1f\x7f]/', $value)) throw new InvalidArgumentException($field === 'email' ? 'CALENDAR_PARTICIPANT_ADDRESS' : ($field === 'name' ? 'CALENDAR_PARTICIPANT_NAME_REQUIRED' : 'CALENDAR_PARTICIPANT_INVALID'));
+		}
 		$userid = null; $emailid = null;
 		if (($input['kind'] ?? '') === 'internal') {
 			$userid = filter_var($input['userid'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 			$user = $userid ? $this->getAdapter()->fetchRow($this->getAdapter()->select()->from('user', ['id', 'name', 'email'])->where('id = ?', $userid)->where('clientid = ?', $this->clientid)->where('activated = ?', 1)->where('deleted = ?', 0)) : null;
-			if (!$user || $userid === $this->actor) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+			if (!$user) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_USER');
+			if ($userid === $this->actor) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_SELF');
 			$name = trim((string)$user['name']) ?: '#' . $userid;
 			$email = DEEC_Filter::isValidEmail($user['email']) ? Calendar_Model_Icalendar::email($user['email']) : null;
 		} elseif (($input['kind'] ?? '') === 'external') {
@@ -235,13 +250,27 @@ class Calendar_Model_DbTable_Event extends Zend_Db_Table_Abstract
 			if ($emailid === false) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
 			if ($emailid) {
 				$contact = $this->contactEmails($id, '', $emailid)[0] ?? null;
-				if (!$contact) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+				if (!$contact) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_SELECTION');
+				if (isset($input['email']) && Calendar_Model_Icalendar::email($input['email']) !== Calendar_Model_Icalendar::email($contact['email'])) throw new InvalidArgumentException('CALENDAR_CONTACT_CHANGED');
 				$name = $contact['name']; $email = Calendar_Model_Icalendar::email($contact['email']);
-			} else { $name = trim($input['name'] ?? ''); $email = Calendar_Model_Icalendar::email($input['email'] ?? ''); }
+			} else {
+				$name = trim($input['name'] ?? ''); $email = Calendar_Model_Icalendar::email($input['email'] ?? '');
+				$users = $this->getAdapter()->fetchAll($this->getAdapter()->select()->from('user', ['id', 'name'])->where('clientid = ?', $this->clientid)->where('activated = ?', 1)->where('deleted = ?', 0)->where('LOWER(TRIM(email)) = ?', $email)->limit(2));
+				if (count($users) > 1) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_AMBIGUOUS');
+				if ($users) {
+					$userid = (int)$users[0]['id']; $name = trim((string)$users[0]['name']) ?: '#' . $userid;
+					if ($userid === $this->actor) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_SELF');
+				} elseif ($this->permission->hasPermission('contacts', 'contact', 'view')) {
+					$contacts = $this->contactEmails($id, '', 0, $email);
+					if (count($contacts) > 1) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_AMBIGUOUS');
+					if ($contacts) { $emailid = (int)$contacts[0]['id']; $name = $contacts[0]['name']; }
+				}
+			}
 			$emailid = $emailid ?: null;
 		} else throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
 		$user = Zend_Registry::get('User');
-		if ($name === '' || mb_strlen($name) > 255 || ($email && in_array($email, array_map('strtolower', [(string)($user['email'] ?? ''), (string)($user['smtpuser'] ?? '')]), true))) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+		if ($name === '' || mb_strlen($name) > 255) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_NAME_REQUIRED');
+		if ($email && in_array($email, array_map('strtolower', [(string)($user['email'] ?? ''), (string)($user['smtpuser'] ?? '')]), true)) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_SELF');
 		$db = $this->getAdapter(); $db->beginTransaction();
 		try {
 			$event = $this->ownedEvent($id, 'edit', true); $this->checkSequence($event, $sequence);
@@ -260,9 +289,10 @@ class Calendar_Model_DbTable_Event extends Zend_Db_Table_Abstract
 			$count = (int)$db->fetchOne($db->select()->from('calendarparticipant', [new Zend_Db_Expr('COUNT(*)')])->where('eventid = ?', $id)->where('clientid = ?', $this->clientid)->where('removed = ?', 0));
 			if ($count >= 100) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_LIMIT');
 			$data = ['userid' => $userid, 'name' => $name, 'email' => $email, 'contactemailid' => $emailid, 'status' => 'invited', 'removed' => 0, 'modified' => gmdate('Y-m-d H:i:s')];
-			if ($rows) $db->update('calendarparticipant', $data + ['generation' => (int)$rows[0]['generation'] + 1], $this->participantWhere($id, (int)$rows[0]['id']));
-			else $db->insert('calendarparticipant', $data + ['eventid' => $id, 'clientid' => $this->clientid, 'created' => gmdate('Y-m-d H:i:s')]);
+			if ($rows) { $pid = (int)$rows[0]['id']; $db->update('calendarparticipant', $data + ['generation' => (int)$rows[0]['generation'] + 1], $this->participantWhere($id, $pid)); }
+			else { $db->insert('calendarparticipant', $data + ['eventid' => $id, 'clientid' => $this->clientid, 'created' => gmdate('Y-m-d H:i:s')]); $pid = (int)$db->lastInsertId('calendarparticipant'); }
 			$this->touchSequence($event); $db->commit();
+			return ['id' => $pid, 'sequence' => (int)$event['icalsequence'] + 1];
 		} catch (Exception $e) { $db->rollBack(); throw $e; }
 	}
 

@@ -4,13 +4,13 @@ class Calendar_Model_Icalendar
 {
 	public static function email(string $value): string
 	{
-		if (preg_match('/[\x00-\x20\x7f]/', trim($value))) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+		if (preg_match('/[\x00-\x20\x7f]/', trim($value))) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_ADDRESS');
 		$value = DEEC_Filter::email($value) ?? '';
-		if (substr_count($value, '@') !== 1) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+		if (substr_count($value, '@') !== 1) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_ADDRESS');
 		[$local, $domain] = explode('@', $value);
 		if (preg_match('/[^\x00-\x7f]/', $domain)) $domain = idn_to_ascii($domain, 0, INTL_IDNA_VARIANT_UTS46) ?: '';
 		$value = strtolower($local . '@' . $domain);
-		if (strlen($value) > 254 || preg_match('/[^\x00-\x7f]/', $value) || !DEEC_Filter::isValidEmail($value)) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+		if (strlen($value) > 254 || preg_match('/[^\x00-\x7f]/', $value) || !DEEC_Filter::isValidEmail($value)) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_ADDRESS');
 		return $value;
 	}
 

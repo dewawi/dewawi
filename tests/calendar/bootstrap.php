@@ -27,7 +27,9 @@ if (is_file($work . '/smtp.json')) {
 		public function getName() { return 'Email'; }
 		public function getEmailConfig($module): array {
 			global $work;
-			$port = json_decode(file_get_contents($work . '/smtp.json'), true)['port'];
+			$config = json_decode(file_get_contents($work . '/smtp.json'), true);
+			if (!empty($config['disabled'])) throw new RuntimeException('Fixture SMTP configuration unavailable');
+			$port = $config['port'];
 			return [['host' => '127.0.0.1', 'port' => $port, 'auth' => false, 'secure' => '', 'timeout' => 3], 'organizer@example.invalid', 'Calendar Organizer'];
 		}
 	}

@@ -9,11 +9,12 @@ if (preg_match('#^/(?:css|js|library/jQuery|library/Datejs|library/Leaflet|image
 	readfile($file); exit;
 }
 if ($path === '/browser.html') { header('Content-Type: text/html'); readfile($work . '/browser.html'); exit; }
+if ($path === '/mail-count') { header('Content-Type: text/plain'); echo count(glob($work . '/smtp-*.eml')); exit; }
 calendarActor((int)($_GET['actor'] ?? $_COOKIE['actor'] ?? 1), (int)($_GET['tenant'] ?? $_COOKIE['tenant'] ?? 1));
 if (isset($_GET['actor'])) setcookie('actor', (string)(int)$_GET['actor'], 0, '/');
 if (isset($_GET['tenant'])) setcookie('tenant', (string)(int)$_GET['tenant'], 0, '/');
 if (!empty($_GET['guest'])) Zend_Auth::getInstance()->clearIdentity();
-if (!preg_match('#^/calendar(?:/index)?(?:/(index|get|view|add|edit|delete|reminders|participants|respond|contacts|cancel|send))?(?:/id/(\d+))?/?$#', $path, $parts)) { http_response_code(404); exit; }
+if (!preg_match('#^/calendar(?:/index)?(?:/(index|get|view|add|edit|delete|reminders|participants|respond|contacts|cancel|send|endtime))?(?:/id/(\d+))?/?$#', $path, $parts)) { http_response_code(404); exit; }
 $action = ($parts[1] ?? '') ?: 'index';
 $request = new Zend_Controller_Request_Http();
 $request->setModuleName('calendar')->setControllerName('index')->setActionName($action)->setParams(['module' => 'calendar', 'controller' => 'index', 'action' => $action]);

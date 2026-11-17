@@ -78,6 +78,28 @@ class Calendar_Model_Event
 		];
 	}
 
+	public static function shiftEnd(array $input): array
+	{
+		if (array_diff(array_keys($input), ['start', 'end', 'newstart', 'timezone', 'allday', 'startfold', 'endfold', 'newstartfold'])) throw new InvalidArgumentException('CALENDAR_INVALID_INPUT');
+		foreach ($input as $value) if (!is_string($value) || strlen($value) > 100) throw new InvalidArgumentException('CALENDAR_INVALID_INPUT');
+		$before = self::validate(array_diff_key($input, array_flip(['newstart', 'newstartfold'])) + ['title' => 'Calendar', 'visibility' => 'team']);
+		$zone = self::timezone($input['timezone']); $new = $input['newstart'] ?? '';
+		$values = ['title' => 'Calendar', 'visibility' => 'team', 'timezone' => $input['timezone'], 'allday' => (string)$before['allday'], 'start' => $new, 'startfold' => $input['newstartfold'] ?? ''];
+		if ($before['allday']) {
+			$days = (self::date(substr($input['end'], 0, 10))->getTimestamp() - self::date(substr($input['start'], 0, 10))->getTimestamp()) / 86400;
+			$values['end'] = self::date($new)->modify('+' . (int)$days . ' days')->format('Y-m-d');
+			$values['endfold'] = '';
+		} else {
+			$utc = new DateTimeZone('UTC');
+			$duration = (new DateTimeImmutable($before['endutc'], $utc))->getTimestamp() - (new DateTimeImmutable($before['startutc'], $utc))->getTimestamp();
+			$end = self::localTime($new, $zone, $values['startfold'])->modify('+' . $duration . ' seconds');
+			$values['end'] = $end->setTimezone($zone)->format((int)$end->format('s') ? 'Y-m-d\TH:i:s' : 'Y-m-d\TH:i');
+			$values['endfold'] = self::localTime($values['end'], $zone, 'earlier')->getTimestamp() === $end->getTimestamp() ? 'earlier' : 'later';
+		}
+		self::validate($values);
+		return ['end' => $values['end'], 'endfold' => $values['endfold']];
+	}
+
 	public static function period(string $date, string $mode, DateTimeZone $zone): array
 	{
 		$day = self::date($date)->setTimezone(new DateTimeZone('UTC'));

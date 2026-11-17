@@ -33,9 +33,9 @@ $statuses = ['invited' => 'CALENDAR_INVITED', 'accepted' => 'CALENDAR_ACCEPTED',
 	</tbody></table></div>
 	<?php if ($this->canEdit): ?>
 		<h4><?php echo $t('CALENDAR_ADD_INTERNAL'); ?></h4>
-		<form method="post" action="<?php echo $url('participants'); ?>" data-autosave="false" data-calendar-add-internal><?php echo $this->internalParticipantForm->render(); ?><button class="dw-btn" type="submit"><?php echo $t('CALENDAR_ADD'); ?></button></form>
+		<form method="post" action="<?php echo $url('participants'); ?>" data-autosave="false" data-calendar-add-internal data-user-email-availability="<?php echo $e(json_encode($this->participantEmails)); ?>" data-mail-choice="<?php echo $e($this->participantMailChoice['internal'] ?? ''); ?>"><?php echo $this->internalParticipantForm->render(); ?><button class="dw-btn" type="submit"><?php echo $t('CALENDAR_ADD'); ?></button></form>
 		<h4><?php echo $t('CALENDAR_ADD_EXTERNAL'); ?></h4>
-		<form method="post" action="<?php echo $url('participants'); ?>" data-autosave="false" data-calendar-add-external>
+		<form method="post" action="<?php echo $url('participants'); ?>" data-autosave="false" data-calendar-add-external data-mail-choice="<?php echo $e($this->participantMailChoice['external'] ?? ''); ?>">
 			<?php if ((new DEEC_Permission((array)$this->user))->hasPermission('contacts', 'contact', 'view')): ?>
 				<div data-calendar-contact-search data-url="<?php echo $url('contacts'); ?>"><label><?php echo $t('CALENDAR_CONTACT_SEARCH_LABEL'); ?><input class="dw-input" type="search" data-calendar-contact-query maxlength="100"></label><button class="dw-btn" type="button" data-calendar-contact-button><?php echo $t('CALENDAR_CONTACT_FIND'); ?></button>
 				<select class="dw-select" name="contactemailid" aria-label="<?php echo $t('CALENDAR_CONTACT_CHOOSE'); ?>"><option value="0"><?php echo $t('CALENDAR_CONTACT_MANUAL'); ?></option></select><p role="status" data-calendar-contact-result></p></div>

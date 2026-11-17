@@ -65,9 +65,11 @@ class Calendar_IndexController extends Zend_Controller_Action
 			$canEdit = $event['own'] && $this->events->can('edit');
 			$participants = $event['own'] || $event['participation'] !== null ? $this->events->participants($event['id']) : [];
 			$this->view->assign(['event' => $event, 'participants' => $participants, 'canEdit' => $canEdit && !$event['cancelled'], 'canManage' => $canEdit, 'canMail' => $canEdit && $this->events->can('add'), 'canDelete' => $event['own'] && $this->events->can('delete')]);
+			if (($this->calendarSession->participantNotice['id'] ?? null) === $event['id']) { $this->view->participantNotice = $this->calendarSession->participantNotice['message']; unset($this->calendarSession->participantNotice); }
 			if ($canEdit && !$event['cancelled']) {
+				$this->view->participantEmails = $this->events->participantEmailAvailability($event['id']);
 				foreach (['internal' => true, 'external' => false] as $key => $internal) {
-					$form = new Calendar_Form_Participant($internal ? $this->events->participantUsers($event['id']) : [], $internal);
+					$form = new Calendar_Form_Participant($internal ? $this->events->participantUsers($event['id']) : [], $internal, $this->events->can('add'));
 					$form->setValues(['sequence' => $event['sequence'], 'csrf_token' => $this->calendarSession->csrf]);
 					$this->view->{$key . 'ParticipantForm'} = $form;
 				}
@@ -82,17 +84,54 @@ class Calendar_IndexController extends Zend_Controller_Action
 	{
 		try {
 			$this->requirePost(); $this->checkCsrf();
+			$id = $this->id();
 			$input = $this->getRequest()->getPost();
 			$sequence = $this->sequence($input);
-			if (array_diff(array_keys($input), ['csrf_token', 'sequence', 'operation', 'kind', 'userid', 'name', 'email', 'contactemailid', 'participantid', 'status'])) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
-			if (($input['operation'] ?? '') === 'add') $this->events->addParticipant($this->id(), array_intersect_key($input, array_flip(['kind', 'userid', 'name', 'email', 'contactemailid'])), $sequence);
+			if (array_diff(array_keys($input), ['csrf_token', 'sequence', 'operation', 'kind', 'userid', 'name', 'email', 'contactemailid', 'participantid', 'status', 'sendinvite'])) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+			if (($input['operation'] ?? '') === 'add') {
+				if (!in_array($input['sendinvite'] ?? '0', ['0', '1'], true)) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
+				$send = ($input['sendinvite'] ?? '0') === '1';
+				if ($send) $this->events->authorize('add');
+				$adding = true;
+				$added = $this->events->addParticipant($id, array_intersect_key($input, array_flip(['kind', 'userid', 'name', 'email', 'contactemailid'])), $sequence);
+				$message = $this->view->translate('CALENDAR_PARTICIPANT_ADDED'); $mail = null;
+				if ($send) {
+					try {
+						$mail = (new Calendar_Model_Invitation())->send($this->id(), [$added['id']], $added['sequence'], (string)Zend_Registry::get('Zend_Locale'));
+						$message .= ' ' . $this->view->translate($mail['failed'] ? 'CALENDAR_MAIL_UNKNOWN' : 'CALENDAR_MAIL_COMPLETE');
+					} catch (Throwable $e) {
+						$mail = ['sent' => 0, 'skipped' => 0, 'failed' => 1];
+						$message .= ' ' . $this->view->translate('CALENDAR_PARTICIPANT_MAIL_FAILED') . ' ' . ($e instanceof Exception ? $this->message($e) : $this->view->translate('CALENDAR_MAIL_FAILED'));
+					}
+				}
+				$this->participantResult(['message' => $message, 'mail' => $mail]); return;
+			}
 			elseif (($input['operation'] ?? '') === 'remove') $this->events->removeParticipant($this->id(), $this->positive($input['participantid'] ?? null), $sequence);
 			elseif (($input['operation'] ?? '') === 'status') {
 				if (!is_string($input['status'] ?? null)) throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
 				$this->events->respond($this->id(), $input['status'], $sequence, $this->positive($input['participantid'] ?? null));
 			} else throw new InvalidArgumentException('CALENDAR_PARTICIPANT_INVALID');
 			$this->participantResult();
-		} catch (InvalidArgumentException | RuntimeException $e) { $this->failure($e); }
+		} catch (InvalidArgumentException | RuntimeException $e) {
+			if (!$this->getRequest()->isXmlHttpRequest() && $e instanceof InvalidArgumentException && isset($adding)) {
+				$this->viewAction();
+				$this->getResponse()->setHttpResponseCode(422); $this->view->participantError = $this->message($e);
+				$key = ($input['kind'] ?? '') === 'internal' ? 'internalParticipantForm' : 'externalParticipantForm';
+				if ($this->view->$key) $this->view->$key->setValues(array_filter(array_intersect_key($input, array_flip(['userid', 'name', 'email', 'sendinvite'])), 'is_string'));
+				$this->view->participantMailChoice = [($input['kind'] ?? '') === 'internal' ? 'internal' : 'external' => ($input['sendinvite'] ?? '0') === '1' ? '1' : '0'];
+				$this->_helper->viewRenderer->setRender('view');
+			} else $this->failure($e);
+		}
+	}
+
+	public function endtimeAction()
+	{
+		try {
+			$this->requirePost(); $this->checkCsrf(); $this->events->authorize('view');
+			if (!$this->events->can('add') && !$this->events->can('edit')) throw new RuntimeException('CALENDAR_DENIED', 403);
+			$input = $this->getRequest()->getPost(); unset($input['csrf_token']);
+			$this->json(['ok' => true] + Calendar_Model_Event::shiftEnd($input));
+		} catch (InvalidArgumentException | RuntimeException $e) { $this->failure($e, true); }
 	}
 
 	public function respondAction()
@@ -153,9 +192,10 @@ class Calendar_IndexController extends Zend_Controller_Action
 		if (!$this->getRequest()->isPost()) throw new RuntimeException('CALENDAR_POST_REQUIRED', 405);
 	}
 
-	private function participantResult(): void
+	private function participantResult(array $extra = []): void
 	{
-		if ($this->getRequest()->isXmlHttpRequest()) { $this->json(['ok' => true, 'event' => $this->events->getEvent($this->id()), 'participants' => $this->events->participants($this->id())]); return; }
+		if ($this->getRequest()->isXmlHttpRequest()) { $this->json(['ok' => true, 'event' => $this->events->getEvent($this->id()), 'participants' => $this->events->participants($this->id())] + $extra); return; }
+		if (isset($extra['message'])) $this->calendarSession->participantNotice = ['id' => $this->id(), 'message' => $extra['message']];
 		$this->_helper->redirector->gotoSimple('view', 'index', 'calendar', ['id' => $this->id()]);
 	}
 

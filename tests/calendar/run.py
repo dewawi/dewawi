@@ -69,6 +69,7 @@ try:
     subprocess.run(['php', str(root/'tests/calendar/integration.php')], check=True, env=env)
     subprocess.run(['php', str(root/'tests/calendar/reminders.php')], check=True, env=env)
     subprocess.run(['php', str(root/'tests/calendar/participants.php')], check=True, env=env)
+    subprocess.run(['php', str(root/'tests/calendar/usability.php')], check=True, env=env)
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
         port = sock.getsockname()[1]
@@ -76,7 +77,7 @@ try:
     with (work/'http.log').open('w') as log:
         web = subprocess.Popen(['php', '-S', f'127.0.0.1:{port}', str(root/'tests/calendar/router.php')], env=env, stdout=log, stderr=log)
         time.sleep(.3)
-        for script in ['workflow.py', 'reminders-workflow.py', 'participants-workflow.py']:
+        for script in ['workflow.py', 'reminders-workflow.py', 'participants-workflow.py', 'usability-workflow.py']:
             result = subprocess.run(['python3', str(root/'tests/calendar'/script), str(work), address])
             if result.returncode:
                 print('\n'.join(line for line in (work/'http.log').read_text().splitlines() if not any(noise in line for noise in ['Accepted', 'Closing', 'Closed without sending'])))

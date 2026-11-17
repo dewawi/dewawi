@@ -63,6 +63,7 @@ class DEEC_Permission
 			'createquote',
 		],
 		'view' => [
+			'endtime',
 			'respond',
 			'reminders',
 			'view',

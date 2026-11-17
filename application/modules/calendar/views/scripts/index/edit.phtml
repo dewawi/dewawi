@@ -4,8 +4,9 @@
 	<?php if ($this->calendarError): ?><p class="dw-alert dw-alert--danger" role="alert"><?php echo $e($this->calendarError); ?></p><?php endif; ?>
 	<p><?php echo $e($this->translate('CALENDAR_OWNER')); ?>: <?php echo $e($this->ownerName); ?></p>
 	<p><?php echo $e($this->translate('CALENDAR_EDIT_HELP')); ?></p>
-	<form id="calendar-event" method="post" data-autosave="false" data-calendar-form action="<?php echo $e($this->url(['module' => 'calendar', 'controller' => 'index', 'action' => $this->event ? 'edit' : 'add', 'id' => $this->event['id'] ?? null], 'default', true)); ?>">
+	<form id="calendar-event" method="post" data-autosave="false" data-calendar-form data-endtime-url="<?php echo $e($this->url(['module' => 'calendar', 'controller' => 'index', 'action' => 'endtime'], 'default', true)); ?>" action="<?php echo $e($this->url(['module' => 'calendar', 'controller' => 'index', 'action' => $this->event ? 'edit' : 'add', 'id' => $this->event['id'] ?? null], 'default', true)); ?>">
 		<?php echo $this->eventForm->render(); ?>
+		<p role="status" data-calendar-time-result></p>
 		<button class="dw-btn dw-btn--primary" type="submit"><?php echo $e($this->translate('CALENDAR_SAVE')); ?></button>
 	</form>
 </section>
