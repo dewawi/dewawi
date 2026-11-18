@@ -184,7 +184,7 @@ $outcome = $service->run($runId);
 batchCheck($outcome['counts']['changed'] === 1 && count($service->requests) === 1 && $service->requests[0]['street'] === 'synthetic street 2', 'Stale privacy approval transmitted changed address');
 mapActor(300); batchReject(fn() => $model->candidates()); batchReject(fn() => $service->status()); mapActor(100);
 batchReject(fn() => batchService($work.'/invalid-limit', ['daily_limit' => 501]));
-batchReject(fn() => $model->candidates(28507));
+batchReject(fn() => $model->candidates(Contacts_Model_GeocodingBatch::MAX_PAGE_SIZE + 1));
 
 // Exercise the actual CLI with URL access disabled and column-restricted test credentials.
 function batchCli(array $arguments): array {
@@ -207,12 +207,12 @@ $before = $db->fetchAll('SELECT * FROM address ORDER BY id');
 batchCheck($exit === 0 && $errors === '' && !str_contains($output, 'PRIVATE_') && !is_dir($cliDir) && $db->fetchAll('SELECT * FROM address ORDER BY id') === $before, 'CLI dry-run changed data or emitted PII');
 [$exit, $output, $errors] = batchCli(array_merge(array_replace($args, [2 => '--config='.$work.'/readonly.ini']), ['--mode=dry-run']));
 batchCheck($exit === 0 && $errors === '' && json_decode($output, true)['database_writes'] === 0, 'Dry-run requires writable database credentials');
+$primer = batchService($cliDir); $review = $primer->inspectGeocoding($ids[1]); $primer->geocodeAddress($ids[1], $review['fingerprint']);
 [$exit, $output, $errors] = batchCli(array_merge($args, ['--mode=review', '--output='.$cliManifest]));
 batchCheck($exit === 0 && $errors === '' && json_decode($output, true)['approved'] === 0, 'CLI review implicitly approved data');
 $data = json_decode(file_get_contents($cliManifest), true);
 foreach ($data['addresses'] as &$entry) if ($entry['id'] === 50005) { $entry['public'] = $entry['non_personal'] = $entry['non_confidential'] = true; $entry['review_reference'] = 'TEST-CLI-REVIEW'; }
 unset($entry); file_put_contents($cliManifest, json_encode($data));
-$primer = batchService($cliDir); $review = $primer->inspectGeocoding($ids[1]); $primer->geocodeAddress($ids[1], $review['fingerprint']);
 [$exit, $output, $errors] = batchCli(array_merge($args, ['--mode=prepare', '--approvals='.$cliManifest]));
 $prepared = json_decode($output, true);
 batchCheck($exit === 0 && $errors === '' && $prepared['total'] === 1, 'CLI prepare included unapproved records');
@@ -243,7 +243,7 @@ $db->query('CREATE TEMPORARY TABLE batch_digits (n INT NOT NULL)');
 $db->query('INSERT INTO batch_digits VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9)');
 $db->query("INSERT INTO contact (id, clientid, catid, created, name1) SELECT 100000 + seq.n, 100, 0, '2026-12-01', 'Synthetic scale fixture' FROM (SELECT a.n + b.n*10 + c.n*100 + d.n*1000 + e.n*10000 AS n FROM batch_digits a CROSS JOIN batch_digits b CROSS JOIN batch_digits c CROSS JOIN batch_digits d CROSS JOIN batch_digits e) seq WHERE seq.n BETWEEN 1 AND 28510");
 $db->query("INSERT INTO address (parentid, clientid, module, controller, type) SELECT id, 100, 'contacts', 'contact', 'billing' FROM contact WHERE id BETWEEN 100001 AND 128510");
-$started = microtime(true); $scale = $model->candidates();
+$started = microtime(true); $scale = $model->candidates(28506);
 batchCheck(count($scale) === 28506 && (int)$scale[0]['id'] === 128510 && (int)$scale[28505]['id'] === 100005, '28,506-contact selection cap/sort failed');
 echo 'PASS: 28,506 synthetic candidates selected in '.round(microtime(true) - $started, 3)." seconds; no API calls\n";
 echo 'PASS: '.$checks." batch ordering, approvals, resume, quotas, cache, concurrency, map parity and CLI security cases\n";

@@ -12,8 +12,10 @@ class DEEC_AddressBatch extends DEEC_Address
 	{
 		$this->validateGeocodingOptions();
 		$this->model = $model;
-		$this->policy = $policy + ['enabled' => false, 'daily_limit' => 500, 'max_contacts' => 28506, 'usage_approval_reference' => '', 'privacy_approval_reference' => '', 'approval_valid_until' => ''];
-		foreach (['daily_limit' => 500, 'max_contacts' => 28506] as $field => $maximum) {
+		// max_contacts is a legacy page-size alias, never a total inventory/API cap.
+		$policy['selection_page_size'] = $policy['selection_page_size'] ?? $policy['max_contacts'] ?? 1000;
+		$this->policy = $policy + ['enabled' => false, 'daily_limit' => 500, 'usage_approval_reference' => '', 'privacy_approval_reference' => '', 'approval_valid_until' => ''];
+		foreach (['daily_limit' => 500, 'selection_page_size' => Contacts_Model_GeocodingBatch::MAX_PAGE_SIZE] as $field => $maximum) {
 			$value = filter_var($this->policy[$field], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => $maximum]]);
 			if ($value === false) throw new InvalidArgumentException('Invalid batch limit');
 			$this->policy[$field] = $value;
@@ -27,28 +29,33 @@ class DEEC_AddressBatch extends DEEC_Address
 		if ($write && !(new DEEC_Permission(Zend_Registry::get('User')))->hasPermission('contacts', 'contact', 'edit')) throw new RuntimeException('Batch edit permission denied', 403);
 	}
 
-	public function dryRun(?string $approvals = null): array
+	public function dryRun(?string $approvals = null, ?string $after = null): array
 	{
 		$this->authorize(false);
 		$manifest = $approvals === null ? ['addresses' => []] : $this->manifest($approvals);
-		[, $counts] = $this->inventory($manifest['addresses']);
-		return ['status' => 'dry_run', 'clientid' => 100, 'counts' => $counts, 'activation_blockers' => $this->activationBlockers(), 'external_requests' => 0, 'database_writes' => 0];
+		$selection = $manifest['selection_page'] ?? [];
+		if ($after !== null) {
+			if ($selection && $after !== $selection['after']) throw new InvalidArgumentException('Approval selection cursor differs');
+			$selection['after'] = $after;
+		}
+		[, $counts, $diagnostics] = $this->inventory($manifest['addresses'], false, $selection);
+		return ['status' => 'dry_run', 'clientid' => 100, 'counts' => $counts] + $diagnostics + ['activation_blockers' => $this->activationBlockers(), 'external_requests' => 0, 'database_writes' => 0];
 	}
 
-	public function exportReview(string $output): array
+	public function exportReview(string $output, ?string $after = null): array
 	{
 		$this->authorize(false);
 		$this->privateFile($output, false);
 		if (file_exists($output)) throw new RuntimeException('Review output already exists');
-		[$entries, $counts] = $this->inventory([], true);
-		$data = ['version' => 1, 'clientid' => 100, 'endpoint' => $this->geocoding['endpoint'], 'reviewed_by' => (int)Zend_Registry::get('User')['id'], 'addresses' => $entries];
+		[$entries, $counts, $diagnostics] = $this->inventory([], true, ['after' => $after]);
+		$data = ['version' => 1, 'clientid' => 100, 'endpoint' => $this->geocoding['endpoint'], 'reviewed_by' => (int)Zend_Registry::get('User')['id'], 'selection_page' => $diagnostics['selection_page'], 'addresses' => $entries];
 		$handle = fopen($output, 'x');
 		if (!$handle) throw new RuntimeException('Cannot create review file');
 		try {
 			$encoded = json_encode($data, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
 			if (!chmod($output, 0600) || fwrite($handle, $encoded) !== strlen($encoded) || !fflush($handle)) throw new RuntimeException('Cannot write review file');
 		} finally { fclose($handle); }
-		return ['status' => 'review_exported', 'counts' => $counts, 'approved' => 0, 'external_requests' => 0, 'database_writes' => 0];
+		return ['status' => 'review_exported', 'counts' => $counts] + $diagnostics + ['approved' => 0, 'external_requests' => 0, 'database_writes' => 0];
 	}
 
 	public function prepare(string $approvals): array
@@ -58,11 +65,26 @@ class DEEC_AddressBatch extends DEEC_Address
 		if ($manifest['reviewed_by'] !== (int)Zend_Registry::get('User')['id']) throw new RuntimeException('Preparing user must attest the address review');
 		return $this->locked(function() use ($approvals, $manifest): array {
 			if (file_exists($this->geocoding['state_dir'].'/batch.json')) throw new RuntimeException('A batch already exists; resume it or archive a completed batch explicitly');
-			[$jobs, $counts] = $this->inventory($manifest['addresses']);
-			if (!$jobs) return ['status' => 'no_approved_candidates', 'counts' => $counts, 'external_requests' => 0, 'database_writes' => 0];
+			[$jobs, $counts, $diagnostics] = $this->inventory($manifest['addresses'], false, $manifest['selection_page'] ?? []);
+			if ($diagnostics['review_page_changed']) throw new RuntimeException('Reviewed page membership changed; export a new review');
+			if (!$jobs) return ['status' => 'no_approved_candidates', 'counts' => $counts] + $diagnostics + ['external_requests' => 0, 'database_writes' => 0];
 			$state = ['version' => 1, 'clientid' => 100, 'run_id' => bin2hex(random_bytes(16)), 'endpoint' => $this->geocoding['endpoint'], 'manifest_path' => $approvals, 'manifest_digest' => $manifest['digest'], 'prepared_by' => $manifest['reviewed_by'], 'created_at' => $this->geocodingTime(), 'updated_at' => $this->geocodingTime(), 'cursor' => 0, 'counts' => $counts, 'jobs' => $jobs];
+			$state['diagnostics'] = $diagnostics;
 			$this->writeGeocodingState($state, 'batch.json');
 			return $this->summary($state) + ['external_requests' => 0, 'database_writes' => 0];
+		});
+	}
+
+	public function archive(string $runId): array
+	{
+		$this->authorize(true);
+		return $this->locked(function() use ($runId): array {
+			$state = $this->batchState();
+			if ($state === null || !hash_equals($state['run_id'], $runId) || $this->summary($state)['status'] !== 'complete') throw new RuntimeException('Only the explicitly selected completed batch may be archived');
+			$directory = $this->geocoding['state_dir'];
+			$target = $directory.'/batch-'.$runId.'.json';
+			if (file_exists($target) || is_link($target) || !rename($directory.'/batch.json', $target)) throw new RuntimeException('Cannot archive completed batch');
+			return ['status' => 'archived', 'run_id' => $runId, 'next_after' => $state['diagnostics']['selection_page']['next_after'] ?? null, 'external_requests' => 0, 'database_writes' => 0];
 		});
 	}
 
@@ -132,15 +154,21 @@ class DEEC_AddressBatch extends DEEC_Address
 		if (!hash_equals($digest, hash_file('sha256', $path))) throw new RuntimeException('Address approvals revoked before request');
 	}
 
-	private function inventory(array $approvals, bool $template = false): array
+	private function inventory(array $approvals, bool $template = false, array $selection = []): array
 	{
 		$counts = array_fill_keys(self::COUNTS, 0);
-		$entries = [];
-		foreach ($this->model->candidates($this->policy['max_contacts']) as $row) {
+		$entries = []; $reasons = []; $issues = [];
+		$page = $this->model->page($selection['page_size'] ?? $this->policy['selection_page_size'], $selection['after'] ?? null);
+		foreach ($page['rows'] as $row) {
 			$counts['selected']++;
 			// Inventory has no use for a full cache reload for each missing point.
-			$review = $this->review((int)$row['address_id'], $this->getAddress((int)$row['address_id']), []);
-			if (!isset($review['fingerprint'])) { $counts['unreviewable']++; continue; }
+			$review = $this->review((int)$row['address_id'], $this->getAddress((int)$row['address_id']), [], true);
+			if (!isset($review['fingerprint'])) {
+				$counts['unreviewable']++;
+				$primary = $review['reasons'][0]; $reasons[$primary] = ($reasons[$primary] ?? 0) + 1;
+				foreach ($review['reasons'] as $reason) $issues[$reason] = ($issues[$reason] ?? 0) + 1;
+				continue;
+			}
 			if (in_array($review['status'], ['existing_coordinates', 'unchanged', 'postal_address_changed'], true)) { $counts['already_valid']++; continue; }
 			$entry = ['id' => (int)$row['id'], 'address_id' => (int)$row['address_id'], 'fingerprint' => $review['fingerprint']];
 			if ($template) { $entries[] = $entry + ['public' => false, 'non_personal' => false, 'non_confidential' => false, 'review_reference' => '']; continue; }
@@ -150,7 +178,9 @@ class DEEC_AddressBatch extends DEEC_Address
 			$entries[] = $entry + ['created' => $row['created'], 'status' => 'pending', 'retry_at' => 0];
 			$counts['approved']++;
 		}
-		return [$entries, $counts];
+		ksort($reasons); ksort($issues);
+		$changed = isset($selection['snapshot_digest']) && !hash_equals($selection['snapshot_digest'], $page['selection_page']['snapshot_digest']);
+		return [$entries, $counts, ['exclusion_reasons' => $reasons, 'validation_issues' => $issues, 'validation_issues_overlap' => true, 'review_page_changed' => $changed, 'selection_page' => $page['selection_page'], 'population' => $page['population']]];
 	}
 
 	private function approved(array $entry): bool
@@ -163,7 +193,15 @@ class DEEC_AddressBatch extends DEEC_Address
 		$this->privateFile($path, true);
 		$bytes = file_get_contents($path);
 		$data = json_decode($bytes, true, 512, JSON_THROW_ON_ERROR);
-		if (!is_array($data) || ($data['version'] ?? 0) !== 1 || ($data['clientid'] ?? 0) !== 100 || ($data['endpoint'] ?? '') !== $this->geocoding['endpoint'] || !is_int($data['reviewed_by'] ?? null) || $data['reviewed_by'] < 1 || !is_array($data['addresses'] ?? null) || count($data['addresses']) > 28506) throw new InvalidArgumentException('Invalid address approvals');
+		if (!is_array($data) || ($data['version'] ?? 0) !== 1 || ($data['clientid'] ?? 0) !== 100 || ($data['endpoint'] ?? '') !== $this->geocoding['endpoint'] || !is_int($data['reviewed_by'] ?? null) || $data['reviewed_by'] < 1 || !is_array($data['addresses'] ?? null) || count($data['addresses']) > Contacts_Model_GeocodingBatch::MAX_PAGE_SIZE) throw new InvalidArgumentException('Invalid address approvals');
+		$selection = $data['selection_page'] ?? [];
+		if (!is_array($selection)) throw new InvalidArgumentException('Invalid approval selection page');
+		if ($selection) {
+			if (!is_array($selection) || !is_int($selection['page_size'] ?? null) || $selection['page_size'] < 1 || $selection['page_size'] > Contacts_Model_GeocodingBatch::MAX_PAGE_SIZE || !array_key_exists('after', $selection) || ($selection['after'] !== null && !is_string($selection['after']))) throw new InvalidArgumentException('Invalid approval selection page');
+			if ($selection['after'] !== null) Contacts_Model_GeocodingBatch::decodeCursor($selection['after']);
+			if (isset($selection['snapshot_digest']) && (!is_string($selection['snapshot_digest']) || !preg_match('/^[a-f0-9]{64}$/D', $selection['snapshot_digest']))) throw new InvalidArgumentException('Invalid review page digest');
+			$selection = array_intersect_key($selection, array_flip(['after', 'page_size', 'snapshot_digest']));
+		}
 		$entries = [];
 		foreach ($data['addresses'] as $entry) {
 			if (!is_array($entry) || !is_int($entry['id'] ?? null) || $entry['id'] < 1 || !is_int($entry['address_id'] ?? null) || $entry['address_id'] < 1 || !preg_match('/^[a-f0-9]{64}$/D', $entry['fingerprint'] ?? '') || !is_string($entry['review_reference'] ?? null)) throw new InvalidArgumentException('Invalid address approval entry');
@@ -172,7 +210,7 @@ class DEEC_AddressBatch extends DEEC_Address
 			if (isset($entries[$key])) throw new InvalidArgumentException('Duplicate address approval');
 			$entries[$key] = $entry;
 		}
-		return ['addresses' => $entries, 'reviewed_by' => $data['reviewed_by'], 'digest' => hash('sha256', $bytes)];
+		return ['addresses' => $entries, 'reviewed_by' => $data['reviewed_by'], 'digest' => hash('sha256', $bytes), 'selection_page' => $selection];
 	}
 
 	private function activationBlockers(): array
@@ -190,7 +228,7 @@ class DEEC_AddressBatch extends DEEC_Address
 	private function privateFile(string $path, bool $existing): void
 	{
 		$parent = realpath(dirname($path)); $base = realpath($this->basePath);
-		if ($path === '' || $path[0] !== '/' || !$parent || (fileperms($parent) & 0077) || is_link($path) || ($base && ($parent === $base || str_starts_with($parent, $base.'/'))) || ($existing && (!is_file($path) || (fileperms($path) & 0077) || filesize($path) > 20 * 1024 * 1024))) throw new InvalidArgumentException('Private approval/output path required');
+		if ($path === '' || $path[0] !== '/' || !$parent || (fileperms($parent) & 0077) || is_link($path) || ($base && ($parent === $base || str_starts_with($parent, $base.'/'))) || ($existing && (!is_file($path) || (fileperms($path) & 0077) || filesize($path) > 32 * 1024 * 1024))) throw new InvalidArgumentException('Private approval/output path required');
 	}
 
 	private function locked(callable $operation): array
@@ -210,7 +248,7 @@ class DEEC_AddressBatch extends DEEC_Address
 		if (!file_exists($file)) return null;
 		$this->privateFile($file, true);
 		$state = json_decode(file_get_contents($file), true, 512, JSON_THROW_ON_ERROR);
-		if (!is_array($state) || ($state['version'] ?? 0) !== 1 || ($state['clientid'] ?? 0) !== 100 || !preg_match('/^[a-f0-9]{32}$/D', $state['run_id'] ?? '') || !is_array($state['jobs'] ?? null) || count($state['jobs']) > 28506 || !is_int($state['cursor'] ?? null) || $state['cursor'] < 0 || $state['cursor'] > count($state['jobs']) || !is_string($state['manifest_path'] ?? null) || !preg_match('/^[a-f0-9]{64}$/D', $state['manifest_digest'] ?? '')) throw new RuntimeException('Invalid batch state');
+		if (!is_array($state) || ($state['version'] ?? 0) !== 1 || ($state['clientid'] ?? 0) !== 100 || !preg_match('/^[a-f0-9]{32}$/D', $state['run_id'] ?? '') || !is_array($state['jobs'] ?? null) || count($state['jobs']) > Contacts_Model_GeocodingBatch::MAX_PAGE_SIZE || !is_int($state['cursor'] ?? null) || $state['cursor'] < 0 || $state['cursor'] > count($state['jobs']) || !is_string($state['manifest_path'] ?? null) || !preg_match('/^[a-f0-9]{64}$/D', $state['manifest_digest'] ?? '')) throw new RuntimeException('Invalid batch state');
 		if (!is_string($state['endpoint'] ?? null) || !is_int($state['prepared_by'] ?? null) || $state['prepared_by'] < 1 || !is_array($state['counts'] ?? null) || array_keys($state['counts']) !== self::COUNTS) throw new RuntimeException('Invalid batch metadata');
 		foreach ($state['counts'] as $count) if (!is_int($count) || $count < 0) throw new RuntimeException('Invalid batch counts');
 		if ($state['counts']['approved'] !== count($state['jobs'])) throw new RuntimeException('Invalid batch job count');
@@ -228,7 +266,7 @@ class DEEC_AddressBatch extends DEEC_Address
 	{
 		$counts = array_fill_keys(self::STATES, 0); $cached = 0; $next = null;
 		foreach ($state['jobs'] as $job) { $counts[$job['status']]++; if (!empty($job['cached'])) $cached++; if ($job['status'] === 'retry') $next = $next === null ? $job['retry_at'] : min($next, $job['retry_at']); }
-		return ['status' => $counts['pending'] ? 'ready' : ($counts['retry'] ? 'waiting' : 'complete'), 'clientid' => 100, 'run_id' => $state['run_id'], 'cursor' => $state['cursor'], 'total' => count($state['jobs']), 'counts' => $counts, 'cached' => $cached, 'next_retry_at' => $next, 'selection' => $state['counts']];
+		return ['status' => $counts['pending'] ? 'ready' : ($counts['retry'] ? 'waiting' : 'complete'), 'clientid' => 100, 'run_id' => $state['run_id'], 'cursor' => $state['cursor'], 'total' => count($state['jobs']), 'counts' => $counts, 'cached' => $cached, 'next_retry_at' => $next, 'selection' => $state['counts']] + ($state['diagnostics'] ?? []);
 	}
 
 	private function hasCoordinates(array $row): bool

@@ -153,10 +153,10 @@ class DEEC_Address {
 		finally { $this->batchContext = null; }
 	}
 
-	protected function review(int $id, $address, array $state): array {
-		if (!$address) return ['status' => 'ineligible'];
-		$postal = $this->postalAddress($address);
-		if ($postal === null) return ['status' => 'incomplete_or_unreviewable'];
+	protected function review(int $id, $address, array $state, bool $explain = false): array {
+		if (!$address) return ['status' => 'ineligible'] + ($explain ? ['reasons' => ['ineligible_address']] : []);
+		$postal = $this->postalAddress($address, $issues);
+		if ($postal === null) return ['status' => 'incomplete_or_unreviewable'] + ($explain ? ['reasons' => $issues] : []);
 		$key = $postal['key'];
 		$last = $state['addresses'][(string)$id] ?? [];
 		$status = 'needs_geocoding';
@@ -168,24 +168,30 @@ class DEEC_Address {
 		return ['status' => $status, 'fingerprint' => hash('sha256', $id.':'.$key.':'.json_encode($snapshot))];
 	}
 
-	private function postalAddress(array $address): ?array {
-		$fields = [];
+	private function postalAddress(array $address, ?array &$issues = null): ?array {
+		$fields = []; $issues = [];
 		foreach (['street', 'postcode', 'city', 'country'] as $field) {
 			$value = (string)($address[$field] ?? '');
-			if (!mb_check_encoding($value, 'UTF-8') || preg_match('/[\x00-\x1f\x7f]/u', $value)) return null;
+			if (!mb_check_encoding($value, 'UTF-8')) { $issues[] = 'invalid_utf8_'.$field; continue; }
+			if (preg_match('/[\x00-\x1f\x7f]/u', $value)) { $issues[] = 'control_characters_'.$field; continue; }
 			$fields[$field] = $this->normalize($value);
-			if ($fields[$field] === '') return null;
+			if ($fields[$field] === '') $issues[] = 'missing_'.$field;
 		}
-		if (!preg_match('/^[a-z]{2}$/D', $fields['country'])) return null;
-		$country = strtoupper($fields['country']);
-		$statement = $this->connection->prepare('SELECT code FROM country WHERE clientid = ? AND BINARY code = ? AND deleted = 0 LIMIT 1');
-		$client = self::GEOCODING_CLIENT_ID;
-		try {
-			$statement->bind_param('is', $client, $country);
-			$statement->execute();
-			if (!$statement->get_result()->fetch_assoc()) return null;
-		} finally { $statement->close(); }
-		if ($this->streetParts($fields['street']) === null) return null;
+		if (isset($fields['country']) && $fields['country'] !== '') {
+			if (!preg_match('/^[a-z]{2}$/D', $fields['country'])) $issues[] = 'invalid_country_code';
+			else {
+				$country = strtoupper($fields['country']);
+				$statement = $this->connection->prepare('SELECT code FROM country WHERE clientid = ? AND BINARY code = ? AND deleted = 0 LIMIT 1');
+				$client = self::GEOCODING_CLIENT_ID;
+				try {
+					$statement->bind_param('is', $client, $country);
+					$statement->execute();
+					if (!$statement->get_result()->fetch_assoc()) $issues[] = 'country_not_configured';
+				} finally { $statement->close(); }
+			}
+		}
+		if (isset($fields['street']) && $fields['street'] !== '' && $this->streetParts($fields['street']) === null) $issues[] = 'unrecognized_house_number';
+		if ($issues) return null;
 		return ['fields' => $fields, 'key' => hash('sha256', json_encode([self::GEOCODING_CLIENT_ID, $this->geocoding['endpoint'], 1, $fields]))];
 	}
 

@@ -23,12 +23,15 @@ All modes require explicit context:
 Modes:
   --mode=status                     Read progress and activation blockers (default).
   --mode=dry-run                    Read counts; no files, API or DB writes.
+  --mode=dry-run --after=CURSOR      Inspect the next older selection page.
   --mode=dry-run --approvals=/private/approvals.json
   --mode=review --output=/private/review.json
                                     Export IDs/fingerprints, ALL privacy flags false.
+                                    Optional --after=CURSOR continues older contacts.
   --mode=prepare --approvals=/private/approvals.json
                                     Freeze approved candidates; persist a run ID.
   --mode=run --execute=RUN_ID        Resume <=100 local items / one API request.
+  --mode=archive --execute=RUN_ID    Archive only a completed run; keep cache/quotas.
 
 Review each selected billing address in the ERP. Only public, NON-PERSONAL and
 NON-CONFIDENTIAL addresses may have all three flags true, with a review_reference
@@ -39,8 +42,21 @@ Pause with batch.enabled=false; resume with the SAME approval file and run ID.
 
 Selection: created DESC, id DESC; the map's first active billing address by ordering
 and id. Valid coordinates are skipped. geoupdated never excludes missing coordinates.
-The snapshot never grows automatically; at most 28,506 selected contacts. Unapproved
-and unreviewable records stay excluded. Changed addresses require a new review.
+Selection is bounded by selection_page_size (default 1000, maximum 50000) per page,
+NOT by estimated API requests or total contacts. Legacy max_contacts is a page-size
+alias. The dry-run reports exclusion_reasons (one primary reason per unreviewable row),
+validation_issues (overlapping field errors), population and selection_page.
+Use selection_page.next_after as --after for the next older page, including pages
+without reviewable/approved entries. remaining_older counts candidates beyond this
+page; population.without_billing_address explains contacts missing from the queue.
+NULL creation dates are last, with descending IDs. No OFFSET pagination is used.
+Review files bind their page/cursor; prepare uses that page even after config changes.
+If page membership changes between review and prepare, review_page_changed is true
+and prepare requires a fresh review; no older unreviewed rows fill vacated slots.
+Snapshots never grow automatically. Unapproved/unreviewable records stay excluded.
+After a run completes, archive it explicitly and prepare a separately reviewed older
+page using a new approval file. Active/retrying runs cannot be archived. Legacy run
+files remain resumable; their missing selection boundary is never guessed.
 
 Use configs/geocoding-batch.sample.ini. Before ANY run, obtain written service-use
 approval covering the volume/rate, complete privacy clearance, set both approval
@@ -49,7 +65,7 @@ Rate limits alone do NOT authorize public Nominatim bulk processing.
 
 Manual and batch MUST share one private state directory (0700), outside the web root,
 on ONE machine. Approval files and their parents require 0600 and 0700 respectively.
-Application rights: contact view; prepare/run also require edit. DB: SELECT plus
+Application rights: contact view; prepare/run/archive also require edit. DB: SELECT plus
 UPDATE(latitude, longitude, geoupdated) on address for run. No SQL migration needed.
 No web sessions or campaigns are bootstrapped. Output contains aggregate status only.
 
@@ -70,15 +86,16 @@ Policy: https://operations.osmfoundation.org/policies/nominatim/
 HELP;
 			exit(0);
 		}
-		if (!preg_match('/^--([a-z-]+)=(.*)$/sD', $argument, $match) || isset($args[$match[1]]) || !in_array($match[1], ['client', 'user', 'config', 'environment', 'geocoding-config', 'mode', 'execute', 'approvals', 'output'], true)) throw new InvalidArgumentException('Invalid arguments');
+		if (!preg_match('/^--([a-z-]+)=(.*)$/sD', $argument, $match) || isset($args[$match[1]]) || !in_array($match[1], ['client', 'user', 'config', 'environment', 'geocoding-config', 'mode', 'execute', 'approvals', 'output', 'after'], true)) throw new InvalidArgumentException('Invalid arguments');
 		$args[$match[1]] = $match[2];
 	}
 	foreach (['client', 'user', 'config', 'environment', 'geocoding-config'] as $required) if (empty($args[$required])) throw new InvalidArgumentException('Explicit context required');
 	$mode = $args['mode'] ?? 'status';
-	if ($args['client'] !== '100' || !ctype_digit($args['user']) || !filter_var($args['user'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) || !in_array($mode, ['status', 'dry-run', 'review', 'prepare', 'run'], true)) throw new InvalidArgumentException('Invalid batch scope');
+	if ($args['client'] !== '100' || !ctype_digit($args['user']) || !filter_var($args['user'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) || !in_array($mode, ['status', 'dry-run', 'review', 'prepare', 'run', 'archive'], true)) throw new InvalidArgumentException('Invalid batch scope');
 	foreach (['config', 'geocoding-config'] as $field) if ($args[$field][0] !== '/' || !is_file($args[$field])) throw new InvalidArgumentException('Explicit configuration path required');
-	if (($mode === 'run') !== isset($args['execute']) || (isset($args['execute']) && !preg_match('/^[a-f0-9]{32}$/D', $args['execute']))) throw new InvalidArgumentException('Prepared run ID required for run only');
+	if (in_array($mode, ['run', 'archive'], true) !== isset($args['execute']) || (isset($args['execute']) && !preg_match('/^[a-f0-9]{32}$/D', $args['execute']))) throw new InvalidArgumentException('Explicit run ID required for run/archive only');
 	if (($mode === 'review') !== isset($args['output']) || ($mode === 'prepare' && empty($args['approvals'])) || (isset($args['approvals']) && !in_array($mode, ['prepare', 'dry-run'], true))) throw new InvalidArgumentException('Invalid mode arguments');
+	if (isset($args['after']) && (!in_array($mode, ['dry-run', 'review'], true) || !preg_match('/^[A-Za-z0-9_-]{1,256}$/D', $args['after']))) throw new InvalidArgumentException('Invalid selection cursor argument');
 
 	define('BASE_PATH', dirname(__DIR__, 2));
 	define('APPLICATION_PATH', BASE_PATH.'/application');
@@ -111,10 +128,11 @@ HELP;
 	$service = new DEEC_AddressBatch(BASE_PATH, $params['host'] ?? 'localhost', $params['username'], $params['password'] ?? '', $params['dbname'], $geocoding->manual->toArray(), (int)($params['port'] ?? 0), $params['unix_socket'] ?? null);
 	$service->configureBatch(new Contacts_Model_GeocodingBatch(), $geocoding->batch->toArray());
 	switch ($mode) {
-		case 'dry-run': $result = $service->dryRun($args['approvals'] ?? null); break;
-		case 'review': $result = $service->exportReview($args['output']); break;
+		case 'dry-run': $result = $service->dryRun($args['approvals'] ?? null, $args['after'] ?? null); break;
+		case 'review': $result = $service->exportReview($args['output'], $args['after'] ?? null); break;
 		case 'prepare': $result = $service->prepare($args['approvals']); break;
 		case 'run': $result = $service->run($args['execute']); break;
+		case 'archive': $result = $service->archive($args['execute']); break;
 		default: $result = $service->status();
 	}
 	echo json_encode($result, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)."\n";
