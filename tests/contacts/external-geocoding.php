@@ -109,7 +109,7 @@ externalCheck(array_sum(array_column($ledger['entries'], 'credits')) === 6 && ar
 externalCheck(!str_contains(file_get_contents($directory.'/jobs.json'), 'DO_NOT_STORE') && !str_contains(file_get_contents($directory.'/jobs.json'), $provider['api_key']), 'Provider URL/API key persisted');
 $db->update('address', ['city' => 'Changed City'], ['id = ?' => $ids[8]]);
 $plan = $tool->plan('plan-main.json', $target); $planHash = $plan['plan_sha256'];
-externalCheck($plan['counts'] === ['planned' => 3, 'conflicts' => 1, 'rejected' => 1, 'pending' => 0] && $plan['rejected_reasons'] === ['low_or_missing_accuracy' => 1], 'Dry-run did not distinguish conflicts and rejected matches');
+externalCheck($plan['counts'] === ['planned' => 3, 'conflicts' => 1, 'rejected' => 1, 'pending' => 0, 'deferred' => 0] && $plan['rejected_reasons'] === ['low_or_missing_accuracy' => 1], 'Dry-run did not distinguish conflicts and rejected matches');
 externalReject(fn() => $tool->plan('plan-main.json', $target));
 externalReject(fn() => $tool->import('plan-main.json', $target, array_replace(externalPermit($planHash), ['enabled' => false]), $planHash));
 externalReject(fn() => $tool->import('plan-main.json', 'wrong-target', externalPermit($planHash), $planHash));
@@ -178,7 +178,7 @@ foreach ([[], [$amenity], [$amenity, $amenity], [null, $amenity]] as $features) 
 externalFixture(); [$candidateTool, $candidateDir] = externalTool(); $candidateTool->withAmenity = true; $candidateTool->behavior = 'immediate';
 $candidateExport = $candidateTool->export($target, 1); $candidateTool->geocode(externalProvider($candidateDir), $candidateExport['export_sha256']);
 $candidatePlan = $candidateTool->plan('plan-candidates.json', $target);
-externalCheck($candidatePlan['counts'] === ['planned' => 1, 'conflicts' => 0, 'rejected' => 0, 'pending' => 0], 'Saved batch response with building and amenity remained rejected');
+externalCheck($candidatePlan['counts'] === ['planned' => 1, 'conflicts' => 0, 'rejected' => 0, 'pending' => 0, 'deferred' => 0], 'Saved batch response with building and amenity remained rejected');
 $legacy = json_decode(file_get_contents($candidateDir.'/plan-candidates.json'), true); $legacy['data']['updates'] = []; $legacy['data']['counts']['planned'] = 0; $legacy['data']['counts']['rejected'] = 1; $legacy['data']['rejected_reasons'] = ['missing_or_ambiguous' => 1]; $legacy['sha256'] = OneTimeGeocoding::digest($legacy['data']);
 $legacyBackup = 'backup-'.$legacy['sha256'].'.json';
 foreach (['plan-legacy.json', $legacyBackup] as $name) { file_put_contents($candidateDir.'/'.$name, json_encode($legacy)); chmod($candidateDir.'/'.$name, 0600); }
@@ -289,6 +289,8 @@ $exportBytes = file_get_contents($cliDir.'/export.json'); $damaged = json_decode
 [$exit, $output, $errors] = externalCli(['--client=100', '--work='.$cliDir, '--mode=status']);
 externalCheck($exit === 1 && $output === '', 'Changed export was accepted'); file_put_contents($cliDir.'/export.json', $exportBytes);
 
+require __DIR__.'/external-geocoding-deferrals.php';
+
 // Exercise the intended inventory size, provider chunking and multiple budget windows.
 $db->update('contact', ['deleted' => 1], ['clientid = ?' => 100]);
 $db->query('CREATE TEMPORARY TABLE external_digits (n INT NOT NULL)'); $db->query('INSERT INTO external_digits VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9)');
@@ -305,7 +307,7 @@ for ($step = 0; $step < 200; $step++) {
 externalCheck($progress['status'] === 'complete' && $waits === 5 && count($large->calls) === 56, 'Large run lost jobs, ignored limits or repeated submissions');
 ExternalFixtureTool::$remote = []; $large->calls = [];
 $largePlan = $large->plan('plan.json', $target);
-externalCheck($largePlan['counts'] === ['planned' => 27863, 'conflicts' => 0, 'rejected' => 0, 'pending' => 0], 'Full-sized import dry-run incomplete');
+externalCheck($largePlan['counts'] === ['planned' => 27863, 'conflicts' => 0, 'rejected' => 0, 'pending' => 0, 'deferred' => 0], 'Full-sized import dry-run incomplete');
 $largeImport = $large->import('plan.json', $target, externalPermit($largePlan['plan_sha256']), $largePlan['plan_sha256'], 1);
 externalCheck($largeImport['database_writes'] === 1 && $largeImport['remaining'] === 27862, 'Full-sized bounded import failed');
 $largeResume = $large->import('plan.json', $target, externalPermit($largePlan['plan_sha256']), $largePlan['plan_sha256'], 1);

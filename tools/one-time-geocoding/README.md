@@ -37,7 +37,45 @@ php tools/one-time-geocoding/cli.php --client=100 --work=/root/dewawi-geocoding/
 
 Record the returned `export_sha256`. Export reuses the map's first active billing address, `ordering ASC, id ASC`, and selects contacts `created DESC, id DESC` in bounded keyset pages. Valid existing coordinates are skipped regardless of timestamps. The existing DEEC address assessment excludes incomplete/bad addresses. Local deduplication normalizes case, NFC, whitespace and the narrow K2C.2 number formats; punctuation and meaningful tokens remain significant.
 
-`export.json` stores postal fields, address/contact IDs, the complete relevant original address/coordinate snapshot and contact creation date. Its digest and the query mapping are immutable. Console output contains aggregate counts and hashes only. Default export cap is 50,000 selected candidates; `remaining_older` explicitly reports any truncation. `--limit=100` can create a separately reviewed small pilot, but it is a subset, not a continuation of an existing export. Never overwrite an export or remove quota state to start over.
+`export.json` stores postal fields, address/contact IDs, the complete relevant original address/coordinate snapshot and contact creation date. Its digest and the query mapping are immutable. Normal console output contains aggregate counts and hashes only; the explicit `entries` mode below also lists private identifiers. Default export cap is 50,000 selected candidates; `remaining_older` explicitly reports any truncation. `--limit=100` can create a separately reviewed small pilot, but it is a subset, not a continuation of an existing export. Never overwrite an export or remove quota state to start over.
+
+### Defer individual unsent pilot entries
+
+Use the EXISTING pilot workspace, not a new export. The path below is an example: replace it with the actual pilot directory. `entry` is the immutable **one-based export position**, not a contact ID, address ID or provider job index. First inspect the mapping and copy its `export_sha256`:
+
+```bash
+cd /var/www/dewawi
+geo_cmd=(php -d memory_limit=512M tools/one-time-geocoding/cli.php --client=100 --work=/root/dewawi-geocoding/run-01)
+"${geo_cmd[@]}" --mode=entries
+"${geo_cmd[@]}" --mode=status
+```
+
+`entries` lists entry/contact/address IDs, query keys, duplicate counts and status without postal text. Review the postal details privately in the frozen export using those IDs. Keep this output private as well. Entries 7 and 8 below are EXAMPLES, not a recommendation about the live pilot. Replace them with the reviewed positions and `EXPORT_SHA256` with the exact digest:
+
+```bash
+"${geo_cmd[@]}" --mode=defer --entry=7 --execute=EXPORT_SHA256 \
+  --operator=remzi --reason=postal_review --reference=GEO-PILOT-007
+"${geo_cmd[@]}" --mode=defer --entry=8 --execute=EXPORT_SHA256 \
+  --operator=remzi --reason=incomplete_address --reference=GEO-PILOT-008
+"${geo_cmd[@]}" --mode=status
+```
+
+Allowed reasons: `postal_review`, `incomplete_address`, `privacy_review`, `other_review`. Use an operator label and a private ticket/reference code, never postal details or free-form customer information. The label is self-declared audit metadata, not ERP authentication; offline operations require OS access to the private workspace. Neither a provider configuration nor a database configuration is accepted by `defer`.
+
+If `duplicate_count` exceeds one, the same postal query belongs to multiple entries. An individual deferral would still transmit that address through its duplicate. The command therefore refuses it unless the operator explicitly confirms deferring the **whole shared query group** after reviewing all affected entries:
+
+```bash
+"${geo_cmd[@]}" --mode=defer --entry=7 --execute=EXPORT_SHA256 \
+  --operator=remzi --reason=postal_review --reference=GEO-PILOT-007 --include-duplicates=true
+```
+
+The response reports `affected_addresses`. Every affected entry then has status `deferred`. Repeating a deferral returns `already_deferred` without changing the original audit entry. Any query already assigned to ANY job is refused, including completed, pending, uncertain, expired or abandoned jobs. These operations cannot retract a submitted address and never modify jobs or their saved results.
+
+The only new persistent file is `deferrals.jsonl` (0600): a durable, append-only, export-bound hash chain with entry/contact/address/query mapping, timestamp, operator, reason, reference and explicit duplicate confirmation. The existing workspace lock serializes deferral, submission and import. A malformed, truncated or inconsistent journal blocks processing before submission. Keep the journal with the workspace backup; do not edit, truncate or delete it. There is no undo/release command: reconsideration requires a separately reviewed workflow. Export snapshots/hashes, previous plans, results, backups, releases and quota accounting are not rewritten.
+
+`status.counts` partitions exported addresses into `processed` (saved result qualifies), `open` (unsent or in progress), `deferred`, and `rejected` (unsuitable result or failed terminal job). `processed` does not mean imported into the database. `queries` gives the same counts after deduplication; `not_submitted_queries` and `in_progress_queries` split open queries. Deferred queries count in neither open counter and will not be submitted. Rejected queries remain rejected rather than being reclassified as deferrals.
+
+After deferrals, create a NEW read-only import plan using a new filename (see step 3). Plans count `deferred` separately, omit these entries from updates and exclude them from `pending_queries`. The new plan binds the deferral journal as well as the provider state. Old plans/approvals stay untouched; they cannot authorize an import against a changed deferral policy. With no deferrals, existing completed plans and approvals retain their original result-state hash.
 
 ## 2. Separately release and perform geocoding
 
@@ -68,7 +106,7 @@ php tools/one-time-geocoding/cli.php --client=100 --work=/root/dewawi-geocoding/
   --mode=plan --config=/root/dewawi-diagnostic/readonly.ini --environment=diagnostic --user=100 --plan=plan-01.json
 ```
 
-Review `planned`, `conflicts`, `rejected`, `pending`, `pending_queries`, rejection reasons and `plan_sha256`. Each plan is a new immutable private file. To refresh after changes use another name, e.g. `plan-02.json`.
+Review `planned`, `conflicts`, `rejected`, `pending`, `deferred`, `pending_queries`, rejection reasons and `plan_sha256`. Each plan is a new immutable private file. To refresh after changes use another name, e.g. `plan-02.json`. Deferred entries are neither pending API queries nor proposed database updates.
 
 Every returned candidate is checked independently. Automatic eligibility requires exactly one qualifying building result: full/building match type, confidence >=0.95 for the address, city, street AND building, complete matching country/postcode/city/street/house number, valid finite nonzero coordinates and matching Point geometry. Optional bounding boxes must be plausible and contain the point. Additional amenity/POI results do not compete with a qualifying building. Multiple qualifying buildings remain ambiguous, including duplicate building entries; no result-order tie-break is used. Missing confidence/component fields, abbreviation differences, alternative locality spellings and coarse positions cannot qualify. A single rejected candidate retains its specific rejection reason; multiple candidates without a qualifying building report `no_suitable_building`. Technical export eligibility does not guarantee an importable result.
 
@@ -78,7 +116,7 @@ The original address ID, contact/tenant association, active billing selection, p
 
 ## 4. Separately release the production import
 
-Do not enable this during preparation. First complete/reject all queries, inspect the immutable plan, take and verify a current database backup using your approved operational procedure, settle attribution and obtain separate import approval.
+Do not enable this during preparation. First complete/reject or explicitly defer all queries, inspect the immutable plan, take and verify a current database backup using your approved operational procedure, settle attribution and obtain separate import approval.
 
 Prepare a private writer configuration, e.g. `/root/dewawi-geocoding/writer.ini`, section `diagnostic`. It must use the identical host/port/socket/database parameters as the export; only credentials may differ. Grant SELECT plus UPDATE of `address.latitude`, `address.longitude`, `address.geoupdated`, without broader update/DDL rights. Do not run migrations. Set `import.ini` to `enabled = true`, the exact reviewed `plan_sha256`, the approval reference, tested backup reference and attribution reference.
 

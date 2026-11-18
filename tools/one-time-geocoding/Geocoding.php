@@ -11,6 +11,7 @@ class OneTimeGeocoding
 	public const ENDPOINT = 'https://api-eu.geoapify.com/v1/batch';
 	private const SNAPSHOT = ['id', 'clientid', 'parentid', 'module', 'controller', 'type', 'deleted', 'ordering', 'street', 'postcode', 'city', 'country', 'created', 'modified', 'latitude', 'longitude', 'geoupdated'];
 	private const NUMBER = '\d+(?: ?\p{L})?(?: ?[-\/–] ?\d+(?: ?\p{L})?)?';
+	private const DEFER_REASONS = ['postal_review', 'incomplete_address', 'privacy_review', 'other_review'];
 	private string $directory;
 	private $lock;
 	private $db;
@@ -177,9 +178,73 @@ class OneTimeGeocoding
 
 	public function status(): array
 	{
-		$export = $this->exportFile(); $state = $this->state($export['sha256']); $counts = [];
-		foreach ($state['jobs'] as $job) $counts[$job['status']] = ($counts[$job['status']] ?? 0) + 1;
-		return ['export_sha256' => $export['sha256'], 'exported' => count($export['data']['records']), 'unique_requests' => count($export['data']['queries']), 'jobs' => $counts, 'external_requests' => 0, 'database_writes' => 0];
+		$export = $this->exportFile(); $results = $this->results($export); $jobs = [];
+		foreach ($results['state']['jobs'] as $job) $jobs[$job['status']] = ($jobs[$job['status']] ?? 0) + 1;
+		return ['export_sha256' => $export['sha256'], 'exported' => count($export['data']['records']), 'unique_requests' => count($export['data']['queries']), 'jobs' => $jobs] + $this->overview($export, $results) + ['external_requests' => 0, 'database_writes' => 0];
+	}
+
+	public function entries(): array
+	{
+		$export = $this->exportFile();
+		return ['export_sha256' => $export['sha256']] + $this->overview($export, $this->results($export), true) + ['external_requests' => 0, 'database_writes' => 0];
+	}
+
+	private function overview(array $export, array $results, bool $withEntries = false): array
+	{
+		$counts = array_fill_keys(['processed', 'open', 'deferred', 'rejected'], 0); $queries = $counts;
+		$groups = array_count_values(array_column($export['data']['records'], 'query_key')); $assigned = [];
+		foreach ($results['state']['jobs'] as $index => $job) foreach ($job['keys'] as $key) $assigned[$key] = ['job' => $index, 'provider_status' => $job['status']];
+		$statuses = []; $entries = []; $notSubmitted = $inProgress = 0;
+		foreach ($export['data']['records'] as $index => $record) {
+			$key = $record['query_key'];
+			if (!isset($statuses[$key])) {
+				if (isset($results['deferred'][$key])) $status = 'deferred';
+				elseif (isset($results['data'][$key])) $status = isset(self::validate($results['data'][$key], $record['fields'])['point']) ? 'processed' : 'rejected';
+				else { $status = 'open'; if (isset($assigned[$key])) $inProgress++; else $notSubmitted++; }
+				$statuses[$key] = $status; $queries[$status]++;
+			}
+			$counts[$statuses[$key]]++;
+			if ($withEntries) $entries[] = ['entry' => $index + 1, 'contact_id' => $record['contact_id'], 'address_id' => $record['snapshot']['id'], 'query_key' => $key, 'duplicate_count' => $groups[$key], 'status' => $statuses[$key]] + ($assigned[$key] ?? []);
+		}
+		return ['counts' => $counts, 'queries' => $queries, 'not_submitted_queries' => $notSubmitted, 'in_progress_queries' => $inProgress] + ($withEntries ? ['entries' => $entries] : []);
+	}
+
+	private static function validDeferralAudit(array $data): bool
+	{
+		return is_string($data['operator'] ?? null) && preg_match('/^[a-zA-Z0-9][a-zA-Z0-9._@-]{0,79}$/D', $data['operator']) && in_array($data['reason'] ?? '', self::DEFER_REASONS, true)
+			&& is_string($data['reference'] ?? null) && preg_match('~^[a-zA-Z0-9][a-zA-Z0-9._:/-]{2,127}$~D', $data['reference']);
+	}
+
+	private function deferrals(array $export, array $state): array
+	{
+		$keys = []; $previous = $export['sha256']; $file = $this->path('deferrals.jsonl');
+		if (!file_exists($file)) return ['keys' => $keys, 'sha256' => $previous];
+		if (filesize($file) > 128 * 1024 * 1024) throw new RuntimeException('large_deferral_journal');
+		$groups = array_count_values(array_column($export['data']['records'], 'query_key')); $assigned = [];
+		foreach ($state['jobs'] as $job) foreach ($job['keys'] as $key) $assigned[$key] = true;
+		foreach (file($file) as $line) {
+			if (!str_ends_with($line, "\n")) throw new RuntimeException('incomplete_deferral_journal');
+			$event = json_decode($line, true, 16, JSON_THROW_ON_ERROR); $data = $event['data'] ?? null;
+			if (!is_array($data) || !is_string($event['sha256'] ?? null) || !hash_equals($event['sha256'], self::digest($data)) || ($data['version'] ?? 0) !== 1 || ($data['clientid'] ?? 0) !== 100 || ($data['export_sha256'] ?? '') !== $export['sha256'] || ($data['previous_sha256'] ?? '') !== $previous || ($data['sequence'] ?? 0) !== count($keys) + 1 || !is_int($data['entry'] ?? null) || $data['entry'] < 1 || !self::validDeferralAudit($data) || !is_int($data['at'] ?? null) || $data['at'] < 0 || !is_bool($data['duplicates_acknowledged'] ?? null)) throw new RuntimeException('invalid_deferral_journal');
+			$record = $export['data']['records'][$data['entry'] - 1] ?? null;
+			if (!$record || ($data['contact_id'] ?? null) !== $record['contact_id'] || ($data['address_id'] ?? null) !== $record['snapshot']['id'] || ($data['query_key'] ?? '') !== $record['query_key'] || ($data['affected_addresses'] ?? 0) !== $groups[$record['query_key']] || ($groups[$record['query_key']] > 1 && !$data['duplicates_acknowledged']) || isset($keys[$record['query_key']]) || isset($assigned[$record['query_key']])) throw new RuntimeException('invalid_deferred_mapping');
+			$keys[$record['query_key']] = $data; $previous = $event['sha256'];
+		}
+		return ['keys' => $keys, 'sha256' => $previous];
+	}
+
+	public function defer(int $entry, string $execute, string $operator, string $reason, string $reference, bool $includeDuplicates = false): array
+	{
+		$export = $this->exportFile(); $record = $export['data']['records'][$entry - 1] ?? null;
+		if ($entry < 1 || !$record || !hash_equals($export['sha256'], $execute) || !self::validDeferralAudit(['operator' => $operator, 'reason' => $reason, 'reference' => $reference])) throw new RuntimeException('invalid_deferral_request');
+		$state = $this->state($export['sha256']); $deferred = $this->deferrals($export, $state); $key = $record['query_key'];
+		if (isset($deferred['keys'][$key])) return ['status' => 'already_deferred', 'entry' => $entry, 'affected_addresses' => $deferred['keys'][$key]['affected_addresses'], 'external_requests' => 0, 'database_writes' => 0];
+		foreach ($state['jobs'] as $job) if (in_array($key, $job['keys'], true)) throw new RuntimeException('address_already_assigned');
+		$affected = count(array_filter($export['data']['records'], static fn($row) => $row['query_key'] === $key));
+		if ($affected > 1 && !$includeDuplicates) throw new RuntimeException('explicit_duplicate_confirmation_required');
+		$data = ['version' => 1, 'clientid' => 100, 'export_sha256' => $export['sha256'], 'sequence' => count($deferred['keys']) + 1, 'previous_sha256' => $deferred['sha256'], 'entry' => $entry, 'contact_id' => $record['contact_id'], 'address_id' => $record['snapshot']['id'], 'query_key' => $key, 'affected_addresses' => $affected, 'duplicates_acknowledged' => $includeDuplicates, 'operator' => $operator, 'reason' => $reason, 'reference' => $reference, 'at' => $this->now()];
+		$this->append('deferrals.jsonl', ['sha256' => self::digest($data), 'data' => $data]);
+		return ['status' => 'deferred', 'entry' => $entry, 'affected_addresses' => $affected, 'external_requests' => 0, 'database_writes' => 0];
 	}
 
 	private static function reference($value): bool { return is_string($value) && strlen(trim($value)) >= 3 && strlen($value) <= 250 && !preg_match('/[\x00-\x1f\x7f]/', $value); }
@@ -201,7 +266,7 @@ class OneTimeGeocoding
 		if (($ledger['key_hash'] ?? '') !== hash('sha256', $config['api_key'])) throw new RuntimeException('quota_key_changed');
 		if (!is_int($ledger['next_at'] ?? null) || $ledger['next_at'] < 0 || !is_array($ledger['entries'] ?? null)) throw new RuntimeException('invalid_quota_state');
 		foreach ($ledger['entries'] as $entry) foreach (['at', 'credits', 'inputs'] as $field) if (!is_int($entry[$field] ?? null) || $entry[$field] < 0) throw new RuntimeException('invalid_quota_state');
-		$state = $this->state($export['sha256']); $index = null;
+		$state = $this->state($export['sha256']); $deferred = $this->deferrals($export, $state); $index = null;
 		foreach ($state['jobs'] as $job) foreach ($job['keys'] as $key) if (!isset($export['data']['queries'][$key])) throw new RuntimeException('foreign_job_key');
 		foreach ($state['jobs'] as $i => $job) {
 			if (in_array($job['status'], ['submitting', 'unknown'], true)) return ['status' => 'submission_unknown', 'job' => $i, 'external_requests' => 0];
@@ -209,7 +274,7 @@ class OneTimeGeocoding
 		}
 		if ($index === null) {
 			$used = []; foreach ($state['jobs'] as $job) foreach ($job['keys'] as $key) $used[$key] = true;
-			$keys = array_slice(array_keys(array_diff_key($export['data']['queries'], $used)), 0, $batchSize);
+			$keys = array_slice(array_keys(array_diff_key($export['data']['queries'], $used, $deferred['keys'])), 0, $batchSize);
 			if (!$keys) return ['status' => 'complete', 'external_requests' => 0];
 			$index = count($state['jobs']); $job = ['keys' => $keys, 'status' => 'submitting', 'submitted_at' => $this->now(), 'next_at' => 0, 'poll_reserved' => true];
 		} else $job = $state['jobs'][$index];
@@ -353,6 +418,7 @@ class OneTimeGeocoding
 	private function results(array $export): array
 	{
 		$state = $this->state($export['sha256']); $results = []; $pending = count($export['data']['queries']);
+		$deferred = $this->deferrals($export, $state); $pending -= count($deferred['keys']);
 		foreach ($state['jobs'] as $index => $job) {
 			if ($job['status'] === 'done') {
 				$file = $this->sealed('results-'.$index.'.json');
@@ -360,7 +426,9 @@ class OneTimeGeocoding
 				$results += $file['data']; $pending -= count($job['keys']);
 			} elseif (in_array($job['status'], ['expired', 'invalid_response', 'abandoned'], true)) { foreach ($job['keys'] as $key) $results[$key] = ['error' => true]; $pending -= count($job['keys']); }
 		}
-		return ['data' => $results, 'pending' => $pending, 'sha256' => self::digest($state)];
+		$sha = self::digest($state);
+		if ($deferred['keys']) $sha = self::digest(['jobs_sha256' => $sha, 'deferrals_sha256' => $deferred['sha256']]);
+		return ['data' => $results, 'pending' => $pending, 'sha256' => $sha, 'state' => $state, 'deferred' => $deferred['keys']];
 	}
 
 	private function current(array $record): ?array
@@ -394,8 +462,9 @@ class OneTimeGeocoding
 		$this->authorize(); $export = $this->exportFile();
 		if ($export['data']['target'] !== $target) throw new RuntimeException('target_changed');
 		$results = $this->results($export); $currentHashes = $this->currentHashes($export['data']['records']);
-		$updates = []; $counts = ['planned' => 0, 'conflicts' => 0, 'rejected' => 0, 'pending' => 0]; $reasons = [];
+		$updates = []; $counts = ['planned' => 0, 'conflicts' => 0, 'rejected' => 0, 'pending' => 0, 'deferred' => 0]; $reasons = [];
 		foreach ($export['data']['records'] as $record) {
+			if (isset($results['deferred'][$record['query_key']])) { $counts['deferred']++; continue; }
 			$result = $results['data'][$record['query_key']] ?? null;
 			if ($result === null) { $counts['pending']++; continue; }
 			$check = self::validate($result, $record['fields']);
@@ -426,7 +495,7 @@ class OneTimeGeocoding
 		$seen = [];
 		foreach ($plan['updates'] as $update) {
 			$record = $update['record']; $id = $record['snapshot']['id'];
-			if (isset($seen[$id]) || self::validPoint($record['snapshot']) || ($original[$id] ?? null) !== $record || (self::validate($results['data'][$record['query_key']] ?? [], $record['fields'])['point'] ?? null) !== $update['point']) throw new RuntimeException('invalid_planned_update');
+			if (isset($seen[$id]) || isset($results['deferred'][$record['query_key']]) || self::validPoint($record['snapshot']) || ($original[$id] ?? null) !== $record || (self::validate($results['data'][$record['query_key']] ?? [], $record['fields'])['point'] ?? null) !== $update['point']) throw new RuntimeException('invalid_planned_update');
 			$seen[$id] = true;
 		}
 		$backup = 'backup-'.$execute.'.json'; $journal = 'import-'.$execute.'.jsonl';
