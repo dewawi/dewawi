@@ -105,6 +105,7 @@ function recoverySelection(array $job, DEEC_DocumentArchive $reviewArchive, ?arr
 	reviewPrivateFile($path);
 	$file = $reviewArchive->inspect($path, 'pdf');
 	if ($file['status'] !== 'ok' || !is_string($selection['sha256'] ?? null) || !hash_equals($file['sha256'], $selection['sha256'])) throw new RuntimeException('Selected candidate integrity differs');
+	if (DEEC_DocumentReview::isViewingCopy($job['identity']['clientid'], $file['sha256'])) throw new RuntimeException('Viewing copies cannot be selected or approved as originals');
 	if (file_exists($job['directory'] . '/diagnostics/' . $file['sha256'] . '.json')) throw new RuntimeException('Diagnostic PDFs cannot be selected or approved as originals');
 	$proven = str_starts_with($relative, 'external/') && in_array($kind, ['datev', 'email', 'historical_pdf'], true);
 	if (str_starts_with($relative, 'candidates/')) {

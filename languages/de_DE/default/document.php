@@ -1,4 +1,5 @@
 <?php return array(
+	'DOCUMENTS_HISTORICAL_FILE_RECOVERY_ORIGIN_UNCONFIRMED' => 'Historische Datei nach Dateiabgleich wiederhergestellt; ursprüngliche Herkunft nicht unabhängig nachgewiesen',
 	'CORRECTION_LAST_EDITED' => 'Zuletzt bearbeitet',
 	'CORRECTION_EXPORT' => 'Freigegebene Berichtigungen mit Nachweisen exportieren (JSON)',
 	'CORRECTION_ORIGIN_NOTICE' => 'Die Archivprüfsumme bestätigt nur die gespeicherten Bytes, nicht die historische Herkunft. Vor Freigabe muss das tatsächlich ausgestellte Original unabhängig geprüft werden. Die Bestätigung gilt nur für diese Berichtigung; Archivfreigaben und Herkunftsklassifizierung werden nicht geändert.',

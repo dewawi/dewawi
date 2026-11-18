@@ -43,6 +43,9 @@ function viewingCheckMarks(array $response, string $mark, int $minimumPages = 1)
 	return $pages;
 }
 
+recoveryTestInsert('quote', array_replace($pdo->query('SELECT * FROM quote WHERE id = 601')->fetch(PDO::FETCH_ASSOC), ['id' => 690, 'quoteid' => 9690]));
+recoveryTestInsert('quotepos', array_replace($pdo->query('SELECT * FROM quotepos WHERE parentid = 601')->fetch(PDO::FETCH_ASSOC), ['id' => 690, 'parentid' => 690]));
+
 $viewingTables = ['documentarchive', 'emailattachment', 'emailmessage', 'emailmessageattachment', 'pricerulepos'];
 foreach (DEEC_DocumentArchive::documents() as $controllers) foreach ($controllers as $controller) $viewingTables = array_merge($viewingTables, [$controller, $controller . 'pos', $controller . 'posset']);
 $viewingDbBefore = [];
@@ -63,6 +66,8 @@ try {
 	foreach ($viewingDocuments as $query) {
 		$response = recoveryTestDownload($query + ['action' => 'reconstructed']);
 		$viewingHashes[] = hash('sha256', $response['bytes']);
+		$download = recoveryTestDownload($query + ['action' => 'download']);
+		recoveryTestCheck($download['code'] === 200 && $download['bytes'] === $response['bytes'] && str_contains($download['headers'], 'attachment;'), 'Normal Download did not reuse the permanent copy');
 		$pages = viewingCheckMarks($response, 'KOPIE', 2);
 		recoveryTestCheck(str_contains($response['headers'], 'historical_reconstructed_viewing_copy') && str_contains(implode('', $pages), 'Stored viewing buyer') && str_contains(implode('', $pages), 'Stored viewing position'), 'Stored content was not reconstructed: ' . json_encode($query));
 		recoveryTestCheck(!str_contains(implode('', $pages), 'MUSTER'), 'Finalized viewing copy was marked as a draft');
@@ -70,23 +75,54 @@ try {
 		recoveryTestCheck(recoveryTestDownload($query + ['action' => 'reconstructed'], 43)['code'] === 404 && recoveryTestDownload($query + ['action' => 'reconstructed'], 44)['code'] === 404 && recoveryTestDownload($query + ['action' => 'reconstructed'], null)['code'] === 401, 'Viewing tenant/authentication isolation failed');
 	}
 	$quoteQuery = $viewingDocuments[0];
+	$copyRecords = glob($base . '/files/documents/.viewing-copies/7/sales/quote/601/*/de_DE/copy.json');
+	recoveryTestCheck(count($copyRecords) === 1, 'Permanent copy receipt missing');
+	$initialCopy = recoveryJsonFile($copyRecords[0]); $initialCopyPath = dirname($copyRecords[0]) . '/' . $initialCopy['sha256'] . '.pdf';
+	$initialCopyBytes = file_get_contents($initialCopyPath);
+	recoveryTestCheck((fileperms($initialCopyPath) & 0777) === 0600 && !(new Contacts_Model_DbTable_Emailattachment())->canReadStoredFile(substr($initialCopyPath, strlen($base) + 1)), 'Permanent copy leaked into a direct file route');
+	unlink($copyRecords[0]);
 	foreach ([['id' => 0], ['id' => ['invalid']], ['module' => 'shops'], ['controller' => 'user'], ['id' => 999999]] as $invalid) recoveryTestCheck(recoveryTestDownload(array_replace($quoteQuery, ['action' => 'reconstructed'], $invalid))['code'] === 404, 'Invalid viewing identity was accepted');
-	// Independent workers render the same document without a shared output path or cache.
+	// Concurrent first readers publish one permanent copy and keep any orphaned previous PDF.
 	$port = stream_socket_server('tcp://127.0.0.1:0'); $secondAddress = stream_socket_get_name($port, false); fclose($port);
 	$secondServer = proc_open([PHP_BINARY, '-d', 'error_reporting=8191', '-S', $secondAddress, __DIR__ . '/document-recovery-download-fixture.php'], [0 => ['pipe', 'r'], 1 => $httpLog, 2 => $httpLog], $secondPipes, null, array_replace(getenv(), ['DEWAWI_REVIEW_TEST_SOCKET' => $socket])); fclose($secondPipes[0]);
 	try {
 		for ($i = 0; $i < 100; $i++) { $ready = @stream_socket_client('tcp://' . $secondAddress); if ($ready) { fclose($ready); break; } usleep(50000); }
 		$workers = [];
 		foreach ([$httpAddress, $secondAddress] as $address) {
-			$process = proc_open(['curl', '--silent', '--show-error', '--fail', '-H', 'X-Review-Test-User: 42', 'http://' . $address . '/?' . http_build_query($quoteQuery + ['action' => 'reconstructed'])], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+			$process = proc_open(['curl', '--silent', '--show-error', '--fail', '-H', 'X-Review-Test-User: 42', 'http://' . $address . '/?' . http_build_query(array_replace($quoteQuery, ['id' => 690, 'action' => 'reconstructed']))], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
 			$workers[] = [$process, $pipes];
 		}
+		$concurrentHashes = [];
 		foreach ($workers as [$process, $pipes]) {
 			$bytes = stream_get_contents($pipes[1]); $error = stream_get_contents($pipes[2]); fclose($pipes[1]); fclose($pipes[2]);
 			recoveryTestCheck(proc_close($process) === 0, 'Concurrent viewing failed: ' . $error);
+			$concurrentHashes[] = hash('sha256', $bytes); $viewingHashes[] = hash('sha256', $bytes);
 			foreach (viewingPdfPages($bytes) as $page) recoveryTestCheck(str_contains($page, 'KOPIE'), 'Concurrent viewing lost copy marking');
 		}
+		recoveryTestCheck(count(array_unique($concurrentHashes)) === 1 && file_get_contents($initialCopyPath) === $initialCopyBytes, 'Concurrent cache miss changed a stored copy or returned differing bytes');
 	} finally { proc_terminate($secondServer); proc_close($secondServer); }
+	recoveryTestCheck(recoveryTestDownload($quoteQuery + ['action' => 'reconstructed'])['code'] === 200, 'Missing copy receipt could not be recreated while retaining the old PDF');
+	$copy = recoveryJsonFile($copyRecords[0]); $copyPath = dirname($copyRecords[0]) . '/' . $copy['sha256'] . '.pdf'; $copyBytes = file_get_contents($copyPath);
+	file_put_contents($copyPath, 'Synthetic corrupted stored copy');
+	recoveryTestCheck(recoveryTestDownload($quoteQuery + ['action' => 'download'])['code'] === 404, 'Corrupt permanent copy was silently replaced');
+	file_put_contents($copyPath, $copyBytes); chmod($copyPath, 0600);
+	unlink($copyPath);
+	recoveryTestCheck(recoveryTestDownload($quoteQuery + ['action' => 'download'])['code'] === 404, 'Missing permanent PDF behind a receipt was silently replaced');
+	file_put_contents($copyPath, $copyBytes); chmod($copyPath, 0600);
+	$copyIdentity = ['module' => 'sales', 'controller' => 'quote', 'id' => 601, 'clientid' => 7, 'document_number' => '9601'];
+	$copyJob = ['identity' => $copyIdentity, 'directory' => $review . '/viewing-copy-601']; reviewDirectory($copyJob['directory'] . '/external');
+	reviewWrite($copyJob['directory'] . '/external/viewing.pdf', $copyBytes);
+	$copyDecision = ['decision' => 'selected', 'document' => $copyIdentity, 'reason' => 'Synthetic forbidden viewing promotion', 'reviewed_by' => 42, 'reviewed_at' => gmdate('c'), 'candidate_path' => 'external/viewing.pdf', 'sha256' => $copy['sha256'], 'origin' => ['kind' => 'historical_pdf', 'source_path' => $copyPath]];
+	try { recoverySelection($copyJob, new DEEC_DocumentArchive($review), $copyDecision); throw new LogicException('Viewing copy entered privileged recovery selection'); }
+	catch (RuntimeException $error) { recoveryTestCheck($error->getMessage() === 'Viewing copies cannot be selected or approved as originals', 'Unexpected viewing copy selection refusal'); }
+	$copyGuardUser = Zend_Registry::get('User'); $copyGuardClient = Zend_Registry::get('Client'); $copyGuardAdapter = Zend_Db_Table::getDefaultAdapter();
+	$copyGuardDb = recoveryBoot(migrationConfig($work . '/database.ini', 'production') + ['unix_socket' => $socket], $base, 7, 42);
+	$copyArchive = new DEEC_DocumentArchive($base); $copyPublication = $copyArchive->storeFile($copyPath, 7, 'sales', 'quote', 601, 'pdf', $copy['sha256']);
+	try {
+		(new Application_Model_DbTable_Documentarchive())->registerOriginal($pdo->query('SELECT * FROM quote WHERE id = 601')->fetch(PDO::FETCH_ASSOC), 'sales', 'quote', 'pdf', 'synthetic-viewing-copy.pdf');
+		throw new LogicException('Viewing copy entered original registration');
+	} catch (RuntimeException $error) { recoveryTestCheck($error->getMessage() === 'Viewing copies cannot be registered as originals', 'Unexpected viewing copy registration refusal: ' . $error->getMessage()); }
+	finally { $copyArchive->discardUncommitted($copyPublication); $copyGuardDb->closeConnection(); Zend_Db_Table::setDefaultAdapter($copyGuardAdapter); Zend_Registry::set('User', $copyGuardUser); Zend_Registry::set('Client', $copyGuardClient); }
 	foreach ($viewingDocuments as $query) recoveryTestCheck(glob($base . '/cache/document/' . $query['module'] . '/' . $query['controller'] . '/7/' . $query['id'] . '/*') === [], 'Viewing created a PDF cache entry');
 	foreach (['de_DE', 'en_US'] as $locale) {
 		$panel = recoveryTestDownload($quoteQuery + ['view' => 1, 'locale' => $locale]);
@@ -166,7 +202,7 @@ $viewingExport = (new DEEC_Export_Gobd($viewingDb, 7, 42))->export($viewingExpor
 $viewingZip = new ZipArchive(); $viewingZip->open($viewingExportDir . $viewingExport);
 for ($i = 0; $i < $viewingZip->numFiles; $i++) {
 	$name = $viewingZip->getNameIndex($i);
-	if (str_ends_with($name, '.pdf')) recoveryTestCheck(!in_array(hash('sha256', $viewingZip->getFromIndex($i)), $viewingHashes, true), 'An on-demand viewing copy entered the original GoBD delivery');
+	if (str_ends_with($name, '.pdf')) recoveryTestCheck(!in_array(hash('sha256', $viewingZip->getFromIndex($i)), $viewingHashes, true), 'A permanent viewing copy entered the original GoBD delivery');
 }
 $viewingZip->close(); Zend_Registry::set('User', $viewingUser); $viewingDb->closeConnection();
 $viewingDb = recoveryBoot(migrationConfig($work . '/database.ini', 'production') + ['unix_socket' => $socket], $base, 7, 42);

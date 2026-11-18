@@ -1,4 +1,5 @@
 <?php return array(
+	'DOCUMENTS_HISTORICAL_FILE_RECOVERY_ORIGIN_UNCONFIRMED' => 'Historical file restored by matching files; original provenance has not been independently proven',
 	'CORRECTION_LAST_EDITED' => 'Last edited',
 	'CORRECTION_EXPORT' => 'Export approved corrections and evidence (JSON)',
 	'CORRECTION_ORIGIN_NOTICE' => 'The archive checksum verifies stored bytes, not historical origin. Independently check the actually issued original before approval. This confirmation applies only to this correction; archive approvals and provenance classification remain unchanged.',

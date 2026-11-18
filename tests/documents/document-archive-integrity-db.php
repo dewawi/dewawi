@@ -166,3 +166,4 @@ echo 'PASS: ' . $checks . " isolated original archive checks; eight real PDF flo
 require __DIR__ . '/document-recovery-assessment-db-fixtures.php';
 require __DIR__ . '/document-revision-db-fixtures.php';
 require __DIR__ . '/invoice-correction-db-fixtures.php';
+require __DIR__ . '/document-historical-recovery-db-fixtures.php';

@@ -254,8 +254,7 @@ class DEEC_DocumentArchive
 		$before = (new self(dirname($source)))->inspect($source, $format);
 		if ($before['status'] !== 'ok' || !hash_equals($sha, $before['sha256'])) throw new RuntimeException('Archive source integrity differs');
 		$target = $this->path($clientId, $module, $controller, $documentId, $format);
-		$this->copyVerified($source, $target, $before, $format);
-		return $this->inspect($target, $format);
+		return $this->copyVerified($source, $target, $before, $format);
 	}
 
 	private function copyVerified(string $source, string $target, array $before, string $format): array

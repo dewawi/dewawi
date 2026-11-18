@@ -104,6 +104,7 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 			foreach ($expected as $field => $value) if ((string)$existing[0][$field] !== (string)$value) throw new RuntimeException('Document archive metadata differs');
 			return $existing[0];
 		}
+		if (strtolower($format) === 'pdf' && DEEC_DocumentReview::isViewingCopy($clientId, $file['sha256'])) throw new RuntimeException('Viewing copies cannot be registered as originals');
 		$this->insert($expected + [
 			'parameters' => $parameters === null ? null : json_encode($parameters, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
 			'correctionarchiveid' => null, 'archived' => $this->_date, 'archivedby' => (int)($this->_user['id'] ?? 0),

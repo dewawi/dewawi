@@ -62,8 +62,8 @@ try:
                     print('PASS: original review form ' + locale + '/' + str(width) + '; explicit selection, mandatory confirmations, no autosave or overflow')
                     browser.navigate((work / ('viewing-panel-' + locale + '.html')).as_uri())
                     panel = browser.execute("return {overflow: document.documentElement.scrollWidth > innerWidth, status: document.querySelector('[role=status]').dataset.documentStatus, links: document.querySelectorAll('a').length, text: document.body.textContent}")
-                    assert not panel['overflow'] and panel['status'] == 'historical_viewing_copy' and panel['links'] == 1 and 'DOCUMENTS_' not in panel['text'], panel
-                    print('PASS: historical viewing panel ' + locale + '/' + str(width) + '; explicit translated copy action and no overflow')
+                    assert not panel['overflow'] and panel['status'] == 'historical_viewing_copy' and panel['links'] == 2 and 'DOCUMENTS_' not in panel['text'], panel
+                    print('PASS: historical viewing panel ' + locale + '/' + str(width) + '; normal download, explicit translated copy action and no overflow')
 
         finally:
             browser.close()

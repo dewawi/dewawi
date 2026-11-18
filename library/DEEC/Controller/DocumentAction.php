@@ -297,17 +297,19 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 	public function downloadAction()
 	{
 		$id = (int)$this->_getParam('id', 0);
-
-		if (!$this->loadRow($id)) {
-			return $this->handleDocumentNotFound(false);
+		$row = $this->loadRow($id);
+		if (!$row) return $this->handleDocumentNotFound(false);
+		try {
+			$result = $this->generatePdfDocument($id, ['output' => 'download', 'storage' => 'cache', 'overwrite' => true]);
+		} catch (RuntimeException | InvalidArgumentException $error) {
+			$request = $this->getRequest();
+			if (!DEEC_Permission::isDocumentReadonly($request->getModuleName(), $request->getControllerName(), $row)) throw $error;
+			$this->disableView();
+			if (!in_array($request->getMethod(), ['GET', 'HEAD'], true)) { $this->getResponse()->setHttpResponseCode(405)->setHeader('Allow', 'GET, HEAD', true); return; }
+			try { $copy = (new DEEC_DocumentReview())->openViewingCopy($id, $request->getModuleName(), $request->getControllerName()); }
+			catch (RuntimeException | InvalidArgumentException | JsonException $failure) { error_log('Document download unavailable: ' . $failure->getMessage()); $this->getResponse()->setHttpResponseCode(404); return; }
+			return $this->sendReviewPdfResponse($copy, 'attachment');
 		}
-
-		$result = $this->generatePdfDocument($id, [
-			'output' => 'download',
-			'storage' => 'cache',
-			'overwrite' => true,
-		]);
-
 		return $this->sendPdfResponse($result);
 	}
 

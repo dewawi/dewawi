@@ -1,5 +1,7 @@
 # Migration in das Dokumentarchiv
 
+K4: Der Bestandsbericht bleibt eine unveränderte Diagnose des alten Archivabgleichs. Für fehlende Originale mit identischen Beleganhang-/Legacy-Dateien steht die ausdrücklich freizugebende [historische Dateiwiederherstellung](document-historical-recovery.md) bereit. Der alte `--apply`-Aufruf übernimmt diese neue Freigaberegel nicht stillschweigend.
+
 ## Kanonische Ablage
 
 Ausgestellte Originale werden unter

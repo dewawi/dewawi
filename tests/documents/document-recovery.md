@@ -1,5 +1,7 @@
 # Historische Dokumente: vorbereiten, freigeben und unverändert archivieren
 
+K4: Für passende historische Beleganhänge und Legacy-Kontaktdateien gilt jetzt die vereinfachte [Dateiabgleich-Sammelregel](document-historical-recovery.md). Sie benötigt keinen Einzel-Originalvergleich, sondern eine geprüfte, hashgebundene Administrator-Sammelfreigabe mit bestätigter Sicherung. Abweichende aktuelle Kontaktdateien bleiben erhalten und sperren diese Regel nicht. Die älteren Verfahren unten behalten ihre strengeren Nachweisanforderungen. Ohne nutzbares Original führt der normale Download zu einer dauerhaft geschützten KOPIE; sie wird nicht als Original registriert.
+
 Der Ablauf verwendet die vorhandenen DEEC-Komponenten, Version 1 von `documentarchive` und den geschützten Prüfbereich. Er gilt für alle Mandanten, alle Zeiträume und alle acht Typen aus `DEEC_DocumentArchive::documents()`: `sales/quote`, `sales/salesorder`, `sales/invoice`, `sales/deliveryorder`, `sales/creditnote`, `sales/reminder`, `purchases/quoterequest`, `purchases/purchaseorder`.
 
 Keine Nummernvergabe, Fertigstellung oder Änderung von Geschäftsdaten. Es gibt keine neue Archivarchitektur, keine SQL-Migration und keine erneute Hauptmigration. Vorhandene registrierte Originale werden im Sammelablauf geprüft und unverändert übersprungen. Historische Dateien bleiben erhalten; eine spätere Auslagerung wird nur durch `retention-plan` vorbereitet, niemals ausgeführt.
