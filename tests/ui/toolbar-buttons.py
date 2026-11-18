@@ -12,6 +12,8 @@ import sys
 
 sys.dont_write_bytecode = True
 root = Path(__file__).resolve().parents[2]
+tasks_mode = '--tasks' in sys.argv
+modules = ['tasks'] if tasks_mode else ['contacts', 'items']
 spec = importlib.util.spec_from_file_location('shared_toolbar_driver', root / 'tests/site/accessibility-http.py')
 browser = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(browser)
@@ -27,7 +29,7 @@ pages, searches = {}, {}
 profiles = [('index', 'layout'), ('select', 'plain'), ('edit', 'layout'), ('view', 'layout')]
 for locale in ['de_DE', 'en_US']:
     searches[locale.replace('_', '-')] = {}
-    for module in ['contacts', 'items']:
+    for module in modules:
         for action, layout in profiles:
             for state in ['', 'readonly']:
                 r = subprocess.run(['php', str(root / 'tests/ui/toolbar-buttons.php'), 'render', locale, module, action, layout, state], capture_output=True, text=True, check=True)
@@ -82,8 +84,8 @@ try:
     driver = browser.WebDriver()
     driver.command('POST', '/goog/cdp/execute', {'cmd': 'Page.addScriptToEvaluateOnNewDocument', 'params': {'source': 'window.fixtureErrors=[];addEventListener("error",function(e){fixtureErrors.push(e.message||e.target.src||e.target.href||"resource error")},true)'}})
     for locale in ['de_DE', 'en_US']:
-        for module in ['contacts', 'items']:
-            controller = 'contact' if module == 'contacts' else 'item'
+        for module in modules:
+            controller = {'contacts': 'contact', 'items': 'item', 'tasks': 'task'}[module]
             route = f'/fixture/{module}/{controller}'
             for action, layout in profiles:
                 for width in [390, 768, 1280]:
@@ -146,10 +148,24 @@ try:
                         driver.execute('calls=[];document.querySelector("button[name=filter]").focus()')
                         driver.keys('space')
                         check(driver.execute('return $(".dw-filter-panel").hasClass("is-open")'), f'{context}: filter keyboard failed')
+                        if tasks_mode:
+                            check(driver.execute('return JSON.stringify(collectToolbarData().states)===JSON.stringify(["100","101","102","103","104"])'), f'{context}: Task state defaults changed')
+                            driver.execute('calls=[];$("input[name^=states][value=100]").prop("checked",false).trigger("change")')
+                            driver.wait('return calls.length===1')
+                            check(driver.execute('return JSON.stringify(calls[0].data.states)===JSON.stringify(["101","102","103","104"])'), f'{context}: Task state filter changed')
+                            driver.execute('calls=[];$("input[name=daterange][value=custom]").prop("checked",true).trigger("change")')
+                            driver.wait('return calls.length===1')
+                            check(driver.execute('return calls[0].data.daterange==="custom"&&!$(".dw-filter-card.daterange").hasClass("is-hidden")'), f'{context}: custom date range changed')
+                            driver.execute('calls=[];$("input[name=from]").val("2026-02-03").trigger("change")')
+                            driver.wait('return calls.length===1')
+                            check(driver.execute('return calls[0].data.from==="2026-02-03"&&calls[0].data.daterange==="custom"'), f'{context}: date field request changed')
+                            driver.execute('calls=[]')
                         driver.execute('window.oldFooter=document.querySelector(".dw-toolbar--bottom");document.querySelector("button[name=reset]").focus()')
                         driver.keys('enter')
                         driver.wait('return calls.length===1')
                         check(driver.execute('return oldFooter!==document.querySelector(".dw-toolbar--bottom")&&calls[0].data.context_action==="index"'), f'{context}: reset/AJAX footer changed')
+                        if tasks_mode:
+                            check(driver.execute('return calls[0].data.daterange==="all"&&JSON.stringify(calls[0].data.states)===JSON.stringify(["100","101","102","103","104"])'), f'{context}: Task reset lost state/date defaults')
                     if action in ['index', 'select']:
                         driver.execute('calls=[];$("input[name=keyword]").val("query").trigger("input")')
                         driver.wait('return calls.length===1')
@@ -162,11 +178,22 @@ try:
                         driver.execute('calls=[];navigations=[];document.querySelector(".dw-toolbar button[name=copy]").focus()')
                         driver.keys('enter')
                         check(driver.execute('return calls.length===1&&calls[0].url===arguments[0]+"/copy/id/17"&&navigations[0]===arguments[0]+"/edit/id/117"', [route]), f'{context}: detail copy route changed')
+                        if tasks_mode and action == 'edit':
+                            driver.execute('calls=[];$(".dw-toolbar select[name=state]").val("101").trigger("change")')
+                            check(driver.execute('return calls.length===1&&calls[0].data.state==="101"&&calls[0].url===arguments[0]+"/edit/id/17"', [route]), f'{context}: toolbar status save changed')
+                            driver.execute('calls=[];$("#task-fields select[name=state]").val("102").trigger("change")')
+                            check(driver.execute('return calls.length===1&&calls[0].data.state==="102"&&calls[0].url===arguments[0]+"/edit/id/17"', [route]), f'{context}: form status auto-save changed')
+                            driver.execute('calls=[];$("#task-fields select[name=responsible]").val("43").trigger("change")')
+                            check(driver.execute('return calls.length===1&&calls[0].data.responsible==="43"&&calls[0].url===arguments[0]+"/edit/id/17"', [route]), f'{context}: assignment auto-save changed')
+                            driver.execute('calls=[];$("#task-fields").attr("data-autosave","false");$("#task-fields select[name=responsible]").val("42").trigger("change")')
+                            check(driver.execute('return calls.length===0'), f'{context}: auto-save opt-out ignored')
+                        if tasks_mode and action == 'view':
+                            check(driver.execute('return [...document.querySelectorAll("#task-fields select")].every(s=>s.disabled)'), f'{context}: readonly Task fields enabled')
                     check(driver.execute('return document.querySelectorAll(".dw-icon-symbols").length===1&&document.querySelectorAll("button.dw-btn--control").length===arguments[0]&&[...document.querySelectorAll(".dw-btn--control use")].every(i=>i.getBBox().width>0)&&fixtureErrors.length===0', [9 if action == 'index' else 1]), f'{context}: dynamic scope/geometry, duplicate symbols or script errors')
                     if locale == 'de_DE' and width in [390, 1280]:
                         driver.execute('window.scrollTo(0,0);$(".dw-filter-panel").removeClass("is-open")')
                         shot = driver.command('GET', '/screenshot')
-                        Path(f'/tmp/dewawi-b5-{module}-{action}-{width}.png').write_bytes(base64.b64decode(shot))
+                        Path(f'/tmp/dewawi-{"b6" if tasks_mode else "b5"}-{module}-{action}-{width}.png').write_bytes(base64.b64decode(shot))
                     print(f'PASS: {context} shared toolbar layout, keyboard, selection, requests and states')
             driver.navigate(f'http://127.0.0.1:{server.server_port}/fixture/{locale}/{module}/index/layout/readonly')
             driver.wait('return !!window.calls')

@@ -22,7 +22,7 @@ function toolbarContext(string $module, string $controller, string $action, arra
 	$request->setBaseUrl('/fixture')->setModuleName($module)->setControllerName($controller)->setActionName($action);
 	$front = Zend_Controller_Front::getInstance();
 	$front->setRequest($request)->setBaseUrl('/fixture');
-	$front->setControllerDirectory(['default' => $root . '/application/controllers', 'contacts' => $root . '/application/modules/contacts/controllers', 'items' => $root . '/application/modules/items/controllers']);
+	$front->setControllerDirectory(['default' => $root . '/application/controllers', 'contacts' => $root . '/application/modules/contacts/controllers', 'items' => $root . '/application/modules/items/controllers', 'tasks' => $root . '/application/modules/tasks/controllers']);
 	$front->setRouter(new Zend_Controller_Router_Rewrite());
 	$front->getRouter()->addDefaultRoutes();
 }
@@ -30,7 +30,7 @@ function toolbarContext(string $module, string $controller, string $action, arra
 function toolbarPage(string $locale, string $module, string $action = 'index', string $layoutName = 'layout', array $rights = ['view', 'add', 'edit', 'delete'], bool $readonly = false, string $contextAction = 'index'): array
 {
 	global $root;
-	$controller = $module === 'contacts' ? 'contact' : 'item';
+	$controller = ['contacts' => 'contact', 'items' => 'item', 'tasks' => 'task'][$module];
 	toolbarContext($module, $controller, $action, $rights);
 	$translator = buttonTranslations($locale);
 	$translator->loadDir($module, $root . '/languages/' . $locale . '/' . $module);
@@ -39,6 +39,7 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 	Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_NonPersistent());
 	$class = ucfirst($module) . '_Form_Toolbar';
 	$toolbar = new $class();
+	if ($module === 'tasks') $toolbar->setElementData('state', ['options' => $toolbar->getElement('states')['options']]);
 	if ($readonly) $toolbar->setMode('readonly');
 	$view = new Zend_View();
 	$view->addHelperPath($root . '/application/views/helpers', 'Zend_View_Helper');
@@ -48,7 +49,7 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 	$view->headScript()->appendFile('/fixture/toolbar-setup.js');
 	$view->assign([
 		'language' => $locale, 'module' => $module, 'controller' => $controller, 'action' => $action,
-		'id' => 17, 'title' => $translator->t($module === 'contacts' ? 'CONTACTS' : 'ITEMS'),
+		'id' => 17, 'title' => $translator->t(['contacts' => 'CONTACTS', 'items' => 'ITEMS', 'tasks' => 'TASKS'][$module]),
 		'toolbar' => $toolbar, 'options' => [], 'messages' => [],
 		'user' => Zend_Registry::get('User') + ['name' => 'Fixture User'],
 		'categories' => [1 => ['id' => 1, 'parentid' => 0, 'title' => 'Fixture category']], 'tags' => [1 => 'Fixture tag'],
@@ -60,6 +61,13 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 		'listFooter' => in_array($action, ['index', 'select', 'search'], true), 'context' => ['action' => $action === 'search' ? $contextAction : $action],
 	]);
 	$content = $list->render();
+	if ($module === 'tasks' && in_array($action, ['edit', 'view'], true)) {
+		$taskForm = new Tasks_Form_Task();
+		$taskForm->setElementData('responsible', ['options' => [42 => 'Fixture User', 43 => 'Fixture Assignee']]);
+		$taskForm->setValues(['state' => '100', 'responsible' => '42']);
+		if ($readonly || $action === 'view') $taskForm->setMode('readonly');
+		$content .= '<form id="task-fields">' . $taskForm->renderElement('state') . $taskForm->renderElement('responsible') . '</form>';
+	}
 	if ($action === 'search') {
 		Zend_Controller_Action_HelperBroker::getStaticHelper('viewRenderer')->setView($view);
 		Zend_Controller_Front::getInstance()->getRequest()->setParam('context_action', $contextAction);

@@ -2,6 +2,8 @@
 
 Stand: 18.11.2026. Lokale Grundlage: B2 `b27f55e6`, B3 `2af50303`, B4 `20ebf9d9`, [Bestandsaufnahme](buttons-icons-analysis.md), [Button-Grundlage](buttons-foundation.md), [SVG-Katalog](button-icons.md) und [Inquiry-Pilot](inquiry-buttons.md). Der unversionierte Analysebericht bleibt unverändert und außerhalb des Commits.
 
+Fortsetzung: [B6 – Tasks-Standardtoolbar](tasks-toolbar.md) übernimmt die gezielt geprüften Tasks-Controls. Die folgenden Gruppen-/Inventarangaben beschreiben den historischen B5-Stand; B5 bleibt durch eigene unveränderte Baselines abgesichert.
+
 ## Architekturentscheidung und konkreter Umfang
 
 Der gemeinsame Renderer existiert bereits: `DEEC_Form::renderElementHtml()` bereitet Rechte, Readonly, Übersetzung und Attribute vor und delegiert an `renderButtonHtml()`/`renderButtonIcon()`. Der View-Helper `Button::renderButton()` verwendet dieselbe Präsentation. `Toolbar()` und `ToolbarBottom()` rufen bereits `renderElement()` bzw. `renderElementWithAttribs()` auf. B5 aktiviert die vorhandene Präsentation über ausdrückliche Metadaten; eine zweite Renderarchitektur oder erneute Helperimplementierung ist unnötig.

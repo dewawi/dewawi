@@ -55,7 +55,7 @@ $this->language = str_replace('_', '-', $this->language);
 	<?php
 	if (($this->module === 'contacts' && $this->controller === 'inquiry')
 		|| (in_array($this->action, ['index', 'search', 'select', 'edit', 'view'], true)
-			&& (($this->module === 'contacts' && $this->controller === 'contact') || ($this->module === 'items' && $this->controller === 'item')))) {
+			&& (($this->module === 'contacts' && $this->controller === 'contact') || ($this->module === 'items' && $this->controller === 'item') || ($this->module === 'tasks' && $this->controller === 'task')))) {
 		echo (new DEEC_Form())->renderButtonSymbols();
 	}
 	?>
