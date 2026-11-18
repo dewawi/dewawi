@@ -95,5 +95,15 @@ class Statistics_Form_Toolbar extends DEEC_Form
 			'wrap' => false,
 			'attribs' => ['class' => 'export'],
 		]);
+
+		$request = $this->getCurrentRequest();
+		if ($request && get_class($this) === self::class
+			&& $request->getModuleName() === 'statistics'
+			&& in_array($request->getControllerName(), ['customer', 'quote', 'turnover'], true)
+			&& in_array($request->getActionName(), ['index', 'search'], true)) {
+			foreach (['filter' => 'filter', 'reset' => 'reset'] as $name => $icon) {
+				$this->setElementData($name, ['icon' => $icon, 'iconFormat' => 'svg']);
+			}
+		}
 	}
 }

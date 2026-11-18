@@ -183,5 +183,16 @@ class Admin_Form_Toolbar extends DEEC_Form
 			'format' => ['type' => 'string'],
 			'attribs' => ['class' => 'hidden-sm'],
 		]);
+
+		$request = $this->getCurrentRequest();
+		if ($request && get_class($this) === self::class
+			&& $request->getModuleName() === 'admin'
+			&& in_array($request->getControllerName(), ['country', 'uom', 'deliverytime', 'manufacturer', 'warehouse', 'shippingmethod'], true)
+			&& in_array($request->getActionName(), ['index', 'search', 'select', 'edit', 'view'], true)) {
+			foreach (['add' => 'add', 'edit' => 'edit', 'copy' => 'copy', 'filter' => 'filter', 'reset' => 'reset'] as $name => $icon) {
+				$this->setElementData($name, ['icon' => $icon, 'iconFormat' => 'svg']);
+			}
+			$this->setElementData('clear', ['label' => 'CLEAR', 'icon' => 'clear', 'iconFormat' => 'svg', 'iconOnly' => true]);
+		}
 	}
 }

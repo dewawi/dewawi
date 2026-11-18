@@ -13,7 +13,13 @@ import sys
 sys.dont_write_bytecode = True
 root = Path(__file__).resolve().parents[2]
 tasks_mode = '--tasks' in sys.argv
-modules = ['tasks'] if tasks_mode else ['contacts', 'items']
+remaining_mode = '--remaining' in sys.argv
+modules = (['admin/' + c for c in ['country', 'uom', 'deliverytime', 'manufacturer', 'warehouse', 'shippingmethod']] + ['statistics/' + c for c in ['customer', 'quote', 'turnover']]) if remaining_mode else (['tasks'] if tasks_mode else ['contacts', 'items'])
+case = next((arg.split('=', 1)[1] for arg in sys.argv if arg.startswith('--case=')), None)
+if case:
+    modules = [m for m in modules if m == case]
+    if not modules:
+        raise ValueError('Unknown toolbar test case')
 spec = importlib.util.spec_from_file_location('shared_toolbar_driver', root / 'tests/site/accessibility-http.py')
 browser = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(browser)
@@ -30,20 +36,28 @@ profiles = [('index', 'layout'), ('select', 'plain'), ('edit', 'layout'), ('view
 for locale in ['de_DE', 'en_US']:
     searches[locale.replace('_', '-')] = {}
     for module in modules:
-        for action, layout in profiles:
+        for action, layout in (profiles if not module.startswith('statistics/') else [('index', 'layout')]):
             for state in ['', 'readonly']:
                 r = subprocess.run(['php', str(root / 'tests/ui/toolbar-buttons.php'), 'render', locale, module, action, layout, state], capture_output=True, text=True, check=True)
                 pages[f'/fixture/{locale}/{module}/{action}/{layout}/{state}'] = json.loads(r.stdout)['html'].encode()
         searches[locale.replace('_', '-')][module] = {}
-        for context in ['index', 'select']:
+        for context in (['index'] if module.startswith('statistics/') else ['index', 'select']):
             r = subprocess.run(['php', str(root / 'tests/ui/toolbar-buttons.php'), 'render', locale, module, 'search', 'layout', '', context], capture_output=True, text=True, check=True)
             searches[locale.replace('_', '-')][module][context] = json.loads(r.stdout)
+
+if remaining_mode:
+    r = subprocess.run(['php', str(root / 'tests/ui/toolbar-buttons.php'), 'render', 'en_US', 'statistics/turnover', 'index', 'layout', 'legacy-statistics'], capture_output=True, text=True, check=True)
+    pages['/fixture/legacy/statistics-turnover'] = json.loads(r.stdout)['html'].encode()
+    for locale in ['de_DE', 'en_US']:
+        for controller in ['currency', 'taxrate', 'paymentmethod', 'shop', 'user', 'category']:
+            r = subprocess.run(['php', str(root / 'tests/ui/toolbar-buttons.php'), 'render', locale, 'admin/' + controller, 'index', 'layout'], capture_output=True, text=True, check=True)
+            pages[f'/fixture/legacy/{locale}/{controller}'] = json.loads(r.stdout)['html'].encode()
 
 setup = ('var fixtureSearches=' + json.dumps(searches).replace('<', '\\u003c') + ';' + r'''
 window.calls=[];window.navigations=[];window.holdCopy=false;window.finishCopy=null;
 $.ajax=function(options){
     calls.push({url:options.url,data:options.data,type:options.type});
-    var d=$.Deferred(), response=options.url.indexOf('/search')!==-1 ? fixtureSearches[document.documentElement.lang][module][options.data.context_action] : {ok:true,saved:true,id:117};
+    var fixtures=fixtureSearches[document.documentElement.lang], d=$.Deferred(), response=options.url.indexOf('/search')!==-1 ? (fixtures[module+'/'+controller]||fixtures[module])[options.data.context_action] : {ok:true,saved:true,id:117};
     function finish(){if(options.success)options.success(response);d.resolve(response);if(options.complete)options.complete();}
     if(holdCopy&&options.url.indexOf('/copy/')!==-1) finishCopy=finish;else finish();
     return d.promise({abort:function(){}});
@@ -83,11 +97,18 @@ driver = None
 try:
     driver = browser.WebDriver()
     driver.command('POST', '/goog/cdp/execute', {'cmd': 'Page.addScriptToEvaluateOnNewDocument', 'params': {'source': 'window.fixtureErrors=[];addEventListener("error",function(e){fixtureErrors.push(e.message||e.target.src||e.target.href||"resource error")},true)'}})
+    if remaining_mode:
+        driver.emulate_viewport(390, 1100)
+        driver.navigate(f'http://127.0.0.1:{server.server_port}/fixture/legacy/statistics-turnover')
+        driver.wait('return !!window.calls')
+        legacy_report = driver.execute('return {width:document.documentElement.scrollWidth,controls:document.querySelectorAll(".dw-btn--control").length,overflow:[...document.querySelectorAll("#content h3")].filter(e=>e.scrollWidth>e.clientWidth).map(e=>e.textContent)}')
+        check(legacy_report['controls'] == 0 and legacy_report['width'] > 390 and legacy_report['overflow'], 'Legacy report overflow reference changed; review its exception')
+        print(f'KNOWN: legacy en_US turnover at 390px: {legacy_report}')
     for locale in ['de_DE', 'en_US']:
         for module in modules:
-            controller = {'contacts': 'contact', 'items': 'item', 'tasks': 'task'}[module]
-            route = f'/fixture/{module}/{controller}'
-            for action, layout in profiles:
+            route = '/fixture/' + (module if '/' in module else module + '/' + {'contacts': 'contact', 'items': 'item', 'tasks': 'task'}[module])
+            is_report = module.startswith('statistics/')
+            for action, layout in (profiles if not is_report else [('index', 'layout')]):
                 for width in [390, 768, 1280]:
                     context = f'{locale}/{module}/{action}/{layout}/{width}'
                     driver.emulate_viewport(width, 1100)
@@ -95,7 +116,8 @@ try:
                     driver.wait('return !!window.DewawiToolbar&&!!window.calls')
                     metrics = driver.execute(r'''
                         var controls=[...document.querySelectorAll('button.dw-btn--control')];
-                        return {errors:fixtureErrors,overflow:document.documentElement.scrollWidth>innerWidth,symbols:document.querySelectorAll('.dw-icon-symbols').length,
+                        return {errors:fixtureErrors,overflow:document.documentElement.scrollWidth>innerWidth,pageWidth:document.documentElement.scrollWidth,
+                            toolbarOverflow:[...document.querySelectorAll('.dw-toolbar button.dw-btn--control')].some(b=>{var r=b.getBoundingClientRect();return r.left<0||r.right>innerWidth}),symbols:document.querySelectorAll('.dw-icon-symbols').length,
                             controls:controls.map(b=>{var i=b.querySelector('svg'),r=b.getBoundingClientRect(),ir=i.getBoundingClientRect(),l=b.querySelector('.dw-btn__label');return {
                                 name:b.name,label:b.getAttribute('aria-label')||b.textContent.trim(),title:b.title,type:b.type,height:r.height,
                                 geometry:i.querySelector('use').getBBox().width>0,stroke:getComputedStyle(i).stroke,color:getComputedStyle(b).color,
@@ -103,8 +125,10 @@ try:
                                 center:Math.abs(ir.top+ir.height/2-r.top-r.height/2),gap:l?l.getBoundingClientRect().left-ir.right:8
                             }})};
                     ''')
-                    check(not metrics['errors'] and not metrics['overflow'] and metrics['symbols'] == 1, f'{context}: asset/layout/symbol failure: {metrics}')
-                    check(len(metrics['controls']) == (9 if action == 'index' else 1), f'{context}: wrong scope')
+                    known_report_overflow = remaining_mode and module == 'statistics/turnover' and locale == 'en_US' and width == 390 and metrics['pageWidth'] == legacy_report['width']
+                    check(not metrics['errors'] and (not metrics['overflow'] or known_report_overflow) and not metrics['toolbarOverflow'] and metrics['symbols'] == 1, f'{context}: asset/layout/symbol failure: {metrics}')
+                    expected_count = 2 if is_report else (9 if action == 'index' else 1)
+                    check(len(metrics['controls']) == expected_count, f'{context}: wrong scope')
                     for b in metrics['controls']:
                         check(b['type'] == 'button' and b['geometry'] and b['stroke'] == b['color'] and b['decorative'], f'{context}: icon/type failure: {b}')
                         check(b['label'] and not b['label'].startswith(('TOOLBAR_', 'CONTACT_', 'CLEAR')) and not b['title'].startswith('TOOLBAR_'), f'{context}: technical accessible name: {b}')
@@ -112,7 +136,7 @@ try:
                     ax = driver.command('POST', '/goog/cdp/execute', {'cmd': 'Accessibility.getFullAXTree', 'params': {}})
                     names = {n.get('name', {}).get('value') for n in ax['nodes'] if n.get('role', {}).get('value') == 'button'}
                     check({b['label'] for b in metrics['controls']} <= names, f'{context}: AX name missing')
-                    selector = '.dw-toolbar button[name=add]' if action == 'index' else ('.dw-toolbar button[name=clear]' if action == 'select' else '.dw-toolbar button[name=copy]')
+                    selector = '.dw-toolbar button[name=filter]' if is_report else ('.dw-toolbar button[name=add]' if action == 'index' else ('.dw-toolbar button[name=clear]' if action == 'select' else '.dw-toolbar button[name=copy]'))
                     driver.execute('document.querySelector(arguments[0]).focus()', [selector])
                     driver.keys('tab')
                     driver.shift_tab()
@@ -132,7 +156,7 @@ try:
                         setButtonLoading(b,true);setButtonLoading(b,false);var stillDisabled=b.prop('disabled');b.prop('disabled',false);
                         return busy&&restored&&blocked&&stillDisabled;
                     ''', [selector]), f'{context}: disabled/loading content or guard failed')
-                    if action == 'index':
+                    if action == 'index' and not is_report:
                         driver.execute('document.querySelector(".dw-toolbar button[name=add]").focus()')
                         driver.keys('enter')
                         check(driver.execute('return navigations.length===1&&navigations[0].indexOf(arguments[0]+"/add")===0', [route]), f'{context}: add route changed')
@@ -166,7 +190,22 @@ try:
                         check(driver.execute('return oldFooter!==document.querySelector(".dw-toolbar--bottom")&&calls[0].data.context_action==="index"'), f'{context}: reset/AJAX footer changed')
                         if tasks_mode:
                             check(driver.execute('return calls[0].data.daterange==="all"&&JSON.stringify(calls[0].data.states)===JSON.stringify(["100","101","102","103","104"])'), f'{context}: Task reset lost state/date defaults')
-                    if action in ['index', 'select']:
+                    if is_report:
+                        driver.execute('calls=[];document.querySelector("button[name=filter]").focus()')
+                        driver.keys('space')
+                        check(driver.execute('return $(".dw-filter-panel").hasClass("is-open")&&!document.querySelector(".dw-toolbar--bottom")'), f'{context}: report filter or unexpected footer')
+                        driver.execute('calls=[];$("select[name=daterange]").val("custom").trigger("change")')
+                        driver.wait('return calls.length===1')
+                        check(driver.execute('return calls[0].url===arguments[0]+"/search"&&calls[0].data.daterange==="custom"&&!$(".dw-filter-card.daterange").hasClass("is-hidden")', [route]), f'{context}: report date range request changed')
+                        driver.execute('calls=[];$("input[name=from]").val("2026-02-03").trigger("change")')
+                        driver.wait('return calls.length===1')
+                        check(driver.execute('return calls[0].data.from==="2026-02-03"&&calls[0].data.daterange==="custom"'), f'{context}: report date request changed')
+                        driver.execute('calls=[];document.querySelector("button[name=reset]").focus()')
+                        driver.keys('enter')
+                        driver.wait('return calls.length===1')
+                        check(driver.execute('return calls[0].data.context_action==="index"&&calls[0].data.daterange==="all"&&calls[0].data.country==="0"&&calls[0].data.catid==="all"'), f'{context}: report reset defaults changed')
+                        check(driver.execute('var b=document.querySelector("button[name=export]");return !!b&&!b.classList.contains("dw-btn--control")&&!b.querySelector("svg")'), f'{context}: report export migrated')
+                    elif action in ['index', 'select']:
                         driver.execute('calls=[];$("input[name=keyword]").val("query").trigger("input")')
                         driver.wait('return calls.length===1')
                         check(driver.execute('return calls[0].data.keyword==="query"&&calls[0].url===arguments[0]+"/search"', [route]), f'{context}: keyword search changed')
@@ -189,15 +228,30 @@ try:
                             check(driver.execute('return calls.length===0'), f'{context}: auto-save opt-out ignored')
                         if tasks_mode and action == 'view':
                             check(driver.execute('return [...document.querySelectorAll("#task-fields select")].every(s=>s.disabled)'), f'{context}: readonly Task fields enabled')
-                    check(driver.execute('return document.querySelectorAll(".dw-icon-symbols").length===1&&document.querySelectorAll("button.dw-btn--control").length===arguments[0]&&[...document.querySelectorAll(".dw-btn--control use")].every(i=>i.getBBox().width>0)&&fixtureErrors.length===0', [9 if action == 'index' else 1]), f'{context}: dynamic scope/geometry, duplicate symbols or script errors')
+                        if module.startswith('admin/') and action == 'edit':
+                            driver.execute('calls=[];$("#admin-fields input[type=text]").val("Fixture change").trigger("change")')
+                            check(driver.execute('var f=document.querySelector("#admin-fields input[type=text]");return calls.length===1&&calls[0].data[f.name]==="Fixture change"&&calls[0].url===arguments[0]+"/edit/id/17"', [route]), f'{context}: admin form auto-save changed')
+                            driver.execute('calls=[];$("#admin-fields").attr("data-autosave","false");$("#admin-fields input[type=text]").val("Opt out").trigger("change")')
+                            check(driver.execute('return calls.length===0'), f'{context}: admin auto-save opt-out changed')
+                        if module.startswith('admin/') and action == 'view':
+                            check(driver.execute('return [...document.querySelectorAll("#admin-fields input[type=text]")].every(f=>f.disabled||f.readOnly)'), f'{context}: readonly admin field enabled')
+                    check(driver.execute('return document.querySelectorAll(".dw-icon-symbols").length===1&&document.querySelectorAll("button.dw-btn--control").length===arguments[0]&&[...document.querySelectorAll(".dw-btn--control use")].every(i=>i.getBBox().width>0)&&fixtureErrors.length===0', [expected_count]), f'{context}: dynamic scope/geometry, duplicate symbols or script errors')
                     if locale == 'de_DE' and width in [390, 1280]:
                         driver.execute('window.scrollTo(0,0);$(".dw-filter-panel").removeClass("is-open")')
                         shot = driver.command('GET', '/screenshot')
-                        Path(f'/tmp/dewawi-{"b6" if tasks_mode else "b5"}-{module}-{action}-{width}.png').write_bytes(base64.b64decode(shot))
+                        Path(f'/tmp/dewawi-{"b7" if remaining_mode else ("b6" if tasks_mode else "b5")}-{module.replace("/", "-")}-{action}-{width}.png').write_bytes(base64.b64decode(shot))
                     print(f'PASS: {context} shared toolbar layout, keyboard, selection, requests and states')
             driver.navigate(f'http://127.0.0.1:{server.server_port}/fixture/{locale}/{module}/index/layout/readonly')
             driver.wait('return !!window.calls')
             check(driver.execute('return [...document.querySelectorAll(".dw-btn--control")].every(b=>b.disabled&&parseFloat(getComputedStyle(b).opacity)<1)'), f'{locale}/{module}: readonly enabled')
+    if remaining_mode:
+        for locale in ['de_DE', 'en_US']:
+            for controller in ['currency', 'taxrate', 'paymentmethod', 'shop', 'user', 'category']:
+                for width in [390, 1280]:
+                    driver.emulate_viewport(width, 1100)
+                    driver.navigate(f'http://127.0.0.1:{server.server_port}/fixture/legacy/{locale}/{controller}')
+                    driver.wait('return !!window.calls')
+                    check(driver.execute('var b=document.querySelector("button[name=copy]");return !document.querySelector(".dw-icon-symbols,.dw-btn--control")&&!!b&&getComputedStyle(b).backgroundImage.includes("/images/copy.png")&&fixtureErrors.length===0'), f'{locale}/{controller}/{width}: excluded toolbar migrated or broken')
     print(f'PASS: {checks} shared toolbar browser assertions')
 finally:
     if driver:

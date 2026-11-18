@@ -2,6 +2,8 @@
 
 Stand: 18.11.2026. Geprüft: lokaler B2–B5-Stand bis `aaca1571`, `AGENTS.md`, [Bestandsaufnahme](buttons-icons-analysis.md), [Button-Grundlage](buttons-foundation.md), [SVG-Katalog](button-icons.md), [Inquiry-Pilot](inquiry-buttons.md) und [gemeinsame Toolbars](toolbar-buttons.md). Der unversionierte Analysebericht bleibt unverändert und außerhalb des Commits.
 
+Fortsetzung: [B7 – verbleibende Standardtoolbars](remaining-toolbars.md) konsolidiert die geprüften Admin- und Statistikgruppen. Die nachstehenden B6-Ergebnisse und Tasks-Kontextgrenzen gelten unverändert.
+
 ## Entscheidung und migrierte Controls
 
 `Tasks_Form_Toolbar` nutzt bereits `DEEC_Form`. B6 ergänzt nur die vorhandenen Präsentationsmetadaten und erweitert die begrenzte Symbolblockbedingung in den zwei internen Layouts. Keine neuen Renderer, Icons, CSS-Regeln, JavaScript-Handler, Bibliotheken oder allgemeinen Formular-/Tabellenänderungen.

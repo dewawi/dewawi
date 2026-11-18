@@ -14,42 +14,53 @@ class ToolbarButtonRequestFixture extends Zend_Controller_Request_Http
 	public function isXmlHttpRequest() { return $this->getActionName() === 'search'; }
 }
 
+class ToolbarStatisticsLegacyFixture extends Statistics_Form_Toolbar {}
+
 function toolbarContext(string $module, string $controller, string $action, array $rights = ['view', 'add', 'edit', 'delete']): void
 {
 	global $root, $adapter;
 	$adapter->permissions = [['id' => 1, 'userid' => 42, 'clientid' => 70, 'deleted' => 0, 'contacts' => json_encode(['contact' => $rights]), 'items' => json_encode(['item' => $rights])]];
+	if ($module === 'statistics') $adapter->permissions[0]['statistics'] = json_encode(['customer' => $rights, 'quote' => $rights, 'turnover' => $rights]);
 	$request = new ToolbarButtonRequestFixture('http://localhost/fixture/' . $module . '/' . $controller . '/' . $action);
 	$request->setBaseUrl('/fixture')->setModuleName($module)->setControllerName($controller)->setActionName($action);
 	$front = Zend_Controller_Front::getInstance();
 	$front->setRequest($request)->setBaseUrl('/fixture');
-	$front->setControllerDirectory(['default' => $root . '/application/controllers', 'contacts' => $root . '/application/modules/contacts/controllers', 'items' => $root . '/application/modules/items/controllers', 'tasks' => $root . '/application/modules/tasks/controllers']);
+	$directories = ['default' => $root . '/application/controllers'];
+	foreach (['contacts', 'items', 'tasks', 'admin', 'statistics'] as $name) $directories[$name] = $root . '/application/modules/' . $name . '/controllers';
+	$front->setControllerDirectory($directories);
 	$front->setRouter(new Zend_Controller_Router_Rewrite());
 	$front->getRouter()->addDefaultRoutes();
 }
 
-function toolbarPage(string $locale, string $module, string $action = 'index', string $layoutName = 'layout', array $rights = ['view', 'add', 'edit', 'delete'], bool $readonly = false, string $contextAction = 'index'): array
+function toolbarPage(string $locale, string $module, string $action = 'index', string $layoutName = 'layout', array $rights = ['view', 'add', 'edit', 'delete'], bool $readonly = false, string $contextAction = 'index', bool $legacyStatistics = false): array
 {
 	global $root;
-	$controller = ['contacts' => 'contact', 'items' => 'item', 'tasks' => 'task'][$module];
+	if (str_contains($module, '/')) [$module, $controller] = explode('/', $module, 2);
+	else $controller = ['contacts' => 'contact', 'items' => 'item', 'tasks' => 'task'][$module];
 	toolbarContext($module, $controller, $action, $rights);
+	$user = Zend_Registry::get('User');
+	$user['admin'] = $module === 'admin' ? 1 : 0;
+	Zend_Registry::set('User', $user);
 	$translator = buttonTranslations($locale);
 	$translator->loadDir($module, $root . '/languages/' . $locale . '/' . $module);
 	foreach (glob($root . '/languages/' . $locale . '/*/common.php') as $common) $translator->load(basename(dirname($common)) . '_common', $common);
 	Zend_Registry::set('Zend_Locale', new Zend_Locale($locale));
 	Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_NonPersistent());
 	$class = ucfirst($module) . '_Form_Toolbar';
+	if ($legacyStatistics && $module === 'statistics') $class = 'ToolbarStatisticsLegacyFixture';
 	$toolbar = new $class();
 	if ($module === 'tasks') $toolbar->setElementData('state', ['options' => $toolbar->getElement('states')['options']]);
 	if ($readonly) $toolbar->setMode('readonly');
 	$view = new Zend_View();
 	$view->addHelperPath($root . '/application/views/helpers', 'Zend_View_Helper');
+	if ($module === 'admin') $view->addHelperPath($root . '/application/modules/admin/views/helpers', 'Zend_View_Helper');
 	$view->addScriptPath($root . '/application/views/scripts');
 	foreach (['headTitle', 'headScript', 'headLink', 'headMeta'] as $helperName) $view->$helperName()->getContainer()->exchangeArray([]);
 	$view->doctype('HTML5');
 	$view->headScript()->appendFile('/fixture/toolbar-setup.js');
 	$view->assign([
 		'language' => $locale, 'module' => $module, 'controller' => $controller, 'action' => $action,
-		'id' => 17, 'title' => $translator->t(['contacts' => 'CONTACTS', 'items' => 'ITEMS', 'tasks' => 'TASKS'][$module]),
+		'id' => 17, 'title' => $translator->t(['contacts' => 'CONTACTS', 'items' => 'ITEMS', 'tasks' => 'TASKS', 'admin' => 'ADMIN', 'statistics' => 'STATISTICS'][$module]),
 		'toolbar' => $toolbar, 'options' => [], 'messages' => [],
 		'user' => Zend_Registry::get('User') + ['name' => 'Fixture User'],
 		'categories' => [1 => ['id' => 1, 'parentid' => 0, 'title' => 'Fixture category']], 'tags' => [1 => 'Fixture tag'],
@@ -61,6 +72,26 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 		'listFooter' => in_array($action, ['index', 'select', 'search'], true), 'context' => ['action' => $action === 'search' ? $contextAction : $action],
 	]);
 	$content = $list->render();
+	if ($module === 'admin' && in_array($action, ['edit', 'view'], true)) {
+		$formClass = 'Admin_Form_' . ucfirst($controller);
+		$form = new $formClass();
+		$field = in_array($controller, ['country', 'manufacturer'], true) ? 'name' : 'title';
+		$form->setValue($field, 'Fixture record');
+		if ($readonly || $action === 'view') $form->setMode('readonly');
+		$content .= '<form id="admin-fields">' . $form->renderElement($field) . '</form>';
+	}
+	if ($module === 'statistics') {
+		$view->addScriptPath($root . '/application/modules/statistics/views/scripts');
+		$pixel = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aK1cAAAAASUVORK5CYII=';
+		$view->assign([
+			'customerList' => [], 'yearlySummaryTable' => $list, 'yearlyTables' => [],
+			'yearlyTurnover' => [], 'monthlyTurnover' => [], 'categoryRows' => [],
+			'yearlyCategoryRows' => [], 'yearlyComparisonRows' => [],
+			'chartImages' => ['turnover' => $pixel, 'turnover-category' => $pixel],
+		]);
+		$list->setSelectable(false)->setListFooter(false);
+		$content = $view->render($controller . '/index.phtml');
+	}
 	if ($module === 'tasks' && in_array($action, ['edit', 'view'], true)) {
 		$taskForm = new Tasks_Form_Task();
 		$taskForm->setElementData('responsible', ['options' => [42 => 'Fixture User', 43 => 'Fixture Assignee']]);
@@ -79,7 +110,7 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 		return json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);
 	}
 	$top = $view->Toolbar();
-	$bottom = $view->ToolbarBottom($toolbar, $action);
+	$bottom = $module === 'statistics' ? '' : $view->ToolbarBottom($toolbar, $action);
 	$layout = new Zend_Layout(['layoutPath' => $root . '/application/layouts/scripts', 'layout' => $layoutName]);
 	$layout->setView($view);
 	$view->getHelper('layout')->setLayout($layout);
@@ -88,7 +119,7 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 }
 
 if (($argv[1] ?? '') === 'render') {
-	echo json_encode(toolbarPage($argv[2] ?? 'de_DE', $argv[3] ?? 'contacts', $argv[4] ?? 'index', $argv[5] ?? 'layout', ['view', 'add', 'edit', 'delete'], ($argv[6] ?? '') === 'readonly', $argv[7] ?? 'index'), JSON_THROW_ON_ERROR);
+	echo json_encode(toolbarPage($argv[2] ?? 'de_DE', $argv[3] ?? 'contacts', $argv[4] ?? 'index', $argv[5] ?? 'layout', ['view', 'add', 'edit', 'delete'], ($argv[6] ?? '') === 'readonly', $argv[7] ?? 'index', ($argv[6] ?? '') === 'legacy-statistics'), JSON_THROW_ON_ERROR);
 	exit;
 }
 
