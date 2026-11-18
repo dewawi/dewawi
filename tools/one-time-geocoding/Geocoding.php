@@ -315,8 +315,20 @@ class OneTimeGeocoding
 	public static function validate(array $result, array $fields): array
 	{
 		if (($result['type'] ?? '') !== 'FeatureCollection' || !is_array($result['features'] ?? null)) return ['rejected' => 'api_error'];
-		if (count($result['features']) !== 1) return ['rejected' => 'missing_or_ambiguous'];
-		$feature = $result['features'][0] ?? null;
+		if (!$result['features']) return ['rejected' => 'missing_or_ambiguous'];
+		$eligible = []; $rejection = 'no_suitable_building';
+		foreach ($result['features'] as $feature) {
+			$check = self::validateFeature($feature, $fields);
+			if (isset($check['point'])) $eligible[] = $check;
+			else $rejection = $check['rejected'];
+		}
+		if (count($eligible) === 1) return $eligible[0];
+		if ($eligible) return ['rejected' => 'missing_or_ambiguous'];
+		return ['rejected' => count($result['features']) === 1 ? $rejection : 'no_suitable_building'];
+	}
+
+	private static function validateFeature($feature, array $fields): array
+	{
 		if (!is_array($feature) || !is_array($feature['properties'] ?? null) || !is_array($feature['geometry'] ?? null) || !is_array($feature['properties']['rank'] ?? null)) return ['rejected' => 'malformed_feature'];
 		$p = $feature['properties']; $rank = $p['rank']; $coordinates = $feature['geometry']['coordinates'] ?? null;
 		if (($feature['geometry']['type'] ?? '') !== 'Point' || !is_array($coordinates) || !array_is_list($coordinates) || count($coordinates) !== 2 || !self::validPoint(['latitude' => $p['lat'] ?? null, 'longitude' => $p['lon'] ?? null]) || (float)$p['lat'] === 0.0 && (float)$p['lon'] === 0.0) return ['rejected' => 'invalid_coordinates'];

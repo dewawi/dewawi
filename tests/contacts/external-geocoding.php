@@ -34,6 +34,7 @@ class ExternalFixtureTool extends OneTimeGeocoding {
 	public int $clock = 1800000000;
 	public array $calls = [];
 	public string $behavior = 'pending';
+	public bool $withAmenity = false;
 	public static array $remote = [];
 	public $beforeApply = null;
 	protected function now(): int { return $this->clock; }
@@ -48,7 +49,11 @@ class ExternalFixtureTool extends OneTimeGeocoding {
 				[$street] = explode(', ', $input['params']['text']); preg_match('/^(.+) (\d+)$/D', $street, $parts);
 				$feature = externalFeature($parts[1], $parts[2]);
 				if ($parts[2] === '3') $feature['properties']['rank']['confidence'] = .5;
-				$items[] = ['params' => $input['params'], 'result' => ['type' => 'FeatureCollection', 'features' => [$feature]]];
+				$features = [$feature];
+				if ($this->withAmenity) {
+					$amenity = externalFeature($parts[1], $parts[2]); $amenity['properties']['result_type'] = 'amenity'; $amenity['properties']['rank']['match_type'] = 'inner_part'; $features[] = $amenity;
+				}
+				$items[] = ['params' => $input['params'], 'result' => ['type' => 'FeatureCollection', 'features' => $features]];
 			}
 			self::$remote[$id] = ['api' => '/v1/geocode/search', 'id' => $id, 'results' => array_reverse($items)];
 			if ($this->behavior === 'timeout') return [0, [], 0];
@@ -139,6 +144,51 @@ $copy = $feature; $copy['geometry']['coordinates'] = [7, 52]; $bad[] = $copy;
 $copy = $feature; $copy['bbox'] = [0, 0, 100, 80]; $bad[] = $copy;
 foreach ($bad as $invalid) externalCheck(isset(OneTimeGeocoding::validate(['type' => 'FeatureCollection', 'features' => [$invalid]], $fields)['rejected']), 'Invalid feature accepted');
 externalCheck(isset(OneTimeGeocoding::validate(['type' => 'FeatureCollection', 'features' => [$feature, $feature]], $fields)['rejected']), 'Ambiguous matches accepted');
+
+// Only fully qualified buildings compete, independently of provider result order.
+$point = OneTimeGeocoding::validate(['type' => 'FeatureCollection', 'features' => [$feature]], $fields);
+$amenity = $feature; $amenity['properties']['result_type'] = 'amenity'; $amenity['properties']['rank']['match_type'] = 'inner_part';
+foreach ([[$feature, $amenity], [$amenity, $feature]] as $features) externalCheck(OneTimeGeocoding::validate(['type' => 'FeatureCollection', 'features' => $features], $fields) === $point, 'Exact building was disqualified by a subordinate amenity or result order');
+$otherBuilding = $feature; $otherBuilding['properties']['lat'] = 51.25; $otherBuilding['properties']['lon'] = 6.75; $otherBuilding['geometry']['coordinates'] = [6.75, 51.25];
+externalCheck(isset(OneTimeGeocoding::validate(['type' => 'FeatureCollection', 'features' => [$otherBuilding]], $fields)['point']), 'Conflicting fixture is not an equally qualified building');
+foreach ([[$feature, $otherBuilding], [$otherBuilding, $feature], [$amenity, $feature, $otherBuilding]] as $features) externalCheck(OneTimeGeocoding::validate(['type' => 'FeatureCollection', 'features' => $features], $fields) === ['rejected' => 'missing_or_ambiguous'], 'Competing building coordinates were resolved by result order');
+foreach ([['country_code', 'at'], ['postcode', '99999'], ['city', 'Wrong City'], ['street', 'Wrong Street'], ['housenumber', '2']] as [$field, $value]) {
+	$wrong = $feature; $wrong['properties'][$field] = $value;
+	externalCheck(OneTimeGeocoding::validate(['type' => 'FeatureCollection', 'features' => [$wrong, $amenity]], $fields) === ['rejected' => 'no_suitable_building'], 'Postal mismatch became eligible beside an amenity');
+	externalCheck(OneTimeGeocoding::validate(['type' => 'FeatureCollection', 'features' => [$wrong, $feature]], $fields) === $point, 'Nonmatching building competed with the exact postal match');
+}
+foreach (['confidence', 'confidence_city_level', 'confidence_street_level', 'confidence_building_level'] as $confidence) {
+	foreach ([null, .94, 1.01, true, 'NaN'] as $value) {
+		$weak = $feature;
+		if ($value === null) unset($weak['properties']['rank'][$confidence]); else $weak['properties']['rank'][$confidence] = $value;
+		externalCheck(isset(OneTimeGeocoding::validate(['type' => 'FeatureCollection', 'features' => [$weak, $amenity]], $fields)['rejected']), 'Missing/invalid accuracy was rescued by an amenity');
+	}
+}
+$wrongGeometry = $feature; $wrongGeometry['geometry']['coordinates'] = [8, 53];
+externalCheck(isset(OneTimeGeocoding::validate(['type' => 'FeatureCollection', 'features' => [$wrongGeometry, $amenity]], $fields)['rejected']), 'Contradictory point geometry was accepted');
+$wrongBox = $feature; $wrongBox['bbox'] = [8, 53, 8.01, 53.01];
+externalCheck(isset(OneTimeGeocoding::validate(['type' => 'FeatureCollection', 'features' => [$wrongBox, $amenity]], $fields)['rejected']), 'Contradictory bounding box was accepted');
+$innerBuilding = $feature; $innerBuilding['properties']['rank']['match_type'] = 'inner_part';
+externalCheck(isset(OneTimeGeocoding::validate(['type' => 'FeatureCollection', 'features' => [$innerBuilding, $amenity]], $fields)['rejected']), 'Inner-part building match became an exact match');
+$buildingMatch = $feature; $buildingMatch['properties']['rank']['match_type'] = 'match_by_building';
+externalCheck(OneTimeGeocoding::validate(['type' => 'FeatureCollection', 'features' => [$amenity, $buildingMatch]], $fields) === $point, 'Existing exact building match type regressed');
+foreach ([[], [$amenity], [$amenity, $amenity], [null, $amenity]] as $features) externalCheck(isset(OneTimeGeocoding::validate(['type' => 'FeatureCollection', 'features' => $features], $fields)['rejected']), 'Response without a suitable building was accepted');
+
+// Re-evaluate saved results into a new plan; never mutate an old rejection/release.
+externalFixture(); [$candidateTool, $candidateDir] = externalTool(); $candidateTool->withAmenity = true; $candidateTool->behavior = 'immediate';
+$candidateExport = $candidateTool->export($target, 1); $candidateTool->geocode(externalProvider($candidateDir), $candidateExport['export_sha256']);
+$candidatePlan = $candidateTool->plan('plan-candidates.json', $target);
+externalCheck($candidatePlan['counts'] === ['planned' => 1, 'conflicts' => 0, 'rejected' => 0, 'pending' => 0], 'Saved batch response with building and amenity remained rejected');
+$legacy = json_decode(file_get_contents($candidateDir.'/plan-candidates.json'), true); $legacy['data']['updates'] = []; $legacy['data']['counts']['planned'] = 0; $legacy['data']['counts']['rejected'] = 1; $legacy['data']['rejected_reasons'] = ['missing_or_ambiguous' => 1]; $legacy['sha256'] = OneTimeGeocoding::digest($legacy['data']);
+$legacyBackup = 'backup-'.$legacy['sha256'].'.json';
+foreach (['plan-legacy.json', $legacyBackup] as $name) { file_put_contents($candidateDir.'/'.$name, json_encode($legacy)); chmod($candidateDir.'/'.$name, 0600); }
+file_put_contents($candidateDir.'/permit.ini', "[import]\nenabled = false\nplan_sha256 = ".$legacy['sha256']."\n"); chmod($candidateDir.'/permit.ini', 0600);
+$files = ['export.json', 'jobs.json', 'results-0.json', 'plan-legacy.json', $legacyBackup, 'permit.ini']; $hashes = [];
+foreach ($files as $name) $hashes[$name] = hash_file('sha256', $candidateDir.'/'.$name);
+$candidateBefore = $db->fetchAll('SELECT * FROM address ORDER BY id');
+$reviewed = $candidateTool->plan('plan-reviewed.json', $target);
+externalCheck($reviewed['counts']['planned'] === 1 && $reviewed['plan_sha256'] !== $legacy['sha256'] && count($candidateTool->calls) === 1 && $db->fetchAll('SELECT * FROM address ORDER BY id') === $candidateBefore, 'Reassessment reused a stale release, requested API data or imported automatically');
+foreach ($files as $name) externalCheck(hash_file('sha256', $candidateDir.'/'.$name) === $hashes[$name], 'Reassessment changed a snapshot, backup or release');
 
 // All database mutations below affect this disposable fixture only.
 $other = Zend_Db::factory('Pdo_Mysql', ['host' => 'localhost', 'unix_socket' => $work.'/mysql.sock', 'username' => 'root', 'password' => '', 'dbname' => 'contact_map_test', 'charset' => 'utf8']);
