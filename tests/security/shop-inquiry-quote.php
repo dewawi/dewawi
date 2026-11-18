@@ -119,7 +119,20 @@ $socket = $argv[1];
 $bootstrap = new PDO('mysql:unix_socket=' . $socket, 'root', '', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 $bootstrap->exec('CREATE DATABASE dewawi_shop_inquiry_quote_test');
 $bootstrap = null;
-$adapter = new Zend_Db_Adapter_Pdo_Mysql([
+class InquiryCommitFixtureAdapter extends Zend_Db_Adapter_Pdo_Mysql
+{
+	public int $failCommitAt = 0;
+	public bool $commitBeforeFailure = false;
+	public function commit()
+	{
+		if ($this->failCommitAt > 0 && --$this->failCommitAt === 0) {
+			if ($this->commitBeforeFailure) parent::commit();
+			throw new RuntimeException('Fixture shop commit acknowledgement failure');
+		}
+		return parent::commit();
+	}
+}
+$adapter = new InquiryCommitFixtureAdapter([
 	'host' => 'localhost', 'unix_socket' => $socket, 'username' => 'root', 'password' => '',
 	'dbname' => 'dewawi_shop_inquiry_quote_test', 'charset' => 'utf8mb4',
 ]);
@@ -499,6 +512,23 @@ foreach([['price' => null, 'specialprice' => null], ['currency' => 'USD']] as $i
 	$adapter->update('item', ['price' => 1000, 'specialprice' => 900, 'currency' => 'EUR'], 'id = 10');
 }
 
+// Losing the commit acknowledgement must preserve a potentially committed original.
+foreach ([false, true] as $committed) {
+	$commitController = new ShopInquiryQuoteController($request, new Zend_Controller_Response_Http());
+	$commitController->setup($context, ['id' => 865, 'language' => 'de_DE', 'quotetemplateid' => 100], [['description' => 'ZCE110', 'value' => 9.87, 'percent' => 100.7, 'title' => 'referenzleistung']]);
+	$commitInquiry = (new Shops_Model_DbTable_Inquirydata())->save(865, bin2hex(random_bytes(16)), $inquiryData);
+	$adapter->failCommitAt = 2; $adapter->commitBeforeFailure = $committed;
+	try { $commitController->createQuote($inquiryData, $commitInquiry); throw new LogicException('Uncertain shop commit was reported as success'); }
+	catch (RuntimeException $error) { checkInquiryQuote($error->getMessage() === 'Fixture shop commit acknowledgement failure', 'Unexpected shop commit fixture failure'); }
+	$adapter->failCommitAt = 0;
+	$commitQuoteId = (int)$adapter->fetchOne('SELECT quoteid FROM shopinquirydata WHERE id = ?', [$commitInquiry]);
+	$commitPath = (new DEEC_DocumentArchive(BASE_PATH))->path(100, 'sales', 'quote', $commitQuoteId);
+	checkInquiryQuote(is_file($commitPath), 'Uncertain shop commit deleted a published original');
+	$registrations = (int)$adapter->fetchOne('SELECT COUNT(*) FROM documentarchive WHERE documentid = ? AND module = ? AND controller = ?', [$commitQuoteId, 'sales', 'quote']);
+	checkInquiryQuote($registrations === ($committed ? 1 : 0), 'Shop commit fixture did not exercise both outcomes');
+}
+fwrite(STDERR, "PASS: shop archive rollback, retry and uncertain commit cases\n");
+
 // Persist a real-form-shaped incomplete inquiry through the controller, without sending email.
 Zend_Controller_Action_HelperBroker::addPath($root.'/library/Zend/Layout/Controller/Action/Helper', 'Zend_Layout_Controller_Action_Helper');
 Zend_Layout::startMvc(['layoutPath' => $root.'/application/layouts/scripts']);
@@ -508,6 +538,7 @@ Zend_Controller_Front::getInstance()->getRouter()->addRoute('inquiry_success', n
 $reference = is_file('/tmp/dewawi-inquiry-referenzen/form-865.fields.json') ? json_decode(file_get_contents('/tmp/dewawi-inquiry-referenzen/form-865.fields.json'), true) : [1 => [
 	['name' => 'sku', 'type' => 'text'], ['name' => 'email', 'type' => 'email', 'required' => true], ['name' => 'privacy', 'type' => 'checkbox', 'required' => true],
 	['name' => 'medium', 'type' => 'select', 'options' => ['Wasser', 'Wasser/Glykol']],
+	['name' => 'glykol_anteil', 'type' => 'number'],
 ]];
 $requestFields = array_merge(...array_values($reference));
 $post = array_replace($inquiryData, ['step' => 'request', 'csrf_token' => 'csrf-value', 'inquiry_token' => str_repeat('9', 32), 'einsatzbereich' => '0', 'medium' => '1', 'glykol_typ' => '1', 'glykol_anteil' => '30', 'pumpe' => '0', 'geraeuschreduktion' => '1', 'titel' => 'Requested device', 'privacy' => '1']);

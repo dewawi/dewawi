@@ -55,6 +55,7 @@ class DEEC_DocumentArchive
 
 	public function inspect(string $path, ?string $format = null): array
 	{
+		clearstatcache(true, $path);
 		$result = ['path' => $path, 'status' => 'missing', 'size' => null, 'sha256' => null];
 		if ($path === '') return $result;
 		$this->assertInside($path);
@@ -77,6 +78,27 @@ class DEEC_DocumentArchive
 		try { $header = fread($handle, 5); fseek($handle, max(0, $size - 2048)); $tail = stream_get_contents($handle); }
 		finally { fclose($handle); }
 		return $size >= 12 && $header === '%PDF-' && str_ends_with(rtrim((string)$tail), '%%EOF') ? 'ok' : 'invalid_pdf';
+	}
+
+	public function registrationIssues(array $document, array $registrations, string $format = 'pdf'): array
+	{
+		$relative = $this->relativePath((int)$document['clientid'], $document['module'], $document['controller'], (int)$document['id'], $format);
+		$file = $this->inspect($this->base . '/' . $relative, $format);
+		$issues = [];
+		if (!$registrations) $issues[] = 'registration_missing';
+		if (count($registrations) > 1) $issues[] = 'registrations_ambiguous';
+		if ($file['status'] !== 'ok') $issues[] = 'file_' . $file['status'];
+		foreach ($registrations as $row) {
+			foreach (['clientid' => $document['clientid'], 'module' => $document['module'], 'controller' => $document['controller'], 'documentid' => $document['id'], 'format' => $format, 'version' => 1, 'path' => $relative] as $field => $expected) {
+				if ((string)($row[$field] ?? '') !== (string)$expected) $issues[] = $field . '_mismatch';
+			}
+			if (!DEEC_Emailattachment::validFilename((string)($row['filename'] ?? ''))) $issues[] = 'filename_invalid';
+			if ($format === 'pdf' && DEEC_Emailattachment::validFilename((string)($document['filename'] ?? '')) && $row['filename'] !== $document['filename']) $issues[] = 'filename_mismatch';
+			if ($file['size'] !== null && (int)($row['filesize'] ?? -1) !== $file['size']) $issues[] = 'filesize_mismatch';
+			if (!preg_match('/^[a-f0-9]{64}$/D', (string)($row['sha256'] ?? '')) || ($file['sha256'] !== null && !hash_equals((string)$row['sha256'], $file['sha256']))) $issues[] = 'sha256_mismatch';
+		}
+		$fields = array_flip(['id', 'clientid', 'module', 'controller', 'documentid', 'format', 'version', 'path', 'filename', 'filesize', 'sha256']);
+		return ['issues' => array_values(array_unique($issues)), 'file' => $file, 'registrations' => array_map(static fn(array $row): array => array_intersect_key($row, $fields), $registrations)];
 	}
 
 	private function inspectXml(string $path): string
@@ -203,8 +225,7 @@ class DEEC_DocumentArchive
 			if (file_put_contents($temp, $bytes, LOCK_EX) !== strlen($bytes)) throw new RuntimeException('Archive staging write failed');
 			$source = $this->inspect($temp, $format);
 			if ($source['status'] !== 'ok') throw new RuntimeException('Archive content is invalid');
-			$this->copyVerified($temp, $target, $source, $format);
-			return $this->inspect($target, $format);
+			return $this->copyVerified($temp, $target, $source, $format);
 		} finally { if (is_file($temp)) unlink($temp); }
 	}
 
@@ -228,27 +249,39 @@ class DEEC_DocumentArchive
 		return $this->inspect($target, $format);
 	}
 
-	private function copyVerified(string $source, string $target, array $before, string $format): void
+	private function copyVerified(string $source, string $target, array $before, string $format): array
 	{
 		$this->ensureDirectory(dirname($target));
 		if ($this->hasSymlink($target)) throw new RuntimeException('Archive target contains a symlink');
-		$output = @fopen($target, 'x+b');
-		if (!$output) throw new RuntimeException(file_exists($target) || is_link($target) ? 'Archive target collision' : 'Archive target is not writable');
-		$input = @fopen($source, 'rb');
+		$temp = tempnam(dirname($target), '.archive-');
+		if ($temp === false) throw new RuntimeException('Archive staging file could not be created');
 		try {
-			if (!$input || stream_copy_to_stream($input, $output) !== $before['size']) throw new RuntimeException('Archive copy failed');
-			if (!fflush($output)) throw new RuntimeException('Archive flush failed');
-			if (function_exists('fsync') && !fsync($output)) throw new RuntimeException('Archive sync failed');
-		} catch (Throwable $exception) {
-			fclose($output); if ($input) fclose($input); if (is_file($target) && !is_link($target)) unlink($target); throw $exception;
-		}
-		fclose($output); if ($input) fclose($input);
-		if (!chmod($target, 0666 & ~umask())) { unlink($target); throw new RuntimeException('Archive permissions could not be set'); }
-		$after = $this->inspect($target, $format);
-		if ($after['status'] !== 'ok' || $after['size'] !== $before['size'] || !hash_equals($before['sha256'], $after['sha256'])) {
-			if (is_file($target) && !is_link($target)) unlink($target);
-			throw new RuntimeException('Archive integrity verification failed');
-		}
+			$output = @fopen($temp, 'r+b');
+			$input = @fopen($source, 'rb');
+			try {
+				if (!$input || !$output || stream_copy_to_stream($input, $output) !== $before['size']) throw new RuntimeException('Archive copy failed');
+				if (!fflush($output) || (function_exists('fsync') && !fsync($output))) throw new RuntimeException('Archive sync failed');
+			} finally { if ($output) fclose($output); if ($input) fclose($input); }
+			if (!chmod($temp, 0666 & ~umask())) throw new RuntimeException('Archive permissions could not be set');
+			$after = $this->inspect($temp, $format);
+			if ($after['status'] !== 'ok' || $after['size'] !== $before['size'] || !hash_equals($before['sha256'], $after['sha256'])) throw new RuntimeException('Archive integrity verification failed');
+			$publication = lstat($temp);
+			if (!@link($temp, $target)) throw new RuntimeException(file_exists($target) || is_link($target) ? 'Archive target collision' : 'Archive target is not writable');
+			return array_replace($after, ['path' => $target, 'publication' => $publication]);
+		} finally { if (is_file($temp)) unlink($temp); }
+	}
+
+	public function discardUncommitted(array $file): void
+	{
+		$path = $file['path'];
+		$this->assertInside($path);
+		clearstatcache(true, $path);
+		if (!file_exists($path) && !is_link($path)) return;
+		$stat = lstat($path);
+		if ($this->hasSymlink($path) || !$stat || !is_file($path) || empty($file['publication'])
+			|| $stat['dev'] !== $file['publication']['dev'] || $stat['ino'] !== $file['publication']['ino']
+			|| !hash_equals((string)$file['sha256'], hash_file('sha256', $path))) throw new RuntimeException('Uncommitted archive file changed; retained for inspection');
+		if (!unlink($path)) throw new RuntimeException('Uncommitted archive file could not be removed');
 	}
 
 	private function shard(int $id): string { $value = (string)$id; return $value[0] . '/' . ($value[1] ?? '0') . '/' . $value; }
@@ -262,6 +295,7 @@ class DEEC_DocumentArchive
 		foreach (explode('/', substr($path, strlen($this->base) + 1)) as $part) {
 			if ($part === '' || $part === '.' || $part === '..') return true;
 			$current .= '/' . $part;
+			clearstatcache(true, $current);
 			if (is_link($current)) return true;
 		}
 		return false;
@@ -275,7 +309,8 @@ class DEEC_DocumentArchive
 			$current .= '/' . $part;
 			if (is_link($current)) throw new RuntimeException('Archive directory contains a symlink');
 			if (file_exists($current)) { if (!is_dir($current)) throw new RuntimeException('Archive directory collision'); continue; }
-			if (!mkdir($current, 0775)) throw new RuntimeException('Archive directory is not writable');
+			if (!@mkdir($current, 0775) && !is_dir($current)) throw new RuntimeException('Archive directory is not writable');
+			if (is_link($current)) throw new RuntimeException('Archive directory contains a symlink');
 		}
 	}
 }

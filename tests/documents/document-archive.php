@@ -149,6 +149,20 @@ archiveCheck($storedXml['status'] === 'ok' && file_get_contents($xmlPath) === $x
 try { $archive->store(str_replace('112143', 'changed', $xml), 100, 'sales', 'invoice', 59296, 'xml'); throw new RuntimeException('XML original was overwritten'); }
 catch (RuntimeException $expected) { archiveCheck($expected->getMessage() === 'Archive target collision', 'Unexpected XML collision result'); }
 
+$uncommitted = $archive->store(archivePdf('owned publication'), 100, 'sales', 'quote', 990001, 'pdf');
+$archive->discardUncommitted($uncommitted);
+archiveCheck(!is_file($uncommitted['path']), 'Confirmed rollback did not remove its own publication');
+$replaced = $archive->store(archivePdf('same bytes, different file'), 100, 'sales', 'quote', 990002, 'pdf');
+rename($replaced['path'], $replaced['path'] . '.held');
+file_put_contents($replaced['path'], archivePdf('same bytes, different file'));
+try { $archive->discardUncommitted($replaced); throw new LogicException('Rollback removed another publication'); }
+catch (RuntimeException $expected) { archiveCheck(is_file($replaced['path']) && hash_file('sha256', $replaced['path']) === $replaced['sha256'], 'Rollback changed a replacement original'); }
+$changed = $archive->store(archivePdf('owned hash'), 100, 'sales', 'quote', 990003, 'pdf');
+file_put_contents($changed['path'], archivePdf('changed hash'));
+try { $archive->discardUncommitted($changed); throw new LogicException('Rollback removed changed bytes'); }
+catch (RuntimeException $expected) { archiveCheck(file_get_contents($changed['path']) === archivePdf('changed hash'), 'Rollback removed a modified original'); }
+archiveCheck(glob(dirname($changed['path']) . '/.archive-*') === [], 'Atomic publication retained temporary staging files');
+
 foreach (DEEC_DocumentArchive::documents() as $module => $controllers) foreach ($controllers as $controller) {
 	$fixture = array_replace($base, ['module' => $module, 'controller' => $controller, 'id' => ++$base['id'], 'filename' => $controller . '-approved.pdf']);
 	$paths = $archive->paths($fixture);

@@ -1027,6 +1027,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 		$inquiryDb = new Shops_Model_DbTable_Inquirydata();
 		$adapter = $quoteDb->getAdapter();
 		$publishedOriginal = null;
+		$commitStarted = false;
 		$adapter->beginTransaction();
 
 		try {
@@ -1045,20 +1046,23 @@ class Shops_InquiryController extends Shops_Controller_Action
 				$filename = (new Shops_Model_DbTable_Filename())->getFilename('quote', (string)$quote['language']);
 				$quoteDb->saveQuote($quoteId, $quoteNumber, str_replace('%NUMBER%', (string)$quoteNumber, $filename));
 				$pdf = $this->generateQuotePdf($quoteId, true);
-				$publishedOriginal = $pdf['path'] ?? null;
+				$publishedOriginal = $pdf;
 			} elseif (!(new Application_Model_DbTable_Documentarchive())->getForSiteQuote($quoteId)) {
 				throw new RuntimeException('Finalized inquiry quote archive is unavailable');
 			}
 
+			$commitStarted = true;
 			$adapter->commit();
 			return $quoteId;
 		} catch (Throwable $e) {
+			$rolledBack = false;
 			try {
 				$adapter->rollBack();
+				$rolledBack = true;
 			} catch (Throwable $rollbackError) {
 				error_log('Inquiry quote finalization rollback failed: ' . $rollbackError->getMessage());
 			}
-			if (is_string($publishedOriginal)) $this->removeUncommittedQuotePdf($quoteId, $publishedOriginal);
+			if (!$commitStarted && $rolledBack && $publishedOriginal) $this->removeUncommittedQuotePdf($quoteId, $publishedOriginal);
 			throw $e;
 		}
 	}
@@ -1161,7 +1165,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 				$archiveDb->registerSiteQuoteOriginal($quoteId);
 				$result['url'] = $this->setQuoteDownloadGrant($quoteId, (string)$result['path']);
 			} catch (Throwable $e) {
-				if (!empty($result['path'])) $this->removeUncommittedQuotePdf($quoteId, (string)$result['path']);
+				if (!empty($result['path'])) $this->removeUncommittedQuotePdf($quoteId, $result);
 				throw $e;
 			}
 		} else {
@@ -1199,7 +1203,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 		return rtrim((string)$this->view->baseUrl(), '/') . '/' . $this->formDataSession->downloadFile['relative'];
 	}
 
-	protected function removeUncommittedQuotePdf(int $quoteId, string $path): void
+	protected function removeUncommittedQuotePdf(int $quoteId, array $file): void
 	{
 		try {
 			$expected = (new DEEC_DocumentArchive(BASE_PATH))->path(
@@ -1209,9 +1213,7 @@ class Shops_InquiryController extends Shops_Controller_Action
 				$quoteId,
 				'pdf'
 			);
-			if (hash_equals($expected, $path) && is_file($path) && !is_link($path) && !unlink($path)) {
-				error_log('Failed to remove uncommitted inquiry quote PDF: ' . $path);
-			}
+			if (hash_equals($expected, $file['path'])) (new DEEC_DocumentArchive(BASE_PATH))->discardUncommitted($file);
 		} catch (Throwable $e) {
 			error_log('Failed to verify uncommitted inquiry quote PDF cleanup: ' . $e->getMessage());
 		}

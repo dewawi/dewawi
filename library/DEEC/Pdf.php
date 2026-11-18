@@ -651,13 +651,21 @@ class DEEC_Pdf
 		clearstatcache(true, $file['path']);
 		$file['exists'] = is_file($file['path']);
 		self::assertCompletePdfFile($file['path']);
+		if (!empty($payload['meta']['createOriginal'])) {
+			$file['publication'] = lstat($file['path']);
+			$file['sha256'] = hash_file('sha256', $file['path']);
+		}
 
 		return $file;
 	}
 
 	protected function publishPdfFile(string $tempFile, array $file, array $payload, string $source): void
 	{
-		chmod($tempFile, 0666 & ~umask());
+		if (!chmod($tempFile, 0666 & ~umask())) throw new RuntimeException('PDF permissions could not be set');
+		$stream = fopen($tempFile, 'r+b');
+		if (!$stream) throw new RuntimeException('PDF staging file could not be opened');
+		try { if (!fflush($stream) || (function_exists('fsync') && !fsync($stream))) throw new RuntimeException('PDF staging sync failed'); }
+		finally { fclose($stream); }
 
 		// Publish the complete PDF without replacing a concurrent writer's file.
 		if (@link($tempFile, $file['path'])) {

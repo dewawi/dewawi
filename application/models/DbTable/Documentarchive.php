@@ -40,11 +40,11 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 
 	private function getOriginal(array $document, int $clientId, string $module, string $controller, string $format): ?array
 	{
-		$row = $this->fetchRow($this->select()->where('documentid = ?', (int)$document['id'])->where('module = ?', $module)
-			->where('controller = ?', $controller)->where('clientid = ?', $clientId)->where('format = ?', strtolower($format))
-			->where('version = ?', 1)->limit(1));
-		if (!$row) return null;
-		$data = $row->toArray();
+		$rows = $this->fetchAll($this->select()->where('documentid = ?', (int)$document['id'])->where('module = ?', $module)
+			->where('controller = ?', $controller)->where('clientid = ?', $clientId)->where('format = ?', strtolower($format)))->toArray();
+		if (!$rows) return null;
+		if (count($rows) !== 1 || (int)$rows[0]['version'] !== 1) throw new RuntimeException('Document archive versions are ambiguous');
+		$data = $rows[0];
 		if (!DEEC_Emailattachment::validFilename((string)$data['filename'])) throw new RuntimeException('Invalid document archive filename');
 		if (strtolower($format) === 'pdf' && DEEC_Emailattachment::validFilename((string)($document['filename'] ?? ''))
 			&& !hash_equals((string)$document['filename'], (string)$data['filename'])) throw new RuntimeException('Document archive filename differs');
@@ -59,8 +59,9 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 		$data = $row->toArray();
 		$context = (new Contacts_Model_DbTable_Emailattachment())->getParentContext($data['documentid'], $data['module'], $data['controller']);
 		if (!$context || (int)$data['clientid'] !== (int)$context['clientid']) return null;
-		$this->assertStoredFile($data);
-		return $data;
+		$original = $this->getOriginal($context['parent'], (int)$context['clientid'], $data['module'], $data['controller'], $data['format']);
+		if (!$original || (int)$original['id'] !== $id) throw new RuntimeException('Document original is ambiguous');
+		return $original;
 	}
 
 	public function registerOriginal(array $document, string $module, string $controller, string $format = 'pdf', ?string $filename = null, ?array $parameters = null): array
@@ -93,9 +94,8 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 		$file = $archive->inspect(BASE_PATH . '/' . $relative, $format);
 		if ($file['status'] !== 'ok') throw new RuntimeException('Document archive file is unavailable or invalid');
 		$existing = $this->fetchAll($this->select()->where('documentid = ?', (int)$document['id'])->where('module = ?', $module)
-			->where('controller = ?', $controller)->where('clientid = ?', $clientId)->where('format = ?', strtolower($format))
-			->where('version = ?', 1))->toArray();
-		if (count($existing) > 1) throw new RuntimeException('Document archive metadata is ambiguous');
+			->where('controller = ?', $controller)->where('clientid = ?', $clientId)->where('format = ?', strtolower($format)))->toArray();
+		if (count($existing) > 1 || ($existing && (int)$existing[0]['version'] !== 1)) throw new RuntimeException('Document archive metadata is ambiguous');
 		$expected = [
 			'documentid' => (int)$document['id'], 'module' => $module, 'controller' => $controller, 'clientid' => $clientId,
 			'filename' => $filename, 'format' => strtolower($format), 'path' => $relative, 'filesize' => (int)$file['size'], 'sha256' => $file['sha256'], 'version' => 1,
@@ -109,7 +109,10 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 			'correctionarchiveid' => null, 'archived' => $this->_date, 'archivedby' => (int)($this->_user['id'] ?? 0),
 		]);
 		$expected['id'] = (int)$this->getAdapter()->lastInsertId();
-		return $expected;
+		$stored = $this->getOriginal($document, $clientId, $module, $controller, $format);
+		if (!$stored) throw new RuntimeException('Document archive registration is missing');
+		foreach ($expected as $field => $value) if ((string)$stored[$field] !== (string)$value) throw new RuntimeException('Document archive registration differs');
+		return $stored;
 	}
 
 	private function getSiteQuoteContext(int $documentId): ?array
@@ -126,12 +129,35 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 
 	public function archiveBytes(array $document, string $module, string $controller, string $format, string $filename, string $bytes, array $parameters = []): array
 	{
-		$existing = $this->getForDocument((int)($document['id'] ?? 0), $module, $controller, $format);
-		if ($existing) return $existing;
 		$context = (new Contacts_Model_DbTable_Emailattachment())->getParentContext($document['id'] ?? 0, $module, $controller);
 		if (!$context || !DEEC_Permission::isDocumentReadonly($module, $controller, $context['parent'])) throw new RuntimeException('Document archive access denied');
-		(new DEEC_DocumentArchive(BASE_PATH))->store($bytes, (int)$context['clientid'], $module, $controller, (int)$document['id'], $format);
-		return $this->registerOriginal($document, $module, $controller, $format, $filename, $parameters);
+		$db = $this->getAdapter();
+		$archive = new DEEC_DocumentArchive(BASE_PATH);
+		$published = null;
+		$commitStarted = false;
+		$db->beginTransaction();
+		try {
+			$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller);
+			$document = (new $class())->setClientId((int)$context['clientid'])->getByIdForUpdate((int)$document['id']);
+			if (!$document || !DEEC_Permission::isDocumentReadonly($module, $controller, $document)) throw new RuntimeException('Issued document changed');
+			$result = $this->getForDocument((int)$document['id'], $module, $controller, $format);
+			if (!$result) {
+				$published = $archive->store($bytes, (int)$context['clientid'], $module, $controller, (int)$document['id'], $format);
+				$result = $this->registerOriginal($document, $module, $controller, $format, $filename, $parameters);
+			}
+			$commitStarted = true;
+			$db->commit();
+			return $result;
+		} catch (Throwable $error) {
+			$rolledBack = false;
+			try { $db->rollBack(); $rolledBack = true; }
+			catch (Throwable $rollbackError) { error_log('Document byte archive rollback failed: ' . $rollbackError->getMessage()); }
+			if (!$commitStarted && $rolledBack && $published) {
+				try { $archive->discardUncommitted($published); }
+				catch (Throwable $cleanupError) { error_log('Uncommitted byte archive retained: ' . $cleanupError->getMessage()); }
+			}
+			throw $error;
+		}
 	}
 
 	public function getPath(array $archive): string

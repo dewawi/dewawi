@@ -377,7 +377,7 @@ $failedArchive = (new DEEC_DocumentArchive(BASE_PATH))->path(7, 'sales', 'quote'
 DEEC_Pdf::$callback = static function (array $request) use ($failedArchive): array {
 	if (!is_dir(dirname($failedArchive))) mkdir(dirname($failedArchive), 0775, true);
 	file_put_contents($failedArchive, "%PDF-1.4\nUncommitted original\n%%EOF\n");
-	return $request + ['path' => $failedArchive];
+	return $request + ['path' => $failedArchive, 'publication' => lstat($failedArchive), 'sha256' => hash_file('sha256', $failedArchive)];
 };
 try {
     $controller->issue(1);
@@ -398,7 +398,7 @@ DEEC_Pdf::$callback = static function (array $request) use (&$pdfStored, $failed
 	$pdfStored = true;
 	if (!is_dir(dirname($failedArchive))) mkdir(dirname($failedArchive), 0775, true);
 	file_put_contents($failedArchive, "%PDF-1.4\nCommit failure original\n%%EOF\n");
-	return $request + ['path' => $failedArchive];
+	return $request + ['path' => $failedArchive, 'publication' => lstat($failedArchive), 'sha256' => hash_file('sha256', $failedArchive)];
 };
 try {
     $controller->issue(1);

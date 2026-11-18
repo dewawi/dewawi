@@ -403,7 +403,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 					$row = $this->loadRow($id);
 					$row = $this->finalizeDocument($row);
 					$result = $this->generatePdf($row, $options, true);
-					$publishedOriginal = $result['path'] ?? null;
+					$publishedOriginal = $result;
 					$this->registerPdfDocument($row);
 					$commitStarted = true;
 					$adapter->commit();
@@ -415,10 +415,10 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 				$rolledBack = false;
 				try { $adapter->rollBack(); $rolledBack = true; }
 				catch (Throwable $rollbackException) { error_log('Document finalization rollback failed: ' . $rollbackException->getMessage()); }
-				if (!$commitStarted && $rolledBack && is_string($publishedOriginal) && is_file($publishedOriginal) && !is_link($publishedOriginal)) {
+				if (!$commitStarted && $rolledBack && !empty($publishedOriginal['path'])) {
 					try {
 						$expected = (new DEEC_DocumentArchive(BASE_PATH))->path((int)$row['clientid'], $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName(), (int)$row['id'], 'pdf');
-						if (hash_equals($expected, $publishedOriginal) && !unlink($publishedOriginal)) error_log('Failed to remove uncommitted document original: ' . $publishedOriginal);
+						if (hash_equals($expected, $publishedOriginal['path'])) (new DEEC_DocumentArchive(BASE_PATH))->discardUncommitted($publishedOriginal);
 					} catch (Throwable $cleanupException) {
 						error_log('Failed to verify uncommitted document original cleanup: ' . $cleanupException->getMessage());
 					}
