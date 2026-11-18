@@ -35,6 +35,10 @@
  * - section (string|null)	  Section grouping headline
  * - order (int)				Sort order
  * - format (array|null)		Filter schema for getFilteredValues()
+ * - icon (string|false)		Opt in to button presentation; existing icon key or false
+ * - variant (string)		Button variant: default, primary, danger, ghost
+ * - size (string)			Button size: sm, md, touch (HTML field size stays in attribs)
+ * - iconOnly (bool)			Hide button text without removing its translated accessible name
  *
  * Optional (multi / child rows):
  * - module (string)			Module for multi row form/entity
@@ -465,7 +469,7 @@ class DEEC_Form
 			'controller' => $cfg['controller'] ?? '',
 			'rows' => $cfg['rows'] ?? [],
 			'fields' => $cfg['fields'] ?? [],
-		];
+		] + array_intersect_key($cfg, array_flip(['icon', 'variant', 'size', 'iconOnly']));
 	}
 
 	/**
@@ -492,6 +496,7 @@ class DEEC_Form
 			'col','tab','section','order','wrap',
 			'source',
 			'filter','toolbar',
+			'icon','variant','size','iconOnly',
 			'module','controller','rows','fields',
 		];
 
@@ -1511,18 +1516,18 @@ class DEEC_Form
 			return $wrapperAttributes !== '' ? '<div class="dependent-field"'.$wrapperAttributes.'>'.$hidden.'</div>' : $hidden;
 		}
 
-		if ($type === 'button') {
+		if ($type === 'button' || $type === 'submit') {
 			$btnAttribs = $attribs;
 
-			if (!empty($el['toolbar']) && empty($btnAttribs['data-action'])) {
+			if ($type === 'button' && !empty($el['toolbar']) && empty($btnAttribs['data-action'])) {
 				$btnAttribs['data-action'] = $nameRaw;
 			}
 
 			unset($btnAttribs['id']);
 
 			$btnText = $hasLabel
-				? htmlspecialchars($labelTxt . $unitTxt)
-				: '';
+				? $labelTxt . $unitTxt
+				: ($type === 'submit' ? $this->translate('SUBMIT') : '');
 
 			$classes = $this->normalizeCssClasses(
 				(string)($btnAttribs['class'] ?? '')
@@ -1530,7 +1535,7 @@ class DEEC_Form
 
 			$classes[] = 'dw-btn';
 
-			if ($btnText === '') {
+			if ($type === 'button' && $btnText === '') {
 				$classes[] = 'dw-btn--icon';
 			} else {
 				$classes[] = 'dw-btn--action';
@@ -1541,53 +1546,21 @@ class DEEC_Form
 				array_values(array_unique($classes))
 			);
 
-			$btnAttribs['type'] = 'button';
+			$btnAttribs['type'] = $type;
 
-			if ($btnText === '' && empty($btnAttribs['aria-label'])) {
+			if ($type === 'button' && $btnText === '' && empty($btnAttribs['aria-label'])) {
 				$btnAttribs['aria-label'] = $this->translate(
 					(string)($el['label'] ?: strtoupper($nameRaw))
 				);
 			}
 
-			$btnAttrs = $this->renderHtmlAttribs($btnAttribs);
-
-			$button = '<button' . $btnAttrs . '>'
-				. $btnText
-				. '</button>';
-
-			return $wrap
-				? '<div class="' . $wrapperClasses . '"' . $wrapperAttributes . '>' . $button . '</div>'
-				: $button;
-		}
-
-		if ($type === 'submit') {
-			$btnAttribs = $attribs;
-
-			unset($btnAttribs['id']);
-
-			$btnText = $hasLabel
-				? htmlspecialchars($labelTxt . $unitTxt)
-				: $this->translate('SUBMIT');
-
-			$classes = $this->normalizeCssClasses(
-				(string)($btnAttribs['class'] ?? '')
-			);
-
-			$classes[] = 'dw-btn';
-			$classes[] = 'dw-btn--action';
-
-			$btnAttribs['class'] = implode(
-				' ',
-				array_values(array_unique($classes))
-			);
-
-			$btnAttribs['type'] = 'submit';
-
-			$button = '<button'
-				. $this->renderHtmlAttribs($btnAttribs)
-				. '>'
-				. htmlspecialchars($btnText)
-				. '</button>';
+			$presentation = array_intersect_key($el, array_flip(['icon', 'variant', 'size', 'iconOnly']));
+			$presentation['legacy'] = !$presentation;
+			$presentation['text'] = $btnText;
+			if (!$presentation['legacy'] && ($el['value'] !== null || $el['default'] !== null)) {
+				$btnAttribs['value'] = (string)$val;
+			}
+			$button = $this->renderButtonHtml($presentation, $btnAttribs);
 
 			return $wrap
 				? '<div class="' . $wrapperClasses . '"' . $wrapperAttributes . '>' . $button . '</div>'
@@ -2041,6 +2014,61 @@ class DEEC_Form
 	protected function renderAdditionalMultiActions(array $row, array $ctx): string
 	{
 		return '';
+	}
+
+	/** Render presentation only; callers retain authorization, translation and action routing. */
+	public function renderButtonHtml(array $presentation, array $attribs = []): string
+	{
+		$tag = $presentation['tag'] ?? 'button';
+		if (!in_array($tag, ['button', 'a'], true)) throw new InvalidArgumentException('Unsupported button tag');
+		$text = (string)($presentation['text'] ?? '');
+		$labelHtml = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+		$content = $labelHtml;
+
+		if (!empty($presentation['legacy'])) {
+			if (!empty($presentation['wrapLabel']) && $text !== '') $content = '<span>' . $content . '</span>';
+		} else {
+			$classes = $this->normalizeCssClasses((string)($attribs['class'] ?? ''));
+			$variant = $presentation['variant'] ?? (in_array('dw-btn--primary', $classes, true) ? 'primary' : 'default');
+			$size = $presentation['size'] ?? 'md';
+			if (!in_array($variant, ['default', 'primary', 'danger', 'ghost'], true)) throw new InvalidArgumentException('Unsupported button variant');
+			if (!in_array($size, ['sm', 'md', 'touch'], true)) throw new InvalidArgumentException('Unsupported button size');
+
+			$icons = ['add', 'edit', 'view', 'copy', 'settings', 'delete', 'cancel', 'clear', 'reset', 'apply', 'save', 'email', 'close', 'details', 'positions', 'back', 'pdf', 'get', 'daterange', 'select', 'up', 'down', 'filter'];
+			$icon = $presentation['icon'] ?? (array_values(array_intersect($classes, $icons))[0] ?? false);
+			if ($icon !== false && !in_array($icon, $icons, true)) throw new InvalidArgumentException('Unsupported button icon');
+			$iconOnly = (bool)($presentation['iconOnly'] ?? ($text === ''));
+			if ($iconOnly) {
+				if (trim((string)($attribs['aria-label'] ?? '')) === '' && trim((string)($attribs['aria-labelledby'] ?? '')) === '') $attribs['aria-label'] = $text;
+				$hasName = trim((string)($attribs['aria-label'] ?? '')) !== '' || trim((string)($attribs['aria-labelledby'] ?? '')) !== '';
+				if (!$hasName || $icon === false) throw new InvalidArgumentException('Icon-only buttons need an icon and an accessible name');
+			}
+
+			$classes = array_diff($classes, ['dw-btn--icon', 'dw-btn--action', 'dw-btn--default', 'dw-btn--primary', 'dw-btn--secondary', 'dw-btn--danger', 'dw-btn--ghost', 'dw-btn--sm', 'dw-btn--md', 'dw-btn--touch']);
+			$classes = array_merge($classes, ['dw-btn', 'dw-btn--control', 'dw-btn--' . $variant, 'dw-btn--' . $size, $iconOnly ? 'dw-btn--icon' : 'dw-btn--action']);
+			$attribs['class'] = implode(' ', array_unique($classes));
+			if ($tag === 'button') {
+				$attribs['type'] = $attribs['type'] ?? 'button';
+				if (!in_array($attribs['type'], ['button', 'submit', 'reset'], true)) throw new InvalidArgumentException('Unsupported button type');
+			} else {
+				if (!empty($attribs['disabled'])) {
+					$attribs['aria-disabled'] = 'true';
+					$attribs['tabindex'] = '-1';
+				}
+				unset($attribs['disabled']);
+			}
+
+			$content = $icon !== false ? $this->renderButtonIcon($icon) : '';
+			if (!$iconOnly) $content .= '<span class="dw-btn__label">' . $labelHtml . '</span>';
+		}
+
+		return '<' . $tag . $this->renderHtmlAttribs($attribs) . '>' . $content . '</' . $tag . '>';
+	}
+
+	/** Stable icon slot for a later local SVG implementation; B2 uses the existing PNGs. */
+	protected function renderButtonIcon(string $icon): string
+	{
+		return '<span class="dw-btn__icon dw-btn__icon--' . $icon . '" aria-hidden="true"></span>';
 	}
 
 	protected function renderHtmlAttribs(array $attribs): string

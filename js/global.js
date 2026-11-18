@@ -2,6 +2,15 @@ var isDirty = false;
 var timeout = 0;
 var setid = 0;
 
+// Capture disabled control clicks before inline handlers, delegated actions or navigation.
+document.addEventListener('click', function (event) {
+	var $control = $(event.target).closest('.dw-btn--control');
+	if ($control.is('[aria-disabled="true"], :disabled, .is-loading')) {
+		event.preventDefault();
+		event.stopImmediatePropagation();
+	}
+}, true);
+
 //Date picker options
 var datePickerOptions = {
 	autoHide: true,

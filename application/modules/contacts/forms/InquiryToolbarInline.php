@@ -7,12 +7,20 @@ class Contacts_Form_InquiryToolbarInline extends DEEC_Form
 		$this->addElement([
 			'type' => 'button',
 			'name' => 'view',
+			'label' => 'TOOLBAR_VIEW',
+			'icon' => 'view',
+			'iconOnly' => true,
+			'size' => 'sm',
 			'attribs' => ['class' => 'view nolabel'],
 			'wrap' => false,
 		]);
 		$this->addElement([
 			'type' => 'button',
 			'name' => 'edit',
+			'label' => 'TOOLBAR_EDIT',
+			'icon' => 'edit',
+			'iconOnly' => true,
+			'size' => 'sm',
 			'attribs' => ['class' => 'edit nolabel'],
 			'wrap' => false,
 		]);
