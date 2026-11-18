@@ -2,6 +2,8 @@
 
 Stand: 18.11.2026. Lokale Grundlage: B2 `b27f55e6`, B3 `2af50303`, [Bestandsaufnahme](buttons-icons-analysis.md), [Button-Grundlage](buttons-foundation.md) und [SVG-Vertrag/Katalog](button-icons.md). Der unversionierte Analysebericht bleibt unverändert und außerhalb dieses Commits.
 
+Fortsetzung: [B5 – gemeinsame Standardtoolbars](toolbar-buttons.md) erweitert den begrenzten Einbau auf Kontakt-/Artikelstammdaten. Die folgenden Scopeangaben beschreiben den B4-Stand; der Inquiry-Pilot bleibt erhalten.
+
 ## Ergebnis und Abnahmestatus
 
 Die sechs bereits in B2 vorgesehenen Controls verwenden jetzt ausdrücklich SVG. Der Renderer, seine Allowlist, Iconassets, Varianten und Größen aus B3 bleiben unverändert. Beide internen vollständigen Layouts liefern den vorhandenen Symbolblock einmal, ausschließlich für `contacts/inquiry`. Es gibt keine pauschale Umstellung anderer Toolbars und keine neuen Symbole, CSS-Regeln oder JavaScript-Handler.

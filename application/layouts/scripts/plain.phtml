@@ -52,7 +52,13 @@ $this->language = str_replace('_', '-', $this->language);
 	<?php echo $this->headScript(); ?>
 </head>
 <body class="dw-popup-page">
-	<?php if ($this->module === 'contacts' && $this->controller === 'inquiry') echo (new DEEC_Form())->renderButtonSymbols(); ?>
+	<?php
+	if (($this->module === 'contacts' && $this->controller === 'inquiry')
+		|| (in_array($this->action, ['index', 'search', 'select', 'edit', 'view'], true)
+			&& (($this->module === 'contacts' && $this->controller === 'contact') || ($this->module === 'items' && $this->controller === 'item')))) {
+		echo (new DEEC_Form())->renderButtonSymbols();
+	}
+	?>
 	<div class="dw-popup-shell dw-popup-shell--<?php echo $this->escape($this->module); ?> dw-popup-shell--<?php echo $this->escape($this->controller); ?> dw-popup-shell--<?php echo $this->escape($this->action); ?>">
 		<header class="dw-popup-header">
 			<div class="dw-popup-header__title">

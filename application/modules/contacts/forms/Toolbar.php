@@ -209,5 +209,12 @@ class Contacts_Form_Toolbar extends DEEC_Form
 				'format' => ['type' => 'int'],
 			]);
 		}
+
+		if ($isContactController && get_class($this) === self::class && in_array($request->getActionName(), ['index', 'search', 'select', 'edit', 'view'], true)) {
+			foreach (['add' => 'add', 'edit' => 'edit', 'copy' => 'copy', 'filter' => 'filter', 'reset' => 'reset'] as $name => $icon) {
+				$this->setElementData($name, ['icon' => $icon, 'iconFormat' => 'svg']);
+			}
+			$this->setElementData('clear', ['label' => 'CLEAR', 'icon' => 'clear', 'iconFormat' => 'svg', 'iconOnly' => true]);
+		}
 	}
 }
