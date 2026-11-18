@@ -1,5 +1,7 @@
 # B7 – Verbleibende risikoarme Standardtoolbars
 
+Fortsetzung: [B8 – Qualitätsaudit und Freigabevorbereitung](button-quality-audit.md) prüft den lokalen Stand, präzisiert die Übersetzungsfixture und dokumentiert aktuelle Freigabegrenzen. Die folgenden Angaben beschreiben den historischen B7-Stand.
+
 Stand: 18.11.2026. Lokale Grundlage: `AGENTS.md`, [Bestandsaufnahme](buttons-icons-analysis.md), [B2](buttons-foundation.md), [B3](button-icons.md), [B4](inquiry-buttons.md), [B5-Inventar](toolbar-buttons.md) und [B6](tasks-toolbar.md); Commits `b27f55e6`, `2af50303`, `20ebf9d9`, `aaca1571`, `f23f05fb`. Der unversionierte Analysebericht bleibt unverändert und außerhalb des Commits.
 
 ## Entscheidung und migrierter Umfang

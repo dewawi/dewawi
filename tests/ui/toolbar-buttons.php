@@ -41,9 +41,11 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 	$user = Zend_Registry::get('User');
 	$user['admin'] = $module === 'admin' ? 1 : 0;
 	Zend_Registry::set('User', $user);
-	$translator = buttonTranslations($locale);
-	$translator->loadDir($module, $root . '/languages/' . $locale . '/' . $module);
+	$translator = new DEEC_Translate($locale);
+	$translator->loadDir('default', $root . '/languages/' . $locale . '/default');
 	foreach (glob($root . '/languages/' . $locale . '/*/common.php') as $common) $translator->load(basename(dirname($common)) . '_common', $common);
+	$translator->loadDir($module, $root . '/languages/' . $locale . '/' . $module);
+	Zend_Registry::set('DEEC_Translate', $translator);
 	Zend_Registry::set('Zend_Locale', new Zend_Locale($locale));
 	Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_NonPersistent());
 	$class = ucfirst($module) . '_Form_Toolbar';

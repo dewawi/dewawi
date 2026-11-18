@@ -94,6 +94,28 @@ foreach (['de_DE', 'en_US'] as $locale) foreach (['admin' => $adminControllers, 
 	}
 }
 
+// Compare fixture translations with the actual route plugin, without its optional user/DB branch.
+require_once $root . '/application/plugins/Translate.php';
+if (!defined('BASE_PATH')) define('BASE_PATH', $root);
+$front = Zend_Controller_Front::getInstance();
+$previousBootstrap = $front->getParam('bootstrap');
+$front->setParam('bootstrap', new class {
+	public function getResource($name) { return new Zend_View(); }
+});
+$previousUser = Zend_Registry::get('User');
+foreach (['de_DE', 'en_US'] as $locale) foreach (['contacts/contact', 'items/item', 'tasks/task', 'admin/country', 'statistics/turnover'] as $context) {
+	toolbarPage($locale, $context);
+	$fixtureTranslator = Zend_Registry::get('DEEC_Translate');
+	$translator = new DEEC_Translate($locale);
+	$translator->loadDir('default', $root . '/languages/' . $locale . '/default');
+	Zend_Registry::set('DEEC_Translate', $translator);
+	Zend_Registry::getInstance()->offsetUnset('User');
+	(new Application_Plugin_Translate())->routeShutdown($front->getRequest());
+	foreach (['TOOLBAR_NEW', 'TOOLBAR_EDIT', 'TOOLBAR_COPY', 'TOOLBAR_FILTER', 'TOOLBAR_RESET', 'CLEAR', 'MENU_CONTACTS', 'MENU_ITEMS', 'MENU_STATISTICS', 'STATISTICS_TURNOVER_MONTHS'] as $key) check($fixtureTranslator->t($key) === $translator->t($key), 'Fixture translation differs from route plugin: ' . $locale . '/' . $context . '/' . $key);
+	Zend_Registry::set('User', $previousUser);
+}
+$front->setParam('bootstrap', $previousBootstrap);
+
 // Exercise the unchanged server-side ACL with an authenticated in-memory identity.
 require_once $root . '/application/plugins/Acl.php';
 class RemainingToolbarFlashFixture extends Zend_Controller_Action_Helper_Abstract

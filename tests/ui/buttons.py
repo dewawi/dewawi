@@ -12,6 +12,9 @@ from threading import Thread
 sys.dont_write_bytecode = True
 root = Path(__file__).resolve().parents[2]
 svg_mode = '--svg' in sys.argv
+audit_mode = '--audit' in sys.argv
+if audit_mode and not svg_mode:
+    raise ValueError('The quality audit requires --svg')
 spec = importlib.util.spec_from_file_location('button_browser_driver', root / 'tests/site/accessibility-http.py')
 browser = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(browser)
@@ -194,6 +197,36 @@ try:
                     screenshot = driver.command('GET', '/screenshot')
                     Path('/tmp/dewawi-' + ('b3-icons-' if svg_mode else 'b2-buttons-') + str(width) + '.png').write_bytes(base64.b64decode(screenshot))
                 print(f'PASS: {locale} {width}px button layout, keyboard, AJAX, auto-save, loading, links and submit')
+            if audit_mode:
+                # Probe shared presentation gaps once per locale, outside the route matrix.
+                contrast = driver.execute(r'''
+                    function rgb(c){return c.match(/[\d.]+/g).map(Number)}
+                    function luminance(c){var a=c.slice(0,3).map(v=>{v/=255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4)});return a[0]*.2126+a[1]*.7152+a[2]*.0722}
+                    return [...document.querySelectorAll('[id^=variant-]')].map(b=>{
+                        var c=rgb(getComputedStyle(b).color),e=b,bg;
+                        do {bg=rgb(getComputedStyle(e).backgroundColor);e=e.parentElement} while(bg[3]===0&&e);
+                        if(bg[3]===0)bg=[255,255,255];
+                        var x=luminance(c),y=luminance(bg);return {id:b.id,ratio:(Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+                    });
+                ''')
+                check(len(contrast) == 4 and all(c['ratio'] >= 4.5 for c in contrast), f'{locale}: normal text contrast: {contrast}')
+                driver.emulate_viewport(1280, 1100)
+                driver.command('POST', '/goog/cdp/execute', {'cmd': 'Emulation.setTouchEmulationEnabled', 'params': {'enabled': True, 'maxTouchPoints': 1}})
+                check(driver.execute('return matchMedia("(pointer: coarse)").matches&&[...document.querySelectorAll(".dw-btn--control")].every(b=>b.getBoundingClientRect().height>=44)&&[...document.querySelectorAll(".dw-btn--control .dw-btn__icon")].every(i=>getComputedStyle(i).width==="20px")'), f'{locale}: desktop coarse pointer lost touch dimensions')
+                driver.command('POST', '/goog/cdp/execute', {'cmd': 'Emulation.setTouchEmulationEnabled', 'params': {'enabled': False}})
+                driver.emulate_viewport(768, 1100)
+                driver.execute('document.body.style.zoom="2";window.scrollTo(0,0)')
+                check(driver.execute('return document.documentElement.scrollWidth<=innerWidth&&[...document.querySelectorAll("#controls .dw-btn--control")].every(b=>b.scrollWidth<=b.clientWidth)&&[...document.querySelectorAll(".dw-btn--control svg")].every(i=>i.querySelector("use").getBBox().width>0)'), f'{locale}: 200% CSS zoom clipped labels or icons')
+                Path(f'/tmp/dewawi-b8-quality-{locale}-zoom.png').write_bytes(base64.b64decode(driver.command('GET', '/screenshot')))
+                driver.execute('document.body.style.zoom="";window.busyClear=document.querySelector("#toolbar button[name=clear]");setButtonLoading($(busyClear),true,"Working")')
+                ax = driver.command('POST', '/goog/cdp/execute', {'cmd': 'Accessibility.getFullAXTree', 'params': {}})
+                clear_name = 'Leeren' if locale == 'de_DE' else 'Clear'
+                busy = [n for n in ax['nodes'] if n.get('role', {}).get('value') == 'button' and n.get('name', {}).get('value') == clear_name]
+                properties = {p['name']: p['value'].get('value') for p in busy[0].get('properties', [])} if len(busy) == 1 else {}
+                check(bool(properties.get('busy')) and bool(properties.get('disabled')), f'{locale}: busy icon-only AX name/state lost: {busy}')
+                driver.execute('setButtonLoading($(busyClear),false)')
+                check(driver.execute('return !busyClear.disabled&&!busyClear.hasAttribute("aria-busy")&&busyClear.querySelector("svg")!==null'), f'{locale}: audit loading state not restored')
+                print(f'PASS: {locale} quality probes; normal text contrast {contrast}')
         driver.command('POST', '/goog/cdp/execute', {'cmd': 'Emulation.setEmulatedMedia', 'params': {'features': [{'name': 'forced-colors', 'value': 'active'}]}})
         driver.execute('document.getElementById("variant-default").focus()')
         driver.keys('tab')
