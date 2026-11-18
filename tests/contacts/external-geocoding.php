@@ -35,6 +35,7 @@ class ExternalFixtureTool extends OneTimeGeocoding {
 	public array $calls = [];
 	public string $behavior = 'pending';
 	public bool $withAmenity = false;
+	public bool $cityOnly = false;
 	public static array $remote = [];
 	public $beforeApply = null;
 	protected function now(): int { return $this->clock; }
@@ -49,6 +50,7 @@ class ExternalFixtureTool extends OneTimeGeocoding {
 				[$street] = explode(', ', $input['params']['text']); preg_match('/^(.+) (\d+)$/D', $street, $parts);
 				$feature = externalFeature($parts[1], $parts[2]);
 				if ($parts[2] === '3') $feature['properties']['rank']['confidence'] = .5;
+				if ($this->cityOnly) { $feature['properties']['result_type'] = 'street'; $feature['properties']['rank']['match_type'] = 'match_by_street'; }
 				$features = [$feature];
 				if ($this->withAmenity) {
 					$amenity = externalFeature($parts[1], $parts[2]); $amenity['properties']['result_type'] = 'amenity'; $amenity['properties']['rank']['match_type'] = 'inner_part'; $features[] = $amenity;
@@ -290,24 +292,26 @@ $exportBytes = file_get_contents($cliDir.'/export.json'); $damaged = json_decode
 externalCheck($exit === 1 && $output === '', 'Changed export was accepted'); file_put_contents($cliDir.'/export.json', $exportBytes);
 
 require __DIR__.'/external-geocoding-deferrals.php';
+require __DIR__.'/external-geocoding-city.php';
 
 // Exercise the intended inventory size, provider chunking and multiple budget windows.
 $db->update('contact', ['deleted' => 1], ['clientid = ?' => 100]);
 $db->query('CREATE TEMPORARY TABLE external_digits (n INT NOT NULL)'); $db->query('INSERT INTO external_digits VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9)');
 $db->query("INSERT INTO contact (id, clientid, catid, created) SELECT 900000 + seq.n, 100, 0, '2026-11-18' FROM (SELECT a.n + b.n*10 + c.n*100 + d.n*1000 + e.n*10000 AS n FROM external_digits a CROSS JOIN external_digits b CROSS JOIN external_digits c CROSS JOIN external_digits d CROSS JOIN external_digits e) seq WHERE seq.n BETWEEN 1 AND 27863");
 $db->query("INSERT INTO address (parentid, clientid, module, controller, type, street, postcode, city, country) SELECT id, 100, 'contacts', 'contact', 'billing', CONCAT('Synthetic Street ', id), '12345', 'Example City', 'DE' FROM contact WHERE id BETWEEN 900001 AND 927863");
-[$large, $largeDir] = externalTool(); $largeExport = $large->export($target); $largeFile = json_decode(file_get_contents($largeDir.'/export.json'), true);
+[$large, $largeDir] = externalTool(); $large->cityOnly = true; $largeExport = $large->export($target); $largeFile = json_decode(file_get_contents($largeDir.'/export.json'), true);
 externalCheck($largeExport['exported'] === 27863 && $largeExport['unique_requests'] === 27863 && $largeExport['remaining_older'] === 0 && array_column($largeFile['data']['records'], 'contact_id') === range(927863, 900001), 'Paged export omitted, duplicated or reordered contacts'); unset($largeFile);
 $largeProvider = externalProvider($largeDir); $largeProvider['batch_size'] = 1000; $waits = 0;
 for ($step = 0; $step < 200; $step++) {
-	$progress = $large->geocode($largeProvider, $largeExport['export_sha256']);
+	$progress = $large->run($largeProvider, $largeExport['export_sha256'], 'city');
 	if ($progress['status'] === 'complete') break;
 	if ($progress['status'] === 'quota_wait') { $waits++; $large->clock += 86401; } else $large->clock += 300;
 }
 externalCheck($progress['status'] === 'complete' && $waits === 5 && count($large->calls) === 56, 'Large run lost jobs, ignored limits or repeated submissions');
 ExternalFixtureTool::$remote = []; $large->calls = [];
-$largePlan = $large->plan('plan.json', $target);
+$largePlan = $large->plan('plan.json', $target, 'city');
 externalCheck($largePlan['counts'] === ['planned' => 27863, 'conflicts' => 0, 'rejected' => 0, 'pending' => 0, 'deferred' => 0], 'Full-sized import dry-run incomplete');
+externalCheck($largePlan['accuracy_counts'] === ['building' => 0, 'city' => 27863], 'Full-sized fallback city plan lost accuracy evidence');
 $largeImport = $large->import('plan.json', $target, externalPermit($largePlan['plan_sha256']), $largePlan['plan_sha256'], 1);
 externalCheck($largeImport['database_writes'] === 1 && $largeImport['remaining'] === 27862, 'Full-sized bounded import failed');
 $largeResume = $large->import('plan.json', $target, externalPermit($largePlan['plan_sha256']), $largePlan['plan_sha256'], 1);

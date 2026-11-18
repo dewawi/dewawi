@@ -3,7 +3,7 @@ $this->title = $this->translate('CONTACTS_MAP_TITLE');
 $this->headTitle($this->title);
 $listUrl = $this->url(['module' => 'contacts', 'controller' => 'contact', 'action' => 'index'], null, true);
 $messages = [];
-foreach (['LOADING', 'ERROR', 'EMPTY', 'NO_POSITIONS', 'MORE', 'OPEN', 'ZOOM', 'RETRY'] as $key) $messages[strtolower($key)] = $this->translate('CONTACTS_MAP_'.$key);
+foreach (['LOADING', 'ERROR', 'EMPTY', 'NO_POSITIONS', 'MORE', 'OPEN', 'ZOOM', 'RETRY', 'APPROXIMATE'] as $key) $messages[strtolower($key)] = $this->translate('CONTACTS_MAP_'.$key);
 ?>
 <section class="dw-contact-map" data-contact-map
 	data-page-url="<?php echo $this->escape($this->url(['module' => 'contacts', 'controller' => 'contact', 'action' => 'map'], null, true)); ?>"
@@ -28,6 +28,7 @@ foreach (['LOADING', 'ERROR', 'EMPTY', 'NO_POSITIONS', 'MORE', 'OPEN', 'ZOOM', '
 		<?php endforeach; ?>
 	</div>
 	<div class="dw-contact-map__status" role="status" aria-live="polite" data-map-status></div>
+	<p><small data-map-approximate><?php echo $this->translate('CONTACTS_MAP_ACCURACY'); ?> · Powered by <a href="https://www.geoapify.com/">Geoapify</a></small></p>
 	<button type="button" class="dw-btn dw-btn--action" data-contact-map-retry hidden><?php echo $this->translate('CONTACTS_MAP_RETRY'); ?></button>
 	<div class="dw-contact-map__canvas" data-map-canvas role="region" aria-label="<?php echo $this->escape($this->title); ?>"></div>
 </section>

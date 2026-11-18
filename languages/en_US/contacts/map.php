@@ -19,4 +19,6 @@
 	'CONTACTS_MAP_OPEN' => 'Open contact',
 	'CONTACTS_MAP_ZOOM' => 'Expand locations or open contacts',
 	'CONTACTS_MAP_RETRY' => 'Try again',
+	'CONTACTS_MAP_APPROXIMATE' => 'Approximate location',
+	'CONTACTS_MAP_ACCURACY' => 'Locations are for orientation and may only identify the city. Building positions are not guaranteed.',
 ];

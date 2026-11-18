@@ -12,6 +12,7 @@ class OneTimeGeocoding
 	private const SNAPSHOT = ['id', 'clientid', 'parentid', 'module', 'controller', 'type', 'deleted', 'ordering', 'street', 'postcode', 'city', 'country', 'created', 'modified', 'latitude', 'longitude', 'geoupdated'];
 	private const NUMBER = '\d+(?: ?\p{L})?(?: ?[-\/–] ?\d+(?: ?\p{L})?)?';
 	private const DEFER_REASONS = ['postal_review', 'incomplete_address', 'privacy_review', 'other_review'];
+	private const CITY_POLICY = 'city-postcode-v1';
 	private string $directory;
 	private $lock;
 	private $db;
@@ -176,20 +177,32 @@ class OneTimeGeocoding
 		return $state;
 	}
 
-	public function status(): array
+	private static function accuracy(string $accuracy): void
 	{
+		if (!in_array($accuracy, ['strict', 'city'], true)) throw new RuntimeException('invalid_accuracy_mode');
+	}
+
+	public function status(string $accuracy = 'strict'): array
+	{
+		self::accuracy($accuracy);
 		$export = $this->exportFile(); $results = $this->results($export); $jobs = [];
 		foreach ($results['state']['jobs'] as $job) $jobs[$job['status']] = ($jobs[$job['status']] ?? 0) + 1;
-		return ['export_sha256' => $export['sha256'], 'exported' => count($export['data']['records']), 'unique_requests' => count($export['data']['queries']), 'jobs' => $jobs] + $this->overview($export, $results) + ['external_requests' => 0, 'database_writes' => 0];
+		$run = [];
+		if (file_exists($this->path('run.json'))) {
+			$run = $this->sealed('run.json')['data'];
+			if (($run['version'] ?? 0) !== 1 || ($run['clientid'] ?? 0) !== 100 || ($run['export_sha256'] ?? '') !== $export['sha256']) throw new RuntimeException('invalid_run_scope');
+		}
+		return ['export_sha256' => $export['sha256'], 'accuracy_mode' => $accuracy, 'exported' => count($export['data']['records']), 'unique_requests' => count($export['data']['queries']), 'jobs' => $jobs, 'automation' => $run] + $this->overview($export, $results, false, $accuracy) + ['external_requests' => 0, 'database_writes' => 0];
 	}
 
-	public function entries(): array
+	public function entries(string $accuracy = 'strict'): array
 	{
+		self::accuracy($accuracy);
 		$export = $this->exportFile();
-		return ['export_sha256' => $export['sha256']] + $this->overview($export, $this->results($export), true) + ['external_requests' => 0, 'database_writes' => 0];
+		return ['export_sha256' => $export['sha256'], 'accuracy_mode' => $accuracy] + $this->overview($export, $this->results($export), true, $accuracy) + ['external_requests' => 0, 'database_writes' => 0];
 	}
 
-	private function overview(array $export, array $results, bool $withEntries = false): array
+	private function overview(array $export, array $results, bool $withEntries = false, string $accuracy = 'strict'): array
 	{
 		$counts = array_fill_keys(['processed', 'open', 'deferred', 'rejected'], 0); $queries = $counts;
 		$groups = array_count_values(array_column($export['data']['records'], 'query_key')); $assigned = [];
@@ -199,7 +212,7 @@ class OneTimeGeocoding
 			$key = $record['query_key'];
 			if (!isset($statuses[$key])) {
 				if (isset($results['deferred'][$key])) $status = 'deferred';
-				elseif (isset($results['data'][$key])) $status = isset(self::validate($results['data'][$key], $record['fields'])['point']) ? 'processed' : 'rejected';
+				elseif (isset($results['data'][$key])) $status = isset(self::validate($results['data'][$key], $record['fields'], $accuracy)['point']) ? 'processed' : 'rejected';
 				else { $status = 'open'; if (isset($assigned[$key])) $inProgress++; else $notSubmitted++; }
 				$statuses[$key] = $status; $queries[$status]++;
 			}
@@ -284,7 +297,14 @@ class OneTimeGeocoding
 		// Priority 0.5; reserve creation plus the first GET before submitting.
 		$credits = $isPost ? (int)ceil($inputs * .5) + 2 : ($job['poll_reserved'] && $job['submitted_at'] > $now - 86400 ? 0 : 1);
 		$ledger['entries'] = array_values(array_filter($ledger['entries'], fn($entry) => $entry['at'] > $now - 86400));
-		if (array_sum(array_column($ledger['entries'], 'credits')) + $credits > $dailyCredits || array_sum(array_column($ledger['entries'], 'inputs')) + $inputs > $dailyInputs) return ['status' => 'quota_wait', 'external_requests' => 0];
+		if (array_sum(array_column($ledger['entries'], 'credits')) + $credits > $dailyCredits || array_sum(array_column($ledger['entries'], 'inputs')) + $inputs > $dailyInputs) {
+			$next = null;
+			foreach (array_unique(array_column($ledger['entries'], 'at')) as $at) {
+				$remaining = array_filter($ledger['entries'], static fn($entry) => $entry['at'] > $at);
+				if (array_sum(array_column($remaining, 'credits')) + $credits <= $dailyCredits && array_sum(array_column($remaining, 'inputs')) + $inputs <= $dailyInputs) $next = min($next ?? PHP_INT_MAX, $at + 86400);
+			}
+			return ['status' => 'quota_wait', 'next_at' => $next, 'reason' => $next === null ? 'batch_exceeds_daily_budget' : 'rolling_daily_budget', 'external_requests' => 0];
+		}
 		$ledger['entries'][] = ['at' => $now, 'credits' => $credits, 'inputs' => $inputs]; $ledger['next_at'] = $now + 60;
 		$quota->write('quota.json', $ledger);
 		$state['jobs'][$index] = $job; $this->write('jobs.json', $state);
@@ -305,7 +325,13 @@ class OneTimeGeocoding
 					$name = 'results-'.$index.'.json';
 					if (file_exists($this->path($name))) {
 						$existing = $this->sealed($name);
-						if ($existing['sha256'] !== self::digest($results)) throw new RuntimeException('completed_results_changed');
+						if ($existing['sha256'] !== self::digest($results)) {
+							// A legacy download may predate retained region fields; never rewrite it on resume.
+							$legacy = $results;
+							foreach ($legacy as &$result) if (isset($result['features'])) foreach ($result['features'] as &$feature) unset($feature['properties']['state'], $feature['properties']['state_code'], $feature['properties']['county']);
+							unset($result, $feature);
+							if ($existing['sha256'] !== self::digest($legacy)) throw new RuntimeException('completed_results_changed');
+						}
 						$job['result_sha256'] = $existing['sha256'];
 					} else $job['result_sha256'] = $this->seal($name, $results);
 					$job['status'] = 'done';
@@ -313,7 +339,19 @@ class OneTimeGeocoding
 			}
 		} else $job['status'] = $isPost ? 'unknown' : 'invalid_response';
 		$state['jobs'][$index] = $job; $this->write('jobs.json', $state);
-		return ['status' => $job['status'], 'job' => $index, 'reserved_credits' => $credits, 'external_requests' => 1, 'database_writes' => 0];
+		return ['status' => $job['status'], 'job' => $index, 'next_at' => $job['status'] === 'unknown' ? null : ($job['status'] === 'pending' ? $job['next_at'] : $now + 60), 'reserved_credits' => $credits, 'external_requests' => 1, 'database_writes' => 0];
+	}
+
+	// One resumable scheduler tick; the existing workspace and quota locks cover all work.
+	public function run(array $config, string $execute, string $accuracy = 'strict'): array
+	{
+		self::accuracy($accuracy);
+		$config += ['batch_size' => 1000];
+		$step = $this->geocode($config, $execute); $status = $this->status($accuracy);
+		$finished = $status['exported'] - $status['counts']['open'];
+		$data = ['version' => 1, 'clientid' => 100, 'export_sha256' => $status['export_sha256'], 'accuracy_mode' => $accuracy, 'at' => $this->now(), 'status' => $step['status'], 'next_at' => $step['next_at'] ?? null, 'next_at_utc' => isset($step['next_at']) ? gmdate('c', $step['next_at']) : null, 'reason' => $step['reason'] ?? null, 'counts' => $status['counts'], 'progress' => ['finished' => $finished, 'total' => $status['exported'], 'percent' => $status['exported'] ? round(100 * $finished / $status['exported'], 2) : 100]];
+		$this->write('run.json', ['sha256' => self::digest($data), 'data' => $data]);
+		return $data + ['external_requests' => $step['external_requests'], 'database_writes' => 0];
 	}
 
 	protected function http(string $method, ?string $id, ?array $body, string $key): array
@@ -346,7 +384,7 @@ class OneTimeGeocoding
 			if (is_array($features)) foreach ($features as $feature) {
 				if (!is_array($feature)) { $clean[] = []; continue; }
 				$feature = array_intersect_key($feature, array_flip(['type', 'properties', 'geometry', 'bbox']));
-				$feature['properties'] = array_intersect_key(is_array($feature['properties'] ?? null) ? $feature['properties'] : [], array_flip(['lat', 'lon', 'country_code', 'postcode', 'city', 'street', 'housenumber', 'result_type', 'rank', 'datasource']));
+				$feature['properties'] = array_intersect_key(is_array($feature['properties'] ?? null) ? $feature['properties'] : [], array_flip(['lat', 'lon', 'country_code', 'postcode', 'city', 'state', 'state_code', 'county', 'street', 'housenumber', 'result_type', 'rank', 'datasource']));
 				$clean[] = $feature;
 			}
 			$mapped[$key] = is_array($features) ? ['type' => $item['result']['type'] ?? '', 'features' => $clean] : ['error' => true];
@@ -377,8 +415,10 @@ class OneTimeGeocoding
 		return true;
 	}
 
-	public static function validate(array $result, array $fields): array
+	public static function validate(array $result, array $fields, string $accuracy = 'strict'): array
 	{
+		self::accuracy($accuracy);
+		if ($accuracy === 'city') return self::validateCity($result, $fields);
 		if (($result['type'] ?? '') !== 'FeatureCollection' || !is_array($result['features'] ?? null)) return ['rejected' => 'api_error'];
 		if (!$result['features']) return ['rejected' => 'missing_or_ambiguous'];
 		$eligible = []; $rejection = 'no_suitable_building';
@@ -395,9 +435,8 @@ class OneTimeGeocoding
 	private static function validateFeature($feature, array $fields): array
 	{
 		if (!is_array($feature) || !is_array($feature['properties'] ?? null) || !is_array($feature['geometry'] ?? null) || !is_array($feature['properties']['rank'] ?? null)) return ['rejected' => 'malformed_feature'];
-		$p = $feature['properties']; $rank = $p['rank']; $coordinates = $feature['geometry']['coordinates'] ?? null;
-		if (($feature['geometry']['type'] ?? '') !== 'Point' || !is_array($coordinates) || !array_is_list($coordinates) || count($coordinates) !== 2 || !self::validPoint(['latitude' => $p['lat'] ?? null, 'longitude' => $p['lon'] ?? null]) || (float)$p['lat'] === 0.0 && (float)$p['lon'] === 0.0) return ['rejected' => 'invalid_coordinates'];
-		if (!self::validPoint(['longitude' => $coordinates[0], 'latitude' => $coordinates[1]]) || (float)$coordinates[0] !== (float)$p['lon'] || (float)$coordinates[1] !== (float)$p['lat']) return ['rejected' => 'geometry_mismatch'];
+		$p = $feature['properties']; $rank = $p['rank']; $point = self::featurePoint($feature);
+		if (isset($point['rejected'])) return $point;
 		if (($p['result_type'] ?? '') !== 'building' || !in_array($rank['match_type'] ?? '', ['full_match', 'match_by_building'], true)) return ['rejected' => 'imprecise'];
 		foreach (['confidence', 'confidence_city_level', 'confidence_street_level', 'confidence_building_level'] as $field) if (!is_numeric($rank[$field] ?? null) || !is_finite((float)$rank[$field]) || $rank[$field] < .95 || $rank[$field] > 1) return ['rejected' => 'low_or_missing_accuracy'];
 		foreach (['country_code', 'postcode', 'city', 'street', 'housenumber'] as $field) if (!is_string($p[$field] ?? null) || !mb_check_encoding($p[$field], 'UTF-8') || preg_match('/[\p{Cc}\p{Cf}]/u', $p[$field])) return ['rejected' => 'incomplete_components'];
@@ -406,13 +445,77 @@ class OneTimeGeocoding
 		if (self::text($p['city']) !== $fields['city']) return ['rejected' => 'city_mismatch'];
 		$number = self::number($p['housenumber']); $road = self::text($p['street']);
 		if ($number === null || !in_array($fields['street'], [$road.' '.$number, $number.' '.$road], true)) return ['rejected' => 'street_or_number_mismatch'];
-		if (isset($feature['bbox'])) {
-			$box = $feature['bbox'];
-			if (!is_array($box) || !array_is_list($box) || count($box) !== 4 || count(array_filter($box, static fn($value) => is_numeric($value) && is_finite((float)$value))) !== 4) return ['rejected' => 'invalid_bbox'];
-			[$west, $south, $east, $north] = array_map('floatval', $box);
-			if ($west < -180 || $east > 180 || $south < -90 || $north > 90 || $east - $west > .1 || $north - $south > .1 || $west > $p['lon'] || $east < $p['lon'] || $south > $p['lat'] || $north < $p['lat']) return ['rejected' => 'invalid_bbox'];
-		}
+		if (!self::validBox($feature, .1)) return ['rejected' => 'invalid_bbox'];
+		return $point;
+	}
+
+	private static function featurePoint(array $feature): array
+	{
+		$p = $feature['properties']; $coordinates = $feature['geometry']['coordinates'] ?? null;
+		if (($feature['geometry']['type'] ?? '') !== 'Point' || !is_array($coordinates) || !array_is_list($coordinates) || count($coordinates) !== 2 || !self::validPoint(['latitude' => $p['lat'] ?? null, 'longitude' => $p['lon'] ?? null]) || (float)$p['lat'] === 0.0 && (float)$p['lon'] === 0.0) return ['rejected' => 'invalid_coordinates'];
+		if (!self::validPoint(['longitude' => $coordinates[0], 'latitude' => $coordinates[1]]) || (float)$coordinates[0] !== (float)$p['lon'] || (float)$coordinates[1] !== (float)$p['lat']) return ['rejected' => 'geometry_mismatch'];
 		return ['point' => ['latitude' => number_format((float)$p['lat'], 9, '.', ''), 'longitude' => number_format((float)$p['lon'], 9, '.', '')]];
+	}
+
+	private static function validBox(array $feature, float $span): bool
+	{
+		if (!isset($feature['bbox'])) return true;
+		$box = $feature['bbox']; $p = $feature['properties'];
+		if (!is_array($box) || !array_is_list($box) || count($box) !== 4 || count(array_filter($box, static fn($value) => is_numeric($value) && is_finite((float)$value))) !== 4) return false;
+		[$west, $south, $east, $north] = array_map('floatval', $box);
+		return $west >= -180 && $east <= 180 && $south >= -90 && $north <= 90 && $east - $west <= $span && $north - $south <= $span && $west <= $p['lon'] && $east >= $p['lon'] && $south <= $p['lat'] && $north >= $p['lat'];
+	}
+
+	private static function distance(array $a, array $b): float
+	{
+		$lat = deg2rad((float)$a['latitude']); $other = deg2rad((float)$b['latitude']);
+		$arc = sin(($other - $lat) / 2) ** 2 + cos($lat) * cos($other) * sin(deg2rad((float)$b['longitude'] - (float)$a['longitude']) / 2) ** 2;
+		return 6371000 * 2 * asin(sqrt(min(1, max(0, $arc))));
+	}
+
+	private static function validateCity(array $result, array $fields): array
+	{
+		if (($result['type'] ?? '') !== 'FeatureCollection' || !is_array($result['features'] ?? null)) return ['rejected' => 'api_error'];
+		if (!$result['features'] || count($result['features']) > 3) return ['rejected' => 'missing_or_ambiguous'];
+		$candidates = []; $regions = []; $minimum = 1.0;
+		foreach ($result['features'] as $feature) {
+			if (!is_array($feature) || !is_array($feature['properties'] ?? null) || !is_array($feature['geometry'] ?? null) || !is_array($feature['properties']['rank'] ?? null)) return ['rejected' => 'malformed_feature'];
+			$p = $feature['properties']; $rank = $p['rank']; $point = self::featurePoint($feature);
+			if (isset($point['rejected'])) return $point;
+			if (!self::validBox($feature, 2)) return ['rejected' => 'invalid_bbox'];
+			if (!in_array($p['result_type'] ?? '', ['building', 'amenity', 'street', 'suburb', 'district', 'postcode', 'city'], true) || !in_array($rank['match_type'] ?? '', ['full_match', 'inner_part', 'match_by_building', 'match_by_street', 'match_by_postcode', 'match_by_city_or_disrict'], true)) return ['rejected' => 'unsupported_city_match'];
+			$confidence = $rank['confidence_city_level'] ?? null;
+			if (!is_numeric($confidence) || !is_finite((float)$confidence) || $confidence < .95 || $confidence > 1) return ['rejected' => 'low_or_missing_city_accuracy'];
+			$minimum = min($minimum, (float)$confidence);
+			foreach (['country_code' => 'country', 'city' => 'city', 'postcode' => 'postcode'] as $property => $field) {
+				$value = $p[$property] ?? null;
+				if (!is_string($value) || !mb_check_encoding($value, 'UTF-8') || preg_match('/[\p{Cc}\p{Cf}]/u', $value) || trim($value) === '') return ['rejected' => 'incomplete_city_identity'];
+				$value = self::text($value); $expected = $fields[$field];
+				if ($field === 'postcode') { $value = str_replace(' ', '', $value); $expected = str_replace(' ', '', $expected); }
+				if ($value !== $expected) return ['rejected' => $field.'_mismatch'];
+			}
+			foreach (['state', 'state_code', 'county'] as $region) if (isset($p[$region])) {
+				if (!is_string($p[$region]) || !mb_check_encoding($p[$region], 'UTF-8') || preg_match('/[\p{Cc}\p{Cf}]/u', $p[$region])) return ['rejected' => 'invalid_region'];
+				$value = self::text($p[$region]);
+				if ($value !== '') { if (isset($regions[$region]) && $regions[$region] !== $value) return ['rejected' => 'region_conflict']; $regions[$region] = $value; }
+			}
+			$candidates[] = ['point' => $point['point'], 'city_result' => $p['result_type'] === 'city'];
+		}
+		$maximum = 0.0;
+		foreach ($candidates as $i => &$candidate) {
+			$candidate['distance_sum'] = 0.0;
+			foreach ($candidates as $j => $other) if ($j !== $i) {
+				$distance = self::distance($candidate['point'], $other['point']);
+				if ($distance > 10000) return ['rejected' => 'geographic_conflict'];
+				$maximum = max($maximum, $distance); $candidate['distance_sum'] += $distance;
+			}
+		}
+		unset($candidate);
+		$exact = self::validate($result, $fields);
+		if (isset($exact['point'])) return $exact + ['accuracy' => 'building', 'decision' => 'exact_building'];
+		// Prefer a city result, then the medoid; coordinate ties are independent of result order.
+		usort($candidates, static fn($a, $b) => ($b['city_result'] <=> $a['city_result']) ?: ($a['distance_sum'] <=> $b['distance_sum']) ?: ($a['point'] <=> $b['point']));
+		return ['point' => $candidates[0]['point'], 'accuracy' => 'city', 'decision' => 'city_postcode_consensus', 'evidence' => ['candidates' => count($candidates), 'minimum_city_confidence' => number_format($minimum, 4, '.', ''), 'maximum_distance_m' => (int)ceil($maximum)]];
 	}
 
 	private function results(array $export): array
@@ -456,25 +559,31 @@ class OneTimeGeocoding
 		return $hashes;
 	}
 
-	public function plan(string $name, string $target): array
+	public function plan(string $name, string $target, string $accuracy = 'strict'): array
 	{
+		self::accuracy($accuracy);
 		if (!preg_match('/^plan(?:-[a-zA-Z0-9_-]+)?\.json$/D', $name)) throw new RuntimeException('invalid_plan_name');
 		$this->authorize(); $export = $this->exportFile();
 		if ($export['data']['target'] !== $target) throw new RuntimeException('target_changed');
 		$results = $this->results($export); $currentHashes = $this->currentHashes($export['data']['records']);
-		$updates = []; $counts = ['planned' => 0, 'conflicts' => 0, 'rejected' => 0, 'pending' => 0, 'deferred' => 0]; $reasons = [];
+		$updates = []; $counts = ['planned' => 0, 'conflicts' => 0, 'rejected' => 0, 'pending' => 0, 'deferred' => 0]; $reasons = []; $levels = ['building' => 0, 'city' => 0];
 		foreach ($export['data']['records'] as $record) {
 			if (isset($results['deferred'][$record['query_key']])) { $counts['deferred']++; continue; }
 			$result = $results['data'][$record['query_key']] ?? null;
 			if ($result === null) { $counts['pending']++; continue; }
-			$check = self::validate($result, $record['fields']);
+			$check = self::validate($result, $record['fields'], $accuracy);
 			if (isset($check['rejected'])) { $counts['rejected']++; $reasons[$check['rejected']] = ($reasons[$check['rejected']] ?? 0) + 1; continue; }
 			if (self::validPoint($record['snapshot']) || !hash_equals($currentHashes[$record['contact_id']] ?? '', self::digest($record['snapshot']))) { $counts['conflicts']++; continue; }
-			$updates[] = ['record' => $record, 'point' => $check['point']]; $counts['planned']++;
+			$updates[] = ['record' => $record, 'point' => $check['point']] + ($accuracy === 'city' ? self::decision($check) : []); $counts['planned']++;
+			if ($accuracy === 'city') $levels[$check['accuracy']]++;
 		}
 		$plan = ['version' => 1, 'clientid' => 100, 'target' => $target, 'export_sha256' => $export['sha256'], 'results_sha256' => $results['sha256'], 'counts' => $counts, 'rejected_reasons' => $reasons, 'updates' => $updates, 'pending_queries' => $results['pending']];
-		return ['plan_sha256' => $this->seal($name, $plan), 'counts' => $counts, 'rejected_reasons' => $reasons, 'pending_queries' => $results['pending'], 'database_writes' => 0];
+		$mode = $accuracy === 'city' ? ['accuracy_mode' => 'city', 'validation_policy' => self::CITY_POLICY, 'accuracy_counts' => $levels] : [];
+		if ($mode) { $plan['version'] = 2; $plan += $mode; }
+		return ['plan_sha256' => $this->seal($name, $plan), 'counts' => $counts, 'rejected_reasons' => $reasons, 'pending_queries' => $results['pending'], 'database_writes' => 0] + $mode;
 	}
+
+	private static function decision(array $check): array { return array_intersect_key($check, array_flip(['accuracy', 'decision', 'evidence'])); }
 
 	private function append(string $name, array $entry): void
 	{
@@ -489,14 +598,18 @@ class OneTimeGeocoding
 	{
 		if (!preg_match('/^plan(?:-[a-zA-Z0-9_-]+)?\.json$/D', $name)) throw new RuntimeException('invalid_plan_name');
 		$this->authorize(true); $file = $this->sealed($name); $plan = $file['data']; $export = $this->exportFile(); $results = $this->results($export);
+		$accuracy = 'strict';
+		if (($plan['version'] ?? 0) === 2 && ($plan['accuracy_mode'] ?? '') === 'city' && ($plan['validation_policy'] ?? '') === self::CITY_POLICY) $accuracy = 'city';
+		elseif (($plan['version'] ?? 0) !== 1 || isset($plan['accuracy_mode']) || isset($plan['validation_policy'])) throw new RuntimeException('unsupported_plan_policy');
 		if ($limit < 1 || $limit > 1000 || filter_var($permit['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN) !== true || !hash_equals($file['sha256'], $execute) || ($permit['plan_sha256'] ?? '') !== $execute || !self::reference($permit['approval_reference'] ?? null) || !self::reference($permit['backup_reference'] ?? null) || !self::reference($permit['attribution_reference'] ?? null)) throw new RuntimeException('import_not_released');
 		if (($plan['clientid'] ?? 0) !== 100 || $plan['target'] !== $target || $plan['export_sha256'] !== $export['sha256'] || $plan['results_sha256'] !== $results['sha256'] || $plan['pending_queries'] !== 0) throw new RuntimeException('import_snapshot_changed');
 		$original = []; foreach ($export['data']['records'] as $record) $original[$record['snapshot']['id']] = $record;
 		$seen = [];
 		foreach ($plan['updates'] as $update) {
 			$record = $update['record']; $id = $record['snapshot']['id'];
-			if (isset($seen[$id]) || isset($results['deferred'][$record['query_key']]) || self::validPoint($record['snapshot']) || ($original[$id] ?? null) !== $record || (self::validate($results['data'][$record['query_key']] ?? [], $record['fields'])['point'] ?? null) !== $update['point']) throw new RuntimeException('invalid_planned_update');
-			$seen[$id] = true;
+			$check = self::validate($results['data'][$record['query_key']] ?? [], $record['fields'], $accuracy);
+			if (isset($seen[$id]) || isset($results['deferred'][$record['query_key']]) || self::validPoint($record['snapshot']) || ($original[$id] ?? null) !== $record || ($check['point'] ?? null) !== $update['point'] || ($accuracy === 'city' && self::decision($check) !== self::decision($update))) throw new RuntimeException('invalid_planned_update');
+			$seen[$id] = $accuracy === 'city' ? self::decision($check) : [];
 		}
 		$backup = 'backup-'.$execute.'.json'; $journal = 'import-'.$execute.'.jsonl';
 		if (!file_exists($this->path($backup))) $this->seal($backup, $plan);
@@ -505,6 +618,7 @@ class OneTimeGeocoding
 		if (file_exists($this->path($journal))) foreach (file($this->path($journal), FILE_IGNORE_NEW_LINES) as $line) {
 			$entry = json_decode($line, true, 16, JSON_THROW_ON_ERROR);
 			if (!is_array($entry) || ($entry['plan_sha256'] ?? '') !== $execute || !is_string($entry['address_id'] ?? null) || !isset($seen[$entry['address_id']]) || !in_array($entry['status'] ?? '', ['intent', 'updated', 'conflicts', 'recovered'], true) || !is_string($entry['geoupdated'] ?? null)) throw new RuntimeException('invalid_journal');
+			if ($accuracy === 'city' && self::decision($entry) !== $seen[$entry['address_id']]) throw new RuntimeException('journal_accuracy_changed');
 			$date = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $entry['geoupdated']);
 			if (!$date || $date->format('Y-m-d H:i:s') !== $entry['geoupdated']) throw new RuntimeException('invalid_journal_date');
 			if ($entry['status'] === 'intent') $entries[$entry['address_id']] = $entry;
@@ -515,7 +629,7 @@ class OneTimeGeocoding
 			$record = $update['record']; $id = $record['snapshot']['id'];
 			if (isset($done[$id])) { $counts['already_logged']++; continue; }
 			if ($processed++ >= $limit) break;
-			$entry = $entries[$id] ?? ['status' => 'intent', 'plan_sha256' => $execute, 'address_id' => $id, 'operator' => (int)Zend_Registry::get('User')['id'], 'at' => gmdate('c', $this->now()), 'geoupdated' => date('Y-m-d H:i:s', $this->now())];
+			$entry = $entries[$id] ?? ['status' => 'intent', 'plan_sha256' => $execute, 'address_id' => $id, 'operator' => (int)Zend_Registry::get('User')['id'], 'at' => gmdate('c', $this->now()), 'geoupdated' => date('Y-m-d H:i:s', $this->now())] + $seen[$id];
 			$current = $this->current($record); $expectedAfter = array_replace($record['snapshot'], $update['point'], ['geoupdated' => $entry['geoupdated']]);
 			if (isset($entries[$id]) && $current === $expectedAfter) $status = 'recovered';
 			elseif ($current !== $record['snapshot']) $status = 'conflicts';

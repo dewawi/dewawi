@@ -19,4 +19,6 @@
 	'CONTACTS_MAP_OPEN' => 'Kontakt öffnen',
 	'CONTACTS_MAP_ZOOM' => 'Standorte auflösen oder Kontakte öffnen',
 	'CONTACTS_MAP_RETRY' => 'Erneut versuchen',
+	'CONTACTS_MAP_APPROXIMATE' => 'Ungefähre Position',
+	'CONTACTS_MAP_ACCURACY' => 'Standorte dienen der Orientierung und können nur auf Ortsebene bestimmt sein. Keine gesicherte Gebäudeposition.',
 ];

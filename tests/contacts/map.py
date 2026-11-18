@@ -78,6 +78,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-contact-map-') as directory:
                 get(params, expected=400)
             page = get(dict(role='partner', tagid=2), path='/map')[0]
             assert 'data-contact-map' in page and 'contacts-map.js' in page and 'value="partner" selected' in page
+            assert 'data-map-approximate' in page and 'Ortsebene' in page and 'href="https://www.geoapify.com/"' in page
             listing = get(path='/index')[0]
             assert 'data-contact-map-open' in listing and 'id="contactsmap"' not in listing and 'function contactsMap' not in listing
             print('PASS:', checks, 'map controller/HTTP, routes, ACL, input and projection checks')

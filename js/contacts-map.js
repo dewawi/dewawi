@@ -73,6 +73,7 @@
 
 		function openGroup(marker, group) {
 			var $popup = $('<div>', {'class': 'dw-contact-map__popup'});
+			$('<small>').text(messages.approximate).appendTo($popup);
 			var $notice = $('<p>').appendTo($popup);
 			var $list = $('<ul>').appendTo($popup);
 			var $more = $('<button>', {type: 'button', 'class': 'dw-btn dw-btn--action'}).text(messages.more).appendTo($popup);
@@ -117,8 +118,10 @@
 					var marker;
 					var longitude = group.longitude + 360 * Math.round((map.getCenter().lng - group.longitude) / 360);
 					if (group.count === 1) {
-						marker = L.marker([group.latitude, longitude], {title: group.name1 || messages.open});
-						marker.bindPopup(contactLink(group), {autoPan: false});
+						marker = L.marker([group.latitude, longitude], {title: (group.name1 || messages.open) + ' · ' + messages.approximate});
+						var $single = $('<div>').append(contactLink(group));
+						$('<p>').append($('<small>').text(messages.approximate)).appendTo($single);
+						marker.bindPopup($single[0], {autoPan: false});
 					} else {
 						marker = L.marker([group.latitude, longitude], {
 							title: group.count + ' · ' + messages.zoom,
