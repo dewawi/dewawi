@@ -35,6 +35,7 @@ class DEEC_Permission
 
 	private const ACTIONS = [
 		'add' => [
+			'revise',
 			'add',
 			'copy',
 			'createcontact',

@@ -12,6 +12,8 @@ class Sales_Service_DocumentFinalizeService
 		}
 
 		(new DEEC_Document_FinalizeValidator())->assertValid($document, 'sales', $controller);
+		$revisions = new Sales_Service_DocumentRevisionService();
+		if ($revisions->relation((int)$document['id'], $controller, (int)$document['clientid'])) $revisions->context((int)$document['id'], $controller, 'approve');
 
 		$incrementDb = new Application_Model_DbTable_Increment();
 		$increment = $incrementDb->getIncrement($docIdField, true);

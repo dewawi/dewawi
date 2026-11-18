@@ -171,7 +171,7 @@ class DEEC_Pdf
 		$this->bootstrapTcpdf();
 		$pdf = $this->initPdf($this->buildPdfTitle($payload), $payload['document'], $payload['template']);
 		$this->renderPayload($pdf, $payload);
-		if ($viewing) $this->markCopy($pdf, 'DOCUMENTS_RECONSTRUCTED_MARK');
+		$this->markCopy($pdf, 'DOCUMENTS_RECONSTRUCTED_MARK');
 		return ['bytes' => $pdf->Output('', 'S'), 'validation' => $validation, 'dependencies' => [
 			'template' => $payload['template'], 'template_sha256' => hash('sha256', json_encode($payload['template'], JSON_THROW_ON_ERROR)),
 			'payload_sha256' => hash('sha256', serialize($payload)), 'renderer_sha256' => hash_file('sha256', __FILE__),
@@ -273,12 +273,7 @@ class DEEC_Pdf
 				$pdf->writeHTML($html . '</table>');
 			}
 		}
-		for ($page = 1; !$viewing && $page <= $pdf->getNumPages(); $page++) {
-			$pdf->setPage($page); $pdf->SetXY(15, 9); $pdf->SetFont('dejavusans', 'B', 8);
-			$pdf->SetTextColor(160, 0, 0);
-			$pdf->Cell(180, 8, 'REKONSTRUKTION ZUR PRÜFUNG – KEIN BESTÄTIGTES ORIGINAL', 1, 0, 'C');
-		}
-		if ($viewing) $this->markCopy($pdf, 'DOCUMENTS_RECONSTRUCTED_MARK');
+		$this->markCopy($pdf, 'DOCUMENTS_RECONSTRUCTED_MARK');
 		return ['bytes' => $pdf->Output('', 'S'), 'diagnosis' => $diagnosis, 'snapshot_sha256' => $snapshot['sha256'], 'dependencies' => ['renderer_sha256' => hash_file('sha256', __FILE__), 'historical_layout_guaranteed' => false, 'payload_services_used' => false]];
 	}
 
@@ -403,11 +398,11 @@ class DEEC_Pdf
 		for ($page = 1; $page <= $pdf->getNumPages(); $page++) {
 			$pdf->setPage($page);
 			$pdf->SetFont('dejavusans', 'B', $page === 1 ? 12 : 10);
-			$pdf->SetTextColor(150, 0, 0);
-			$pdf->SetDrawColor(150, 0, 0);
-			$pdf->SetFillColor(255, 240, 225);
+			$pdf->SetTextColor(45, 45, 45);
+			$pdf->SetDrawColor(150, 150, 150);
+			$pdf->SetLineWidth(0.15);
 			$pdf->SetXY(15, 1);
-			$pdf->Cell($pdf->getPageWidth() - 30, 9, $text, 1, 0, 'C', true, '', 1);
+			$pdf->Cell($pdf->getPageWidth() - 30, 9, $text, 1, 0, 'C', false, '', 1);
 		}
 	}
 

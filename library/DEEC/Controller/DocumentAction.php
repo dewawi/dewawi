@@ -140,6 +140,10 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 			throw new RuntimeException('Document is not editable');
 		}
 		$row = $current;
+		if (($values['state'] ?? null) == 105 && $this->getRequest()->getModuleName() === 'sales'
+			&& (new Sales_Service_DocumentRevisionService())->relation((int)$row['id'], $this->getRequest()->getControllerName(), (int)$row['clientid'])) {
+			throw new RuntimeException('DOCUMENT_CHANGES_ADMIN_REQUIRED');
+		}
 
 		if(array_key_exists('responsibleid', $values)) {
 			$responsibleId = (int)$values['responsibleid'];
@@ -275,6 +279,19 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		}
 
 		return $this->sendPdfResponse($result);
+	}
+
+	public function reviseAction()
+	{
+		$this->disableView(); $request = $this->getRequest(); $response = $this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
+		if (!$request->isPost()) { $response->setHttpResponseCode(405)->setHeader('Allow', 'POST', true); return; }
+		try {
+			$type = $request->getControllerName(); $id = (int)$this->_getParam('id'); $post = (array)$request->getPost();
+			if ($request->getModuleName() !== 'sales' || !is_string($post['csrf_token'] ?? null) || !hash_equals(Sales_Service_DocumentRevisionService::token($type, $id), $post['csrf_token'])) throw new RuntimeException('DOCUMENT_CHANGES_ACCESS_DENIED');
+			if (!is_string($post['reason'] ?? null) || !is_string($post['request_key'] ?? null)) throw new RuntimeException('DOCUMENT_CHANGES_REASON_REQUIRED');
+			$newId = (new Sales_Service_DocumentRevisionService())->create($id, $type, $post['reason'], $post['request_key']);
+			return $this->_helper->redirector->gotoSimple('edit', $type, 'sales', ['id' => $newId]);
+		} catch (RuntimeException | InvalidArgumentException $error) { $response->setHttpResponseCode(409)->setBody($this->view->escape($this->view->translate($error->getMessage()))); }
 	}
 
 	public function downloadAction()
@@ -681,6 +698,19 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 	{
 		$id = (int)$this->_getParam('id', 0);
 		$isAjax = $this->getRequest()->isXmlHttpRequest();
+		$type = $this->getRequest()->getControllerName();
+		if ($this->getRequest()->getModuleName() === 'sales' && (new Sales_Service_DocumentRevisionService())->relation($id, $type, (int)$this->_user['clientid'])) {
+			try { (new Sales_Service_DocumentRevisionService())->context($id, $type, 'approve'); }
+			catch (RuntimeException $error) {
+				$this->disableView(); $this->getResponse()->setHttpResponseCode(403);
+				return $this->_helper->json(['ok' => false, 'message' => 'DOCUMENT_CHANGES_ADMIN_REQUIRED']);
+			}
+			$token = $this->getRequest()->getPost('csrf_token');
+			if (!$this->getRequest()->isPost() || !is_string($token) || !hash_equals(Sales_Service_DocumentRevisionService::token($type, $id), $token)) {
+				$this->disableView(); $this->getResponse()->setHttpResponseCode(403);
+				return $this->_helper->json(['ok' => false, 'message' => 'DOCUMENT_CHANGES_ACCESS_DENIED']);
+			}
+		}
 
 		if (!$this->loadRow($id)) {
 			return $this->handleDocumentNotFound($isAjax);

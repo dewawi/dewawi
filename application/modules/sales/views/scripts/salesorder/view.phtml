@@ -3,6 +3,7 @@ $this->title = $this->salesorder['title'] ? $this->salesorder['title'] : $this->
 $this->headTitle($this->title);
 echo $this->TinyMCE();
 echo $this->FileManager();
+echo $this->DocumentChanges('salesorder', (array)$this->salesorder);
 ?>
 
 <?php echo $this->form->renderForm([

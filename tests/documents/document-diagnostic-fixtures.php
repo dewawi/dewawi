@@ -73,7 +73,7 @@ foreach ($cases as [$module, $controller, $id]) {
 	$text = []; $code = 0; exec('pdftotext -layout ' . escapeshellarg($pdfPath) . ' -', $text, $code);
 	$pages = array_filter(explode("\f", implode("\n", $text)), static fn(string $page): bool => trim($page) !== '');
 	recoveryTestCheck($code === 0 && count($pages) > 1, 'Diagnostic PDF is unreadable or the multi-page fixture did not paginate');
-	foreach ($pages as $page) recoveryTestCheck(str_contains($page, 'REKONSTRUKTION ZUR PRÜFUNG – KEIN BESTÄTIGTES ORIGINAL'), 'Diagnostic page lost its visible non-original banner');
+	foreach ($pages as $page) recoveryTestCheck(str_contains($page, 'KOPIE'), 'Diagnostic page lost its visible non-original banner');
 	$diagnosticStates[$pdfPath] = [hash_file('sha256', $pdfPath), filemtime($pdfPath)];
 	if ($id === 200) recoveryTestCheck($record['diagnosis']['positions_reference_without_rules'][2200]['net'] === null && $record['diagnosis']['calculated_with_valid_saved_rules'] === null, 'Missing price was replaced with zero');
 	if ($id === 201) recoveryTestCheck($record['diagnosis']['saved_price_rules'][0]['valid'] === false && $record['diagnosis']['saved_price_rules'][0]['stored']['action'] === 'broken' && $record['diagnosis']['calculated_with_valid_saved_rules'] === null, 'Invalid price rule was silently accepted or removed');

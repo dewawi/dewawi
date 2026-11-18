@@ -29,6 +29,9 @@ class Application_Controller_Action_Helper_Position extends Zend_Controller_Acti
 					if(isset($positionSetIndex[$dataPosition['possetid']]) && $positionSetIndex[$dataPosition['possetid']]) {
 						$dataPosition['possetid'] = $positionSetIndex[$dataPosition['possetid']];
 					} else {
+						$sourceSetsClass = ucfirst($sourceModule) . '_Model_DbTable_' . ucfirst($sourceController . 'posset');
+						$dataPositionSet = (new $sourceSetsClass())->getPositionSet((int)$dataPosition['possetid']);
+						if ((int)$dataPositionSet['parentid'] !== (int)$position->parentid) throw new RuntimeException('Position set belongs to another document');
 						$dataPositionSet['parentid'] = $parentid;
 						$dataPositionSet['created'] = $created;
 						$dataPositionSet['modified'] = NULL;

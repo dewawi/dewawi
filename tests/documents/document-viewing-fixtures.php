@@ -63,9 +63,9 @@ try {
 	foreach ($viewingDocuments as $query) {
 		$response = recoveryTestDownload($query + ['action' => 'reconstructed']);
 		$viewingHashes[] = hash('sha256', $response['bytes']);
-		$pages = viewingCheckMarks($response, 'KOPIE – REKONSTRUKTION, KEIN ORIGINAL', 2);
+		$pages = viewingCheckMarks($response, 'KOPIE', 2);
 		recoveryTestCheck(str_contains($response['headers'], 'historical_reconstructed_viewing_copy') && str_contains(implode('', $pages), 'Stored viewing buyer') && str_contains(implode('', $pages), 'Stored viewing position'), 'Stored content was not reconstructed: ' . json_encode($query));
-		recoveryTestCheck(!str_contains(implode('', $pages), 'MUSTER – NICHT AUSGESTELLT'), 'Finalized viewing copy was marked as a draft');
+		recoveryTestCheck(!str_contains(implode('', $pages), 'MUSTER'), 'Finalized viewing copy was marked as a draft');
 		recoveryTestCheck(recoveryTestDownload($query + ['action' => 'reconstructed'], 42, 'HEAD')['bytes'] === '' && recoveryTestDownload($query + ['action' => 'reconstructed'], 42, 'POST')['code'] === 405, 'Viewing method restrictions failed');
 		recoveryTestCheck(recoveryTestDownload($query + ['action' => 'reconstructed'], 43)['code'] === 404 && recoveryTestDownload($query + ['action' => 'reconstructed'], 44)['code'] === 404 && recoveryTestDownload($query + ['action' => 'reconstructed'], null)['code'] === 401, 'Viewing tenant/authentication isolation failed');
 	}
@@ -84,7 +84,7 @@ try {
 		foreach ($workers as [$process, $pipes]) {
 			$bytes = stream_get_contents($pipes[1]); $error = stream_get_contents($pipes[2]); fclose($pipes[1]); fclose($pipes[2]);
 			recoveryTestCheck(proc_close($process) === 0, 'Concurrent viewing failed: ' . $error);
-			foreach (viewingPdfPages($bytes) as $page) recoveryTestCheck(str_contains($page, 'KOPIE – REKONSTRUKTION, KEIN ORIGINAL'), 'Concurrent viewing lost copy marking');
+			foreach (viewingPdfPages($bytes) as $page) recoveryTestCheck(str_contains($page, 'KOPIE'), 'Concurrent viewing lost copy marking');
 		}
 	} finally { proc_terminate($secondServer); proc_close($secondServer); }
 	foreach ($viewingDocuments as $query) recoveryTestCheck(glob($base . '/cache/document/' . $query['module'] . '/' . $query['controller'] . '/7/' . $query['id'] . '/*') === [], 'Viewing created a PDF cache entry');
@@ -94,19 +94,19 @@ try {
 		preg_match('~<section[^>]*data-document-status="historical_viewing_copy".*?</section>~s', $panel['bytes'], $match);
 		file_put_contents($work . '/viewing-panel-' . $locale . '.html', '<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="file://' . $root . '/css/ui.css"><body>' . $match[0] . '</body></html>');
 	}
-	viewingCheckMarks(recoveryTestDownload($quoteQuery + ['action' => 'reconstructed', 'locale' => 'en_US']), 'COPY – RECONSTRUCTION, NOT AN ORIGINAL', 2);
+	viewingCheckMarks(recoveryTestDownload($quoteQuery + ['action' => 'reconstructed', 'locale' => 'en_US']), 'COPY', 2);
 	// Missing stored amounts, contradictory totals and unavailable layouts remain visible as raw data.
 	foreach (['UPDATE quotepos SET total = NULL WHERE parentid = 601', 'UPDATE quote SET total = 200 WHERE id = 601', 'UPDATE quote SET templateid = 999999 WHERE id = 601', "UPDATE quote SET currency = '' WHERE id = 601", "UPDATE quote SET billingstreet = '' WHERE id = 601", 'UPDATE quote SET quoteid = NULL, quotedate = NULL WHERE id = 601', 'UPDATE quotepos SET deleted = 1 WHERE parentid = 601'] as $sql) {
 		$pdo->exec($sql);
 		$response = recoveryTestDownload($quoteQuery + ['action' => 'reconstructed']);
-		$pages = viewingCheckMarks($response, 'KOPIE – REKONSTRUKTION, KEIN ORIGINAL', 2);
+		$pages = viewingCheckMarks($response, 'KOPIE', 2);
 		recoveryTestCheck(str_contains($response['headers'], 'historical_diagnostic_viewing_copy') && str_contains(implode('', $pages), 'Gespeicherte Daten: document'), 'Unreliable reconstruction did not expose stored data');
 		$pdo->exec("UPDATE quote SET quoteid = 9601, quotedate = '2010-01-02', total = 119, templateid = 1, currency = 'EUR', billingstreet = 'Stored street' WHERE id = 601");
 		$pdo->exec('UPDATE quotepos SET total = 100, deleted = 0 WHERE parentid = 601');
 	}
 	// An authorized child uses its own document and the permitted parent contact owner.
 	$childView = recoveryTestDownload(['module' => 'sales', 'controller' => 'quote', 'id' => 609, 'action' => 'reconstructed'], 44);
-	$childPages = viewingCheckMarks($childView, 'KOPIE – REKONSTRUKTION, KEIN ORIGINAL');
+	$childPages = viewingCheckMarks($childView, 'KOPIE');
 	recoveryTestCheck(str_contains($childView['headers'], 'historical_reconstructed_viewing_copy') && str_contains(implode('', $childPages), $childViewing['billingname1']), 'Parent contact sharing lost the stored child recipient');
 	$pdo->exec("UPDATE permission SET sales = '{}' WHERE userid = 42");
 	recoveryTestCheck(recoveryTestDownload($quoteQuery + ['action' => 'reconstructed'])['code'] === 404, 'Viewing ignored document permissions');
@@ -128,7 +128,7 @@ try {
 	$pdo->prepare('UPDATE documentarchive SET filename = ? WHERE id = ?')->execute([$originalRow['filename'], $originalRow['id']]);
 	foreach (['missing', 'corrupt'] as $failure) {
 		if ($failure === 'missing') unlink($originalPath); else file_put_contents($originalPath, '%PDF-corrupt');
-		viewingCheckMarks(recoveryTestDownload(['module' => 'sales', 'controller' => 'quote', 'id' => 1, 'action' => 'reconstructed']), 'KOPIE – REKONSTRUKTION, KEIN ORIGINAL');
+		viewingCheckMarks(recoveryTestDownload(['module' => 'sales', 'controller' => 'quote', 'id' => 1, 'action' => 'reconstructed']), 'KOPIE');
 		recoveryTestCheck($failure === 'missing' ? !file_exists($originalPath) : file_get_contents($originalPath) === '%PDF-corrupt', 'Viewing repaired or overwrote a registered original');
 	}
 	file_put_contents($originalPath, $originalBytes); touch($originalPath, $viewingFilesBefore[$originalPath][1]);
@@ -138,16 +138,16 @@ try {
 		foreach ([0, 1] as $cover) {
 			$pdo->exec("UPDATE `$table` SET `{$table}id` = NULL, state = 100, completed = 0, pdfshowcover = $cover WHERE id = $id");
 			$response = recoveryTestDownload($query + ['action' => 'preview']);
-			viewingCheckMarks($response, 'MUSTER – NICHT AUSGESTELLT', $cover ? 2 : 1);
-			if ($table === 'quote') viewingCheckMarks(recoveryTestDownload($query + ['action' => 'download', 'locale' => 'en_US']), 'SAMPLE – NOT ISSUED', $cover ? 2 : 1);
+			viewingCheckMarks($response, 'MUSTER', $cover ? 2 : 1);
+			if ($table === 'quote') viewingCheckMarks(recoveryTestDownload($query + ['action' => 'download', 'locale' => 'en_US']), 'SAMPLE', $cover ? 2 : 1);
 			$pdo->exec("UPDATE `$table` SET `{$table}id` = " . (9000 + $id) . ", state = 105, completed = 1, pdfshowcover = 1 WHERE id = $id");
 		}
 		foreach (['completed = 1', 'cancelled = 1', 'state = 105', 'state = 106'] as $state) {
 			$pdo->exec("UPDATE `$table` SET `{$table}id` = NULL, state = 100, completed = 0, cancelled = 0 WHERE id = $id");
 			$pdo->exec("UPDATE `$table` SET $state WHERE id = $id");
 			$response = recoveryTestDownload($query + ['action' => 'reconstructed']);
-			$pages = viewingCheckMarks($response, 'KOPIE – REKONSTRUKTION, KEIN ORIGINAL');
-			recoveryTestCheck(!str_contains(implode('', $pages), 'MUSTER – NICHT AUSGESTELLT'), 'Server-side finalized state was treated as a draft');
+			$pages = viewingCheckMarks($response, 'KOPIE');
+			recoveryTestCheck(!str_contains(implode('', $pages), 'MUSTER'), 'Server-side finalized state was treated as a draft');
 			$pdo->exec("UPDATE `$table` SET `{$table}id` = " . (9000 + $id) . ", state = 105, completed = 1, cancelled = 0 WHERE id = $id");
 		}
 	}

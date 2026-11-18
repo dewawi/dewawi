@@ -2386,6 +2386,7 @@ $(document).on('click', '[data-document-finalize]', function(event) {
 		type: 'POST',
 		url: url,
 		dataType: 'json',
+		data: {csrf_token: $button.attr('data-document-csrf') || ''},
 		timeout: 120000,
 		success: function(response) {
 			var redirect = response && response.ok === true ? getDocumentUrl(response.redirect) : '';

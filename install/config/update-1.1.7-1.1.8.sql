@@ -388,3 +388,21 @@ ALTER TABLE `emailmessage`
   ADD `calendarsequence` int unsigned DEFAULT NULL AFTER `calendargeneration`,
   ADD `calendarmethod` varchar(8) DEFAULT NULL AFTER `calendarsequence`,
   ADD UNIQUE KEY `calendar_delivery` (`clientid`, `calendareventid`, `calendarparticipantid`, `calendargeneration`, `calendarsequence`, `calendarmethod`);
+-- Explicit commercial revision links; original business rows and archive versions are retained.
+CREATE TABLE IF NOT EXISTS `documentrevision` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `clientid` int(11) NOT NULL,
+  `controller` varchar(32) NOT NULL,
+  `rootdocumentid` int(11) NOT NULL,
+  `sourcedocumentid` int(11) NOT NULL,
+  `documentid` int(11) NOT NULL,
+  `sequence` int(11) NOT NULL,
+  `reason` text NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `request_key` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `client_document` (`clientid`,`controller`,`documentid`),
+  UNIQUE KEY `client_revision` (`clientid`,`controller`,`rootdocumentid`,`sequence`),
+  UNIQUE KEY `client_request` (`clientid`,`createdby`,`request_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -1,0 +1,27 @@
+<?php
+$type = $this->type; $document = $this->document;
+$url = fn(string $action, int $id): string => $this->url(['module' => 'sales', 'controller' => $type, 'action' => $action, 'id' => $id]);
+?>
+<section class="document-revisions" style="overflow-wrap:anywhere" data-document-history>
+<?php if ($this->history): ?>
+<h3><?= $this->escape($this->translate('DOCUMENT_CHANGES_HISTORY')) ?></h3>
+<p><a href="<?= $this->escape($url('view', (int)$this->history[0]['rootdocumentid'])) ?>"><?= $this->escape($this->translate('DOCUMENT_CHANGES_FIRST_VERSION')) ?></a></p>
+<ol start="2">
+<?php foreach ($this->history as $revision): ?>
+<li value="<?= (int)$revision['sequence'] ?>"><a href="<?= $this->escape($url($revision['completed'] ? 'view' : 'edit', (int)$revision['documentid'])) ?>"><?= $this->escape($revision['document_number'] ?: $this->translate('DOCUMENTS_DRAFT_MARK')) ?></a> · <?= $this->escape($revision['created'] . ' · ' . $revision['editor']) ?><br><?= $this->escape($revision['reason']) ?> · <?= $this->escape($this->translate('DOCUMENT_CHANGES_BASE')) ?> #<?= (int)$revision['sourcedocumentid'] ?>
+<?php if ($revision['completed']): ?><p><?= $this->escape($this->translate('DOCUMENT_CHANGES_APPROVED')) ?>: <?= $this->escape($revision['completeddate']) ?> · #<?= (int)$revision['completedby'] ?></p><?php endif ?>
+</li>
+<?php endforeach ?>
+</ol>
+<?php endif ?>
+<?php if ($this->canCreate): ?>
+<details><summary><?= $this->escape($this->translate($type === 'quote' ? 'DOCUMENT_CHANGES_REVISE_QUOTE' : 'DOCUMENT_CHANGES_REVISE_ORDER')) ?></summary>
+<p><?= $this->escape($this->translate('DOCUMENT_CHANGES_NEW_NUMBER')) ?></p>
+<form method="post" action="<?= $this->escape($url('revise', (int)$document['id'])) ?>" data-autosave="false">
+<input type="hidden" name="csrf_token" value="<?= Sales_Service_DocumentRevisionService::token($type, (int)$document['id']) ?>">
+<input type="hidden" name="request_key" value="<?= bin2hex(random_bytes(32)) ?>">
+<p><label><?= $this->escape($this->translate('DOCUMENT_CHANGES_REASON')) ?><br><textarea name="reason" required maxlength="2000" style="max-width:100%"></textarea></label></p>
+<button type="submit"><?= $this->escape($this->translate('DOCUMENT_CHANGES_CREATE_REVISION')) ?></button>
+</form></details>
+<?php endif ?>
+</section>

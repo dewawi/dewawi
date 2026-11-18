@@ -32,6 +32,17 @@ class Sales_Service_DocumentPayloadService
 		}
 
 		$document['templateid'] = (int)$template['id'];
+		if (in_array($controller, ['quote', 'salesorder'], true)) {
+			$revision = (new Sales_Service_DocumentRevisionService())->relation((int)$document['id'], $controller, (int)$document['clientid']);
+			if ($revision) {
+				$db = Zend_Db_Table::getDefaultAdapter();
+				$rootNumber = $db->fetchOne("SELECT `{$controller}id` FROM `$controller` WHERE id = ? AND clientid = ?", [$revision['rootdocumentid'], $document['clientid']]);
+				$translator = new DEEC_Translate($document['language']);
+				$translator->loadDir('default', BASE_PATH . '/languages/' . (str_starts_with($document['language'], 'en') ? 'en_US' : 'de_DE') . '/default');
+				$label = $translator->t('DOCUMENT_CHANGES_REVISION_DESIGNATION', [$revision['sequence'], $rootNumber]);
+				$document['header'] = '<p><strong>' . htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</strong></p>' . ($document['header'] ?? '');
+			}
+		}
 
 		list($positions, $document, $optionsList, $optionSets) = $this->getPositions($document, $locale, $controller);
 

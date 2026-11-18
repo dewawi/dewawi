@@ -136,7 +136,7 @@ function assessmentFacts(string $text, array $identity, array $basis): array
 		}
 		$compare[$field] = ['expected_stored' => $expected, 'detected' => $detected, 'parsed_decimal' => $parsed, 'status' => $parsed === null || !is_numeric($expected) ? 'unresolved' : (number_format((float)$parsed, 2, '.', '') === number_format((float)$expected, 2, '.', '') ? 'text_matches_at_two_decimals' : 'text_differs')];
 	}
-	return ['comparisons' => $compare, 'unparsed_date_values' => array_values(array_filter($rawDates, static fn(string $date): bool => assessmentDate($date) === null)), 'non_original_markers' => (bool)preg_match('/MUSTER\s*[–-]\s*NICHT AUSGESTELLT|KOPIE\s*[–-]\s*REKONSTRUKTION|SAMPLE\s*[–-]\s*NOT ISSUED|COPY\s*[–-]\s*RECONSTRUCTION/iu', $text), 'comparison_is_authenticity_proof' => false];
+	return ['comparisons' => $compare, 'unparsed_date_values' => array_values(array_filter($rawDates, static fn(string $date): bool => assessmentDate($date) === null)), 'non_original_markers' => (bool)preg_match('/(?:^|\n)\h*(?:MUSTER|SAMPLE|KOPIE|COPY)\h*(?:\n|$)|MUSTER\s*[–-]\s*NICHT AUSGESTELLT|KOPIE\s*[–-]\s*REKONSTRUKTION|SAMPLE\s*[–-]\s*NOT ISSUED|COPY\s*[–-]\s*RECONSTRUCTION/iu', $text), 'comparison_is_authenticity_proof' => false];
 }
 
 function assessmentDifference(string $reference, string $text): array

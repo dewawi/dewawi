@@ -9,6 +9,12 @@ class Zend_View_Helper_Finish extends Zend_View_Helper_Abstract
 		$controller = $this->view->controller;
 		$module = $this->view->module;
 		$id = (int)$this->view->form->getValue('id');
+		$revision = $module === 'sales' && $id > 0 ? (new Sales_Service_DocumentRevisionService())->relation($id, $controller, (int)Zend_Registry::get('Client')['id']) : null;
+		$canFinalize = true;
+		if ($revision) {
+			try { (new Sales_Service_DocumentRevisionService())->context($id, $controller, 'approve'); }
+			catch (RuntimeException $error) { $canFinalize = false; }
+		}
 
 		$saveUrl = $this->view->url([
 			'module' => $module,
@@ -80,9 +86,11 @@ class Zend_View_Helper_Finish extends Zend_View_Helper_Abstract
 		$html .= '<button type="button" class="dw-btn view" onclick="previewPdf(this)">';
 		$html .= htmlspecialchars($this->view->translate('DOCUMENTS_PREVIEW_PDF'));
 		$html .= '</button>';
-		$html .= '<a class="dw-btn save" data-document-finalize data-error-message="' . htmlspecialchars($this->view->translate('DOCUMENT_VALIDATION_REQUEST_FAILED')) . '" href="' . htmlspecialchars($saveUrl) . '">';
-		$html .= htmlspecialchars($this->view->translate('DOCUMENTS_SAVE_AND_BOOK'));
-		$html .= '</a>';
+		if ($canFinalize) {
+			$html .= '<a class="dw-btn save" data-document-finalize' . ($revision ? ' data-document-csrf="' . Sales_Service_DocumentRevisionService::token($controller, $id) . '"' : '') . ' data-error-message="' . htmlspecialchars($this->view->translate('DOCUMENT_VALIDATION_REQUEST_FAILED')) . '" href="' . htmlspecialchars($saveUrl) . '">';
+			$html .= htmlspecialchars($this->view->translate('DOCUMENTS_SAVE_AND_BOOK'));
+			$html .= '</a>';
+		} else $html .= '<p>' . htmlspecialchars($this->view->translate('DOCUMENT_CHANGES_ADMIN_REQUIRED')) . '</p>';
 		$html .= '<a class="dw-btn pdf" data-document-download href="' . htmlspecialchars($downloadUrl) . '" target="_blank" rel="noopener">';
 		$html .= htmlspecialchars($this->view->translate('DOCUMENTS_DOWNLOAD_PDF'));
 		$html .= '</a>';

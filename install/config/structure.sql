@@ -3410,3 +3410,21 @@ CREATE TABLE IF NOT EXISTS `inquirytechnicalreview` (
   CONSTRAINT `inquirytechnicalreview_dataset` FOREIGN KEY (`itemsclientid`, `datasetid`) REFERENCES `technicaldataset` (`clientid`, `id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `inquirytechnicalreview_previous` FOREIGN KEY (`clientid`, `inquiryid`, `previousid`) REFERENCES `inquirytechnicalreview` (`clientid`, `inquiryid`, `id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+-- Explicit commercial revision links; original business rows and archive versions are retained.
+CREATE TABLE IF NOT EXISTS `documentrevision` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `clientid` int(11) NOT NULL,
+  `controller` varchar(32) NOT NULL,
+  `rootdocumentid` int(11) NOT NULL,
+  `sourcedocumentid` int(11) NOT NULL,
+  `documentid` int(11) NOT NULL,
+  `sequence` int(11) NOT NULL,
+  `reason` text NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `request_key` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `client_document` (`clientid`,`controller`,`documentid`),
+  UNIQUE KEY `client_revision` (`clientid`,`controller`,`rootdocumentid`,`sequence`),
+  UNIQUE KEY `client_request` (`clientid`,`createdby`,`request_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

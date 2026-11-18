@@ -3,6 +3,7 @@ $this->title = $this->quote['title'] ? $this->quote['title'] : $this->translate(
 $this->headTitle($this->title);
 echo $this->TinyMCE();
 echo $this->FileManager();
+echo $this->DocumentChanges('quote', (array)$this->quote);
 ?>
 
 <?php echo $this->form->renderForm([

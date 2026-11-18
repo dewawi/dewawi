@@ -108,6 +108,7 @@ try {
 	assessmentCheck(assessmentFacts(str_replace('SYN-1', 'SYN-10', $text), $plan, $basis)['comparisons']['number']['status'] === 'text_differs', 'Document number substring was treated as exact identity');
 	assessmentCheck(assessmentDate('2026-02-30') === null && assessmentDate('03.02.2026') === '2026-02-03', 'Invalid or German date handling failed');
 	assessmentCheck(assessmentFacts($text . 'MUSTER – NICHT AUSGESTELLT', $plan, $basis)['non_original_markers'], 'Non-original marker omitted');
+	foreach (['MUSTER', 'SAMPLE', 'KOPIE', 'COPY'] as $mark) assessmentCheck(assessmentFacts($mark . "\n" . $text, $plan, $basis)['non_original_markers'], 'Short non-original marker omitted');
 	assessmentCheck(assessmentFacts("Total: 1.2.3,45\n", $plan, $basis)['comparisons']['total']['parsed_decimal'] === null, 'Malformed separators were guessed');
 	assessmentCheck(assessmentFacts("Total: 1.234,56\n", $plan, ['total' => '1234.56'])['comparisons']['total']['status'] === 'text_matches_at_two_decimals', 'German grouped amount failed');
 	assessmentCheck(assessmentFacts("Taxes: 19%\n", $plan, ['taxes' => 19])['comparisons']['taxes']['status'] === 'unresolved', 'A percentage was compared as a monetary amount');
