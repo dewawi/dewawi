@@ -83,14 +83,20 @@ class ButtonViewFixture extends Zend_View
 	public function baseUrl($url = null) { return '/fixture' . (string)$url; }
 }
 
-function buttonPilot(): array
+function buttonPilot(string $iconFormat = 'png'): array
 {
 	$view = new ButtonViewFixture();
 	$view->assign(['action' => 'index', 'module' => 'contacts', 'controller' => 'inquiry', 'permissions' => ['view' => true, 'edit' => true], 'options' => []]);
 	$toolbar = new Contacts_Form_InquiryToolbar();
-	$view->toolbar = $toolbar;
-	$list = new ButtonInquiryListFixture(['view' => $view, 'module' => 'contacts', 'controller' => 'inquiry', 'toolbarInline' => new Contacts_Form_InquiryToolbarInline()]);
+	$inline = new Contacts_Form_InquiryToolbarInline();
 	$form = new Contacts_Form_Inquiry();
+	if ($iconFormat === 'svg') {
+		foreach (['filter', 'reset', 'clear'] as $name) $toolbar->setElementData($name, ['iconFormat' => 'svg']);
+		foreach (['view', 'edit'] as $name) $inline->setElementData($name, ['iconFormat' => 'svg']);
+		$form->setElementData('save', ['iconFormat' => 'svg']);
+	}
+	$view->toolbar = $toolbar;
+	$list = new ButtonInquiryListFixture(['view' => $view, 'module' => 'contacts', 'controller' => 'inquiry', 'toolbarInline' => $inline]);
 	$form->setValue('status', 'new');
 	return [
 		'toolbar' => (new Zend_View_Helper_Toolbar())->setView($view)->toolbar(),
@@ -105,20 +111,29 @@ $form = new DEEC_Form();
 $helper = new Zend_View_Helper_Button();
 
 if (($argv[1] ?? '') === 'render') {
-	$pilot = buttonPilot();
+	$iconFormat = $argv[3] ?? 'png';
+	$pilot = buttonPilot($iconFormat);
+	$render = static fn(array $presentation, array $attribs = []): string => $helper->renderButton($presentation + ['iconFormat' => $iconFormat], $attribs);
 	$controls = '';
 	foreach (['default', 'primary', 'danger', 'ghost'] as $variant) {
-		$controls .= $helper->renderButton(['text' => 'A & B <' . $variant . '>', 'variant' => $variant, 'icon' => false], ['id' => 'variant-' . $variant]);
+		$controls .= $render(['text' => 'A & B <' . $variant . '>', 'variant' => $variant, 'icon' => false], ['id' => 'variant-' . $variant]);
 	}
-	$controls .= $helper->renderButton(['text' => 'Without icon', 'icon' => false], ['class' => 'save', 'id' => 'no-icon']);
-	$controls .= $helper->renderButton(['text' => 'Save', 'icon' => 'save', 'size' => 'touch'], ['id' => 'touch']);
-	$controls .= $helper->renderButton(['text' => 'Disabled', 'icon' => 'delete', 'variant' => 'danger'], ['id' => 'disabled', 'disabled' => true]);
-	$controls .= $helper->renderButton(['text' => 'Navigation', 'tag' => 'a', 'icon' => 'view'], ['id' => 'link', 'href' => '#navigation', 'onclick' => 'window.inlineClicks++']);
-	$controls .= $helper->renderButton(['text' => 'Blocked navigation', 'tag' => 'a', 'icon' => 'view'], ['id' => 'disabled-link', 'href' => '#blocked', 'disabled' => true, 'onclick' => 'window.inlineClicks++']);
-	$controls .= $helper->renderButton(['text' => 'Long translated action label with several words', 'icon' => 'save'], ['id' => 'long-label']);
+	$controls .= $render(['text' => 'Without icon', 'icon' => false], ['class' => 'save', 'id' => 'no-icon']);
+	$controls .= $render(['text' => 'Save', 'icon' => 'save', 'size' => 'touch'], ['id' => 'touch']);
+	$controls .= $render(['text' => 'Disabled', 'icon' => 'delete', 'variant' => 'danger'], ['id' => 'disabled', 'disabled' => true]);
+	$controls .= $render(['text' => 'Navigation', 'tag' => 'a', 'icon' => 'view'], ['id' => 'link', 'href' => '#navigation', 'onclick' => 'window.inlineClicks++']);
+	$controls .= $render(['text' => 'Blocked navigation', 'tag' => 'a', 'icon' => 'view'], ['id' => 'disabled-link', 'href' => '#blocked', 'disabled' => true, 'onclick' => 'window.inlineClicks++']);
+	$controls .= $render(['text' => 'Long translated action label with several words', 'icon' => 'save'], ['id' => 'long-label']);
 	$controls .= '<button type="button" class="dw-btn dw-btn--action" id="legacy-text">Legacy</button>';
-	$submit = $helper->renderButton(['text' => 'Confirm & save', 'icon' => 'apply', 'variant' => 'primary'], ['id' => 'submit', 'type' => 'submit', 'name' => 'operation', 'value' => 'confirm']);
-	$reset = $helper->renderButton(['text' => 'Reset', 'icon' => false], ['id' => 'native-reset', 'type' => 'reset']);
+	$submit = $render(['text' => 'Confirm & save', 'icon' => 'apply', 'variant' => 'primary'], ['id' => 'submit', 'type' => 'submit', 'name' => 'operation', 'value' => 'confirm']);
+	$reset = $render(['text' => 'Reset', 'icon' => false], ['id' => 'native-reset', 'type' => 'reset']);
+	if ($iconFormat === 'svg') {
+		$pilot['symbols'] = $form->renderButtonSymbols();
+		$pilot['catalog'] = '';
+		foreach (['add', 'edit', 'save', 'delete', 'copy', 'view', 'download', 'upload', 'send', 'search', 'close', 'clear', 'filter', 'reset', 'apply'] as $icon) {
+			$pilot['catalog'] .= $render(['text' => $icon, 'icon' => $icon], ['data-icon' => $icon]);
+		}
+	}
 	echo json_encode($pilot + ['controls' => $controls, 'submit' => $submit, 'reset' => $reset], JSON_THROW_ON_ERROR);
 	exit;
 }

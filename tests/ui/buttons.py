@@ -6,9 +6,12 @@ import json
 import subprocess
 import sys
 import tempfile
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from threading import Thread
 
 sys.dont_write_bytecode = True
 root = Path(__file__).resolve().parents[2]
+svg_mode = '--svg' in sys.argv
 spec = importlib.util.spec_from_file_location('button_browser_driver', root / 'tests/site/accessibility-http.py')
 browser = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(browser)
@@ -49,14 +52,17 @@ driver = browser.WebDriver()
 try:
     with tempfile.TemporaryDirectory(prefix='dewawi-buttons-') as directory:
         for locale in ['de_DE', 'en_US']:
-            rendered = subprocess.run(['php', str(root / 'tests/ui/buttons.php'), 'render', locale], capture_output=True, text=True, check=True)
+            rendered = subprocess.run(['php', str(root / 'tests/ui/buttons.php'), 'render', locale, 'svg' if svg_mode else 'png'], capture_output=True, text=True, check=True)
             data = json.loads(rendered.stdout)
             html = '<!doctype html><html lang="' + locale.replace('_', '-') + '"><meta charset="utf-8"><meta name="viewport" content="width=device-width">'
             html += '<link rel="stylesheet" href="' + (root / 'css/ui.css').as_uri() + '">'
             html += '<style>section{margin:16px 0}#controls{display:flex;flex-wrap:wrap;gap:8px}#long-label{max-width:180px}</style>'
-            html += '<h1>DEWAWI B2</h1><section id="toolbar">' + data['toolbar'] + '</section><section id="content">' + data['row'] + '</section>'
+            html += data.get('symbols', '')
+            html += '<h1>DEWAWI ' + ('B3' if svg_mode else 'B2') + '</h1><section id="toolbar">' + data['toolbar'] + '</section><section id="content">' + data['row'] + '</section>'
             html += '<section class="edit"><form id="pilot-form">' + data['form'] + '</form><form data-autosave="false"><input name="isolated" value="0"></form></section>'
             html += '<section id="controls">' + data['controls'] + '</section><section class="add"><form id="native"><input name="required" required value="valid">' + data['submit'] + data['reset'] + '</form></section>'
+            if svg_mode:
+                html += '<section id="catalog">' + data['catalog'] + '</section>'
             html += '<div id="messages"></div><script src="' + (root / 'library/jQuery/jquery-1.12.4.min.js').as_uri() + '"></script>'
             html += '<script src="' + (root / 'library/jQuery/jquery.cookie.js').as_uri() + '"></script>'
             html += '<script>var fixture=' + json.dumps(data).replace('<', '\\u003c') + ';' + script + '</script>'
@@ -78,7 +84,9 @@ try:
                         compact: compact.getBoundingClientRect().width,
                         standard: standard.getBoundingClientRect().height,
                         touch: document.getElementById('touch').getBoundingClientRect().height,
-                        icons: controls.every(c=>[...c.querySelectorAll('.dw-btn__icon')].every(i=>getComputedStyle(i).backgroundImage!=='none'&&i.getAttribute('aria-hidden')==='true')),
+                        icons: controls.every(c=>[...c.querySelectorAll('.dw-btn__icon')].every(i=>
+                            (i.tagName==='svg' ? i.querySelector('use').getBBox().width>0 && i.querySelector('use').getBBox().height>0 && getComputedStyle(i).stroke===getComputedStyle(c).color && getComputedStyle(i).fill==='none' : getComputedStyle(i).backgroundImage!=='none')
+                            &&i.getAttribute('aria-hidden')==='true')),
                         names: controls.every(c=>(c.getAttribute('aria-label')||c.textContent).trim().length>0),
                         noBackground: controls.every(c=>getComputedStyle(c).backgroundImage==='none'),
                         noIconPadding: getComputedStyle(document.getElementById('no-icon')).paddingLeft,
@@ -134,7 +142,7 @@ try:
                     return busy&&!blocked&&b.html()===original&&b.find('.dw-btn__icon')[0]===icon&&!b.prop('disabled')&&!b.is('[aria-busy]');
                 '''), 'Loading lost content, state or overlapping-request lock')
                 check(driver.execute("setButtonLoading($('#disabled'),true,'Working');setButtonLoading($('#disabled'),false);return $('#disabled').prop('disabled')"), 'Loading re-enabled a pre-disabled control')
-                driver.execute('inlineClicks=0;document.getElementById("disabled-link").click();document.getElementById("disabled-link").firstChild.click()')
+                driver.execute('inlineClicks=0;document.getElementById("disabled-link").click();document.getElementById("disabled-link").firstChild.dispatchEvent(new MouseEvent("click",{bubbles:true,cancelable:true}))')
                 check(driver.execute('return inlineClicks===0&&location.hash!=="#blocked"'), 'Disabled link ran inline handler or navigated')
                 driver.click('#link')
                 check(driver.execute('return inlineClicks===1&&location.hash==="#navigation"'), 'Native enabled link was intercepted')
@@ -176,15 +184,59 @@ try:
                 button_names = {n.get('name', {}).get('value') for n in names['nodes'] if n.get('role', {}).get('value') == 'button'}
                 expected = {'Anzeigen', 'Bearbeiten', 'Leeren'} if locale == 'de_DE' else {'View', 'Edit', 'Clear'}
                 check(expected <= button_names, f'Accessible tree lost localized names: {expected-button_names}')
+                if svg_mode:
+                    check(driver.execute('return document.querySelectorAll(".dw-icon-symbols").length===1 && document.querySelectorAll("symbol").length===14 && !document.querySelector("#content symbol") && [...document.querySelectorAll("#content use")].every(i=>i.getBBox().width>0 && i.getBBox().height>0)'), 'AJAX/loading lost visible geometry or duplicated symbol definitions')
+                    check(not any(n.get('role', {}).get('value') in ['image', 'graphics-symbol'] for n in names['nodes'] if not n.get('ignored')), 'Decorative SVG exposed an extra accessible image')
+                    driver.execute('inlineClicks=0;var c=document.querySelector("#disabled-link use");c.dispatchEvent(new MouseEvent("click",{bubbles:true,cancelable:true}))')
+                    check(driver.execute('return inlineClicks===0'), 'SVG use child bypassed disabled capture guard')
                 if locale == 'de_DE' and width in [390, 1280]:
                     driver.execute("$('.dw-filter-panel').removeClass('is-open');window.scrollTo(0,0)")
                     screenshot = driver.command('GET', '/screenshot')
-                    Path('/tmp/dewawi-b2-buttons-' + str(width) + '.png').write_bytes(base64.b64decode(screenshot))
+                    Path('/tmp/dewawi-' + ('b3-icons-' if svg_mode else 'b2-buttons-') + str(width) + '.png').write_bytes(base64.b64decode(screenshot))
                 print(f'PASS: {locale} {width}px button layout, keyboard, AJAX, auto-save, loading, links and submit')
         driver.command('POST', '/goog/cdp/execute', {'cmd': 'Emulation.setEmulatedMedia', 'params': {'features': [{'name': 'forced-colors', 'value': 'active'}]}})
         driver.execute('document.getElementById("variant-default").focus()')
         driver.keys('tab')
         check(driver.execute('return getComputedStyle(document.activeElement).outlineStyle==="solid"'), 'Forced-colors keyboard focus missing')
+        if svg_mode:
+            check(driver.execute('return [...document.querySelectorAll(".dw-btn svg")].every(i=>getComputedStyle(i).stroke===getComputedStyle(i.closest(".dw-btn")).color)'), 'SVG lost currentColor in forced colors')
+            driver.command('POST', '/goog/cdp/execute', {'cmd': 'Emulation.setEmulatedMedia', 'params': {'features': []}})
+            # A separate document verifies rendering with no script/style exceptions for icons.
+            policy = "default-src 'none'; style-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'"
+            strict_html = '<!doctype html><html lang="en"><meta charset="utf-8"><link rel="stylesheet" href="/ui.css">' + data['symbols'] + data['catalog']
+            class StrictIcons(BaseHTTPRequestHandler):
+                def do_GET(self):
+                    if self.path == '/ui.css':
+                        payload, content_type = (root / 'css/ui.css').read_bytes(), 'text/css'
+                    elif self.path in ['/', '/frame']:
+                        payload = (strict_html + ('<iframe title="Isolated icon document" src="/frame"></iframe>' if self.path == '/' else '') + '</html>').encode()
+                        content_type = 'text/html; charset=utf-8'
+                    else:
+                        self.send_error(404)
+                        return
+                    self.send_response(200)
+                    self.send_header('Content-Type', content_type)
+                    self.send_header('Content-Security-Policy', policy)
+                    self.end_headers()
+                    self.wfile.write(payload)
+                def log_message(self, *args):
+                    pass
+            server = ThreadingHTTPServer(('127.0.0.1', 0), StrictIcons)
+            worker = Thread(target=server.serve_forever, daemon=True)
+            worker.start()
+            try:
+                for width in [390, 1280]:
+                    driver.emulate_viewport(width, 1100)
+                    driver.navigate('http://127.0.0.1:' + str(server.server_port) + '/')
+                    driver.wait('return document.querySelector("iframe").contentDocument.readyState==="complete"')
+                    check(driver.execute('return [...document.querySelectorAll("use")].every(i=>{var s=getComputedStyle(i.parentNode);return i.getBBox().width>0 && i.getBBox().height>0 && s.stroke!=="none" && s.stroke===getComputedStyle(i.closest("button")).color && s.fill==="none" && s.width===(innerWidth<768?"20px":"16px")})'), 'Strict CSP blocked local symbols or their styling')
+                    check(driver.execute('var d=document.querySelector("iframe").contentDocument;return d.querySelectorAll(".dw-icon-symbols").length===1 && [...d.querySelectorAll("use")].every(i=>i.getBBox().width>0 && i.getBBox().height>0)'), 'Iframe failed to resolve its own symbol definitions')
+                    check(driver.execute('return performance.getEntriesByType("resource").every(r=>r.name.endsWith("/ui.css")||r.name.endsWith("/frame"))'), 'SVG requested an external resource')
+                print('PASS: strict CSP without script/inline-style/img permissions, local symbols and isolated iframe')
+            finally:
+                server.shutdown()
+                server.server_close()
+                worker.join()
         print(f'PASS: {checks} browser assertions including forced colors')
 finally:
     driver.close()

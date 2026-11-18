@@ -36,6 +36,7 @@
  * - order (int)				Sort order
  * - format (array|null)		Filter schema for getFilteredValues()
  * - icon (string|false)		Opt in to button presentation; existing icon key or false
+ * - iconFormat (string)		png (default) or svg with an explicit semantic icon key
  * - variant (string)		Button variant: default, primary, danger, ghost
  * - size (string)			Button size: sm, md, touch (HTML field size stays in attribs)
  * - iconOnly (bool)			Hide button text without removing its translated accessible name
@@ -160,6 +161,13 @@
 
 class DEEC_Form
 {
+	private const BUTTON_SVG_ICONS = [
+		'add' => 'add', 'edit' => 'edit', 'save' => 'save', 'delete' => 'delete',
+		'copy' => 'copy', 'view' => 'view', 'download' => 'download', 'upload' => 'upload',
+		'send' => 'send', 'search' => 'search', 'close' => 'close', 'clear' => 'close',
+		'filter' => 'filter', 'reset' => 'reset', 'apply' => 'apply',
+	];
+
 	protected $mode = 'edit';
 	protected array $readonlyEditableFields = [];
 	protected $method = 'post';
@@ -469,7 +477,7 @@ class DEEC_Form
 			'controller' => $cfg['controller'] ?? '',
 			'rows' => $cfg['rows'] ?? [],
 			'fields' => $cfg['fields'] ?? [],
-		] + array_intersect_key($cfg, array_flip(['icon', 'variant', 'size', 'iconOnly']));
+		] + array_intersect_key($cfg, array_flip(['icon', 'iconFormat', 'variant', 'size', 'iconOnly']));
 	}
 
 	/**
@@ -496,7 +504,7 @@ class DEEC_Form
 			'col','tab','section','order','wrap',
 			'source',
 			'filter','toolbar',
-			'icon','variant','size','iconOnly',
+			'icon','iconFormat','variant','size','iconOnly',
 			'module','controller','rows','fields',
 		];
 
@@ -1554,7 +1562,7 @@ class DEEC_Form
 				);
 			}
 
-			$presentation = array_intersect_key($el, array_flip(['icon', 'variant', 'size', 'iconOnly']));
+			$presentation = array_intersect_key($el, array_flip(['icon', 'iconFormat', 'variant', 'size', 'iconOnly']));
 			$presentation['legacy'] = !$presentation;
 			$presentation['text'] = $btnText;
 			if (!$presentation['legacy'] && ($el['value'] !== null || $el['default'] !== null)) {
@@ -2035,7 +2043,15 @@ class DEEC_Form
 			if (!in_array($size, ['sm', 'md', 'touch'], true)) throw new InvalidArgumentException('Unsupported button size');
 
 			$icons = ['add', 'edit', 'view', 'copy', 'settings', 'delete', 'cancel', 'clear', 'reset', 'apply', 'save', 'email', 'close', 'details', 'positions', 'back', 'pdf', 'get', 'daterange', 'select', 'up', 'down', 'filter'];
-			$icon = $presentation['icon'] ?? (array_values(array_intersect($classes, $icons))[0] ?? false);
+			$iconFormat = $presentation['iconFormat'] ?? 'png';
+			if (!in_array($iconFormat, ['png', 'svg'], true)) throw new InvalidArgumentException('Unsupported button icon format');
+			if ($iconFormat === 'svg') {
+				if (!array_key_exists('icon', $presentation)) throw new InvalidArgumentException('SVG buttons need an explicit semantic icon');
+				$icons = array_keys(self::BUTTON_SVG_ICONS);
+				$icon = $presentation['icon'];
+			} else {
+				$icon = $presentation['icon'] ?? (array_values(array_intersect($classes, $icons))[0] ?? false);
+			}
 			if ($icon !== false && !in_array($icon, $icons, true)) throw new InvalidArgumentException('Unsupported button icon');
 			$iconOnly = (bool)($presentation['iconOnly'] ?? ($text === ''));
 			if ($iconOnly) {
@@ -2058,16 +2074,24 @@ class DEEC_Form
 				unset($attribs['disabled']);
 			}
 
-			$content = $icon !== false ? $this->renderButtonIcon($icon) : '';
+			$content = $icon !== false ? $this->renderButtonIcon($icon, $iconFormat) : '';
 			if (!$iconOnly) $content .= '<span class="dw-btn__label">' . $labelHtml . '</span>';
 		}
 
 		return '<' . $tag . $this->renderHtmlAttribs($attribs) . '>' . $content . '</' . $tag . '>';
 	}
 
-	/** Stable icon slot for a later local SVG implementation; B2 uses the existing PNGs. */
-	protected function renderButtonIcon(string $icon): string
+	/** Emit once per document (also in iframes); never include symbols in AJAX fragments. */
+	public function renderButtonSymbols(): string
 	{
+		return file_get_contents(dirname(__DIR__, 2) . '/images/icons/dewawi.svg');
+	}
+
+	protected function renderButtonIcon(string $icon, string $format = 'png'): string
+	{
+		if ($format === 'svg') {
+			return '<svg class="dw-btn__icon dw-btn__icon--svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#dw-icon-' . self::BUTTON_SVG_ICONS[$icon] . '"></use></svg>';
+		}
 		return '<span class="dw-btn__icon dw-btn__icon--' . $icon . '" aria-hidden="true"></span>';
 	}
 

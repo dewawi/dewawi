@@ -789,6 +789,23 @@ select[aria-busy="true"] {
 	overflow-wrap: anywhere;
 }
 
+.dw-icon-symbols {
+	position: absolute;
+	width: 0;
+	height: 0;
+	overflow: hidden;
+	pointer-events: none;
+}
+
+.dw-btn--control svg.dw-btn__icon {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	background-image: none;
+}
+
 .dw-btn--control:hover:not(:disabled):not([aria-disabled="true"]):not(.is-loading) {
 	background-color: var(--dw-btn-hover-background);
 	border-color: var(--dw-btn-hover-border);
