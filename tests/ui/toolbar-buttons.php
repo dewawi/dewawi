@@ -32,12 +32,13 @@ function toolbarContext(string $module, string $controller, string $action, arra
 	$front->getRouter()->addDefaultRoutes();
 }
 
-function toolbarPage(string $locale, string $module, string $action = 'index', string $layoutName = 'layout', array $rights = ['view', 'add', 'edit', 'delete'], bool $readonly = false, string $contextAction = 'index', bool $legacyStatistics = false): array
+function toolbarPage(string $locale, string $module, string $action = 'index', string $layoutName = 'layout', array $rights = ['view', 'add', 'edit', 'delete'], bool $readonly = false, string $contextAction = 'index', bool $legacyStatistics = false, bool $selectionActions = false): array
 {
 	global $root;
 	if (str_contains($module, '/')) [$module, $controller] = explode('/', $module, 2);
 	else $controller = ['contacts' => 'contact', 'items' => 'item', 'tasks' => 'task'][$module];
 	toolbarContext($module, $controller, $action, $rights);
+	if ($action === 'search') Zend_Controller_Front::getInstance()->getRequest()->setParam('context_action', $contextAction);
 	$user = Zend_Registry::get('User');
 	$user['admin'] = $module === 'admin' ? 1 : 0;
 	Zend_Registry::set('User', $user);
@@ -73,6 +74,15 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 		'columns' => [['name' => 'title', 'label' => 'TOOLBAR_NAME']], 'selectable' => true,
 		'listFooter' => in_array($action, ['index', 'select', 'search'], true), 'context' => ['action' => $action === 'search' ? $contextAction : $action],
 	]);
+	if ($selectionActions && in_array($module, ['contacts', 'items'], true)) {
+		$inlineClass = ucfirst($module) . '_Form_ToolbarInline';
+		$inline = new $inlineClass();
+		if ($readonly) $inline->setMode('readonly');
+		$list->setToolbarInline($inline)->setColumns([
+			['name' => 'title', 'label' => 'TOOLBAR_NAME'],
+			['name' => 'actions', 'type' => 'actions', 'elements' => [['name' => 'apply']]],
+		]);
+	}
 	$content = $list->render();
 	if ($module === 'admin' && in_array($action, ['edit', 'view'], true)) {
 		$formClass = 'Admin_Form_' . ucfirst($controller);
@@ -103,7 +113,6 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 	}
 	if ($action === 'search') {
 		Zend_Controller_Action_HelperBroker::getStaticHelper('viewRenderer')->setView($view);
-		Zend_Controller_Front::getInstance()->getRequest()->setParam('context_action', $contextAction);
 		$response = new Zend_Controller_Response_Http();
 		$response->setBody($content);
 		$plugin = new Application_Plugin_ListResponse();
@@ -121,7 +130,7 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 }
 
 if (($argv[1] ?? '') === 'render') {
-	echo json_encode(toolbarPage($argv[2] ?? 'de_DE', $argv[3] ?? 'contacts', $argv[4] ?? 'index', $argv[5] ?? 'layout', ['view', 'add', 'edit', 'delete'], ($argv[6] ?? '') === 'readonly', $argv[7] ?? 'index', ($argv[6] ?? '') === 'legacy-statistics'), JSON_THROW_ON_ERROR);
+	echo json_encode(toolbarPage($argv[2] ?? 'de_DE', $argv[3] ?? 'contacts', $argv[4] ?? 'index', $argv[5] ?? 'layout', ['view', 'add', 'edit', 'delete'], ($argv[6] ?? '') === 'readonly', $argv[7] ?? 'index', ($argv[6] ?? '') === 'legacy-statistics', ($argv[8] ?? '') === 'selection-actions'), JSON_THROW_ON_ERROR);
 	exit;
 }
 
@@ -141,7 +150,7 @@ foreach (['de_DE', 'en_US'] as $locale) foreach (['contacts', 'items'] as $modul
 	foreach (['index', 'select', 'edit', 'view'] as $action) foreach (['layout', 'plain'] as $layoutName) {
 		$page = toolbarPage($locale, $module, $action, $layoutName);
 		check(substr_count($page['html'], 'class="dw-icon-symbols"') === 1, 'Missing/duplicate full-document symbols');
-		check(substr_count($page['html'], 'dw-btn--control') === ($action === 'index' ? 9 : 1), 'Toolbar migration escaped its bounded scope');
+		check(substr_count($page['html'], 'dw-btn--control') === ($action === 'index' ? 9 : ($action === 'select' ? 3 : 1)), 'Toolbar migration escaped its bounded scope');
 		foreach ($icons as $name => $symbol) {
 			$config = $page['elements'][$name];
 			check(($config['iconFormat'] ?? '') === 'svg', 'Standard control not explicitly migrated');
@@ -152,7 +161,7 @@ foreach (['de_DE', 'en_US'] as $locale) foreach (['contacts', 'items'] as $modul
 			check($button->getElementsByTagName('use')->item(0)->getAttribute('href') === '#dw-icon-' . $symbol, 'Unexpected SVG mapping');
 			if ($name === 'clear') check($button->getAttribute('aria-label') === Zend_Registry::get('DEEC_Translate')->t('CLEAR') && $button->getAttribute('rel') === 'keyword' && trim($button->textContent) === '', 'Clear lost translated accessible name or field target');
 		}
-		foreach (['delete', 'apply', 'tags'] as $name) if (isset($page['elements'][$name])) check(!isset($page['elements'][$name]['iconFormat']), 'A special action was implicitly migrated');
+		foreach (['delete', 'apply', 'tags'] as $name) if (isset($page['elements'][$name])) check(isset($page['elements'][$name]['iconFormat']) === ($name === 'apply' && $action === 'select'), 'A special action escaped its explicit context');
 		$readonly = toolbarPage($locale, $module, $action, $layoutName, ['view', 'add', 'edit', 'delete'], true);
 		foreach (buttonDom($readonly['toolbar'] . $readonly['bottom'])->getElementsByTagName('button') as $button) check($button->hasAttribute('disabled'), 'Readonly toolbar action enabled');
 	}
@@ -165,7 +174,7 @@ foreach (['de_DE', 'en_US'] as $locale) foreach (['contacts', 'items'] as $modul
 	check(array_keys($ajax) === ['content', 'toolbar'] && !str_contains($ajax['content'] . $ajax['toolbar'], '<symbol'), 'Search response changed or duplicated symbols');
 	check(substr_count($ajax['toolbar'], 'dw-btn--control') === 6 && substr_count($ajax['content'], 'dw-btn--control') === 3, 'Dynamic top/bottom toolbar missing SVGs');
 	$selectAjax = toolbarPage($locale, $module, 'search', 'plain', ['view', 'add', 'edit', 'delete'], false, 'select');
-	check(substr_count($selectAjax['toolbar'], 'dw-btn--control') === 1 && !str_contains($selectAjax['content'], 'dw-btn--control'), 'Select AJAX changed its apply/footer context');
+	check(substr_count($selectAjax['toolbar'], 'dw-btn--control') === 2 && substr_count($selectAjax['content'], 'dw-btn--control') === 1, 'Select AJAX changed its apply/footer context');
 }
 
 foreach (['Items_Form_ToolbarStock', 'Items_Form_ToolbarMovements', 'Items_Form_ToolbarItemlist', 'Items_Form_ToolbarStockplanning'] as $class) {

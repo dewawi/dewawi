@@ -127,7 +127,7 @@ try:
                     ''')
                     known_report_overflow = remaining_mode and module == 'statistics/turnover' and locale == 'en_US' and width == 390 and metrics['pageWidth'] == legacy_report['width']
                     check(not metrics['errors'] and (not metrics['overflow'] or known_report_overflow) and not metrics['toolbarOverflow'] and metrics['symbols'] == 1, f'{context}: asset/layout/symbol failure: {metrics}')
-                    expected_count = 2 if is_report else (9 if action == 'index' else 1)
+                    expected_count = 2 if is_report else (9 if action == 'index' else (3 if action == 'select' and module in ['contacts', 'items'] else 1))
                     check(len(metrics['controls']) == expected_count, f'{context}: wrong scope')
                     for b in metrics['controls']:
                         check(b['type'] == 'button' and b['geometry'] and b['stroke'] == b['color'] and b['decorative'], f'{context}: icon/type failure: {b}')

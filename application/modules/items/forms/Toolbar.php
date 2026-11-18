@@ -170,6 +170,9 @@ class Items_Form_Toolbar extends DEEC_Form
 				$this->setElementData($name, ['icon' => $icon, 'iconFormat' => 'svg']);
 			}
 			$this->setElementData('clear', ['label' => 'CLEAR', 'icon' => 'clear', 'iconFormat' => 'svg', 'iconOnly' => true]);
+			if ($request->getActionName() === 'select' || ($request->getActionName() === 'search' && $request->getParam('context_action') === 'select')) {
+				$this->setElementData('apply', ['icon' => 'apply', 'iconFormat' => 'svg']);
+			}
 		}
 	}
 }

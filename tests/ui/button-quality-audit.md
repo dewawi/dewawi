@@ -1,5 +1,7 @@
 # B8 – Button-/SVG-Qualitätsaudit und Freigabevorbereitung
 
+Fortsetzung: [B9 – Auswahl- und Apply-Buttons](apply-buttons.md) migriert gezielt die geprüften Toolbar- und zeilenbezogenen Auswahlbestätigungen. Die folgenden Prüf- und Freigabeangaben beschreiben den historischen B8-Stand.
+
 Stand: 18.11.2026, lokaler Code auf `b523e3b4`. Geprüft: `AGENTS.md`, [B1-Bestandsaufnahme](buttons-icons-analysis.md), [B2](buttons-foundation.md), [B3](button-icons.md), [B4](inquiry-buttons.md), [B5](toolbar-buttons.md), [B6](tasks-toolbar.md), [B7](remaining-toolbars.md). Laufumgebung: PHP 8.3.6, Chromium 157.0.8103.78 unter Linux Mint.
 
 **Ergebnis:** Die vorhandenen Opt-ins bestehen die isolierten technischen Prüfungen. Keine neue Laufzeitregression durch B2–B7 nachgewiesen, daher keine Änderung an Anwendungs-PHP, CSS, JS, Icons oder Geschäftslogik. Eine nachgewiesene Übersetzungsabweichung der Testfixture wurde korrigiert. Die Gesamtfreigabe bleibt ausstehend: authentifizierte vollständige Geschäftsviews, reale Rollen-/SaaS-Konfigurationen und manuelle Browser-/Screenreader-/Produktabnahme fehlen.
