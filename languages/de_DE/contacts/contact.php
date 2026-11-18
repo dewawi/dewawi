@@ -117,6 +117,7 @@
 	'CONTACTS_DOCUMENT_FILE_AVAILABLE' => 'Archiviertes Original verfügbar',
 	'CONTACTS_DOCUMENT_FILE_ORIGINAL_ONLY' => 'Original verfügbar, Attachment fehlt',
 	'CONTACTS_DOCUMENT_FILE_ATTACHMENT_ONLY' => 'Original fehlt, Attachment verfügbar',
+	'CONTACTS_DOCUMENT_FILE_COPY_AVAILABLE' => 'Kopie verfügbar',
 	'CONTACTS_DOCUMENT_FILE_MISSING' => 'Archiviertes Original fehlt',
 	'CONTACTS_DOCUMENT_FILE_INVALID' => 'Gespeicherte Datei ist ungültig',
 	'CONTACTS_DOCUMENT_FILE_MIGRATION_REQUIRED' => 'Historischer Wiederherstellungskandidat muss migriert werden',

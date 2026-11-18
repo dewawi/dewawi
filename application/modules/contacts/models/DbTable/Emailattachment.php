@@ -251,7 +251,7 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 			'status' => 'missing', 'source' => '', 'relative' => '', 'attachmentId' => 0, 'fallbackAttachmentId' => 0, 'documentUrl' => '',
 		];
 		try {
-			$archive = (new Application_Model_DbTable_Documentarchive())->getForDocument((int)$document['id'], $module, $controller, 'pdf');
+			$archive = (new Application_Model_DbTable_Documentarchive())->getForDocument((int)$document['id'], $module, $controller, 'pdf', true);
 			if ($archive) {
 				$result['filename'] = $archive['filename'];
 				$result['status'] = 'available';
@@ -265,6 +265,10 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 			return $result;
 		}
 
+		$result['filename'] = DEEC_DocumentReview::documentFilename($document, $controller);
+		$result['documentUrl'] = '/' . $module . '/' . $controller . '/download/id/' . (int)$document['id'];
+		$result['source'] = 'viewing_copy';
+		$result['status'] = 'copy_available';
 		if (!DEEC_Emailattachment::validFilename($filename)) return $result;
 		$directory = new DEEC_Directory();
 		$originals = [];
@@ -299,8 +303,7 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 			return $result;
 		}
 
-		$result['source'] = 'recovery';
-		$result['status'] = $invalid ? 'invalid' : 'migration_required';
+		if ($invalid) $result['status'] = 'invalid';
 		return $result;
 	}
 

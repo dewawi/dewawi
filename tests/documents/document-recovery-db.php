@@ -266,10 +266,10 @@ $httpAddress = stream_socket_get_name($portSocket, false); fclose($portSocket);
 $httpLog = fopen($work . '/review-http.log', 'wb');
 $httpServer = proc_open([PHP_BINARY, '-d', 'error_reporting=8191', '-S', $httpAddress, __DIR__ . '/document-recovery-download-fixture.php'], [0 => ['pipe', 'r'], 1 => $httpLog, 2 => $httpLog], $httpPipes, null, array_replace(getenv(), ['DEWAWI_REVIEW_TEST_SOCKET' => $socket]));
 fclose($httpPipes[0]);
-function recoveryTestDownload(array $query, ?int $user = 42, string $method = 'GET'): array
+function recoveryTestDownload(array $query, ?int $user = 42, string $method = 'GET', array $extraHeaders = []): array
 {
 	global $httpAddress;
-	$headers = $user === null ? [] : ['X-Review-Test-User: ' . $user];
+	$headers = array_merge($user === null ? [] : ['X-Review-Test-User: ' . $user], $extraHeaders);
 	$context = stream_context_create(['http' => ['method' => $method, 'header' => implode("\r\n", $headers), 'ignore_errors' => true, 'timeout' => 10]]);
 	$bytes = file_get_contents('http://' . $httpAddress . '/?' . http_build_query($query), false, $context);
 	return ['headers' => implode("\n", $http_response_header), 'bytes' => $bytes, 'code' => (int)explode(' ', $http_response_header[0])[1]];
@@ -291,7 +291,7 @@ try {
 		recoveryTestCheck($inline['code'] === 200 && $inline['bytes'] === $download['bytes'] && str_contains($inline['headers'], 'inline;'), 'Inline view changed PDF bytes');
 		foreach ([null, 43, 44] as $user) recoveryTestCheck(recoveryTestDownload($query, $user)['code'] !== 200, 'Anonymous, foreign or child user accessed a parent review PDF');
 		$view = recoveryTestDownload($query + ['view' => 1]);
-		recoveryTestCheck($view['code'] === 200 && str_contains($view['bytes'], 'Historische Rekonstruktion – Papierprüfung ausstehend') && str_contains($view['bytes'], $sha) && str_contains($view['bytes'], 'action=reconstructed') && str_contains($view['bytes'], 'action=reviewdownload') && !str_contains($view['bytes'], '<iframe'), 'Missing-original view omitted review candidates or the explicit reconstructed-copy action');
+		recoveryTestCheck($view['code'] === 200 && str_contains($view['bytes'], 'Historische Rekonstruktion – Papierprüfung ausstehend') && str_contains($view['bytes'], $sha) && str_contains($view['bytes'], 'action=preview') && str_contains($view['bytes'], 'action=reviewdownload') && str_contains($view['bytes'], '<iframe') && !str_contains($view['bytes'], 'action=reconstructed'), 'Missing-original view omitted review candidates or its ordinary embedded preview');
 	}
 	$quoteSha = array_key_first($published['json']['results']['sales/quote/1']['candidates']);
 	$quoteQuery = ['module' => 'sales', 'controller' => 'quote', 'id' => 1, 'sha256' => $quoteSha];

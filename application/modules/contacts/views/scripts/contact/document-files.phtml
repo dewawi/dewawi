@@ -1,6 +1,7 @@
 <?php if (!empty($this->documentFiles)) : ?>
 	<section class="dw-contact-document-files">
 		<h3><?php echo $this->escape($this->translate('CONTACTS_ISSUED_DOCUMENT_FILES')); ?></h3>
+		<div class="dw-table-wrap">
 		<table class="dw-table">
 			<thead>
 				<tr>
@@ -43,10 +44,11 @@
 								<?php echo $this->escape((string)$file['filename']); ?>
 							<?php endif; ?>
 						</td>
-						<td><?php echo $this->escape($this->translate($status)); ?></td>
+						<td><?php echo $this->escape($this->translate($status)); ?><?php if (($file['source'] ?? '') === 'viewing_copy' && $file['status'] !== 'copy_available') : ?><br><?php echo $this->escape($this->translate('CONTACTS_DOCUMENT_FILE_COPY_AVAILABLE')); ?><?php endif; ?></td>
 					</tr>
 				<?php endforeach; ?>
 			</tbody>
 		</table>
+		</div>
 	</section>
 <?php endif; ?>

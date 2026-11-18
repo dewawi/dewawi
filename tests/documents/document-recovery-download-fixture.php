@@ -60,7 +60,8 @@ if (isset($_GET['view'])) {
 	$helper = new Zend_View_Helper_Document(); $helper->setView($view);
 	echo $helper->Document(); exit;
 }
-$controller = new RecoveryDownloadFixtureController($request, new Zend_Controller_Response_Http());
+$response = new Zend_Controller_Response_Http(); Zend_Controller_Front::getInstance()->setResponse($response);
+$controller = new RecoveryDownloadFixtureController($request, $response);
 $method = $action . 'Action';
 $controller->$method();
 $controller->getResponse()->sendResponse();

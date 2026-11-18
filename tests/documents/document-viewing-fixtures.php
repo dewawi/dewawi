@@ -46,6 +46,10 @@ function viewingCheckMarks(array $response, string $mark, int $minimumPages = 1)
 recoveryTestInsert('quote', array_replace($pdo->query('SELECT * FROM quote WHERE id = 601')->fetch(PDO::FETCH_ASSOC), ['id' => 690, 'quoteid' => 9690]));
 recoveryTestInsert('quotepos', array_replace($pdo->query('SELECT * FROM quotepos WHERE parentid = 601')->fetch(PDO::FETCH_ASSOC), ['id' => 690, 'parentid' => 690]));
 
+// Synthetic equivalent of the reported invoice; no production data is used.
+recoveryTestInsert('invoice', array_replace($pdo->query('SELECT * FROM invoice WHERE id = 603')->fetch(PDO::FETCH_ASSOC), ['id' => 59505, 'invoiceid' => 112326, 'filename' => 'Rechnung-112326.pdf']));
+recoveryTestInsert('invoicepos', array_replace($pdo->query('SELECT * FROM invoicepos WHERE parentid = 603')->fetch(PDO::FETCH_ASSOC), ['id' => 59505, 'parentid' => 59505]));
+
 $viewingTables = ['documentarchive', 'emailattachment', 'emailmessage', 'emailmessageattachment', 'pricerulepos'];
 foreach (DEEC_DocumentArchive::documents() as $controllers) foreach ($controllers as $controller) $viewingTables = array_merge($viewingTables, [$controller, $controller . 'pos', $controller . 'posset']);
 $viewingDbBefore = [];
@@ -126,9 +130,9 @@ try {
 	foreach ($viewingDocuments as $query) recoveryTestCheck(glob($base . '/cache/document/' . $query['module'] . '/' . $query['controller'] . '/7/' . $query['id'] . '/*') === [], 'Viewing created a PDF cache entry');
 	foreach (['de_DE', 'en_US'] as $locale) {
 		$panel = recoveryTestDownload($quoteQuery + ['view' => 1, 'locale' => $locale]);
-		recoveryTestCheck(str_contains($panel['bytes'], 'action=reconstructed') && !str_contains($panel['bytes'], '<iframe') && !str_contains($panel['bytes'], 'DOCUMENTS_'), 'Missing-original panel still embeds a failing original or lacks translation');
+		recoveryTestCheck(str_contains($panel['bytes'], 'action=preview') && str_contains($panel['bytes'], '<iframe') && !str_contains($panel['bytes'], 'action=reconstructed') && !str_contains($panel['bytes'], 'DOCUMENTS_'), 'Missing-original panel still embeds a failing original or lacks translation');
 		preg_match('~<section[^>]*data-document-status="historical_viewing_copy".*?</section>~s', $panel['bytes'], $match);
-		file_put_contents($work . '/viewing-panel-' . $locale . '.html', '<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="file://' . $root . '/css/ui.css"><body>' . $match[0] . '</body></html>');
+		file_put_contents($work . '/viewing-panel-' . $locale . '.html', '<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="file://' . $root . '/css/ui.css"><body>' . $panel['bytes'] . '</body></html>');
 	}
 	viewingCheckMarks(recoveryTestDownload($quoteQuery + ['action' => 'reconstructed', 'locale' => 'en_US']), 'COPY', 2);
 	// Missing stored amounts, contradictory totals and unavailable layouts remain visible as raw data.
@@ -164,10 +168,48 @@ try {
 	$pdo->prepare('UPDATE documentarchive SET filename = ? WHERE id = ?')->execute([$originalRow['filename'], $originalRow['id']]);
 	foreach (['missing', 'corrupt'] as $failure) {
 		if ($failure === 'missing') unlink($originalPath); else file_put_contents($originalPath, '%PDF-corrupt');
-		viewingCheckMarks(recoveryTestDownload(['module' => 'sales', 'controller' => 'quote', 'id' => 1, 'action' => 'reconstructed']), 'KOPIE');
+		if ($failure === 'missing') viewingCheckMarks(recoveryTestDownload(['module' => 'sales', 'controller' => 'quote', 'id' => 1, 'action' => 'reconstructed']), 'KOPIE');
+		else foreach (['preview', 'download', 'reconstructed'] as $action) recoveryTestCheck(recoveryTestDownload(['module' => 'sales', 'controller' => 'quote', 'id' => 1, 'action' => $action])['code'] === 404, 'Corrupt original was silently replaced by a copy');
 		recoveryTestCheck($failure === 'missing' ? !file_exists($originalPath) : file_get_contents($originalPath) === '%PDF-corrupt', 'Viewing repaired or overwrote a registered original');
 	}
 	file_put_contents($originalPath, $originalBytes); touch($originalPath, $viewingFilesBefore[$originalPath][1]);
+	$reportedQuery = ['module' => 'sales', 'controller' => 'invoice', 'id' => 59505];
+	$reportedDownload = recoveryTestDownload($reportedQuery + ['action' => 'download']); viewingCheckMarks($reportedDownload, 'KOPIE');
+	recoveryTestCheck(str_contains($reportedDownload['headers'], 'attachment; filename="Rechnung-112326.pdf"') && !str_contains($reportedDownload['headers'], 'reconstructed-copy') && !str_contains($reportedDownload['headers'], '59505.pdf'), 'Synthetic invoice download lost its stored normal filename');
+	$reportedRecords = glob($base . '/files/documents/.viewing-copies/7/sales/invoice/59505/*/de_DE/copy.json');
+	$reportedReceipt = file_get_contents($reportedRecords[0]); $reportedCopy = recoveryJsonFile($reportedRecords[0]); $reportedCopyPath = dirname($reportedRecords[0]) . '/' . $reportedCopy['sha256'] . '.pdf'; $reportedCopyState = [hash_file('sha256', $reportedCopyPath), filemtime($reportedCopyPath)];
+	$reportedPreview = recoveryTestDownload($reportedQuery + ['action' => 'preview']);
+	recoveryTestCheck($reportedPreview['code'] === 200 && $reportedPreview['bytes'] === $reportedDownload['bytes'] && str_contains($reportedPreview['headers'], 'inline; filename="Rechnung-112326.pdf"') && str_contains($reportedPreview['headers'], 'nosniff') && str_contains($reportedPreview['headers'], 'sandbox;'), 'Normal inline preview differs from the protected Download copy');
+	$ajax = recoveryTestDownload($reportedQuery + ['action' => 'preview'], 42, 'POST', ['X-Requested-With: XMLHttpRequest']);
+	if ($ajax['code'] !== 200 || !str_starts_with($ajax['bytes'], '{')) throw new RuntimeException('AJAX preview failed: ' . $ajax['headers'] . ' ' . $ajax['bytes'] . substr(file_get_contents($work . '/viewing-http.log'), -4000));
+	$previewJson = json_decode($ajax['bytes'], true, 512, JSON_THROW_ON_ERROR);
+	recoveryTestCheck($ajax['code'] === 200 && $previewJson['ok'] === true && $previewJson['filename'] === 'Rechnung-112326.pdf' && str_contains($previewJson['url'], 'action=preview') && !str_contains($ajax['bytes'], $base) && !str_contains($ajax['bytes'], 'files/documents') && str_contains($ajax['headers'], 'private, no-store'), 'AJAX preview leaked a private path or failed its ordinary protected route');
+	recoveryTestCheck(file_get_contents($reportedRecords[0]) === $reportedReceipt && [hash_file('sha256', $reportedCopyPath), filemtime($reportedCopyPath)] === $reportedCopyState, 'Filename/preview access rewrote immutable copy bytes or its receipt');
+	foreach (['preview', 'download'] as $action) {
+		recoveryTestCheck(recoveryTestDownload($reportedQuery + ['action' => $action], null)['code'] === 401 && recoveryTestDownload($reportedQuery + ['action' => $action], 43)['code'] !== 200, 'Normal document PDF access leaked across tenant/auth boundaries');
+		recoveryTestCheck(recoveryTestDownload($reportedQuery + ['action' => $action], 42, 'HEAD')['bytes'] === '', 'PDF HEAD leaked content');
+	}
+	$copyGuardDb = recoveryBoot(migrationConfig($work . '/database.ini', 'production') + ['unix_socket' => $socket], $base, 7, 42);
+	$contactFiles = (new Contacts_Model_DbTable_Emailattachment())->getContactDocumentFiles(500);
+	$reportedFiles = array_values(array_filter($contactFiles, static fn(array $file): bool => $file['module'] === 'sales' && $file['controller'] === 'invoice' && $file['id'] === 59505));
+	recoveryTestCheck(count($reportedFiles) === 1 && $reportedFiles[0]['filename'] === 'Rechnung-112326.pdf' && $reportedFiles[0]['status'] === 'copy_available' && $reportedFiles[0]['documentUrl'] === '/sales/invoice/download/id/59505' && $reportedFiles[0]['relative'] === '', 'Contact issued-document files did not use the normal authorized Download identity');
+	Zend_Controller_Front::getInstance()->setControllerDirectory(['default' => $root . '/application/controllers', 'sales' => $root . '/application/modules/sales/controllers', 'contacts' => $root . '/application/modules/contacts/controllers']);
+	Zend_Controller_Front::getInstance()->getRouter()->addRoute('default', new Zend_Controller_Router_Route_Module(['module' => 'default', 'controller' => 'index', 'action' => 'index']));
+	foreach (['de_DE', 'en_US'] as $locale) {
+		$translator = new DEEC_Translate($locale); $translator->loadDir('default', $root . '/languages/' . $locale . '/default'); $translator->loadDir('contacts', $root . '/languages/' . $locale . '/contacts'); Zend_Registry::set('DEEC_Translate', $translator);
+		$view = new Zend_View(['scriptPath' => $root . '/application/modules/contacts/views/scripts']); $view->addHelperPath($root . '/application/views/helpers', 'Zend_View_Helper'); $view->documentFiles = $reportedFiles;
+		$html = $view->render('contact/document-files.phtml');
+		recoveryTestCheck(str_contains($html, '/sales/invoice/download/id/59505') && str_contains($html, '>Rechnung-112326.pdf</a>') && !str_contains($html, 'CONTACTS_DOCUMENT_FILE_COPY_AVAILABLE'), 'Contact filename was not a localized document-route link');
+		file_put_contents($work . '/contact-pdf-panel-' . $locale . '.html', '<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="file://' . $root . '/css/ui.css"><body>' . $html . '<script src="file://' . $root . '/library/jQuery/jquery-1.12.4.min.js"></script><script src="file://' . $root . '/library/jQuery/jquery.cookie.js"></script><script>var language="en",module="contacts",controller="contact",action="fixture",id=500,baseUrl="",cookiePath="/fixture"; var fixtureErrors=[]; window.addEventListener("error",function(e){fixtureErrors.push(e.message);}); $.fn.datepicker=function(){return this;}; function autosize(){}</script><script src="file://' . $root . '/js/global.js"></script></body></html>');
+	}
+	$copyGuardDb->closeConnection();
+	foreach (['sha256' => str_repeat('0', 64), 'version' => 2, 'path' => 'files/documents/incorrect.pdf', 'filesize' => 1] as $field => $invalidValue) {
+		$pdo->prepare('UPDATE documentarchive SET `' . $field . '` = ? WHERE id = ?')->execute([$invalidValue, $originalRow['id']]);
+		foreach (['preview', 'download', 'reconstructed'] as $action) recoveryTestCheck(recoveryTestDownload(['module' => 'sales', 'controller' => 'quote', 'id' => 1, 'action' => $action])['code'] === 404, 'Archive conflict was hidden by a viewing copy: ' . $field);
+		$badAjax = recoveryTestDownload(['module' => 'sales', 'controller' => 'quote', 'id' => 1, 'action' => 'preview'], 42, 'POST', ['X-Requested-With: XMLHttpRequest']);
+		recoveryTestCheck($badAjax['code'] === 404 && json_decode($badAjax['bytes'], true, 512, JSON_THROW_ON_ERROR)['ok'] === false && !str_contains($badAjax['bytes'], $base), 'AJAX preview hid an archive conflict or disclosed a private path');
+		$pdo->prepare('UPDATE documentarchive SET `' . $field . '` = ? WHERE id = ?')->execute([$originalRow[$field], $originalRow['id']]);
+	}
 	// All eight document types: draft previews with/without covers and finalized state rules.
 	foreach ($viewingDocuments as $query) {
 		$table = $query['controller']; $id = $query['id'];

@@ -6,11 +6,11 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 	protected ?string $orderingField = null;
 	protected ?string $deletedField = null;
 
-	public function getForDocument(int $documentId, string $module, string $controller, string $format = 'pdf'): ?array
+	public function getForDocument(int $documentId, string $module, string $controller, string $format = 'pdf', bool $allowMissing = false): ?array
 	{
 		$context = (new Contacts_Model_DbTable_Emailattachment())->getParentContext($documentId, $module, $controller);
 		if (!$context || !DEEC_DocumentArchive::validDocumentType($module, $controller)) return null;
-		return $this->getOriginal($context['parent'], (int)$context['clientid'], $module, $controller, $format);
+		return $this->getOriginal($context['parent'], (int)$context['clientid'], $module, $controller, $format, $allowMissing);
 	}
 
 	public function getForExport(int $documentId, string $module, string $controller): ?array
@@ -38,7 +38,7 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 		return $this->getOriginal($context['parent'], $context['clientid'], 'sales', 'quote', 'pdf');
 	}
 
-	private function getOriginal(array $document, int $clientId, string $module, string $controller, string $format): ?array
+	private function getOriginal(array $document, int $clientId, string $module, string $controller, string $format, bool $allowMissing = false): ?array
 	{
 		$rows = $this->fetchAll($this->select()->where('documentid = ?', (int)$document['id'])->where('module = ?', $module)
 			->where('controller = ?', $controller)->where('clientid = ?', $clientId)->where('format = ?', strtolower($format)))->toArray();
@@ -48,7 +48,7 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 		if (!DEEC_Emailattachment::validFilename((string)$data['filename'])) throw new RuntimeException('Invalid document archive filename');
 		if (strtolower($format) === 'pdf' && DEEC_Emailattachment::validFilename((string)($document['filename'] ?? ''))
 			&& !hash_equals((string)$document['filename'], (string)$data['filename'])) throw new RuntimeException('Document archive filename differs');
-		$this->assertStoredFile($data);
+		if (!$this->assertStoredFile($data, $allowMissing)) return null;
 		return $data;
 	}
 
@@ -167,14 +167,17 @@ class Application_Model_DbTable_Documentarchive extends DEEC_Model_DbTable_Entit
 		return BASE_PATH . '/' . $archive['path'];
 	}
 
-	private function assertStoredFile(array $row): void
+	private function assertStoredFile(array $row, bool $allowMissing = false): bool
 	{
 		$archive = new DEEC_DocumentArchive(BASE_PATH);
 		$expected = $archive->relativePath((int)$row['clientid'], (string)$row['module'], (string)$row['controller'], (int)$row['documentid'], (string)$row['format']);
 		if (!hash_equals($expected, (string)$row['path'])) throw new RuntimeException('Document archive path differs');
+		if (!preg_match('/^[a-f0-9]{64}$/D', (string)$row['sha256']) || (int)$row['filesize'] <= 0) throw new RuntimeException('Invalid document archive integrity metadata');
 		$file = $archive->inspect(BASE_PATH . '/' . $expected, (string)$row['format']);
+		if ($allowMissing && $file['status'] === 'missing') return false;
 		if ($file['status'] !== 'ok' || (int)$row['filesize'] !== (int)$file['size'] || !hash_equals((string)$row['sha256'], (string)$file['sha256'])) {
 			throw new RuntimeException('Document archive integrity check failed');
 		}
+		return true;
 	}
 }

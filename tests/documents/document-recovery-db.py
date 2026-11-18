@@ -61,9 +61,13 @@ try:
                     assert behavior['calls'] == 0 and not behavior['dirty'] and not behavior['errors'] and behavior['native'], behavior
                     print('PASS: original review form ' + locale + '/' + str(width) + '; explicit selection, mandatory confirmations, no autosave or overflow')
                     browser.navigate((work / ('viewing-panel-' + locale + '.html')).as_uri())
-                    panel = browser.execute("return {overflow: document.documentElement.scrollWidth > innerWidth, status: document.querySelector('[role=status]').dataset.documentStatus, links: document.querySelectorAll('a').length, text: document.body.textContent}")
-                    assert not panel['overflow'] and panel['status'] == 'historical_viewing_copy' and panel['links'] == 2 and 'DOCUMENTS_' not in panel['text'], panel
-                    print('PASS: historical viewing panel ' + locale + '/' + str(width) + '; normal download, explicit translated copy action and no overflow')
+                    panel = browser.execute("return {overflow: document.documentElement.scrollWidth > innerWidth, status: document.querySelector('[data-document-status=historical_viewing_copy]').dataset.documentStatus, links: document.querySelectorAll('a').length, frames:document.querySelectorAll('iframe').length, preview:document.querySelector('iframe').getAttribute('src'), text: document.body.textContent}")
+                    assert not panel['overflow'] and panel['status'] == 'historical_viewing_copy' and panel['links'] >= 1 and panel['frames'] == 1 and 'action=preview' in panel['preview'] and 'DOCUMENTS_' not in panel['text'], panel
+                    print('PASS: historical viewing panel ' + locale + '/' + str(width) + '; normal download and embedded protected preview')
+                    browser.navigate((work / ('contact-pdf-panel-' + locale + '.html')).as_uri())
+                    panel = browser.execute("let opened=''; window.open=function(url){opened=url;return {};}; DewawiToolbar.actions.pdf.call(DewawiToolbar,{ids:['59505'],module:'sales',controller:'invoice'},$('<button>')); return {overflow:document.documentElement.scrollWidth>innerWidth,link:document.querySelector('a[href*=download]').getAttribute('href'),history:opened,errors:fixtureErrors,filename:document.querySelector('a[href*=download]').textContent,text:document.body.textContent}")
+                    assert not panel['overflow'] and panel['link'].endswith('/sales/invoice/download/id/59505') and panel['filename']=='Rechnung-112326.pdf' and panel['history']==panel['link'] and not panel['errors'] and 'CONTACTS_' not in panel['text'], panel
+                    print('PASS: contact PDF link ' + locale + '/' + str(width) + '; stored filename, authorized route and responsive table')
 
         finally:
             browser.close()

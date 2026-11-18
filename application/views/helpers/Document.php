@@ -53,15 +53,16 @@ class Zend_View_Helper_Document extends Zend_View_Helper_Abstract
 			} catch (RuntimeException | InvalidArgumentException | JsonException $error) { error_log('Document original review unavailable: ' . $error->getMessage()); }
 		}
 		if (DEEC_Permission::isDocumentReadonly($module, $controller, (array)$document)) {
-			try { $original = (new Application_Model_DbTable_Documentarchive())->getForDocument((int)$document['id'], $module, $controller); }
-			catch (RuntimeException | InvalidArgumentException $error) { $original = null; error_log('Original PDF unavailable: ' . $error->getMessage()); }
+			$invalidArchive = false;
+			try { $original = (new Application_Model_DbTable_Documentarchive())->getForDocument((int)$document['id'], $module, $controller, 'pdf', true); }
+			catch (RuntimeException | InvalidArgumentException $error) { $original = null; $invalidArchive = true; error_log('Original PDF unavailable: ' . $error->getMessage()); }
 			if ($original && (json_decode((string)$original['parameters'], true)['recovery']['selection']['origin']['category'] ?? '') === 'historical_file_recovery_origin_unconfirmed') $html .= '<p>' . $this->view->escape($this->view->translate('DOCUMENTS_HISTORICAL_FILE_RECOVERY_ORIGIN_UNCONFIRMED')) . '</p>';
-			if (!$original) {
-				$copyUrl = $this->view->url(['module' => $module, 'controller' => $controller, 'action' => 'reconstructed', 'id' => $document['id']]);
+			if ($invalidArchive) $html .= '<p role="status">' . $this->view->escape($this->view->translate('DOCUMENTS_ARCHIVE_INVALID')) . '</p>';
+			if (!$original && !$invalidArchive) {
 				$html .= '<section class="dw-alert dw-alert--warning" role="status" data-document-status="historical_viewing_copy"><div><p><strong>' . $this->view->escape($this->view->translate('DOCUMENTS_RECONSTRUCTED_MARK')) . '</strong></p>';
 				$html .= '<p>' . $this->view->escape($this->view->translate('DOCUMENTS_RECONSTRUCTED_EXPLANATION')) . '</p>';
 				$html .= '<p>' . $this->view->escape($this->view->translate('DOCUMENTS_STORED_DATA_GAPS')) . '</p>';
-				return $html . '<p><a href="' . $this->view->escape($url) . '" target="_blank" rel="noopener">' . $this->view->escape($this->view->translate('DOCUMENTS_DOWNLOAD_PDF')) . '</a> · <a href="' . $this->view->escape($copyUrl) . '" target="_blank" rel="noopener">' . $this->view->escape($this->view->translate('DOCUMENTS_VIEW_RECONSTRUCTED_COPY')) . '</a></p></div></section>';
+				$html .= '</div></section>';
 			}
 		}
 		$html .= '<p>';
@@ -70,7 +71,7 @@ class Zend_View_Helper_Document extends Zend_View_Helper_Abstract
 		$html .= '</a>';
 		$html .= '</p>';
 
-		$html .= '<iframe src="' . $this->view->escape($fileUrl) . '" width="900px" height="500px"></iframe>';
+		$html .= '<iframe src="' . $this->view->escape($fileUrl) . '" width="100%" height="500px" title="' . $this->view->escape($this->view->translate('DOCUMENTS_PREVIEW_PDF')) . '"></iframe>';
 
 		return $html;
 	}

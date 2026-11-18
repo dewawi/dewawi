@@ -112,6 +112,7 @@
 	'CONTACTS_DOCUMENT_FILE_AVAILABLE' => 'Archived original available',
 	'CONTACTS_DOCUMENT_FILE_ORIGINAL_ONLY' => 'Original available, attachment missing',
 	'CONTACTS_DOCUMENT_FILE_ATTACHMENT_ONLY' => 'Original missing, attachment available',
+	'CONTACTS_DOCUMENT_FILE_COPY_AVAILABLE' => 'Copy available',
 	'CONTACTS_DOCUMENT_FILE_MISSING' => 'Archived original missing',
 	'CONTACTS_DOCUMENT_FILE_INVALID' => 'Stored file is invalid',
 	'CONTACTS_DOCUMENT_FILE_MIGRATION_REQUIRED' => 'Historical recovery candidate requires migration',

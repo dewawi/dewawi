@@ -1,4 +1,5 @@
 <?php return array(
+	'DOCUMENTS_ARCHIVE_INVALID' => 'Das Originalarchiv ist ungültig oder widersprüchlich. Der PDF-Abruf ist bis zur Klärung gesperrt.',
 	'DOCUMENTS_HISTORICAL_FILE_RECOVERY_ORIGIN_UNCONFIRMED' => 'Historische Datei nach Dateiabgleich wiederhergestellt; ursprüngliche Herkunft nicht unabhängig nachgewiesen',
 	'CORRECTION_LAST_EDITED' => 'Zuletzt bearbeitet',
 	'CORRECTION_EXPORT' => 'Freigegebene Berichtigungen mit Nachweisen exportieren (JSON)',

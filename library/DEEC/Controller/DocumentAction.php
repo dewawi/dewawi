@@ -254,30 +254,45 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		$id = (int)$this->_getParam('id', 0);
 		$templateId = (int)$this->_getParam('templateid', 0);
 		$isAjax = $this->getRequest()->isXmlHttpRequest();
+		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
 
 		$row = $this->loadRow($id);
 		if (!$row) {
 			return $this->handleDocumentNotFound($isAjax);
 		}
 
-		$result = $this->generatePdfDocument($id, [
-			'output' => $isAjax ? 'file' : 'inline',
-			'templateid' => $templateId ?: null,
-			'storage' => 'cache',
-			'overwrite' => true,
-		]);
+		try {
+			$result = $this->generatePdfDocument($id, [
+				'output' => $isAjax ? 'file' : 'inline', 'templateid' => $templateId ?: null,
+				'storage' => 'cache', 'overwrite' => true,
+			]);
+		} catch (RuntimeException | InvalidArgumentException $error) {
+			if (!DEEC_Permission::isDocumentReadonly($this->getRequest()->getModuleName(), $this->getRequest()->getControllerName(), $row)) throw $error;
+			$this->disableView();
+			try { $result = (new DEEC_DocumentReview())->openViewingCopy($id, $this->getRequest()->getModuleName(), $this->getRequest()->getControllerName()); }
+			catch (RuntimeException | InvalidArgumentException | JsonException $failure) {
+				error_log('Document preview unavailable: ' . $failure->getMessage()); $this->getResponse()->setHttpResponseCode(404);
+				if ($isAjax) return $this->_helper->json(['ok' => false]);
+				return;
+			}
+		}
 
 		if ($isAjax) {
 			$this->disableView();
 
+			if (isset($result['stream']) && is_resource($result['stream'])) fclose($result['stream']);
+			$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
+			$url = DEEC_Permission::isDocumentReadonly($this->getRequest()->getModuleName(), $this->getRequest()->getControllerName(), $row)
+				? $this->view->url(['module' => $this->getRequest()->getModuleName(), 'controller' => $this->getRequest()->getControllerName(), 'action' => 'preview', 'id' => $id], null, true) : ($result['url'] ?? null);
 			return $this->_helper->json([
 				'ok' => true,
-				'url' => $result['url'] ?? null,
+				'url' => $url,
 				'filename' => $result['filename'] ?? null,
 				'validation' => $this->localizeDocumentValidation($this->getDocumentValidation($row)),
 			]);
 		}
 
+		if (isset($result['stream'])) return $this->sendReviewPdfResponse($result, 'inline');
 		return $this->sendPdfResponse($result);
 	}
 

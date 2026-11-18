@@ -235,7 +235,7 @@ check(in_array('invoice-112153.pdf', $hiddenDocumentFiles, true) && in_array('pu
 check($adapter->writes === $writesBeforeDocumentFiles, 'Contact document file discovery wrote database data');
 check($byNumber['112153']['source'] === 'archive' && $byNumber['112153']['status'] === 'available' && $byNumber['112153']['attachmentId'] === 0, 'Canonical archive did not take precedence over the legacy original');
 check($byNumber['112279']['source'] === 'archive' && $byNumber['112468']['source'] === 'archive', 'Canonical archives did not take precedence over customer-number originals');
-check($byNumber['112500']['status'] === 'missing' && $byNumber['112500']['relative'] === '' && $byNumber['112500']['attachmentId'] === 0, 'Missing original was not reported explicitly');
+check($byNumber['112500']['status'] === 'copy_available' && $byNumber['112500']['relative'] === '' && $byNumber['112500']['attachmentId'] === 0, 'Missing original did not expose its protected copy route');
 
 class RecoveryDownloadTestController extends DEEC_Controller_DocumentAction
 {
@@ -271,7 +271,7 @@ $filesView->documentFiles = $documentFiles;
 $filesHelper = new Zend_View_Helper_Files();
 $filesHelper->setView($filesView);
 $filesHtml = $filesHelper->Files();
-check(str_contains($filesHtml, 'invoice-112153.pdf') && str_contains($filesHtml, 'CONTACTS_DOCUMENT_FILE_MISSING')
+check(str_contains($filesHtml, 'invoice-112153.pdf') && str_contains($filesHtml, 'CONTACTS_DOCUMENT_FILE_COPY_AVAILABLE')
     && str_contains($filesHtml, '/library/FileManager/dialog.php'), 'Contact files tab lost document statuses or the manual FileManager');
 check(storedResponse($legacyFolder . 'invoice-112153.pdf')[0] === 200, 'Authorized legacy original is unavailable');
 check(storedResponse($currentFolder . 'invoice-112279.pdf')[0] === 200, 'Authorized current original is unavailable');

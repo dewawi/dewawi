@@ -87,8 +87,7 @@ class DEEC_DocumentReview
 	{
 		$snapshot = self::viewingSnapshot($id, $module, $controller);
 		$archiveDb = new Application_Model_DbTable_Documentarchive();
-		try { $original = $archiveDb->getForDocument($id, $module, $controller); }
-		catch (RuntimeException | InvalidArgumentException $error) { $original = null; error_log('Original unavailable for viewing: ' . $error->getMessage()); }
+		$original = $archiveDb->getForDocument($id, $module, $controller, 'pdf', true);
 		if ($original) {
 			$bytes = file_get_contents($archiveDb->getPath($original));
 			if ($bytes === false || strlen($bytes) !== (int)$original['filesize'] || !hash_equals($original['sha256'], hash('sha256', $bytes))) throw new RuntimeException('Original changed before viewing');
@@ -97,13 +96,22 @@ class DEEC_DocumentReview
 		} else {
 			$result = $this->storedViewingCopy($snapshot, $id, $module, $controller);
 			$bytes = $result['bytes'];
-			$filename = $controller . '-' . $id . '-reconstructed-copy.pdf';
+			$filename = self::documentFilename($snapshot['data']['document'], $controller);
 			$status = $result['status'];
 		}
 		$stream = fopen('php://memory', 'w+b');
 		if (!$stream) throw new RuntimeException('Viewing stream unavailable');
 		if (fwrite($stream, $bytes) !== strlen($bytes) || !rewind($stream)) { fclose($stream); throw new RuntimeException('Viewing stream failed'); }
 		return ['stream' => $stream, 'filename' => $filename, 'size' => strlen($bytes), 'sha256' => hash('sha256', $bytes), 'status' => $status];
+	}
+
+	public static function documentFilename(array $document, string $controller): string
+	{
+		$stored = (string)($document['filename'] ?? '');
+		if (DEEC_Emailattachment::validFilename($stored)) return $stored;
+		$number = (string)($document[$controller . 'id'] ?? '');
+		$filename = $controller . ($number === '' ? '' : '-' . $number) . '.pdf';
+		return DEEC_Emailattachment::validFilename($filename) ? $filename : $controller . '.pdf';
 	}
 
 	public static function isViewingCopy(int $clientId, string $sha): bool

@@ -1,4 +1,5 @@
 <?php return array(
+	'DOCUMENTS_ARCHIVE_INVALID' => 'The original archive is invalid or inconsistent. PDF access is blocked pending review.',
 	'DOCUMENTS_HISTORICAL_FILE_RECOVERY_ORIGIN_UNCONFIRMED' => 'Historical file restored by matching files; original provenance has not been independently proven',
 	'CORRECTION_LAST_EDITED' => 'Last edited',
 	'CORRECTION_EXPORT' => 'Export approved corrections and evidence (JSON)',
