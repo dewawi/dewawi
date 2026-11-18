@@ -186,6 +186,19 @@ mapActor(300); batchReject(fn() => $model->candidates()); batchReject(fn() => $s
 batchReject(fn() => batchService($work.'/invalid-limit', ['daily_limit' => 501]));
 batchReject(fn() => $model->candidates(Contacts_Model_GeocodingBatch::MAX_PAGE_SIZE + 1));
 
+// Report formatting independently of privacy approval and retain bad-import exclusions.
+$ids = batchFixture();
+foreach ([3 => ['street' => "Synthetic Street\n3 a"], 2 => ['street' => "Synthetic\tStreet 2"], 1 => ['street' => "Synthetic\fStreet 1"], 5 => ['street' => 'Synthetic Street'], 6 => ['street' => "Synthetic Street\n6"], 7 => ['city' => "\u{feff}Batch City"]] as $n => $changes) $db->update('address', $changes, ['id = ?' => $ids[$n]]);
+$formatService = batchService($work.'/batch-formats', ['enabled' => false]); $beforeFormats = $db->fetchAll('SELECT * FROM address ORDER BY id');
+$formatDry = $formatService->dryRun();
+batchCheck($formatDry['counts']['selected'] === 7 && $formatDry['counts']['unreviewable'] === 4 && $formatDry['counts']['approved'] === 0 && $formatDry['newly_reviewable'] === 2, 'Format normalization inferred approval or misstated improvement');
+batchCheck($formatDry['format_details'] === ['house_number_no_digits' => 1, 'house_number_spacing' => 1, 'invisible_format_city' => 1, 'line_feed_street' => 2, 'problematic_control_street' => 1, 'tab_street' => 1] && $formatDry['format_details_overlap'], 'Format subcategories were lost or double-counted');
+batchCheck(array_sum($formatDry['exclusion_reasons']) === 4 && $formatDry['exclusion_reasons']['control_characters_street'] === 1 && $formatDry['exclusion_reasons']['format_characters_city'] === 1, 'Unsafe controls were accepted as harmless whitespace');
+$formatFile = $work.'/batch-format-review.json'; $formatService->exportReview($formatFile);
+$formatReview = json_decode(file_get_contents($formatFile), true);
+batchCheck(count($formatReview['addresses']) === 3 && array_column($formatReview['addresses'], 'public') === [false, false, false], 'Formatting automatically released private addresses');
+batchCheck($formatService->prepare($formatFile)['status'] === 'no_approved_candidates' && !$formatService->requests && !str_contains(strtolower(json_encode($formatDry)), 'synthetic') && $db->fetchAll('SELECT * FROM address ORDER BY id') === $beforeFormats, 'Format diagnosis exposed or rewrote customer addresses');
+
 // Exercise the actual CLI with URL access disabled and column-restricted test credentials.
 function batchCli(array $arguments): array {
 	global $root;

@@ -4,6 +4,7 @@ class DEEC_Address {
 
 	// Public Nominatim is restricted to explicitly reviewed single addresses.
 	private const GEOCODING_CLIENT_ID = 100;
+	private const FORMATTED_HOUSE_NUMBER = '\d+(?: ?\p{L})?(?: ?[-\/–] ?\d+(?: ?\p{L})?)?';
 	protected array $geocoding = [];
 	private ?array $batchContext = null;
 	private bool $geocodingRequested = false;
@@ -155,25 +156,30 @@ class DEEC_Address {
 
 	protected function review(int $id, $address, array $state, bool $explain = false): array {
 		if (!$address) return ['status' => 'ineligible'] + ($explain ? ['reasons' => ['ineligible_address']] : []);
-		$postal = $this->postalAddress($address, $issues);
-		if ($postal === null) return ['status' => 'incomplete_or_unreviewable'] + ($explain ? ['reasons' => $issues] : []);
+		$postal = $this->postalAddress($address, $issues, $formats);
+		if ($postal === null) return ['status' => 'incomplete_or_unreviewable'] + ($explain ? ['reasons' => $issues, 'format_details' => $formats] : []);
 		$key = $postal['key'];
 		$last = $state['addresses'][(string)$id] ?? [];
 		$status = 'needs_geocoding';
 		if ($this->validCoordinates($address)) {
 			$status = 'existing_coordinates';
-			if ($this->batchContext === null && isset($last['point']) && $this->samePoint($last['point'], $address)) $status = ($last['key'] ?? '') === $key ? 'unchanged' : 'postal_address_changed';
+			// Legacy keys preserve tracked points; requests use only the canonical key.
+			if ($this->batchContext === null && isset($last['point']) && $this->samePoint($last['point'], $address)) $status = in_array($last['key'] ?? '', [$key, $postal['legacy_key']], true) ? 'unchanged' : 'postal_address_changed';
 		}
 		$snapshot = array_intersect_key($address, array_flip(['street', 'postcode', 'city', 'country', 'parentid', 'type', 'modified', 'geoupdated', 'latitude', 'longitude']));
-		return ['status' => $status, 'fingerprint' => hash('sha256', $id.':'.$key.':'.json_encode($snapshot))];
+		return ['status' => $status, 'fingerprint' => hash('sha256', $id.':'.$key.':'.json_encode($snapshot))] + ($explain ? ['format_details' => $formats, 'newly_reviewable' => $postal['newly_reviewable']] : []);
 	}
 
-	private function postalAddress(array $address, ?array &$issues = null): ?array {
-		$fields = []; $issues = [];
+	private function postalAddress(array $address, ?array &$issues = null, ?array &$formats = null): ?array {
+		$fields = []; $issues = []; $formats = []; $legacyControl = false;
 		foreach (['street', 'postcode', 'city', 'country'] as $field) {
 			$value = (string)($address[$field] ?? '');
 			if (!mb_check_encoding($value, 'UTF-8')) { $issues[] = 'invalid_utf8_'.$field; continue; }
-			if (preg_match('/[\x00-\x1f\x7f]/u', $value)) { $issues[] = 'control_characters_'.$field; continue; }
+			foreach (["\r" => 'carriage_return', "\n" => 'line_feed', "\t" => 'tab'] as $character => $kind) if (str_contains($value, $character)) $formats[] = $kind.'_'.$field;
+			if (preg_match('/(?! )\p{Z}/u', $value)) $formats[] = 'unicode_whitespace_'.$field;
+			if (preg_match('/\p{Cc}/u', str_replace(["\r", "\n", "\t"], '', $value))) { $issues[] = 'control_characters_'.$field; $formats[] = 'problematic_control_'.$field; continue; }
+			if (preg_match('/\p{Cf}/u', $value)) { $issues[] = 'format_characters_'.$field; $formats[] = 'invisible_format_'.$field; continue; }
+			$legacyControl = $legacyControl || (bool)preg_match('/[\x00-\x1f\x7f]/u', $value);
 			$fields[$field] = $this->normalize($value);
 			if ($fields[$field] === '') $issues[] = 'missing_'.$field;
 		}
@@ -190,20 +196,50 @@ class DEEC_Address {
 				} finally { $statement->close(); }
 			}
 		}
-		if (isset($fields['street']) && $fields['street'] !== '' && $this->streetParts($fields['street']) === null) $issues[] = 'unrecognized_house_number';
+		$legacyFields = $fields; $legacyNumber = true;
+		if (isset($fields['street']) && $fields['street'] !== '') {
+			$legacyNumber = $this->streetParts($fields['street'], false) !== null;
+			$parts = $this->streetParts($fields['street']);
+			if ($parts === null) {
+				$issues[] = 'unrecognized_house_number';
+				$formats[] = preg_match('/\d/u', $fields['street']) ? 'house_number_digits_unrecognized' : 'house_number_no_digits';
+			} else {
+				if (str_contains($parts[3], ' ')) $formats[] = 'house_number_spacing';
+				if (str_contains($parts[3], '–')) $formats[] = 'house_number_range_dash';
+				$fields['street'] = $parts[2];
+			}
+		}
 		if ($issues) return null;
-		return ['fields' => $fields, 'key' => hash('sha256', json_encode([self::GEOCODING_CLIENT_ID, $this->geocoding['endpoint'], 1, $fields]))];
+		// Identical query fields retain their cache key; changed queries invalidate approvals.
+		$key = hash('sha256', json_encode([self::GEOCODING_CLIENT_ID, $this->geocoding['endpoint'], 1, $fields]));
+		return ['fields' => $fields, 'key' => $key, 'legacy_key' => $legacyFields === $fields ? $key : hash('sha256', json_encode([self::GEOCODING_CLIENT_ID, $this->geocoding['endpoint'], 1, $legacyFields])), 'newly_reviewable' => $legacyControl || !$legacyNumber];
 	}
 
 	private function normalize(string $value): string {
 		return mb_strtolower(trim(preg_replace('/[\s\p{Z}]+/u', ' ', Normalizer::normalize($value, Normalizer::FORM_C))), 'UTF-8');
 	}
 
-	private function streetParts(string $street): ?array {
-		$number = '\d+\p{L}?(?:[-\/]\d+\p{L}?)?';
-		if (preg_match('/^(.+?)\s+('.$number.')$/uD', $street, $parts)) return [$parts[1], $parts[2]];
-		if (preg_match('/^('.$number.')\s+(.+)$/uD', $street, $parts)) return [$parts[2], $parts[1]];
+	private function streetParts(string $street, bool $formatted = true): ?array {
+		$legacy = '\d+\p{L}?(?:[-\/]\d+\p{L}?)?';
+		$suffix = $formatted ? self::FORMATTED_HOUSE_NUMBER : $legacy;
+		// A spaced letter before a road name may belong to the road (e.g. "12 A Street").
+		$prefix = $formatted ? '\d+\p{L}?(?: ?[-\/–] ?\d+\p{L}?)?' : $legacy;
+		if (preg_match('/^(.+?)\s+('.$suffix.')$/uD', $street, $parts)) {
+			$number = $this->normalizeHouseNumber($parts[2]);
+			return [$parts[1], $number, $parts[1].' '.$number, $parts[2]];
+		}
+		if (preg_match('/^('.$prefix.')\s+(.+)$/uD', $street, $parts)) {
+			$number = $this->normalizeHouseNumber($parts[1]);
+			return [$parts[2], $number, $number.' '.$parts[2], $parts[1]];
+		}
 		return null;
+	}
+
+	private function normalizeHouseNumber(string $number): ?string {
+		if (preg_match('/[\p{Cc}\p{Cf}]/u', str_replace(["\r", "\n", "\t"], '', $number))) return null;
+		$number = $this->normalize($number);
+		if (!preg_match('/^'.self::FORMATTED_HOUSE_NUMBER.'$/uD', $number)) return null;
+		return str_replace([' ', '–'], ['', '-'], $number);
 	}
 
 	protected function geocodingPoint(string $body, array $fields) {
@@ -218,7 +254,7 @@ class DEEC_Address {
 			if (!$this->validCoordinates($point)) return null;
 			$details = $result['address'] ?? null;
 			if (!is_array($details) || !is_string($details['country_code'] ?? null) || strtolower($details['country_code']) !== $fields['country'] || filter_var($result['place_rank'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 28, 'max_range' => 30]]) === false) continue;
-			if (!is_string($details['road'] ?? null) || $this->normalize($details['road']) !== $road || !is_string($details['house_number'] ?? null) || $this->normalize($details['house_number']) !== $number) continue;
+			if (!is_string($details['road'] ?? null) || $this->normalize($details['road']) !== $road || !is_string($details['house_number'] ?? null) || $this->normalizeHouseNumber($details['house_number']) !== $number) continue;
 			if (!is_string($details['postcode'] ?? null) || preg_replace('/\s+/u', '', $this->normalize($details['postcode'])) !== preg_replace('/\s+/u', '', $fields['postcode'])) continue;
 			$localities = array_intersect_key($details, array_flip(['city', 'town', 'village', 'municipality', 'hamlet', 'suburb']));
 			if (!in_array($fields['city'], array_map(fn($value) => is_string($value) ? $this->normalize($value) : '', $localities), true)) continue;

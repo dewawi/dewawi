@@ -46,6 +46,15 @@ Selection is bounded by selection_page_size (default 1000, maximum 50000) per pa
 NOT by estimated API requests or total contacts. Legacy max_contacts is a page-size
 alias. The dry-run reports exclusion_reasons (one primary reason per unreviewable row),
 validation_issues (overlapping field errors), population and selection_page.
+format_details distinguishes CR, LF, tabs, Unicode whitespace, problematic controls,
+invisible format characters and house-number formatting; categories overlap.
+newly_reviewable counts technically reviewable candidates previously rejected by
+the format check, independently of privacy approval. Counts apply to this page.
+CR/LF/tabs become spaces only in the query; stored postal text is unchanged. Spaced
+trailing letter suffixes and spaces/en dashes in number ranges are canonicalized.
+Street, house number, country, postcode, locality and result quality still must match.
+Unchanged query fields retain existing cache keys; raw postal snapshots still bind
+approvals. Changed query fields/fingerprints require a fresh address review.
 Use selection_page.next_after as --after for the next older page, including pages
 without reviewable/approved entries. remaining_older counts candidates beyond this
 page; population.without_billing_address explains contacts missing from the queue.

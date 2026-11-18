@@ -26,7 +26,7 @@ for ($n = 1; $n <= 14; $n++) {
 	if ($n === 7) $row['country'] = '';
 	if ($n === 6) $row['country'] = 'DEU';
 	if ($n === 5) $row['country'] = 'XX';
-	if ($n === 4) $row['street'] = "Synthetic\nStreet 1";
+	if ($n === 4) $row['street'] = "Synthetic\fStreet 1";
 	if ($n === 3) $row['street'] = '0';
 	if ($n === 2) $row['postcode'] = '0';
 	$db->insert('address', $row); $addresses[$n] = (int)$db->lastInsertId();
@@ -70,7 +70,7 @@ foreach (['street', 'postcode', 'city', 'country'] as $field) {
 }
 $invalid = $base; $invalid['country'] = '0';
 selectionCheck($service->explain($invalid)['reasons'] === ['invalid_country_code'], 'Zero country was accepted or misreported as empty');
-$invalid = $base; $invalid['street'] = 'Synthetic Street 12 a';
+$invalid = $base; $invalid['street'] = 'Synthetic Street 12 bis';
 selectionCheck($service->explain($invalid)['reasons'] === ['unrecognized_house_number'], 'House-number parser was broadly relaxed');
 $invalid = $base; $invalid['street'] = '12 Synthetic Street';
 selectionCheck($service->explain($invalid)['status'] === 'needs_geocoding', 'Existing supported prefix house format regressed');

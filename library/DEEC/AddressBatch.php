@@ -157,18 +157,20 @@ class DEEC_AddressBatch extends DEEC_Address
 	private function inventory(array $approvals, bool $template = false, array $selection = []): array
 	{
 		$counts = array_fill_keys(self::COUNTS, 0);
-		$entries = []; $reasons = []; $issues = [];
+		$entries = []; $reasons = []; $issues = []; $formats = []; $newlyReviewable = 0;
 		$page = $this->model->page($selection['page_size'] ?? $this->policy['selection_page_size'], $selection['after'] ?? null);
 		foreach ($page['rows'] as $row) {
 			$counts['selected']++;
 			// Inventory has no use for a full cache reload for each missing point.
 			$review = $this->review((int)$row['address_id'], $this->getAddress((int)$row['address_id']), [], true);
+			foreach ($review['format_details'] ?? [] as $format) $formats[$format] = ($formats[$format] ?? 0) + 1;
 			if (!isset($review['fingerprint'])) {
 				$counts['unreviewable']++;
 				$primary = $review['reasons'][0]; $reasons[$primary] = ($reasons[$primary] ?? 0) + 1;
 				foreach ($review['reasons'] as $reason) $issues[$reason] = ($issues[$reason] ?? 0) + 1;
 				continue;
 			}
+			if ($review['newly_reviewable']) $newlyReviewable++;
 			if (in_array($review['status'], ['existing_coordinates', 'unchanged', 'postal_address_changed'], true)) { $counts['already_valid']++; continue; }
 			$entry = ['id' => (int)$row['id'], 'address_id' => (int)$row['address_id'], 'fingerprint' => $review['fingerprint']];
 			if ($template) { $entries[] = $entry + ['public' => false, 'non_personal' => false, 'non_confidential' => false, 'review_reference' => '']; continue; }
@@ -178,9 +180,9 @@ class DEEC_AddressBatch extends DEEC_Address
 			$entries[] = $entry + ['created' => $row['created'], 'status' => 'pending', 'retry_at' => 0];
 			$counts['approved']++;
 		}
-		ksort($reasons); ksort($issues);
+		ksort($reasons); ksort($issues); ksort($formats);
 		$changed = isset($selection['snapshot_digest']) && !hash_equals($selection['snapshot_digest'], $page['selection_page']['snapshot_digest']);
-		return [$entries, $counts, ['exclusion_reasons' => $reasons, 'validation_issues' => $issues, 'validation_issues_overlap' => true, 'review_page_changed' => $changed, 'selection_page' => $page['selection_page'], 'population' => $page['population']]];
+		return [$entries, $counts, ['exclusion_reasons' => $reasons, 'validation_issues' => $issues, 'validation_issues_overlap' => true, 'format_details' => $formats, 'format_details_overlap' => true, 'newly_reviewable' => $newlyReviewable, 'review_page_changed' => $changed, 'selection_page' => $page['selection_page'], 'population' => $page['population']]];
 	}
 
 	private function approved(array $entry): bool

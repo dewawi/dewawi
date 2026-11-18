@@ -31,7 +31,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-geocoding-') as directory:
             time.sleep(0.1)
         else:
             raise RuntimeError('Disposable MariaDB did not become ready')
-        subprocess.run(['php', str(Path(__file__).with_suffix('.php')), str(socket)], check=True)
+        subprocess.run(['php', '-d', 'allow_url_fopen=0', str(Path(__file__).with_suffix('.php')), str(socket)], check=True)
     finally:
         if server is not None:
             server.terminate()

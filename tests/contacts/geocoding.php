@@ -6,6 +6,7 @@ require dirname(__DIR__, 2).'/library/DEEC/Address.php';
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $work = dirname($argv[1]);
 $db = new mysqli('localhost', 'root', '', '', 0, $argv[1]);
+$db->set_charset('utf8mb4');
 $db->query('CREATE DATABASE geocoding_test');
 $db->select_db('geocoding_test');
 $schema = file_get_contents(dirname(__DIR__, 2).'/install/config/structure.sql');
@@ -16,6 +17,7 @@ foreach (['address', 'contact', 'country'] as $table) {
 $db->query('INSERT INTO contact (id, clientid, catid) VALUES (1, 100, 0), (2, 100, 0), (3, 101, 0)');
 $db->query("INSERT INTO country (clientid, code, name, language) VALUES (100, 'DE', 'DE', 'de'), (100, 'AT', 'AT', 'de')");
 $other = new mysqli('localhost', 'root', '', 'geocoding_test', 0, $argv[1]);
+$other->set_charset('utf8mb4');
 $checks = $fixture = 0;
 function check(bool $condition, string $message): void {
 	global $checks;
@@ -39,6 +41,9 @@ class GeocodingTestAddress extends DEEC_Address {
 	public array $response;
 	public string $expectedPostcode = '12345';
 	public string $expectedCountry = 'de';
+	public string $expectedStreet = 'synthetic street 1';
+	public string $expectedCity = 'synthetic city';
+	public array $lastQuery = [];
 	public $duringRequest = null;
 	public function __construct(array $changes = []) {
 		global $argv, $work;
@@ -46,11 +51,13 @@ class GeocodingTestAddress extends DEEC_Address {
 		$this->response = [json_encode([result()]), ['HTTP/1.1 200 OK']];
 	}
 	protected function geocodingTime(): int { return $this->now; }
+	public function explain(int $id): array { return $this->review($id, $this->getAddress($id), [], true); }
 	protected function requestGeocode(string $query): array {
 		$this->requests++;
 		parse_str($query, $fields);
+		$this->lastQuery = $fields;
 		check($fields['countrycodes'] === $this->expectedCountry && $fields['format'] === 'jsonv2' && $fields['addressdetails'] === '1', 'Country restriction or response format missing');
-		check($fields['street'] === 'synthetic street 1' && $fields['postalcode'] === $this->expectedPostcode && $fields['city'] === 'synthetic city', 'Unexpected postal query');
+		check($fields['street'] === $this->expectedStreet && $fields['postalcode'] === $this->expectedPostcode && $fields['city'] === $this->expectedCity, 'Unexpected postal query');
 		check(!isset($fields['q']) && !str_contains($query, 'PRIVATE_CONTACT'), 'Query exposed contact fields or mixed query formats');
 		if ($this->duringRequest) ($this->duringRequest)();
 		return $this->response;
@@ -266,3 +273,4 @@ check($service->requests === 0 && stored($id)['latitude'] === null, 'Corrupt sta
 $cron = file_get_contents(dirname(__DIR__, 2).'/cron.php');
 check(!str_contains($cron, '->geocodeLatestAddress(') && str_contains($cron, '$Email->send(') && str_contains($cron, '$Campaign->touchLastSent('), 'Cron campaign/geocoding boundary regressed');
 echo 'PASS: '.$checks." manual geocoding, caching, backoff, plausibility, privacy, SQL and concurrency cases\n";
+require __DIR__.'/geocoding-formats.php';
