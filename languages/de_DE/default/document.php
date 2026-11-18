@@ -1,4 +1,10 @@
 <?php return array(
+	'DOCUMENTS_VIEW_RECONSTRUCTED_COPY' => 'Rekonstruierte Kopie anzeigen',
+	'DOCUMENTS_RECONSTRUCTED_MARK' => 'KOPIE – REKONSTRUKTION, KEIN ORIGINAL',
+	'DOCUMENTS_DRAFT_MARK' => 'MUSTER – NICHT AUSGESTELLT',
+	'DOCUMENTS_RECONSTRUCTED_EXPLANATION' => 'Dieses PDF wurde aus gespeicherten Beleginformationen erstellt und kann vom ursprünglich ausgestellten Dokument abweichen. Aktuelle Vorlagen, Logos, Stammdaten und Vergleichsberechnungen sind kein Nachweis des historischen Originals. Die Kopie ist kein Versandnachweis und kein freigegebenes Original.',
+	'DOCUMENTS_STORED_DATA_VIEW' => 'Gespeicherte Belegdaten – schreibgeschützte Ansicht',
+	'DOCUMENTS_STORED_DATA_GAPS' => 'Ist eine zuverlässige Belegrekonstruktion nicht möglich, zeigt die Ansicht die verfügbaren gespeicherten Daten mit gekennzeichneten Lücken und Widersprüchen. Fehlende Werte werden nicht ergänzt.',
 	'DOCUMENTS_VERIFIED_RECOVERED_ORIGINAL' => 'Verifiziert wiedergefundene historische Originaldatei',
 	'DOCUMENTS_REVIEWED_RECONSTRUCTION_DUPLICATE' => 'Inhaltlich überprüftes Rekonstruktionsdoppel',
 	'DOCUMENTS_UNREVIEWED_CANDIDATE' => 'Ungeprüfter historischer PDF-Kandidat – keine Originalbestätigung',

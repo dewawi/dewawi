@@ -92,6 +92,7 @@ class DEEC_Pdf
 	public function generate(array $request): array
 	{
 		$payload = $this->buildPayload($request);
+		if (!empty($payload['meta']['draft'])) $payload['meta']['overwrite'] = true;
 		$file = $this->getOutputFile($payload);
 
 		if (empty($payload['meta']['overwrite']) && $file['exists']) {
@@ -119,6 +120,7 @@ class DEEC_Pdf
 		);
 
 		$this->renderPayload($pdf, $payload);
+		if (!empty($payload['meta']['draft'])) $this->markCopy($pdf, 'DOCUMENTS_DRAFT_MARK');
 
 		return $this->outputPdf($pdf, $payload);
 	}
@@ -129,14 +131,37 @@ class DEEC_Pdf
 		$permission = new DEEC_Permission((array)Zend_Registry::get('User'));
 		$context = $permission->getObjectContext($id, $module, $controller);
 		if (!$context || !$permission->hasPermission($module, $controller, 'view') || !$permission->hasPermission($module, $controller, 'edit')) throw new RuntimeException('PDF reconstruction access denied');
-		$document = $context['parent'];
+		return $this->renderReconstruction($id, $module, $controller, $context['parent'], $context['clientid']);
+	}
+
+	public function viewingCopy(int $id, string $module, string $controller): array
+	{
+		$snapshot = DEEC_DocumentReview::viewingSnapshot($id, $module, $controller);
+		try {
+			$result = $this->renderReconstruction($id, $module, $controller, $snapshot['data']['document'], (int)$snapshot['data']['document']['clientid'], true);
+			$result['status'] = 'historical_reconstructed_viewing_copy';
+		} catch (RuntimeException | InvalidArgumentException | Zend_Exception $error) {
+			error_log('Using stored document diagnostic view: ' . $error->getMessage());
+			$result = $this->renderDiagnostic($id, $module, $controller, $snapshot, true);
+			$result['status'] = 'historical_diagnostic_viewing_copy';
+		}
+		if (DEEC_DocumentReview::viewingSnapshot($id, $module, $controller)['sha256'] !== $snapshot['sha256']) throw new RuntimeException('Stored document changed during viewing');
+		return $result;
+	}
+
+	private function renderReconstruction(int $id, string $module, string $controller, array $document, int $clientId, bool $viewing = false): array
+	{
 		if (empty($document[$controller . 'id']) || empty($document[$controller . 'date']) || empty($document['currency']) || !DEEC_Permission::isDocumentReadonly($module, $controller, $document)) throw new RuntimeException('Issued document number, date or currency is missing');
 		$date = (string)$document[$controller . 'date'];
 		if (!preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', $date) || !checkdate((int)substr($date, 5, 2), (int)substr($date, 8, 2), (int)substr($date, 0, 4))) throw new RuntimeException('Stored document date is invalid');
 		$class = ucfirst($module) . '_Model_DbTable_' . ucfirst($controller) . 'pos';
-		$positions = (new $class())->setClientId($context['clientid'])->getPositions($id);
+		$positions = (new $class())->setClientId($clientId)->getPositions($id);
 		if (!count($positions)) throw new RuntimeException('Stored document positions are missing');
-		[$calculation, $validation] = $this->validateReconstructionAmounts($document, $positions, $module, $controller, $context['clientid']);
+		[$calculation, $validation] = $this->validateReconstructionAmounts($document, $positions, $module, $controller, $clientId);
+		if ($viewing) {
+			foreach ($validation['positions'] as $position) if (!in_array($position['classification'], ['matches_net', 'matches_gross', 'historical_rounding'], true)) throw new RuntimeException('Stored position totals are missing or inconsistent');
+			foreach (['billingname1', 'billingstreet', 'billingcity', 'billingcountry'] as $field) if (trim((string)($document[$field] ?? '')) === '') throw new RuntimeException('Stored recipient snapshot is incomplete');
+		}
 		$payload = $this->buildDocumentPayload(['meta' => ['module' => $module, 'controller' => $controller, 'templateid' => null, 'historical_snapshot' => true], 'document' => $document]);
 		$validation['displayed'] = $this->assertReconstructionPayload($payload, $document, $positions, $calculation);
 		if (!empty($payload['historical_recipient']['original_comparison_required'])) {
@@ -146,6 +171,7 @@ class DEEC_Pdf
 		$this->bootstrapTcpdf();
 		$pdf = $this->initPdf($this->buildPdfTitle($payload), $payload['document'], $payload['template']);
 		$this->renderPayload($pdf, $payload);
+		if ($viewing) $this->markCopy($pdf, 'DOCUMENTS_RECONSTRUCTED_MARK');
 		return ['bytes' => $pdf->Output('', 'S'), 'validation' => $validation, 'dependencies' => [
 			'template' => $payload['template'], 'template_sha256' => hash('sha256', json_encode($payload['template'], JSON_THROW_ON_ERROR)),
 			'payload_sha256' => hash('sha256', serialize($payload)), 'renderer_sha256' => hash_file('sha256', __FILE__),
@@ -163,13 +189,20 @@ class DEEC_Pdf
 		if (!$context || !$permission->hasPermission($module, $controller, 'view') || !$permission->hasPermission($module, $controller, 'edit')) throw new RuntimeException('Diagnostic reconstruction access denied');
 		$identity = ['module' => $module, 'controller' => $controller, 'id' => $id, 'clientid' => $context['clientid'], 'document_number' => (string)($context['parent'][$controller . 'id'] ?? '')];
 		$snapshot = DEEC_DocumentReview::snapshot(Zend_Db_Table::getDefaultAdapter(), $identity);
+		return $this->renderDiagnostic($id, $module, $controller, $snapshot);
+	}
+
+	private function renderDiagnostic(int $id, string $module, string $controller, array $snapshot, bool $viewing = false): array
+	{
 		$data = $snapshot['data']; $document = $data['document'];
+		$identity = ['clientid' => (int)$document['clientid']];
 		$numeric = static fn($value): bool => $value !== null && $value !== '' && is_numeric($value) && is_finite((float)$value);
 		$issues = []; $incomplete = false; $canCalculate = true; $lines = []; $references = []; $rules = [];
 		$issue = static function(string $code, string $field, $stored = null, bool $missing = false) use (&$issues, &$incomplete): void {
 			$issues[] = ['code' => $code, 'field' => $field, 'stored' => $stored];
 			$incomplete = $incomplete || $missing;
 		};
+		if ($viewing) $issue('reliable_document_rendering_unavailable', 'rendering', null, true);
 		foreach ([$controller . 'id', $controller . 'date', 'currency'] as $field) if (empty($document[$field])) $issue('missing_document_value', $field, $document[$field] ?? null, true);
 		$date = (string)($document[$controller . 'date'] ?? '');
 		if (!preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', $date) || !checkdate((int)substr($date, 5, 2), (int)substr($date, 8, 2), (int)substr($date, 0, 4))) $issue('invalid_document_date', $controller . 'date', $date, true);
@@ -227,6 +260,7 @@ class DEEC_Pdf
 		$pdf->SetFont('dejavusans', '', 8);
 		$escape = static fn($text): string => htmlspecialchars((string)$text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 		$value = static fn($item): string => $item === null ? 'NICHT REKONSTRUIERBAR (gespeichert: NULL)' : ($item === '' ? 'NICHT REKONSTRUIERBAR (leer gespeichert)' : (string)$item);
+		if ($viewing) $pdf->writeHTML('<h1>' . $escape($this->translate('DOCUMENTS_STORED_DATA_VIEW')) . '</h1><p>' . $escape($this->translate('DOCUMENTS_RECONSTRUCTED_EXPLANATION')) . '</p><p>' . $escape($this->translate('DOCUMENTS_STORED_DATA_GAPS')) . '</p>');
 		$pdf->writeHTML('<h1>Diagnosebeleg – keine Rechnung / kein Original</h1><p>' . $escape($module . '/' . $controller . ' · ID ' . $id . ' · Mandant ' . $identity['clientid']) . '</p><p>Erzeugt: ' . $escape(gmdate('c')) . '. Historische Datierung und Währung werden nicht ergänzt. Gespeicherte und berechnete Beträge sind getrennt. Keine Differenz wird als zulässige Rundung bestätigt. Leere optionale Felder sind keine erfundenen Werte.</p>');
 		foreach (['Fehlende / widersprüchliche Daten' => $issues, 'Kopfsummen: gespeichert / berechnet / Differenz' => $header, 'Arithmetischer Positionsvergleich OHNE Preisregeln – keine freigegebene Grundlage' => $references, 'Gespeicherte Preisregeln mit Prüfstatus' => $rules, 'Vergleichsrechnung mit gültigen gespeicherten Regeln – keine Bestätigung' => $calculated] as $title => $section) {
 			$pdf->writeHTML('<h2>' . $escape($title) . '</h2><pre>' . $escape($section === null ? 'NICHT REKONSTRUIERBAR' : DEEC_DocumentReview::json($section)) . '</pre>');
@@ -239,11 +273,12 @@ class DEEC_Pdf
 				$pdf->writeHTML($html . '</table>');
 			}
 		}
-		for ($page = 1; $page <= $pdf->getNumPages(); $page++) {
+		for ($page = 1; !$viewing && $page <= $pdf->getNumPages(); $page++) {
 			$pdf->setPage($page); $pdf->SetXY(15, 9); $pdf->SetFont('dejavusans', 'B', 8);
 			$pdf->SetTextColor(160, 0, 0);
 			$pdf->Cell(180, 8, 'REKONSTRUKTION ZUR PRÜFUNG – KEIN BESTÄTIGTES ORIGINAL', 1, 0, 'C');
 		}
+		if ($viewing) $this->markCopy($pdf, 'DOCUMENTS_RECONSTRUCTED_MARK');
 		return ['bytes' => $pdf->Output('', 'S'), 'diagnosis' => $diagnosis, 'snapshot_sha256' => $snapshot['sha256'], 'dependencies' => ['renderer_sha256' => hash_file('sha256', __FILE__), 'historical_layout_guaranteed' => false, 'payload_services_used' => false]];
 	}
 
@@ -356,6 +391,26 @@ class DEEC_Pdf
 		require_once BASE_PATH . '/library/Tcpdf/tcpdf.php';
 	}
 
+	protected function markCopy(TCPDF $pdf, string $key): void
+	{
+		$text = $this->translate($key);
+		if ($text === $key) {
+			$locale = Zend_Registry::isRegistered('Zend_Locale') ? (string)Zend_Registry::get('Zend_Locale') : 'de_DE';
+			$texts = require dirname(__DIR__, 2) . '/languages/' . (str_starts_with($locale, 'en') ? 'en_US' : 'de_DE') . '/default/document.php';
+			$text = $texts[$key];
+		}
+		$pdf->SetAutoPageBreak(false);
+		for ($page = 1; $page <= $pdf->getNumPages(); $page++) {
+			$pdf->setPage($page);
+			$pdf->SetFont('dejavusans', 'B', $page === 1 ? 12 : 10);
+			$pdf->SetTextColor(150, 0, 0);
+			$pdf->SetDrawColor(150, 0, 0);
+			$pdf->SetFillColor(255, 240, 225);
+			$pdf->SetXY(15, 1);
+			$pdf->Cell($pdf->getPageWidth() - 30, 9, $text, 1, 0, 'C', true, '', 1);
+		}
+	}
+
 	protected function buildPayload(array $request): array
 	{
 		$module = (string)($request['module'] ?? '');
@@ -375,9 +430,8 @@ class DEEC_Pdf
 			throw new RuntimeException('Document not found');
 		}
 
-		$issued = !empty($document[$this->getDocumentIdField($controller)])
-			|| ($module === 'sales' && in_array($controller, ['invoice', 'creditnote'], true)
-				&& DEEC_Permission::isDocumentReadonly($module, $controller, $document));
+		$issued = DEEC_Permission::isDocumentReadonly($module, $controller, $document)
+			|| !empty($document[$this->getDocumentIdField($controller)]);
 
 		if ($issued && (empty($document['clientid']) || empty($document['contactid']) || empty($document['filename']))) {
 			throw new RuntimeException('Issued document storage is incomplete');
@@ -397,6 +451,7 @@ class DEEC_Pdf
 				'storage' => $issued ? 'archive' : (string)($request['storage'] ?? 'cache'),
 				'overwrite' => !$issued && !empty($request['overwrite']),
 				'createOriginal' => !empty($request['createOriginal']),
+				'draft' => DEEC_Permission::isDocument($module, $controller) && !$issued,
 				'baseUrl' => $view->baseUrl(),
 				'archiveModule' => $archiveModule,
 				'archiveController' => $archiveController,
@@ -793,7 +848,7 @@ class DEEC_Pdf
 		$pdf->ln(4);
 
 		// Billing address
-		if (!empty($contact)) {
+		if (!empty($contact) || !empty($document['billingname1'])) {
 			$pdf->SetFont('freesans', '', 10);
 			if (!empty($document['billingname1'])) {
 				$pdf->MultiCell(70, 0, $document['billingname1'], 0, 'L', false, 1, $x);
@@ -903,7 +958,7 @@ class DEEC_Pdf
 		$pdf->SetFont('freesans', '', 10);
 
 		// Billing address block
-		if (!empty($contact)) {
+		if (!empty($contact) || !empty($document['billingname1'])) {
 			$pdf->MultiCell(70, 0, ($document['billingname1'] ?? ''), 0, 'L', false, 1, $x);
 			if (!empty($document['billingname2'])) $pdf->MultiCell(70, 0, $document['billingname2'], 0, 'L', false, 1, $x);
 			if (!empty($document['billingdepartment'])) $pdf->MultiCell(70, 0, $document['billingdepartment'], 0, 'L', false, 1, $x);

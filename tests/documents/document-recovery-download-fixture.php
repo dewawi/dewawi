@@ -26,8 +26,21 @@ if (!$user) { http_response_code(401); exit; }
 $client = $db->fetchRow('SELECT * FROM client WHERE id = ?', [$user['clientid']]);
 $client['modules'] = ['contacts' => (int)($client['parentid'] ?: $client['id']), 'sales' => (int)$client['id'], 'purchases' => (int)$client['id']];
 Zend_Registry::set('User', $user); Zend_Registry::set('Client', $client);
+$action = $_GET['action'] ?? 'reviewdownload';
+if (!in_array($action, ['originalreview', 'reviewdownload', 'reconstructed', 'preview', 'download'], true)) { http_response_code(404); exit; }
+if (in_array($action, ['reconstructed', 'preview', 'download'], true)) {
+	$locale = ($_GET['locale'] ?? '') === 'en_US' ? 'en_US' : 'de_DE';
+	Zend_Registry::set('Zend_Locale', new Zend_Locale($locale));
+	Zend_Registry::set('Zend_Currency', new Zend_Currency(['locale' => $locale, 'precision' => 2]));
+	$translator = new DEEC_Translate($locale);
+	$translator->loadDir('default', $root . '/languages/' . $locale . '/default');
+	$translator->loadDir('documents', $root . '/languages/' . $locale . '/' . (($_GET['module'] ?? 'sales') === 'purchases' ? 'purchases' : 'sales'));
+	Zend_Registry::set('DEEC_Translate', $translator);
+	Zend_Controller_Action_HelperBroker::addPath($root . '/application/controllers/helpers', 'Application_Controller_Action_Helper');
+	require_once $root . '/application/modules/' . (($_GET['module'] ?? 'sales') === 'purchases' ? 'purchases' : 'sales') . '/controllers/helpers/Positions.php';
+}
 class RecoveryDownloadFixtureController extends DEEC_Controller_DocumentAction {
-	public function init() { $this->view = new RecoveryDocumentViewFixture(); }
+	public function init() { $this->view = new RecoveryDocumentViewFixture(); $this->_user = Zend_Registry::get('User'); Zend_Controller_Action_HelperBroker::getStaticHelper('ViewRenderer')->view = $this->view; }
 	protected function disableView(): void {}
 }
 class RecoveryDocumentViewFixture extends Zend_View {
@@ -35,7 +48,7 @@ class RecoveryDocumentViewFixture extends Zend_View {
 	public function url($options = [], $name = null, $reset = false, $encode = true) { return '/?' . http_build_query($options); }
 }
 $request = new Zend_Controller_Request_Http();
-$request->setModuleName((string)($_GET['module'] ?? 'sales'))->setControllerName((string)($_GET['controller'] ?? 'quote'))->setActionName($reviewAction ? 'originalreview' : 'reviewdownload')->setParam('id', $_GET['id'] ?? 1)->setParam('sha256', $_GET['sha256'] ?? '')->setParam('mode', $_GET['mode'] ?? 'download');
+$request->setModuleName((string)($_GET['module'] ?? 'sales'))->setControllerName((string)($_GET['controller'] ?? 'quote'))->setActionName($action)->setParam('id', $_GET['id'] ?? 1)->setParam('sha256', $_GET['sha256'] ?? '')->setParam('mode', $_GET['mode'] ?? 'download');
 Zend_Controller_Front::getInstance()->setControllerDirectory(['default' => $root . '/application/controllers']);
 Zend_Controller_Front::getInstance()->getRouter()->addDefaultRoutes();
 if (isset($_GET['view'])) {
@@ -48,5 +61,6 @@ if (isset($_GET['view'])) {
 	echo $helper->Document(); exit;
 }
 $controller = new RecoveryDownloadFixtureController($request, new Zend_Controller_Response_Http());
-if ($reviewAction) $controller->originalreviewAction(); else $controller->reviewdownloadAction();
+$method = $action . 'Action';
+$controller->$method();
 $controller->getResponse()->sendResponse();

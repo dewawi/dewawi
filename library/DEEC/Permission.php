@@ -79,6 +79,7 @@ class DEEC_Permission
 			'preview',
 			'download',
 			'reviewdownload',
+			'reconstructed',
 			'xrechnung',
 		],
 		'delete' => [

@@ -55,6 +55,25 @@ class DEEC_DocumentReview
 		$permission = new DEEC_Permission((array)$user);
 		$context = $permission->getObjectContext($identity['id'], $module, $table);
 		if (empty($user['id']) || (int)$user['clientid'] !== $identity['clientid'] || (int)$client['id'] !== $identity['clientid'] || !$context || $context['clientid'] !== $identity['clientid'] || !$permission->hasPermission($module, $table, 'view')) throw new RuntimeException('Document review access denied');
+		return self::storedSnapshot($db, $identity, $lock);
+	}
+
+	public static function viewingSnapshot(int $id, string $module, string $controller): array
+	{
+		if (!Zend_Registry::isRegistered('User') || !Zend_Registry::isRegistered('Client') || !DEEC_DocumentArchive::validDocumentType($module, $controller)) throw new RuntimeException('Document viewing access denied');
+		$user = (array)Zend_Registry::get('User');
+		$client = Zend_Registry::get('Client');
+		$permission = new DEEC_Permission($user);
+		$context = $permission->getObjectContext($id, $module, $controller);
+		if (empty($user['id']) || (int)$user['clientid'] !== (int)$client['id'] || !$context || !$permission->hasPermission($module, $controller, 'view')) throw new RuntimeException('Document viewing access denied');
+		$identity = ['id' => $id, 'clientid' => $context['clientid'], 'module' => $module, 'controller' => $controller, 'document_number' => (string)($context['parent'][$controller . 'id'] ?? '')];
+		return self::storedSnapshot(Zend_Db_Table::getDefaultAdapter(), $identity, false);
+	}
+
+	private static function storedSnapshot(Zend_Db_Adapter_Abstract $db, array $identity, bool $lock): array
+	{
+		$module = $identity['module'];
+		$table = $identity['controller'];
 		$suffix = $lock ? ' FOR UPDATE' : '';
 		$document = $db->fetchRow("SELECT * FROM `$table` WHERE id = ? AND clientid = ? AND deleted = 0" . $suffix, [$identity['id'], $identity['clientid']]);
 		if (!$document || (string)($document[$table . 'id'] ?? '') !== $identity['document_number'] || !DEEC_Permission::isDocumentReadonly($module, $table, $document)) throw new RuntimeException('Issued document identity changed');
@@ -62,6 +81,29 @@ class DEEC_DocumentReview
 		foreach (['pos', 'posset'] as $type) $snapshot[$type] = $db->fetchAll("SELECT * FROM `{$table}{$type}` WHERE parentid = ? AND clientid = ? ORDER BY id" . $suffix, [$identity['id'], $identity['clientid']]);
 		$snapshot['rules'] = $db->fetchAll("SELECT * FROM pricerulepos WHERE clientid = ? AND module = ? AND controller = ? AND parentid IN (SELECT id FROM `{$table}pos` WHERE parentid = ? AND clientid = ?) ORDER BY id" . $suffix, [$identity['clientid'], $module, $table . 'pos', $identity['id'], $identity['clientid']]);
 		return ['data' => $snapshot, 'sha256' => hash('sha256', self::json($snapshot))];
+	}
+
+	public function openViewingCopy(int $id, string $module, string $controller): array
+	{
+		self::viewingSnapshot($id, $module, $controller);
+		$archiveDb = new Application_Model_DbTable_Documentarchive();
+		try { $original = $archiveDb->getForDocument($id, $module, $controller); }
+		catch (RuntimeException | InvalidArgumentException $error) { $original = null; error_log('Original unavailable for viewing: ' . $error->getMessage()); }
+		if ($original) {
+			$bytes = file_get_contents($archiveDb->getPath($original));
+			if ($bytes === false || strlen($bytes) !== (int)$original['filesize'] || !hash_equals($original['sha256'], hash('sha256', $bytes))) throw new RuntimeException('Original changed before viewing');
+			$filename = $original['filename'];
+			$status = 'archived_original';
+		} else {
+			$result = (new DEEC_Pdf())->viewingCopy($id, $module, $controller);
+			$bytes = $result['bytes'];
+			$filename = $controller . '-' . $id . '-reconstructed-copy.pdf';
+			$status = $result['status'];
+		}
+		$stream = fopen('php://memory', 'w+b');
+		if (!$stream) throw new RuntimeException('Viewing stream unavailable');
+		if (fwrite($stream, $bytes) !== strlen($bytes) || !rewind($stream)) { fclose($stream); throw new RuntimeException('Viewing stream failed'); }
+		return ['stream' => $stream, 'filename' => $filename, 'size' => strlen($bytes), 'sha256' => hash('sha256', $bytes), 'status' => $status];
 	}
 
 	public static function validateRoot(string $root, int $clientId): array

@@ -291,7 +291,7 @@ try {
 		recoveryTestCheck($inline['code'] === 200 && $inline['bytes'] === $download['bytes'] && str_contains($inline['headers'], 'inline;'), 'Inline view changed PDF bytes');
 		foreach ([null, 43, 44] as $user) recoveryTestCheck(recoveryTestDownload($query, $user)['code'] !== 200, 'Anonymous, foreign or child user accessed a parent review PDF');
 		$view = recoveryTestDownload($query + ['view' => 1]);
-		recoveryTestCheck($view['code'] === 200 && str_contains($view['bytes'], 'Historische Rekonstruktion – Papierprüfung ausstehend') && str_contains($view['bytes'], $sha) && str_contains($view['bytes'], 'action=download') && str_contains($view['bytes'], 'action=reviewdownload'), 'Document view omitted the review status or changed original links');
+		recoveryTestCheck($view['code'] === 200 && str_contains($view['bytes'], 'Historische Rekonstruktion – Papierprüfung ausstehend') && str_contains($view['bytes'], $sha) && str_contains($view['bytes'], 'action=reconstructed') && str_contains($view['bytes'], 'action=reviewdownload') && !str_contains($view['bytes'], '<iframe'), 'Missing-original view omitted review candidates or the explicit reconstructed-copy action');
 	}
 	$quoteSha = array_key_first($published['json']['results']['sales/quote/1']['candidates']);
 	$quoteQuery = ['module' => 'sales', 'controller' => 'quote', 'id' => 1, 'sha256' => $quoteSha];
@@ -601,4 +601,5 @@ require __DIR__ . '/document-diagnostic-fixtures.php';
 require __DIR__ . '/document-original-review-fixtures.php';
 require __DIR__ . '/invoice-original-batch-fixtures.php';
 require __DIR__ . '/invoice-mixed-batch-fixtures.php';
+require __DIR__ . '/document-viewing-fixtures.php';
 echo 'PASS: ' . $checks . " isolated recovery checks; eight types, retrospective attestations, policy releases, private reports, diagnostic PDFs and unchanged business rows\n";

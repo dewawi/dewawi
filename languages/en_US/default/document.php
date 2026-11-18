@@ -1,4 +1,10 @@
 <?php return array(
+	'DOCUMENTS_VIEW_RECONSTRUCTED_COPY' => 'View reconstructed copy',
+	'DOCUMENTS_RECONSTRUCTED_MARK' => 'COPY – RECONSTRUCTION, NOT AN ORIGINAL',
+	'DOCUMENTS_DRAFT_MARK' => 'SAMPLE – NOT ISSUED',
+	'DOCUMENTS_RECONSTRUCTED_EXPLANATION' => 'This PDF was produced from stored document information and may differ from the document originally issued. Current templates, logos, master data and comparison calculations do not prove the historical original. This copy is neither dispatch evidence nor an approved original.',
+	'DOCUMENTS_STORED_DATA_VIEW' => 'Stored document data – read-only view',
+	'DOCUMENTS_STORED_DATA_GAPS' => 'If reliable document reconstruction is impossible, the view shows the available stored data with identified gaps and inconsistencies. Missing values are never filled in.',
 	'DOCUMENTS_VERIFIED_RECOVERED_ORIGINAL' => 'Verified recovered historical original',
 	'DOCUMENTS_REVIEWED_RECONSTRUCTION_DUPLICATE' => 'Reviewed reconstructed duplicate',
 	'DOCUMENTS_UNREVIEWED_CANDIDATE' => 'Unreviewed historical PDF candidate – original not confirmed',

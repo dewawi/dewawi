@@ -381,6 +381,21 @@ $generator->text = 'Changed draft';
 $generator->generate($request);
 check($generator->renders === 2 && hash_file('sha256', $draft['path']) !== $firstHash, 'Draft preview was frozen');
 check(file_get_contents($original) === $originalBytes, 'Draft preview overwrote an original');
+$generator->text = 'Refreshed draft without overwrite option';
+$cachedRequest = array_replace($request, ['overwrite' => false]);
+$generator->generate($cachedRequest);
+check($generator->renders === 3 && hash_file('sha256', $draft['path']) !== $firstHash, 'An existing draft cache bypassed draft marking and rendering');
+foreach (['sales' => ['quote', 'invoice', 'salesorder', 'deliveryorder', 'creditnote', 'reminder'], 'purchases' => ['quoterequest', 'purchaseorder']] as $module => $controllers) foreach ($controllers as $type) {
+    foreach (['completed' => 1, 'cancelled' => 1, 'state' => 105] as $field => $value) {
+        $saved = array_replace($document, ['state' => 100, 'completed' => 0, $type . 'id' => null, $field => $value]);
+        $adapter->rows[$type] = [$saved];
+        $path = pdfArchivePath($module, $type);
+        if (!is_dir(dirname($path))) mkdir(dirname($path), 0775, true);
+        file_put_contents($path, $originalBytes);
+        $generator = new DocumentPdfTestGenerator();
+        check($generator->generate(array_replace($request, ['module' => $module, 'controller' => $type]))['path'] === $path && $generator->renders === 0 && file_get_contents($path) === $originalBytes, 'Server-side finalized state was rendered or marked as a draft');
+    }
+}
 
 // Exercise the real controller download, preview and view preparation paths.
 $adapter->rows['invoice'] = [$issued];

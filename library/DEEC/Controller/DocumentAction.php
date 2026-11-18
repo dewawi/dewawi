@@ -324,6 +324,24 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 		}
 	}
 
+	public function reconstructedAction()
+	{
+		$this->disableView();
+		$request = $this->getRequest();
+		$response = $this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
+		if (!in_array($request->getMethod(), ['GET', 'HEAD'], true)) { $response->setHttpResponseCode(405)->setHeader('Allow', 'GET, HEAD', true); return; }
+		try {
+			$id = filter_var($this->_getParam('id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+			if (!$id) throw new RuntimeException('Invalid document identity');
+			$result = (new DEEC_DocumentReview())->openViewingCopy($id, $request->getModuleName(), $request->getControllerName());
+		} catch (RuntimeException | InvalidArgumentException | JsonException $error) {
+			error_log('Reconstructed viewing copy unavailable: ' . $error->getMessage());
+			$response->setHttpResponseCode(404);
+			return;
+		}
+		return $this->sendReviewPdfResponse($result, 'inline');
+	}
+
 	public function reviewdownloadAction()
 	{
 		$this->disableView();
@@ -351,7 +369,7 @@ abstract class DEEC_Controller_DocumentAction extends DEEC_Controller_Action
 			$response = $this->getResponse();
 			$response->clearHeaders();
 			$response->setHeader('Content-Type', 'application/pdf', true);
-			$response->setHeader('Content-Disposition', ($mode === 'inline' ? 'inline' : 'attachment') . '; filename="' . $result['filename'] . '"', true);
+			$response->setHeader('Content-Disposition', ($mode === 'inline' ? 'inline' : 'attachment') . '; filename="' . rawurlencode($result['filename']) . '"; filename*=UTF-8\'\'' . rawurlencode($result['filename']), true);
 			$response->setHeader('Content-Length', (string)$result['size'], true);
 			$response->setHeader('X-Content-Type-Options', 'nosniff', true);
 			$response->setHeader('Cache-Control', 'private, no-store', true);

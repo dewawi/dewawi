@@ -60,6 +60,10 @@ try:
                     behavior = browser.execute("let calls=0; $.ajax=function(){calls++; return $.Deferred().resolve({}).promise();}; $('.document-original-review textarea').val('explicit review fixture').trigger('change'); $('.document-original-review input[type=checkbox]').prop('checked',true).trigger('change'); return {calls: calls, dirty: Dewawi.isDirty, errors: fixtureErrors, native: [...document.forms].every(e => !jQuery._data(e,'events') || !jQuery._data(e,'events').submit)}")
                     assert behavior['calls'] == 0 and not behavior['dirty'] and not behavior['errors'] and behavior['native'], behavior
                     print('PASS: original review form ' + locale + '/' + str(width) + '; explicit selection, mandatory confirmations, no autosave or overflow')
+                    browser.navigate((work / ('viewing-panel-' + locale + '.html')).as_uri())
+                    panel = browser.execute("return {overflow: document.documentElement.scrollWidth > innerWidth, status: document.querySelector('[role=status]').dataset.documentStatus, links: document.querySelectorAll('a').length, text: document.body.textContent}")
+                    assert not panel['overflow'] and panel['status'] == 'historical_viewing_copy' and panel['links'] == 1 and 'DOCUMENTS_' not in panel['text'], panel
+                    print('PASS: historical viewing panel ' + locale + '/' + str(width) + '; explicit translated copy action and no overflow')
 
         finally:
             browser.close()
