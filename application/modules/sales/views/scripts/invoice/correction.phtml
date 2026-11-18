@@ -1,0 +1,56 @@
+<?php
+$row = $this->correction; $invoice = $row['snapshot']['source']['document']; $id = (int)$invoice['id'];
+$this->headTitle($this->translate('CORRECTION_TITLE') . ' ' . $row['identity']);
+$url = fn(string $action): string => $this->url(['module' => 'sales', 'controller' => 'invoice', 'action' => $action, 'id' => $id, 'correctionid' => $row['id']]);
+$hidden = ['csrf_token' => Sales_Service_DocumentRevisionService::token('invoice', $id), 'revision' => $row['revision'], 'expected_hash' => $row['record_sha256']];
+$label = function(string $key): string { $parts = explode('.', $key); return $this->translate('CORRECTION_FIELD_' . strtoupper(end($parts))) . ($parts[0] === 'position' ? ' · #' . $parts[1] : ''); };
+$fields = Sales_Service_InvoiceCorrectionService::effective($row);
+?>
+<section class="invoice-correction" style="overflow-wrap:anywhere">
+<h1><?= $this->escape($this->translate('CORRECTION_TITLE') . ' ' . $row['identity']) ?></h1>
+<p><a href="<?= $this->escape($url('view')) ?>"><?= $this->escape($this->translate('CORRECTION_REFERENCE') . ' ' . $invoice['invoiceid'] . ' · ' . $invoice['invoicedate']) ?></a> · <a href="<?= $this->escape($url('download')) ?>" target="_blank" rel="noopener"><?= $this->escape($this->translate('CORRECTION_ORIGINAL_DOWNLOAD')) ?></a></p>
+<p><?= $this->escape($this->translate('CORRECTION_SCOPE')) ?></p>
+<p><?= $this->escape($this->translate('CORRECTION_ORIGIN_NOTICE')) ?></p>
+<p><?= $this->escape($this->translate($row['status'] === 'approved' ? 'DOCUMENT_CHANGES_APPROVED' : 'DOCUMENTS_DRAFT_MARK')) ?> · <?= $this->escape($row['approved'] ?: $row['created']) ?> · #<?= (int)($row['approvedby'] ?: $row['createdby']) ?></p>
+<?php if ($row['modified']): ?><p><?= $this->escape($this->translate('CORRECTION_LAST_EDITED')) ?>: <?= $this->escape($row['modified']) ?> · #<?= (int)$row['modifiedby'] ?></p><?php endif ?>
+<p><?= $this->escape($this->translate('DOCUMENT_CHANGES_REASON')) ?>: <?= nl2br($this->escape($row['reason'])) ?></p>
+<p><?= $this->escape($this->translate('CORRECTION_UNCHANGED_AMOUNTS')) ?> <?= $this->escape(implode(' / ', [$invoice['subtotal'], $invoice['taxes'], $invoice['total']]) . ' ' . $invoice['currency']) ?></p>
+<?php foreach ($row['changes'] as $key => $change): ?>
+<article style="border:1px solid #ccc;padding:1em;margin:1em 0"><h3><?= $this->escape($label($key)) ?></h3>
+<?php foreach (['original' => 'CORRECTION_ORIGINAL_VALUE', 'before' => 'CORRECTION_BEFORE', 'after' => 'CORRECTION_CORRECTED_VALUE'] as $name => $title): ?>
+<p><strong><?= $this->escape($this->translate($title)) ?></strong><br><span style="white-space:pre-wrap"><?= $this->escape($change[$name]) ?></span></p>
+<?php endforeach ?></article>
+<?php endforeach ?>
+<p><a href="<?= $this->escape($url('correctionpdf')) ?>" target="_blank" rel="noopener"><?= $this->escape($this->translate('CORRECTION_PDF')) ?></a></p>
+<?php if ($this->canEditCorrection): ?>
+<form method="post" action="<?= $this->escape($url('correction')) ?>" data-autosave="false">
+<?php foreach ($hidden + ['operation' => 'save'] as $key => $value): ?><input type="hidden" name="<?= $key ?>" value="<?= $this->escape($value) ?>"><?php endforeach ?>
+<p><label><?= $this->escape($this->translate('CORRECTION_FIELD')) ?><br><select name="field_key" required data-correction-select style="max-width:100%"><option value=""><?= $this->escape($this->translate('CORRECTION_SELECT')) ?></option>
+<?php foreach ($fields as $key => $value): ?><option value="<?= $this->escape($key) ?>" data-before="<?= $this->escape($row['snapshot']['base_fields'][$key]) ?>" data-current="<?= $this->escape($value) ?>"><?= $this->escape($label($key)) ?></option><?php endforeach ?>
+</select></label></p>
+<p><strong><?= $this->escape($this->translate('CORRECTION_BEFORE')) ?></strong><br><span data-correction-before style="white-space:pre-wrap"></span></p>
+<p><label><?= $this->escape($this->translate('CORRECTION_CORRECTED_VALUE')) ?><br><textarea name="corrected_value" rows="5" maxlength="20000" style="width:100%;box-sizing:border-box"></textarea></label></p>
+<p><label><?= $this->escape($this->translate('DOCUMENT_CHANGES_REASON')) ?><br><textarea name="reason" required maxlength="2000" style="width:100%;box-sizing:border-box"><?= $this->escape($row['reason']) ?></textarea></label></p>
+<button type="submit"><?= $this->escape($this->translate('CORRECTION_SAVE')) ?></button>
+</form>
+<?php endif ?>
+<?php if ($this->canApproveCorrection): ?>
+<h2><?= $this->escape($this->translate('CORRECTION_APPROVE')) ?></h2>
+<p><?= $this->escape($this->translate('CORRECTION_FORMAT_NOTICE')) ?></p>
+<form method="post" action="<?= $this->escape($url('correction')) ?>" data-autosave="false">
+<?php foreach ($hidden + ['operation' => 'approve'] as $key => $value): ?><input type="hidden" name="<?= $key ?>" value="<?= $this->escape($value) ?>"><?php endforeach ?>
+<p><label><?= $this->escape($this->translate('CORRECTION_FORMAT_SCOPE')) ?><br><select name="format_scope" required style="max-width:100%"><option value=""><?= $this->escape($this->translate('CORRECTION_SELECT')) ?></option>
+<?php foreach (['structured_required', 'consumer', 'outside_domestic_scope', 'transition_2026', 'pre2025_supply'] as $scope): ?><option value="<?= $scope ?>"><?= $this->escape($this->translate('CORRECTION_FORMAT_' . strtoupper($scope))) ?></option><?php endforeach ?>
+</select></label></p>
+<p><label><?= $this->escape($this->translate('CORRECTION_FORMAT_REASON')) ?><br><textarea name="format_reason" required maxlength="2000" style="width:100%;box-sizing:border-box"></textarea></label></p>
+<p><label><?= $this->escape($this->translate('CORRECTION_ORIGIN_REFERENCE')) ?><br><textarea name="original_reference" required maxlength="2000" style="width:100%;box-sizing:border-box"></textarea></label></p>
+<p><label><input type="checkbox" name="original_confirmed" value="1" required> <?= $this->escape($this->translate('CORRECTION_CONFIRM_ORIGINAL')) ?></label></p>
+<?php foreach (['identity_confirmed', 'nonfinancial_confirmed', 'structured_not_required'] as $key): ?><p><label><input type="checkbox" name="<?= $key ?>" value="1" required> <?= $this->escape($this->translate('CORRECTION_CONFIRM_' . strtoupper($key))) ?></label></p><?php endforeach ?>
+<p><label><input type="checkbox" name="recipient_consent" value="1"> <?= $this->escape($this->translate('CORRECTION_CONFIRM_CONSENT')) ?></label></p>
+<button type="submit"><?= $this->escape($this->translate('CORRECTION_APPROVE')) ?></button>
+</form>
+<?php elseif ($row['status'] === 'approved'): ?>
+<p><?= $this->escape($this->translate('CORRECTION_SEND_NOTICE')) ?></p>
+<p>SHA-256: <?= $this->escape($row['sha256']) ?></p>
+<?php endif ?>
+</section>

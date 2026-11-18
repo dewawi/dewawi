@@ -165,3 +165,4 @@ require __DIR__ . '/document-archive-integrity-fixtures.php';
 echo 'PASS: ' . $checks . " isolated original archive checks; eight real PDF flows, rollback, retries, concurrent finalization/XML, commit ambiguity and read-only integrity CLI\n";
 require __DIR__ . '/document-recovery-assessment-db-fixtures.php';
 require __DIR__ . '/document-revision-db-fixtures.php';
+require __DIR__ . '/invoice-correction-db-fixtures.php';

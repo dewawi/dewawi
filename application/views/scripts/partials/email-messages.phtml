@@ -14,6 +14,7 @@ $uploadUrl = $this->baseUrl()
 		class="dw-email-composer__form"
 		data-autosave="<?php echo $isCampaign ? 'true' : 'false'; ?>"
 		method="post">
+		<?php if ($this->module === 'sales' && $this->controller === 'invoice'): ?><input type="hidden" name="correction_csrf_token" value="<?= Sales_Service_DocumentRevisionService::token('invoice', (int)$this->id) ?>"><?php endif ?>
 
 		<?php if($this->emailForm->getElement('feedback')) : ?>
 			<?= $this->emailForm->renderElement('feedback'); ?>
@@ -49,7 +50,7 @@ $uploadUrl = $this->baseUrl()
 										<div id="attachment<?= $this->escape($domId); ?>" class="dw-attachment-item">
 											<?php if(($attachment['available'] ?? true) !== false) : ?>
 											<label class="dw-attachment-item__select">
-												<input type="checkbox" value="<?= $this->escape($attachmentId); ?>" name="file[]"<?= $isCampaign ? '' : ' checked'; ?>>
+												<input type="checkbox" value="<?= $this->escape($attachmentId); ?>" name="file[]"<?= $isCampaign || ($attachment['selected'] ?? true) === false ? '' : ' checked'; ?>>
 												<span></span>
 											</label>
 											<?php endif; ?>

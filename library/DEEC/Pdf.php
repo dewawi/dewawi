@@ -134,6 +134,40 @@ class DEEC_Pdf
 		return $this->renderReconstruction($id, $module, $controller, $context['parent'], $context['clientid']);
 	}
 
+	public function correction(array $record): string
+	{
+		$document = $record['snapshot']['source']['document'];
+		$this->translator = new DEEC_Translate(str_starts_with($document['language'] ?? '', 'en') ? 'en_US' : 'de_DE');
+		$this->translator->loadDir('default', dirname(__DIR__, 2) . '/languages/' . $this->translator->getLocale() . '/default');
+		$this->bootstrapTcpdf(); $pdf = $this->initPdf($this->translate('CORRECTION_TITLE'));
+		$pdf->SetFont('dejavusans', '', 9);
+		$escape = static fn($value): string => htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+		$identity = 'RB-' . $document['invoiceid'] . '-' . $record['sequence'];
+		$issuer = $record['snapshot']['issuer']; $fields = Sales_Service_InvoiceCorrectionService::effective($record);
+		$html = '<h1>' . $escape($this->translate('CORRECTION_TITLE')) . '</h1><p><strong>' . $escape($identity) . '</strong><br>';
+		$html .= $escape($this->translate('CORRECTION_REFERENCE')) . ': ' . $escape($document['invoiceid'] . ' · ' . $document['invoicedate']) . '<br>';
+		$html .= $escape($this->translate('CORRECTION_DATE')) . ': ' . $escape($record['approved'] ?? $record['created']) . '<br>';
+		if ($record['previousid']) $html .= $escape($this->translate('CORRECTION_PREVIOUS')) . ': ' . $escape($record['snapshot']['previous_identity']) . '<br>';
+		$html .= $escape($this->translate('CORRECTION_ISSUER')) . ': ' . nl2br($escape(implode(', ', array_filter($issuer)))) . '</p>';
+		$recipient = []; foreach (['billingname1', 'billingname2', 'billingdepartment', 'billingstreet', 'billingpostcode', 'billingcity'] as $field) $recipient[] = $fields['document.' . $field];
+		$recipient[] = $document['billingcountry'];
+		$html .= '<p>' . $escape($this->translate('CORRECTION_RECIPIENT')) . ': ' . nl2br($escape(implode(', ', array_filter($recipient)))) . '</p>';
+		$html .= '<p>' . $escape($this->translate('DOCUMENT_CHANGES_REASON')) . ': ' . nl2br($escape($record['reason'])) . '</p>';
+		$html .= '<p>' . $escape($this->translate('CORRECTION_UNCHANGED_AMOUNTS')) . ' ' . $escape(implode(' / ', [$document['subtotal'], $document['taxes'], $document['total']]) . ' ' . $document['currency']) . '</p>';
+		$html .= '<h2>' . $escape($this->translate('CORRECTION_CUMULATIVE')) . '</h2><table border="1" cellpadding="4"><thead><tr>';
+		foreach (['CORRECTION_FIELD', 'CORRECTION_ORIGINAL_VALUE', 'CORRECTION_BEFORE', 'CORRECTION_CORRECTED_VALUE'] as $key) $html .= '<th width="25%">' . $escape($this->translate($key)) . '</th>';
+		$html .= '</tr></thead><tbody>';
+		foreach ($fields as $key => $value) if ($value !== $record['snapshot']['original_fields'][$key] || isset($record['changes'][$key])) {
+			$label = $this->translate('CORRECTION_FIELD_' . strtoupper(substr($key, strrpos($key, '.') + 1)));
+			if (str_starts_with($key, 'position.')) $label .= ' · #' . explode('.', $key)[1];
+			$html .= '<tr><td width="25%">' . $escape($label) . '</td><td width="25%">' . nl2br($escape($record['snapshot']['original_fields'][$key])) . '</td><td width="25%">' . nl2br($escape($record['snapshot']['base_fields'][$key])) . '</td><td width="25%">' . nl2br($escape($value)) . '</td></tr>';
+		}
+		$html .= '</tbody></table><p>' . $escape($this->translate('CORRECTION_REFERENCE_SCOPE')) . '</p><p>SHA-256: ' . $escape($record['snapshot']['original']['sha256']) . '</p>';
+		$pdf->writeHTML($html);
+		if ($record['status'] !== 'approved') $this->markCopy($pdf, 'DOCUMENTS_DRAFT_MARK');
+		return $pdf->Output('', 'S');
+	}
+
 	public function viewingCopy(int $id, string $module, string $controller): array
 	{
 		$snapshot = DEEC_DocumentReview::viewingSnapshot($id, $module, $controller);

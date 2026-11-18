@@ -1,0 +1,23 @@
+<?php
+$id = (int)$this->invoice['id'];
+$url = fn(string $action, array $extra = []): string => $this->url(['module' => 'sales', 'controller' => 'invoice', 'action' => $action, 'id' => $id] + $extra);
+?>
+<section class="invoice-corrections" style="overflow-wrap:anywhere" data-correction-history>
+<h3><?= $this->escape($this->translate('CORRECTION_HISTORY')) ?></h3>
+<?php if ($this->history): ?><ol>
+<?php foreach ($this->history as $row): ?>
+<li><a href="<?= $this->escape($url('correction', ['correctionid' => $row['id']])) ?>"><?= $this->escape('RB-' . $this->invoice['invoiceid'] . '-' . $row['sequence']) ?></a> · <?= $this->escape($this->translate($row['status'] === 'approved' ? 'DOCUMENT_CHANGES_APPROVED' : 'DOCUMENTS_DRAFT_MARK')) ?> · <?= $this->escape($row['created']) ?> · #<?= (int)$row['createdby'] ?><br><?= $this->escape($row['reason']) ?>
+<?php if ($row['modified']): ?><br><?= $this->escape($this->translate('CORRECTION_LAST_EDITED')) ?>: <?= $this->escape($row['modified']) ?> · #<?= (int)$row['modifiedby'] ?><?php endif ?>
+<?php if ($row['approved']): ?><br><?= $this->escape($row['approved']) ?> · #<?= (int)$row['approvedby'] ?><?php endif ?></li>
+<?php endforeach ?></ol><?php endif ?>
+<?php if ($this->history && !empty(Zend_Registry::get('User')['admin'])): ?><p><a href="<?= $this->escape($url('correctionexport')) ?>"><?= $this->escape($this->translate('CORRECTION_EXPORT')) ?></a></p><?php endif ?>
+<?php if ($this->canCreate): ?>
+<details><summary><?= $this->escape($this->translate('CORRECTION_CREATE')) ?></summary>
+<p><?= $this->escape($this->translate('CORRECTION_SCOPE')) ?></p>
+<form method="post" action="<?= $this->escape($url('correction')) ?>" data-autosave="false">
+<input type="hidden" name="operation" value="create"><input type="hidden" name="csrf_token" value="<?= Sales_Service_DocumentRevisionService::token('invoice', $id) ?>"><input type="hidden" name="request_key" value="<?= bin2hex(random_bytes(32)) ?>">
+<p><label><?= $this->escape($this->translate('DOCUMENT_CHANGES_REASON')) ?><br><textarea name="reason" required maxlength="2000" style="max-width:100%"></textarea></label></p>
+<button type="submit"><?= $this->escape($this->translate('CORRECTION_CREATE_DRAFT')) ?></button>
+</form></details>
+<?php elseif ($this->unavailable === 'CORRECTION_ORIGINAL_REQUIRED'): ?><p><?= $this->escape($this->translate('CORRECTION_ORIGINAL_REQUIRED')) ?></p><?php endif ?>
+</section>

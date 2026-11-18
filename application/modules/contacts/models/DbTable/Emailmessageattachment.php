@@ -45,6 +45,7 @@ class Contacts_Model_DbTable_Emailmessageattachment extends DEEC_Model_DbTable_E
 			'filesize' => $size, 'sha256' => $hash, 'path' => $relative, 'ordering' => $ordering, 'clientid' => $clientId,
 			'created' => $this->_date, 'createdby' => (int)($this->_user['id'] ?? 0),
 		];
+		if (!empty($source['invoicecorrectionid'])) $data['invoicecorrectionid'] = (int)$source['invoicecorrectionid'];
 		try { $this->insert($data); }
 		catch (Throwable $exception) { unlink($target); throw $exception; }
 		$data['id'] = (int)$this->getAdapter()->lastInsertId();

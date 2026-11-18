@@ -3,6 +3,7 @@ $this->title = $this->invoice['title'] ? $this->invoice['title'] : $this->transl
 $this->headTitle($this->title);
 echo $this->TinyMCE();
 echo $this->FileManager();
+echo $this->InvoiceCorrections((array)$this->invoice);
 $xRechnungHtml = '';
 if (!empty($this->xRechnungAvailable) && $this->xRechnungForm) {
 	$xRechnungHtml = $this->partial('invoice/xrechnung.phtml', [

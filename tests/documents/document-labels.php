@@ -29,7 +29,11 @@ foreach (['de_DE' => ['MUSTER', 'KOPIE'], 'en_US' => ['SAMPLE', 'COPY']] as $loc
 	}
 }
 $fresh = file_get_contents($root . '/install/config/structure.sql'); $migration = file_get_contents($root . '/install/config/update-1.1.7-1.1.8.sql');
-preg_match('/CREATE TABLE IF NOT EXISTS `documentrevision` .*?ENGINE=InnoDB DEFAULT CHARSET=utf8;/s', $fresh, $a);
-preg_match('/CREATE TABLE IF NOT EXISTS `documentrevision` .*?ENGINE=InnoDB DEFAULT CHARSET=utf8;/s', $migration, $b);
-if (!$a || $a !== $b) throw new RuntimeException('Revision install and migration schema differ'); $checks++;
-echo 'PASS: ' . $checks . " PDF label and revision schema checks; both locales, three pages, neutral colors and preserved content\n";
+foreach (['documentrevision', 'invoicecorrection'] as $table) {
+	$pattern = '/CREATE TABLE IF NOT EXISTS `' . $table . '` .*?ENGINE=InnoDB DEFAULT CHARSET=utf8;/s';
+	preg_match($pattern, $fresh, $a); preg_match($pattern, $migration, $b);
+	if (!$a || $a !== $b) throw new RuntimeException('Document change install and migration schema differ: ' . $table); $checks++;
+}
+if (!str_contains($fresh, '`invoicecorrectionid` int(11) DEFAULT NULL') || !str_contains($migration, 'ADD `invoicecorrectionid` int(11) DEFAULT NULL AFTER `emailattachmentid`')
+	|| !str_contains($fresh, 'KEY `invoicecorrectionid` (`invoicecorrectionid`)') || !str_contains($migration, 'ADD KEY `invoicecorrectionid` (`invoicecorrectionid`)')) throw new RuntimeException('Correction email reference migration differs'); $checks++;
+echo 'PASS: ' . $checks . " PDF label and document change schema checks; both locales, three pages, neutral colors and preserved content\n";

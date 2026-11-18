@@ -4,6 +4,79 @@ class Sales_InvoiceController extends DEEC_Controller_DocumentAction
 {
 	private const XRECHNUNG_ENDPOINT_SCHEME = 'EM';
 
+	public function correctionAction()
+	{
+		$request = $this->getRequest(); $id = filter_var($this->_getParam('id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+		$service = new Sales_Service_InvoiceCorrectionService();
+		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
+		try {
+			if (!$id) throw new RuntimeException('DOCUMENT_CHANGES_ACCESS_DENIED');
+			$invoice = $service->context($id);
+			if ($request->isPost()) {
+				$post = (array)$request->getPost();
+				if (!is_string($post['csrf_token'] ?? null) || !hash_equals(Sales_Service_DocumentRevisionService::token('invoice', $id), $post['csrf_token'])) throw new RuntimeException('DOCUMENT_CHANGES_ACCESS_DENIED');
+				$operation = $post['operation'] ?? '';
+				$allowed = ['csrf_token', 'operation', 'revision', 'expected_hash'];
+				$allowed = array_merge($allowed, $operation === 'create' ? ['reason', 'request_key'] : ($operation === 'save' ? ['reason', 'field_key', 'corrected_value'] : ['original_reference', 'original_confirmed', 'format_scope', 'format_reason', 'identity_confirmed', 'nonfinancial_confirmed', 'structured_not_required', 'recipient_consent']));
+				if (array_diff_key($post, array_flip($allowed))) throw new RuntimeException('CORRECTION_FINANCIAL_BLOCKED');
+				if ($operation === 'create') {
+					if (!is_string($post['reason'] ?? null) || !is_string($post['request_key'] ?? null)) throw new RuntimeException('DOCUMENT_CHANGES_REASON_REQUIRED');
+					$correctionId = $service->create($id, $post['reason'], $post['request_key']);
+				} else {
+					$correctionId = filter_var($this->_getParam('correctionid'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+					$revision = filter_var($post['revision'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+					if (!$correctionId || !$revision || !is_string($post['expected_hash'] ?? null)) throw new RuntimeException('DOCUMENT_CHANGES_STALE');
+					if ($operation === 'save') {
+						foreach (['reason', 'field_key', 'corrected_value'] as $key) if (!is_string($post[$key] ?? null)) throw new RuntimeException('CORRECTION_FINANCIAL_BLOCKED');
+						$service->save($id, $correctionId, $revision, $post['expected_hash'], $post['reason'], [$post['field_key'] => $post['corrected_value']]);
+					} elseif ($operation === 'approve') $service->approve($id, $correctionId, $revision, $post['expected_hash'], $post);
+					else throw new RuntimeException('DOCUMENT_CHANGES_ACCESS_DENIED');
+				}
+				return $this->_helper->redirector->gotoSimple('correction', 'invoice', 'sales', ['id' => $id, 'correctionid' => $correctionId]);
+			}
+			if (!in_array($request->getMethod(), ['GET', 'HEAD'], true)) { $this->disableView(); $this->getResponse()->setHttpResponseCode(405); return; }
+			$correctionId = filter_var($this->_getParam('correctionid'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+			if (!$correctionId) throw new RuntimeException('DOCUMENT_CHANGES_ACCESS_DENIED');
+			$this->view->invoice = $invoice; $this->view->correction = $service->get($id, $correctionId);
+			$this->view->canEditCorrection = $this->view->canApproveCorrection = false;
+			try { $service->context($id, 'edit'); $this->view->canEditCorrection = $this->view->correction['status'] === 'draft'; } catch (RuntimeException $error) {}
+			try { $service->context($id, 'approve'); $this->view->canApproveCorrection = $this->view->correction['status'] === 'draft'; } catch (RuntimeException $error) {}
+		} catch (Throwable $error) { return $this->correctionError($error); }
+	}
+
+	public function correctionpdfAction()
+	{
+		$this->disableView(); $request = $this->getRequest();
+		if (!in_array($request->getMethod(), ['GET', 'HEAD'], true)) { $this->getResponse()->setHttpResponseCode(405)->setHeader('Allow', 'GET, HEAD', true); return; }
+		try {
+			$id = filter_var($this->_getParam('id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]); $correctionId = filter_var($this->_getParam('correctionid'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+			if (!$id || !$correctionId) throw new RuntimeException('DOCUMENT_CHANGES_ACCESS_DENIED');
+			$service = new Sales_Service_InvoiceCorrectionService(); $row = $service->get($id, $correctionId);
+			$bytes = $row['status'] === 'approved' ? file_get_contents($service->path($row)) : (new DEEC_Pdf())->correction($row);
+			if (!is_string($bytes) || ($row['status'] === 'approved' && (!hash_equals($row['sha256'], hash('sha256', $bytes)) || strlen($bytes) !== (int)$row['filesize']))) throw new RuntimeException('CORRECTION_INTEGRITY_FAILED');
+			$this->getResponse()->setHeader('Content-Type', 'application/pdf', true)->setHeader('Content-Disposition', 'inline; filename="' . $row['identity'] . '.pdf"', true)->setHeader('Cache-Control', 'private, no-store', true)->setHeader('X-Content-Type-Options', 'nosniff', true)->setHeader('Content-Security-Policy', "sandbox; default-src 'none'", true)->setHeader('Content-Length', (string)strlen($bytes), true)->setBody($request->getMethod() === 'HEAD' ? '' : $bytes);
+		} catch (Throwable $error) { return $this->correctionError($error); }
+	}
+
+	public function correctionexportAction()
+	{
+		$this->disableView(); $request = $this->getRequest();
+		if (!in_array($request->getMethod(), ['GET', 'HEAD'], true)) { $this->getResponse()->setHttpResponseCode(405); return; }
+		try {
+			$id = filter_var($this->_getParam('id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+			if (!$id) throw new RuntimeException('DOCUMENT_CHANGES_ACCESS_DENIED');
+			$data = (new Sales_Service_InvoiceCorrectionService())->manifest($id); $json = DEEC_DocumentReview::json($data);
+			$this->getResponse()->setHeader('Content-Type', 'application/json; charset=UTF-8', true)->setHeader('Content-Disposition', 'attachment; filename="invoice-' . $id . '-corrections.json"', true)->setHeader('Cache-Control', 'private, no-store', true)->setHeader('X-Content-Type-Options', 'nosniff', true)->setHeader('Content-Length', (string)strlen($json), true)->setBody($request->getMethod() === 'HEAD' ? '' : $json);
+		} catch (Throwable $error) { return $this->correctionError($error); }
+	}
+
+	private function correctionError(Throwable $error): void
+	{
+		$this->disableView(); $key = $error->getMessage(); error_log('Invoice correction refused: ' . $key);
+		if (!preg_match('/^(?:DOCUMENT_CHANGES_|CORRECTION_)[A-Z_]+$/D', $key)) $key = 'CORRECTION_FAILED';
+		$this->getResponse()->setHttpResponseCode(in_array($key, ['DOCUMENT_CHANGES_ACCESS_DENIED', 'DOCUMENT_CHANGES_ADMIN_REQUIRED'], true) ? 403 : 409)->setHeader('Cache-Control', 'private, no-store', true)->setBody($this->view->escape($this->view->translate($key)));
+	}
+
 	protected function buildIndexView(): void
 	{
 		$this->buildListView([

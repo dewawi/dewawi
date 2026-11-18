@@ -1983,6 +1983,12 @@ function getEmailmessages(scrollTo, reportError) {
 	});
 }
 
+$(document).on('change', '[data-correction-select]', function() {
+	var $form = $(this).closest('form'), $option = $(this).find('option:selected');
+	$form.find('[data-correction-before]').text($option.attr('data-before') || '');
+	$form.find('[name="corrected_value"]').val($option.attr('data-current') || '');
+});
+
 function sendMessage() {
 	var $form = $('#emailmessage');
 	if (!$form.length || Dewawi.emailRequestPending) return;
@@ -2005,6 +2011,7 @@ function sendMessage() {
 		subject: $form.find('[name="subject"]').val() || '',
 		body: editor ? editor.getContent() : ($form.find('[name="body"]').val() || ''),
 		feedback: Number($form.find('[name="feedback"]').val()) || 0,
+		correction_csrf_token: $form.find('[name="correction_csrf_token"]').val() || '',
 		module: module,
 		controller: controller,
 		files: {}

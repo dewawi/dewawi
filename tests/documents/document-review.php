@@ -138,7 +138,7 @@ function reviewLoadDocument(mysqli $db, DEEC_DocumentArchive $archive, array $se
 		}
 		$addPaths($row['filename'], ['emailattachment' => $row]);
 	}
-	$mail = reviewQuery($db, 'SELECT a.id, a.emailmessageid, a.documentarchiveid, a.emailattachmentid, a.filename, a.path, a.filesize, a.sha256, a.ordering, m.messagesent, m.deliverystatus FROM emailmessageattachment a JOIN emailmessage m ON m.id = a.emailmessageid AND m.clientid = a.clientid WHERE a.clientid = ? AND m.documentid = ? AND m.module = ? AND m.controller = ? ORDER BY a.id', 'iiss', [$document['clientid'], $document['id'], $document['module'], $table]);
+	$mail = reviewQuery($db, 'SELECT a.id, a.emailmessageid, a.documentarchiveid, a.emailattachmentid, a.invoicecorrectionid, a.filename, a.path, a.filesize, a.sha256, a.ordering, m.messagesent, m.deliverystatus FROM emailmessageattachment a JOIN emailmessage m ON m.id = a.emailmessageid AND m.clientid = a.clientid WHERE a.clientid = ? AND m.documentid = ? AND m.module = ? AND m.controller = ? ORDER BY a.id', 'iiss', [$document['clientid'], $document['id'], $document['module'], $table]);
 	$client = (string)$document['clientid'];
 	$shard = $client[0] . '/' . ($client[1] ?? '0') . '/' . $client;
 	foreach ($mail as $row) {
@@ -152,6 +152,7 @@ function reviewLoadDocument(mysqli $db, DEEC_DocumentArchive $archive, array $se
 			if ($found) $reference = true;
 		}
 		if (!$reference) $status = 'message_document_reference_missing';
+		if (!empty($row['invoicecorrectionid'])) $status = 'correction_not_original';
 		if ((int)$row['ordering'] < 1 || $row['path'] !== $prefix . (int)$row['ordering'] . '.pdf' || !DEEC_Emailattachment::validFilename((string)$row['filename'])) $status = 'metadata_path_rejected';
 		$sources[] = ['source' => 'emailmessageattachment', 'path' => $row['path'], 'relative_path' => $row['path'], 'status' => $status, 'evidence' => $row];
 	}

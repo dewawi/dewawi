@@ -991,6 +991,7 @@ CREATE TABLE IF NOT EXISTS `emailmessageattachment` (
   `emailmessageid` int(11) NOT NULL,
   `documentarchiveid` int(11) DEFAULT NULL,
   `emailattachmentid` int(11) DEFAULT NULL,
+  `invoicecorrectionid` int(11) DEFAULT NULL,
   `filename` varchar(255) NOT NULL,
   `filetype` varchar(255) NOT NULL,
   `filesize` bigint(20) unsigned NOT NULL,
@@ -1004,7 +1005,8 @@ CREATE TABLE IF NOT EXISTS `emailmessageattachment` (
   UNIQUE KEY `message_ordering` (`clientid`,`emailmessageid`,`ordering`),
   UNIQUE KEY `message_attachment_path` (`path`),
   KEY `documentarchiveid` (`documentarchiveid`),
-  KEY `emailattachmentid` (`emailattachmentid`)
+  KEY `emailattachmentid` (`emailattachmentid`),
+  KEY `invoicecorrectionid` (`invoicecorrectionid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `emailtemplate` (
@@ -3427,4 +3429,39 @@ CREATE TABLE IF NOT EXISTS `documentrevision` (
   UNIQUE KEY `client_document` (`clientid`,`controller`,`documentid`),
   UNIQUE KEY `client_revision` (`clientid`,`controller`,`rootdocumentid`,`sequence`),
   UNIQUE KEY `client_request` (`clientid`,`createdby`,`request_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+-- Editorial corrections are separate immutable documents, never original archive versions.
+CREATE TABLE IF NOT EXISTS `invoicecorrection` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `clientid` int(11) NOT NULL,
+  `invoiceid` int(11) NOT NULL,
+  `sequence` int(11) NOT NULL,
+  `previousid` int(11) DEFAULT NULL,
+  `reason` text NOT NULL,
+  `snapshot_json` mediumtext NOT NULL,
+  `snapshot_sha256` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `changes_json` mediumtext NOT NULL,
+  `revision` int(11) NOT NULL DEFAULT 1,
+  `status` varchar(16) NOT NULL DEFAULT 'draft',
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) DEFAULT NULL,
+  `approved` datetime DEFAULT NULL,
+  `approvedby` int(11) DEFAULT NULL,
+  `format_scope` varchar(32) NOT NULL DEFAULT 'unresolved',
+  `approval_json` text DEFAULT NULL,
+  `format_reason` text DEFAULT NULL,
+  `consent` tinyint(1) NOT NULL DEFAULT 0,
+  `path` varchar(512) DEFAULT NULL,
+  `filesize` bigint(20) unsigned DEFAULT NULL,
+  `sha256` char(64) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
+  `record_sha256` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `request_key` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `client_invoice_id` (`clientid`,`invoiceid`,`id`),
+  UNIQUE KEY `client_invoice_sequence` (`clientid`,`invoiceid`,`sequence`),
+  UNIQUE KEY `client_request` (`clientid`,`createdby`,`request_key`),
+  CONSTRAINT `invoicecorrection_invoice` FOREIGN KEY (`invoiceid`) REFERENCES `invoice` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `invoicecorrection_previous` FOREIGN KEY (`clientid`,`invoiceid`,`previousid`) REFERENCES `invoicecorrection` (`clientid`,`invoiceid`,`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

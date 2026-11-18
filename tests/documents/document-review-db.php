@@ -41,7 +41,7 @@ $db->query('CREATE TABLE contact (id INT PRIMARY KEY, clientid INT, contactid IN
 $db->query('CREATE TABLE emailattachment (id INT PRIMARY KEY, clientid INT, documentid INT, module VARCHAR(64), controller VARCHAR(64), filename VARCHAR(255), location VARCHAR(512), filesize INT, deleted INT DEFAULT 0)');
 $db->query('CREATE TABLE documentarchive (id INT PRIMARY KEY, clientid INT, documentid INT, module VARCHAR(64), controller VARCHAR(64), filename VARCHAR(255), format VARCHAR(16), path VARCHAR(512), filesize INT, sha256 CHAR(64), version INT DEFAULT 1, correctionarchiveid INT DEFAULT NULL, parameters LONGTEXT)');
 $db->query('CREATE TABLE emailmessage (id INT PRIMARY KEY, clientid INT, documentid INT, module VARCHAR(64), controller VARCHAR(64), messagesent DATETIME, deliverystatus VARCHAR(32))');
-$db->query('CREATE TABLE emailmessageattachment (id INT PRIMARY KEY, clientid INT, emailmessageid INT, documentarchiveid INT, emailattachmentid INT, filename VARCHAR(255), path VARCHAR(512), filesize INT, sha256 CHAR(64), ordering INT)');
+$db->query('CREATE TABLE emailmessageattachment (id INT PRIMARY KEY, clientid INT, emailmessageid INT, documentarchiveid INT, emailattachmentid INT, invoicecorrectionid INT, filename VARCHAR(255), path VARCHAR(512), filesize INT, sha256 CHAR(64), ordering INT)');
 foreach ([[800, 100, 500], [900, 100, 600], [901, 100, 600], [980, 101, 500], [990, 200, 700]] as [$id, $client, $number]) reviewDbInsert($db, 'contact', ['id' => $id, 'clientid' => $client, 'contactid' => $number]);
 $base = $work . '/source';
 mkdir($base, 0700);

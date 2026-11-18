@@ -215,6 +215,11 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				if(isset($data['files'])) {
 					if(!is_array($data['files'])) throw new InvalidArgumentException('Invalid email attachments');
 					foreach($data['files'] as $file) {
+						if (is_string($file) && preg_match('/^correction:([1-9][0-9]*)$/D', $file, $match)) {
+							if (($data['module'] ?? '') !== 'sales' || ($data['controller'] ?? '') !== 'invoice' || !is_string($data['correction_csrf_token'] ?? null)) throw new RuntimeException('Invoice correction context is invalid');
+							$source = (new Sales_Service_InvoiceCorrectionService())->attachment((int)$documentid, (int)$match[1], $data['correction_csrf_token']);
+							$attachmentSources[] = $source; $attachmentsSent[] = $source['filename']; continue;
+						}
 						if(is_string($file) && preg_match('/^archive:([1-9][0-9]*)$/D', $file, $match)) {
 							$archive = (new Application_Model_DbTable_Documentarchive())->getArchive((int)$match[1]);
 							if(!$archive || (int)$archive['documentid'] !== (int)$documentid || $archive['module'] !== $data['module'] || $archive['controller'] !== $data['controller']) throw new RuntimeException('Document original is not available');

@@ -217,7 +217,16 @@ class DEEC_DocumentArchive
 
 	public function store(string $bytes, int $clientId, string $module, string $controller, int $documentId, string $format): array
 	{
+		$format = strtolower($format);
 		$target = $this->path($clientId, $module, $controller, $documentId, $format);
+		return $this->storeAt($bytes, $target, $format);
+	}
+
+	public function storeAt(string $bytes, string $target, string $format): array
+	{
+		$format = strtolower($format);
+		$this->assertInside($target);
+		if (!in_array($format, self::FORMATS, true)) throw new InvalidArgumentException('Invalid archive format');
 		$this->ensureDirectory(dirname($target));
 		$temp = tempnam(dirname($target), '.archive-');
 		if ($temp === false) throw new RuntimeException('Archive staging file could not be created');

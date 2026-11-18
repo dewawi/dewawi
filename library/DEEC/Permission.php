@@ -64,6 +64,9 @@ class DEEC_Permission
 			'createquote',
 		],
 		'view' => [
+			'correction',
+			'correctionpdf',
+			'correctionexport',
 			'map',
 			'mapdata',
 			'endtime',
