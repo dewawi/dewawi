@@ -90,11 +90,10 @@ function buttonPilot(string $iconFormat = 'png'): array
 	$toolbar = new Contacts_Form_InquiryToolbar();
 	$inline = new Contacts_Form_InquiryToolbarInline();
 	$form = new Contacts_Form_Inquiry();
-	if ($iconFormat === 'svg') {
-		foreach (['filter', 'reset', 'clear'] as $name) $toolbar->setElementData($name, ['iconFormat' => 'svg']);
-		foreach (['view', 'edit'] as $name) $inline->setElementData($name, ['iconFormat' => 'svg']);
-		$form->setElementData('save', ['iconFormat' => 'svg']);
-	}
+	// Keep the PNG baseline explicit; inquiry-buttons.php tests unmodified production defaults.
+	foreach (['filter', 'reset', 'clear'] as $name) $toolbar->setElementData($name, ['iconFormat' => $iconFormat]);
+	foreach (['view', 'edit'] as $name) $inline->setElementData($name, ['iconFormat' => $iconFormat]);
+	$form->setElementData('save', ['iconFormat' => $iconFormat]);
 	$view->toolbar = $toolbar;
 	$list = new ButtonInquiryListFixture(['view' => $view, 'module' => 'contacts', 'controller' => 'inquiry', 'toolbarInline' => $inline]);
 	$form->setValue('status', 'new');

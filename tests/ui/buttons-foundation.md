@@ -4,6 +4,8 @@ Stand: 18.11.2026. Grundlage ist die lokale [Bestandsaufnahme](buttons-icons-ana
 
 Fortsetzung: [B3 – lokale semantische SVG-Icons](button-icons.md) ergänzt die gemeinsame Schnittstelle ausdrücklich opt-in und verifiziert sie isoliert. Mangels dokumentierter Pilotfreigabe bleiben die hier beschriebenen produktiven B2-Controls weiterhin bei PNG.
 
+Aktueller Folgestand: [B4 – Inquiry-SVG-Pilot](inquiry-buttons.md) stellt gezielt diese sechs produktiven Controls auf SVG um, ergänzt echte Layout-/Viewprüfungen und korrigiert den dabei gefundenen Statusbutton-Gridumbruch. Die folgenden B2-Angaben beschreiben weiterhin den historischen B2-Stand.
+
 ## Umfang und Architekturentscheidung
 
 Die bisherigen Renderer koppeln Iconabstand, sichtbaren Text und Icon-only-Darstellung an unterschiedliche Klassen bzw. ein fehlendes Label. `DEEC_Form` und der ältere Button-Helper erzeugten ihr Markup unabhängig. B2 führt ihre Ausgabe in `DEEC_Form::renderButtonHtml()` zusammen. Berechtigungen, Readonly, Übersetzung, Formularkontext und Aktionsrouting werden weiterhin vor der Präsentation durch die bisherigen Aufrufer vorbereitet. Die Präsentationsroutine selbst greift weder auf Registry/Request noch auf Datenbanken zu.

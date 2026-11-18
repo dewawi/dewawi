@@ -2,6 +2,8 @@
 
 Stand: 18.11.2026. Geprüfte Grundlage: lokaler B2-Commit `b27f55e6` (`add shared button presentation and inquiry pilot`), [B2-Bericht](buttons-foundation.md) und vollständige vorhandene [Bestandsaufnahme](buttons-icons-analysis.md). Letztere liegt weiterhin unversioniert vor und wird durch B3 weder verändert noch mitcommittet.
 
+Fortsetzung: [B4 – Inquiry-SVG-Pilot](inquiry-buttons.md) führt sechs ausdrücklich konfigurierte produktive Inquiry-Controls und den auf Inquiry begrenzten Layout-Symbolblock ein. Die folgenden Umfangs-/Abnahmeangaben beschreiben den historischen isolierten B3-Stand; aktuelle Prüfergebnisse und offene Freigaben stehen im B4-Bericht.
+
 ## Pilotstatus und Umfang
 
 Für die sechs produktiven B2-Controls ist weiterhin keine fachliche/visuelle Freigabe dokumentiert. Deshalb beschränkt sich B3 gemäß Auftrag auf die isolierte SVG-Integration. Keine produktive Form, kein Layout und kein JavaScript-Aufrufer wird auf SVG umgestellt. Alle bestehenden PNG-Controls, öffentliches CMS/Shop-Frontend, gespeichertes HTML/JSON und Drittanbieter-Widgets bleiben unverändert.

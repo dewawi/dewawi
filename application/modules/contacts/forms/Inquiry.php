@@ -19,6 +19,7 @@ class Contacts_Form_Inquiry extends DEEC_Form
 			'type' => 'submit',
 			'label' => 'CONTACT_INQUIRIES_SAVE_STATUS',
 			'icon' => 'save',
+			'iconFormat' => 'svg',
 			'variant' => 'primary',
 			'wrap' => false,
 			'attribs' => ['class' => 'dw-btn dw-btn--primary'],
