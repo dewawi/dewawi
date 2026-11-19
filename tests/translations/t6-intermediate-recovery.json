@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "-B",
+    "tests/documents/document-recovery-db.py"
+  ],
+  "exit_code": 255,
+  "stdout": "PASS: 343 invoice-original batch checks; 27 files, 26 new registrations, 109860 protected, declaration/plan/backup binding, tenant/permission/ZIP guards and transactional retry\nPASS: 223 mixed invoice batch checks; 17 existing reconstructions, nine recovered originals, two blocked numbers and explicit GoBD provenance\nPHP Fatal error:  Uncaught RuntimeException: Page 1 lost marking SAMPLE:                                                                     MUSTER\n\n\n\n\n                                     ANGEBOT\n\n                                                                                         Angebotsnummer:       -----\n                                                           (HTTP/1.1 200 OK\nHost: 127.0.0.1:45259\nDate: Thu, 19 Nov 2026 14:25:29 GMT\nConnection: close\nX-Powered-By: PHP/8.3.6\nContent-Type: application/pdf\nContent-Disposition: attachment; filename=\"quote_601.pdf\"; filename*=UTF-8''quote_601.pdf\nContent-Length: 172365\nX-Content-Type-Options: nosniff\nCache-Control: private, no-store\nContent-Security-Policy: sandbox; default-src 'none') in /var/www/dewawi/tests/documents/document-recovery-db.php:18\nStack trace:\n#0 /var/www/dewawi/tests/documents/document-viewing-fixtures.php(42): recoveryTestCheck()\n#1 /var/www/dewawi/tests/documents/document-viewing-fixtures.php(225): viewingCheckMarks()\n#2 /var/www/dewawi/tests/documents/document-recovery-db.php(604): require('...')\n#3 {main}\n  thrown in /var/www/dewawi/tests/documents/document-recovery-db.php on line 18\n\n",
+  "stderr": ""
+}

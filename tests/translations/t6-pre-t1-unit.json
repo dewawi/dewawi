@@ -1,0 +1,33 @@
+{
+  "commit": "d68f7a8c",
+  "snapshot": "isolated git archive before T1",
+  "commands": [
+    {
+      "command": [
+        "php",
+        "tests/security/notifications.php"
+      ],
+      "exit_code": 255,
+      "stdout": "PASS: 370 notification rendering, flash, translation and email history checks\n",
+      "stderr": "PHP Fatal error:  Uncaught Error: Class \"Sales_Service_DocumentRevisionService\" not found in /tmp/dewawi-t6-pre-t1-l0tqvd9q/application/modules/sales/views/helpers/Finish.php:12\nStack trace:\n#0 /tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/security/notifications.php(67): Zend_View_Helper_Finish->finish()\n#1 {main}\n  thrown in /tmp/dewawi-t6-pre-t1-l0tqvd9q/application/modules/sales/views/helpers/Finish.php on line 12\nPHP Fatal error:  Uncaught RuntimeException: Document helper fixture failed: sales in /tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/security/notifications.php:211\nStack trace:\n#0 {main}\n  thrown in /tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/security/notifications.php on line 211\n"
+    },
+    {
+      "command": [
+        "php",
+        "tests/contacts/history-states.php"
+      ],
+      "exit_code": 255,
+      "stdout": "",
+      "stderr": "PHP Warning:  Undefined array key \"states\" in /tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/contacts/history-states.php on line 57\nPHP Fatal error:  Uncaught RuntimeException: Missing history status: 100 in /tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/contacts/history-states.php:23\nStack trace:\n#0 /tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/contacts/history-states.php(69): check()\n#1 {main}\n  thrown in /tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/contacts/history-states.php on line 23\n"
+    },
+    {
+      "command": [
+        "php",
+        "tests/documents/document-labels.php"
+      ],
+      "exit_code": 0,
+      "stdout": "PASS: 67 PDF label and document change schema checks; both locales, three pages, neutral colors and preserved content\n",
+      "stderr": ""
+    }
+  ]
+}

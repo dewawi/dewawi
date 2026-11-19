@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "-B",
+    "tests/security/shop-inquiry-quote.py"
+  ],
+  "exit_code": 255,
+  "stdout": "Stored document PDF: shops/quote id=1 clientid=100 source=render\nStored document PDF: shops/quote id=2 clientid=100 source=render\nStored document PDF: shops/quote id=3 clientid=100 source=render\nStored document PDF: shops/quote id=4 clientid=100 source=render\nStored document PDF: shops/quote id=4 clientid=100 source=render\nStored document PDF: shops/quote id=5 clientid=100 source=render\nStored document PDF: shops/quote id=7 clientid=100 source=render\nStored document PDF: shops/quote id=8 clientid=100 source=render\nStored document PDF: shops/quote id=9 clientid=100 source=render\nStored document PDF: shops/quote id=10 clientid=100 source=render\nStored document PDF: shops/quote id=11 clientid=100 source=render\nPASS: shop archive rollback, retry and uncertain commit cases\nStored document PDF: shops/quote id=13 clientid=100 source=render\nPHP Fatal error:  Uncaught RuntimeException: Generic catalog view depends on legacy calculation fields in /var/www/dewawi/tests/security/inquiry-catalog.php:13\nStack trace:\n#0 /var/www/dewawi/tests/security/inquiry-catalog.php(158): checkCatalog()\n#1 /var/www/dewawi/tests/security/shop-inquiry-quote.php(592): require('...')\n#2 {main}\n  thrown in /var/www/dewawi/tests/security/inquiry-catalog.php on line 13\n\n",
+  "stderr": ""
+}

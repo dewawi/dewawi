@@ -5,14 +5,22 @@ $root = dirname(__DIR__, 2);
 set_include_path($root . '/library' . PATH_SEPARATOR . get_include_path());
 spl_autoload_register(static function(string $class): void { if ($path = stream_resolve_include_path(str_replace('_', '/', $class) . '.php')) require_once $path; });
 require_once $root . '/library/Tcpdf/tcpdf.php';
-class LabelFixturePdf extends DEEC_Pdf { public function mark(TCPDF $pdf, string $key): void { $this->markCopy($pdf, $key); } }
+class LabelFixturePdf extends DEEC_Pdf {
+	public function mark(TCPDF $pdf, string $key, string $documentLocale): void {
+		$this->useDocumentLanguage(['language' => $documentLocale], 'sales');
+		$this->markCopy($pdf, $key);
+	}
+}
 $checks = 0;
-foreach (['de_DE' => ['MUSTER', 'KOPIE'], 'en_US' => ['SAMPLE', 'COPY']] as $locale => $marks) {
-	Zend_Registry::set('Zend_Locale', $locale);
+foreach (['de_DE' => ['MUSTER', 'KOPIE'], 'en_US' => ['SAMPLE', 'COPY']] as $locale => $marks) foreach (['de_DE', 'en_US'] as $uiLocale) {
+	Zend_Registry::set('Zend_Locale', $uiLocale);
+	$uiTranslator = new DEEC_Translate($uiLocale); $uiTranslator->loadModule('sales');
+	Zend_Registry::set('DEEC_Translate', $uiTranslator);
 	foreach (['DOCUMENTS_DRAFT_MARK', 'DOCUMENTS_RECONSTRUCTED_MARK'] as $index => $key) {
 		$pdf = new TCPDF(); $pdf->setPrintHeader(false); $pdf->setPrintFooter(false); $pdf->SetCompression(false); $pdf->SetMargins(15, 30, 15);
 		foreach ([1, 2, 3] as $page) { $pdf->AddPage(); $pdf->SetFont('dejavusans', '', 10); $pdf->Write(5, 'Synthetic body ' . $page); }
-		(new LabelFixturePdf())->mark($pdf, $key); $bytes = $pdf->Output('', 'S');
+		(new LabelFixturePdf())->mark($pdf, $key, $locale); $bytes = $pdf->Output('', 'S');
+		if (Zend_Registry::get('DEEC_Translate') !== $uiTranslator || Zend_Registry::get('Zend_Locale') !== $uiLocale) throw new RuntimeException('PDF marking changed the UI context'); $checks++;
 		preg_match_all('/([0-9.]+) ([0-9.]+) ([0-9.]+) (?:rg|RG)\b/', $bytes, $colors, PREG_SET_ORDER);
 		foreach ($colors as $color) { if ($color[1] !== $color[2] || $color[2] !== $color[3]) throw new RuntimeException('Non-neutral PDF label color'); $checks++; }
 		$path = tempnam(sys_get_temp_dir(), 'dewawi-label-'); file_put_contents($path, $bytes);
@@ -36,4 +44,4 @@ foreach (['documentrevision', 'invoicecorrection'] as $table) {
 }
 if (!str_contains($fresh, '`invoicecorrectionid` int(11) DEFAULT NULL') || !str_contains($migration, 'ADD `invoicecorrectionid` int(11) DEFAULT NULL AFTER `emailattachmentid`')
 	|| !str_contains($fresh, 'KEY `invoicecorrectionid` (`invoicecorrectionid`)') || !str_contains($migration, 'ADD KEY `invoicecorrectionid` (`invoicecorrectionid`)')) throw new RuntimeException('Correction email reference migration differs'); $checks++;
-echo 'PASS: ' . $checks . " PDF label and document change schema checks; both locales, three pages, neutral colors and preserved content\n";
+echo 'PASS: ' . $checks . " PDF label and document change schema checks; all UI/document locales, three pages, neutral colors and preserved content\n";

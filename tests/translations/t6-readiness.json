@@ -1,0 +1,140 @@
+{
+  "base_commit": "1910ef01",
+  "recommendation": "GO MIT DOKUMENTIERTEN RESTRISIKEN",
+  "scope": "Translation release readiness for the recorded tested local source; concurrent toolbar work must be completed/reviewed/versioned separately.",
+  "unconditional_production_release": false,
+  "conditions": [
+    "Complete, independently review and version the concurrent toolbar changes; release exactly the tested source or re-run the strict validator and 235-case acceptance.",
+    "Environment-specific external SMTP/TLS delivery requires a separate authorized internal-recipient check; local sinks do not prove provider delivery.",
+    "Review customer templates/extensions separately where used; explicit document language controls PDF marks."
+  ],
+  "cases": [
+    {
+      "id": "notifications",
+      "test_case": "Notifications",
+      "classification": "fixture_or_outdated_test_contract",
+      "cause": "Standalone child fixture omitted the revision service, tenant context and synthetic DB boundary.",
+      "causal_history": "e79ab895",
+      "present_before_t1": true,
+      "pre_t1_exit_code": 255,
+      "before_exit_code": 255,
+      "after_exit_code": 0,
+      "correction": "Real revision service loaded; tenant/document-scoped synthetic table; original helper assertions retained.",
+      "security_and_integrity": "Permissions and revision lookup scope are exercised; no production authorization code changed.",
+      "production_fix_required": false,
+      "translation_release_blocker_after_fix": false
+    },
+    {
+      "id": "history",
+      "test_case": "History",
+      "classification": "fixture_or_outdated_test_contract",
+      "cause": "Empty fixture permissions and no visible contact correctly yield an empty history.",
+      "causal_history": "before T1: e61722be/b32241c1 guards",
+      "present_before_t1": true,
+      "pre_t1_exit_code": 255,
+      "before_exit_code": 255,
+      "after_exit_code": 0,
+      "correction": "Minimal authorized fixture plus scoped contact/document reads and explicit denial cases.",
+      "security_and_integrity": "Real authorization and ownership guards remain intact; negative cases and final state selection remain enforced.",
+      "production_fix_required": false,
+      "translation_release_blocker_after_fix": false
+    },
+    {
+      "id": "shop",
+      "test_case": "Shop-Anfrage",
+      "classification": "fixture_or_outdated_test_contract",
+      "cause": "Translated shop templates require the DEEC helper and module catalogue missing in isolated fixtures.",
+      "causal_history": "88eef4c0",
+      "present_before_t1": false,
+      "pre_t1_exit_code": 0,
+      "before_exit_code": 255,
+      "after_exit_code": 0,
+      "correction": "Real view helper and loadModule(shops) configured in standalone and HTTP fixtures.",
+      "security_and_integrity": "Tenant/shop/identity/CSRF/read-only and replay checks complete; no production service changed.",
+      "production_fix_required": false,
+      "translation_release_blocker_after_fix": false
+    },
+    {
+      "id": "calendar",
+      "test_case": "Kalender",
+      "classification": "fixture_or_outdated_test_contract",
+      "cause": "Naive semicolon split breaks a SQL comment and the fixture reads unrelated trailing migration blocks.",
+      "causal_history": "before T1: e79ab895",
+      "present_before_t1": true,
+      "pre_t1_exit_code": 1,
+      "before_exit_code": 1,
+      "after_exit_code": 0,
+      "correction": "Existing installer SQL parser reused; execution scope bounded to the calendar block in disposable databases.",
+      "security_and_integrity": "Privacy, ACL, CSRF, reminder concurrency, invitation SMTP/ICS and legacy migration comparisons pass; no SQL/schema file changed.",
+      "production_fix_required": false,
+      "translation_release_blocker_after_fix": false
+    },
+    {
+      "id": "pdf_labels",
+      "test_case": "Historische PDF-Markierungsprüfung 1",
+      "classification": "fixture_or_outdated_test_contract",
+      "cause": "Fixture sets UI Zend_Locale without a document translator after the marking contract changed.",
+      "causal_history": "00a99d88",
+      "present_before_t1": false,
+      "pre_t1_exit_code": 0,
+      "before_exit_code": 255,
+      "after_exit_code": 0,
+      "correction": "Use actual document-language initialization and check all UI/document language combinations with exact marks.",
+      "security_and_integrity": "Three pages, unchanged body, neutral color and unchanged UI context verified; no product PDF code changed.",
+      "production_fix_required": false,
+      "translation_release_blocker_after_fix": false
+    },
+    {
+      "id": "pdf_viewing",
+      "test_case": "Historische PDF-Markierungsprüfung 2",
+      "classification": "fixture_or_outdated_test_contract",
+      "cause": "Fixture expects English COPY/SAMPLE for explicitly German historical/draft documents.",
+      "causal_history": "00a99d88",
+      "present_before_t1": false,
+      "pre_t1_exit_code": 0,
+      "before_exit_code": 255,
+      "after_exit_code": 0,
+      "correction": "Assert KOPIE/MUSTER for German documents independently of UI; separate synthetic English document asserts COPY in both UI languages.",
+      "security_and_integrity": "2632 recovery checks include immutable originals/metadata/business-row snapshots, permissions, corruption guards and read-only viewing account.",
+      "production_fix_required": false,
+      "translation_release_blocker_after_fix": false
+    }
+  ],
+  "counts": {
+    "investigated_aborts": 6,
+    "fixture_fixes": 6,
+    "remaining_original_aborts": 0,
+    "pre_t1_failures": 3,
+    "post_t1_outdated_fixture_contracts": 3,
+    "acceptance": {
+      "passed": 235,
+      "failed": 0
+    },
+    "module_language_contexts": 28,
+    "validator": "passed without baseline exceptions",
+    "broad_suite_commands_passed": 8,
+    "pdf_label_checks": 139,
+    "historical_recovery_checks": 2632
+  },
+  "source_sha256": "3ef398fcd7f717a89c0b5582d537aaa588f1dd266a6db8754a04553d3439ecd0",
+  "quality_policy_sha256": "5578671e971e270ef281410003ec8bae19699fb28927180a518f2147cf902765",
+  "product_catalogues_and_domain_order_preserved": true,
+  "t6_production_code_changes": false,
+  "concurrent_unrelated_work": true,
+  "production_database_changes": false,
+  "migration_changes": false,
+  "customer_emails_sent": false,
+  "push_performed": false,
+  "evidence": {
+    "history": "t6-history.json",
+    "acceptance": "t6-acceptance.json",
+    "audit": "t6-report.json",
+    "validation": "t6-validation.json",
+    "suites": "t6-suites.json",
+    "worktree": "t6-worktree-context.json"
+  },
+  "intermediate_failures": [
+    "t6-intermediate-recovery.json: second outdated SAMPLE/MUSTER assertion reached and corrected.",
+    "t6-intermediate-validation.json and t6-intermediate-suites.json: unrelated concurrent toolbar assertion; not accepted as baseline."
+  ]
+}

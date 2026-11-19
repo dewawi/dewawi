@@ -1,3 +1,21 @@
+# T6 – Translation Release Readiness
+
+Aktuell: [T6-Freigabeentscheidung und Ursachenanalyse](T6-release-readiness.md),
+[235er-Abnahme](t6-acceptance.json), [strikter Validator](t6-validation.json),
+[sechs Vorher-/Nachher-Befunde](t6-readiness.json).
+Die sechs Abbrüche sind als Fixture-/Testvertragsfehler behoben; Notifications,
+History und die PDF-Markierungsprüfung sind wieder reguläre harte Gates ohne
+Baseline-Ausnahmen. Shop-, Kalender- und historische PDF-Browserstrecken laufen durch.
+Freigabeempfehlung: **GO MIT DOKUMENTIERTEN RESTRISIKEN**, gebunden an den geprüften
+Quellenstand, separat abzuschließende parallele Toolbar-Arbeiten und die im Bericht
+benannten installationsspezifischen Integrationsabnahmen. Kein Deployment durch T6.
+
+```bash
+python3 -B tests/translations/validate.py --stage T6 --browser
+```
+
+Die nachfolgenden Abschnitte beschreiben die historischen T5-/T2-/T3-/T4-Stände.
+
 # DEWAWI – Übersetzungssystem und Qualitätsprüfungen
 
 Aktueller Stand T5 (19. November 2026): [Abnahme und Qualitätsregeln](T5-acceptance.md),

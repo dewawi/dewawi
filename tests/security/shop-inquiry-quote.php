@@ -204,6 +204,7 @@ Zend_Registry::set('Zend_Locale', new Zend_Locale('de_DE'));
 $translator = new DEEC_Translate('de_DE');
 $translator->loadDir('default', $root.'/languages/de_DE/default');
 $translator->loadDir('sales', $root.'/languages/de_DE/sales');
+$translator->loadModule('shops');
 Zend_Registry::set('DEEC_Translate', $translator);
 Zend_Registry::set('Zend_Currency', new Zend_Currency('EUR', 'de_DE'));
 Zend_Controller_Action_HelperBroker::addHelper(new Application_Controller_Action_Helper_Calculate());

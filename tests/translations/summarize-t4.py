@@ -15,13 +15,13 @@ def read(name):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--stage', choices=['T4', 'T5'], default='T4')
+    parser.add_argument('--stage', choices=['T4', 'T5', 'T6'], default='T4')
     args = parser.parse_args()
     prefix = args.stage.lower()
     before, after = read('t3-http-browser.json'), read(prefix + '-http-browser.json')
     pdf_before, pdf_after = read('t3-pdf.json'), read(prefix + '-pdf.json')
     mail_before, mail_after = read('t3-mail.json'), read(prefix + '-mail.json')
-    audit, old_audit = read(prefix + '-report.json'), read('t4-report.json' if args.stage == 'T5' else 'report.json')
+    audit, old_audit = read(prefix + '-report.json'), read({'T4': 'report.json', 'T5': 't4-report.json', 'T6': 't5-report.json'}[args.stage])
     assert Counter(r['scenario'] for r in before['results']) == Counter(r['scenario'] for r in after['results'])
     paths = {
         'login HTML language de_DE': ['application/modules/users/views/scripts/user/login.phtml'],
@@ -68,7 +68,7 @@ def main():
               'module_language_contexts': 28, 'http_domain_and_text_comparisons': 39,
               'existing_catalogue_keys_and_values_preserved': True, 'domain_order_preserved': True,
               'baseline_failure_note': 'Independent suite failures remain failures; see t4-suites.json, t4-document-regressions.json and t4-recovery-baseline.json. This acceptance is the targeted 235-case contract.'}
-    if args.stage == 'T5':
+    if args.stage in ['T5', 'T6']:
         ledger = read('t5-hardcodes.json')
         original = {row['id']: row for row in read('t3-hardcodes.json')['candidates']}
         assert len(ledger['candidates']) == len(original) == 204
@@ -82,11 +82,14 @@ def main():
             assert hashlib.sha256(source).hexdigest() == row['current_source_sha256'], row['id']
             if row['status'].startswith('completed_'):
                 assert row['translation_key'] in keys and row['translation_key'] in source.decode(), row['id']
-        cleanup, browser = read('t5-cleanup.json'), read('t5-browser.json')
+        cleanup, browser = read(prefix + '-cleanup.json'), read(prefix + '-browser.json')
         assert cleanup['counts']['failed'] == 0 and browser['status'] == 'passed'
-        output.update(stage='T5', base_commit='22bc7ab1', hardcodes=ledger['counts'], remaining_confirmed_ui_hardcodes=0,
+        output.update(stage=args.stage, base_commit='1910ef01' if args.stage == 'T6' else '22bc7ab1', hardcodes=ledger['counts'], remaining_confirmed_ui_hardcodes=0,
                       cleanup=cleanup['counts'], additional_browser_checks=browser['checks'], quality_policy_sha256=audit['quality_policy_sha256'],
                       baseline_failure_note='Independent suite failures remain failures; see t5-suites.json and t5-document-regressions.json. No global acceptance of these suites is claimed.')
+        if args.stage == 'T6':
+            output.update(production_sources_unchanged_from_t5=audit['source_sha256'] == old_audit['source_sha256'], readiness_report='T6-release-readiness.md',
+                          baseline_failure_note='Six former aborts investigated separately; see t6-readiness.json and before/after evidence. No baseline failures are accepted by the validator.')
     print(json.dumps(output, ensure_ascii=False, indent=2))
 
 

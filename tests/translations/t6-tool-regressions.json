@@ -1,0 +1,53 @@
+{
+  "scope": "Existing T4/T5 summary contracts and new T6 stage; historical report files unchanged.",
+  "commands": [
+    {
+      "command": [
+        "python3",
+        "-B",
+        "tests/translations/summarize-t4.py",
+        "--stage",
+        "T4"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "counts": {
+        "passed": 235,
+        "failed": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "-B",
+        "tests/translations/summarize-t4.py",
+        "--stage",
+        "T5"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "counts": {
+        "passed": 235,
+        "failed": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "-B",
+        "tests/translations/summarize-t4.py",
+        "--stage",
+        "T6"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "counts": {
+        "passed": 235,
+        "failed": 0
+      },
+      "stderr": ""
+    }
+  ]
+}

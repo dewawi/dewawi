@@ -1,0 +1,32 @@
+{
+  "base_commit": "1910ef01",
+  "commands": [
+    {
+      "command": [
+        "php",
+        "tests/security/notifications.php"
+      ],
+      "exit_code": 255,
+      "stdout": "PASS: 382 notification rendering, flash, translation and email history checks\n",
+      "stderr": "PHP Fatal error:  Uncaught Error: Class \"Sales_Service_DocumentRevisionService\" not found in /var/www/dewawi/application/modules/sales/views/helpers/Finish.php:12\nStack trace:\n#0 /var/www/dewawi/tests/security/notifications.php(67): Zend_View_Helper_Finish->finish()\n#1 {main}\n  thrown in /var/www/dewawi/application/modules/sales/views/helpers/Finish.php on line 12\nPHP Fatal error:  Uncaught RuntimeException: Document helper fixture failed: sales in /var/www/dewawi/tests/security/notifications.php:214\nStack trace:\n#0 {main}\n  thrown in /var/www/dewawi/tests/security/notifications.php on line 214\n"
+    },
+    {
+      "command": [
+        "php",
+        "tests/contacts/history-states.php"
+      ],
+      "exit_code": 255,
+      "stdout": "",
+      "stderr": "PHP Warning:  Undefined array key \"states\" in /var/www/dewawi/tests/contacts/history-states.php on line 57\nPHP Fatal error:  Uncaught RuntimeException: Missing history status: 100 in /var/www/dewawi/tests/contacts/history-states.php:23\nStack trace:\n#0 /var/www/dewawi/tests/contacts/history-states.php(69): check()\n#1 {main}\n  thrown in /var/www/dewawi/tests/contacts/history-states.php on line 23\n"
+    },
+    {
+      "command": [
+        "php",
+        "tests/documents/document-labels.php"
+      ],
+      "exit_code": 255,
+      "stdout": "",
+      "stderr": "PHP Fatal error:  Uncaught RuntimeException: Exact label or body missing in /var/www/dewawi/tests/documents/document-labels.php:26\nStack trace:\n#0 {main}\n  thrown in /var/www/dewawi/tests/documents/document-labels.php on line 26\n"
+    }
+  ]
+}

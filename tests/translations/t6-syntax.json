@@ -1,0 +1,54 @@
+{
+  "scope": "All nine PHP files changed by T6 only; unrelated toolbar files excluded.",
+  "counts": {
+    "passed": 9,
+    "failed": 0
+  },
+  "checks": [
+    {
+      "file": "tests/calendar/integration.php",
+      "exit_code": 0,
+      "output": "No syntax errors detected in tests/calendar/integration.php\n"
+    },
+    {
+      "file": "tests/contacts/history-states.php",
+      "exit_code": 0,
+      "output": "No syntax errors detected in tests/contacts/history-states.php\n"
+    },
+    {
+      "file": "tests/documents/document-labels.php",
+      "exit_code": 0,
+      "output": "No syntax errors detected in tests/documents/document-labels.php\n"
+    },
+    {
+      "file": "tests/documents/document-viewing-fixtures.php",
+      "exit_code": 0,
+      "output": "No syntax errors detected in tests/documents/document-viewing-fixtures.php\n"
+    },
+    {
+      "file": "tests/security/fixtures/inquiry-pilot-http.php",
+      "exit_code": 0,
+      "output": "No syntax errors detected in tests/security/fixtures/inquiry-pilot-http.php\n"
+    },
+    {
+      "file": "tests/security/inquiry-catalog.php",
+      "exit_code": 0,
+      "output": "No syntax errors detected in tests/security/inquiry-catalog.php\n"
+    },
+    {
+      "file": "tests/security/inquiry-variants.php",
+      "exit_code": 0,
+      "output": "No syntax errors detected in tests/security/inquiry-variants.php\n"
+    },
+    {
+      "file": "tests/security/notifications.php",
+      "exit_code": 0,
+      "output": "No syntax errors detected in tests/security/notifications.php\n"
+    },
+    {
+      "file": "tests/security/shop-inquiry-quote.php",
+      "exit_code": 0,
+      "output": "No syntax errors detected in tests/security/shop-inquiry-quote.php\n"
+    }
+  ]
+}

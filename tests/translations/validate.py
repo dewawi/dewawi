@@ -7,14 +7,10 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-BASELINE_FAILURES = {
-    'tests/security/notifications.php': ['Sales_Service_DocumentRevisionService', 'not found', 'Document helper fixture failed: sales'],
-    'tests/contacts/history-states.php': ['Undefined array key "states"', 'Missing history status: 100'],
-}
 TESTS = ['tests/security/quote-email.php', 'tests/security/shop-email-content.php',
          'tests/security/contact-data.php', 'tests/security/form-input-validation.php',
          'tests/security/user-profile.php', 'tests/ui/buttons.php', 'tests/ui/toolbar-buttons.php',
-         'tests/sales/quote-monitoring.php', 'tests/documents/pdf.php', 'tests/documents/pdf-totals.php',
+         'tests/sales/quote-monitoring.php', 'tests/documents/pdf.php', 'tests/documents/pdf-totals.php', 'tests/documents/document-labels.php',
          'tests/security/notifications.php', 'tests/contacts/history-states.php']
 PHP_CODE = ['library/DEEC/Translate.php', 'library/DEEC/Pdf.php', 'library/DEEC/Feedback.php',
             'application/Bootstrap.php', 'application/plugins/Translate.php', 'application/views/helpers/Translate.php',
@@ -27,7 +23,7 @@ PHP_CODE += ['application/modules/shops/views/scripts/' + path + '.phtml' for pa
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--stage', choices=['T2A', 'T2B', 'T5'], required=True)
+    parser.add_argument('--stage', choices=['T2A', 'T2B', 'T5', 'T6'], required=True)
     parser.add_argument('--browser', action='store_true', help='Include offline Chromium fixtures')
     args = parser.parse_args()
     baseline = json.loads(subprocess.check_output(['git', 'show', 'c6325897:tests/translations/report.json'], cwd=ROOT))
@@ -48,9 +44,7 @@ def main():
     if args.browser: commands.append([sys.executable, '-B', 'tests/translations/browser.py'])
     for command in commands:
         process = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
-        markers = BASELINE_FAILURES.get(command[-1], [])
-        expected = bool(markers) and all(marker in process.stdout + process.stderr for marker in markers)
-        status = 'passed' if process.returncode == 0 else ('baseline_failure' if expected else 'failed')
+        status = 'passed' if process.returncode == 0 else 'failed'
         result = {'command': ' '.join(['python3' if c == sys.executable else c for c in command]), 'exit_code': process.returncode, 'status': status}
         if command[-1] == 'tests/translations/runtime.php' and process.returncode == 0:
             result['checks'] = json.loads(process.stdout)['checks']
@@ -59,7 +53,7 @@ def main():
             result['stdout'] = process.stdout
             result['stderr'] = '\n'.join(line for line in process.stderr.splitlines() if not line.startswith('Ran ') and not line.startswith('----'))
         results.append(result)
-    audit_command = [sys.executable, 'tests/translations/audit.py'] + (['--fail-on-defects'] if args.stage in ['T2B', 'T5'] else [])
+    audit_command = [sys.executable, 'tests/translations/audit.py'] + (['--fail-on-defects'] if args.stage in ['T2B', 'T5', 'T6'] else [])
     process = subprocess.run(audit_command, cwd=ROOT, capture_output=True, text=True)
     report = json.loads(process.stdout)
     results.append({'command': ' '.join(['python3' if c == sys.executable else c for c in audit_command]), 'exit_code': process.returncode, 'status': 'passed' if process.returncode == 0 else 'failed',
@@ -68,8 +62,8 @@ def main():
     results.append({'command': 'repeat complete audit and compare JSON bytes', 'status': 'passed' if process.returncode == repeat.returncode == 0 and process.stdout == repeat.stdout else 'failed'})
     output = {'stage': args.stage, 'source_sha256': report['source_sha256'], 'baseline_summary': baseline['summary'], 'current_summary': report['summary'], 'commands': results,
               'database_changes': False, 'not_run': ['production access', 'customer data', 'authenticated browser', 'live SMTP', 'database integration/migrations'],
-              'notes': ['Baseline failures are retained separately, never counted as passing checks.', 'Runtime PDF payload and mail template contexts use isolated fixtures.']}
-    if args.stage in ['T2B', 'T5']:
+              'notes': ['Former Notifications/History fixtures were repaired in T6; all failures now fail validation.', 'Runtime PDF payload and mail template contexts use isolated fixtures.']}
+    if args.stage in ['T2B', 'T5', 'T6']:
         output['technical_block_commit'] = '00a99d88'
         output['t2a_summary'] = json.loads(subprocess.check_output(['git', 'show', '00a99d88:tests/translations/report.json'], cwd=ROOT))['summary']
     json.dump(output, sys.stdout, ensure_ascii=False, indent=2)

@@ -55,9 +55,19 @@ if ($documentModule !== null) {
     if (!in_array($documentModule, ['sales', 'purchases'], true)) throw new InvalidArgumentException('Invalid fixture module');
     require_once $root . '/application/modules/' . $documentModule . '/views/helpers/Finish.php';
     require_once $root . '/application/modules/' . $documentModule . '/views/helpers/Actions.php';
+    require_once $root . '/application/modules/sales/services/DocumentRevisionService.php';
+    // Keep the real revision service; only its database boundary is synthetic.
+    class Application_Model_DbTable_Documentrevision
+    {
+        public function getForDocument(int $id, string $type, int $clientId): ?array {
+            check($id === 100 && $clientId === 7 && in_array($type, ['quote', 'salesorder'], true), 'Revision lookup lost fixture tenant or document scope');
+            return null;
+        }
+    }
+    Zend_Registry::set('Client', ['id' => 7]);
     foreach (['de_DE', 'en_US'] as $locale) {
         $view = new NotificationTestView();
-        $view->catalog = require $root . '/languages/' . $locale . '/default/document.php';
+        $view->catalog = array_replace(require $root . '/languages/' . $locale . '/default/document.php', require $root . '/languages/' . $locale . '/' . $documentModule . '/common.php');
         $view->form = $view;
         $view->module = $documentModule;
         $view->documentValidation = ['status' => 'success'];

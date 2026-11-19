@@ -1,0 +1,11 @@
+{
+  "commit": "d68f7a8c",
+  "command": [
+    "python3",
+    "-B",
+    "tests/calendar/run.py"
+  ],
+  "exit_code": 1,
+  "stdout": "\nFatal error: Uncaught PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'original business rows and archive versions are retained.\nCREATE TABLE IF NOT...' at line 1 in /tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/calendar/integration.php:23\nStack trace:\n#0 /tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/calendar/integration.php(23): PDO->exec()\n#1 {main}\n  thrown in /tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/calendar/integration.php on line 23\n",
+  "stderr": "PHP Fatal error:  Uncaught PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'original business rows and archive versions are retained.\nCREATE TABLE IF NOT...' at line 1 in /tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/calendar/integration.php:23\nStack trace:\n#0 /tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/calendar/integration.php(23): PDO->exec()\n#1 {main}\n  thrown in /tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/calendar/integration.php on line 23\nTraceback (most recent call last):\n  File \"/tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/calendar/run.py\", line 69, in <module>\n    subprocess.run(['php', str(root/'tests/calendar/integration.php')], check=True, env=env)\n  File \"/usr/lib/python3.12/subprocess.py\", line 571, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['php', '/tmp/dewawi-t6-pre-t1-l0tqvd9q/tests/calendar/integration.php']' returned non-zero exit status 255.\n"
+}

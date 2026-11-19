@@ -1,0 +1,31 @@
+{
+  "commands": [
+    {
+      "command": [
+        "php",
+        "tests/security/notifications.php"
+      ],
+      "exit_code": 0,
+      "stdout": "PASS: 382 notification rendering, flash, translation and email history checks\nPASS: 64 sales document helper rendering checks\nPASS: 24 purchases document helper rendering checks\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "tests/contacts/history-states.php"
+      ],
+      "exit_code": 0,
+      "stdout": "PASS: 49 history checks; both locales, selectable states and authorization/tenant guards\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "tests/documents/document-labels.php"
+      ],
+      "exit_code": 0,
+      "stdout": "PASS: 139 PDF label and document change schema checks; all UI/document locales, three pages, neutral colors and preserved content\n",
+      "stderr": ""
+    }
+  ]
+}

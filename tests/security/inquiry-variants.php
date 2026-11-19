@@ -166,6 +166,7 @@ checkVariant(!variantResult($config, $values)['candidates'] && in_array('variant
 $adapter->rollBack();
 $variantView = new Zend_View();
 $variantView->addScriptPath($root.'/application/modules/shops/views/scripts');
+$variantView->addHelperPath($root.'/application/views/helpers', 'Zend_View_Helper');
 $escapedVariant = variantResult($config, $values) + ['editable' => true];
 $escapedVariant['candidates'][0]['title'] = '<script>window.variantInjected=true</script>';
 $escapedVariant['options'][0]['title'] = '<img src=x onerror=alert(1)>';

@@ -45,6 +45,9 @@ function viewingCheckMarks(array $response, string $mark, int $minimumPages = 1)
 
 recoveryTestInsert('quote', array_replace($pdo->query('SELECT * FROM quote WHERE id = 601')->fetch(PDO::FETCH_ASSOC), ['id' => 690, 'quoteid' => 9690]));
 recoveryTestInsert('quotepos', array_replace($pdo->query('SELECT * FROM quotepos WHERE parentid = 601')->fetch(PDO::FETCH_ASSOC), ['id' => 690, 'parentid' => 690]));
+// A separate synthetic English document; existing stored document languages remain untouched.
+recoveryTestInsert('quote', array_replace($pdo->query('SELECT * FROM quote WHERE id = 601')->fetch(PDO::FETCH_ASSOC), ['id' => 691, 'quoteid' => 9691, 'language' => 'en_US']));
+recoveryTestInsert('quotepos', array_replace($pdo->query('SELECT * FROM quotepos WHERE parentid = 601')->fetch(PDO::FETCH_ASSOC), ['id' => 691, 'parentid' => 691]));
 
 // Synthetic equivalent of the reported invoice; no production data is used.
 recoveryTestInsert('invoice', array_replace($pdo->query('SELECT * FROM invoice WHERE id = 603')->fetch(PDO::FETCH_ASSOC), ['id' => 59505, 'invoiceid' => 112326, 'filename' => 'Rechnung-112326.pdf']));
@@ -134,7 +137,9 @@ try {
 		preg_match('~<section[^>]*data-document-status="historical_viewing_copy".*?</section>~s', $panel['bytes'], $match);
 		file_put_contents($work . '/viewing-panel-' . $locale . '.html', '<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="file://' . $root . '/css/ui.css"><body>' . $panel['bytes'] . '</body></html>');
 	}
-	viewingCheckMarks(recoveryTestDownload($quoteQuery + ['action' => 'reconstructed', 'locale' => 'en_US']), 'COPY', 2);
+	recoveryTestCheck($pdo->query('SELECT language FROM quote WHERE id = 601')->fetchColumn() === 'de_DE', 'German document fixture lost its explicit stored language');
+	viewingCheckMarks(recoveryTestDownload($quoteQuery + ['action' => 'reconstructed', 'locale' => 'en_US']), 'KOPIE', 2);
+	foreach (['de_DE', 'en_US'] as $uiLocale) viewingCheckMarks(recoveryTestDownload(['module' => 'sales', 'controller' => 'quote', 'id' => 691, 'action' => 'reconstructed', 'locale' => $uiLocale]), 'COPY', 2);
 	// Missing stored amounts, contradictory totals and unavailable layouts remain visible as raw data.
 	foreach (['UPDATE quotepos SET total = NULL WHERE parentid = 601', 'UPDATE quote SET total = 200 WHERE id = 601', 'UPDATE quote SET templateid = 999999 WHERE id = 601', "UPDATE quote SET currency = '' WHERE id = 601", "UPDATE quote SET billingstreet = '' WHERE id = 601", 'UPDATE quote SET quoteid = NULL, quotedate = NULL WHERE id = 601', 'UPDATE quotepos SET deleted = 1 WHERE parentid = 601'] as $sql) {
 		$pdo->exec($sql);
@@ -217,7 +222,7 @@ try {
 			$pdo->exec("UPDATE `$table` SET `{$table}id` = NULL, state = 100, completed = 0, pdfshowcover = $cover WHERE id = $id");
 			$response = recoveryTestDownload($query + ['action' => 'preview']);
 			viewingCheckMarks($response, 'MUSTER', $cover ? 2 : 1);
-			if ($table === 'quote') viewingCheckMarks(recoveryTestDownload($query + ['action' => 'download', 'locale' => 'en_US']), 'SAMPLE', $cover ? 2 : 1);
+			if ($table === 'quote') viewingCheckMarks(recoveryTestDownload($query + ['action' => 'download', 'locale' => 'en_US']), 'MUSTER', $cover ? 2 : 1);
 			$pdo->exec("UPDATE `$table` SET `{$table}id` = " . (9000 + $id) . ", state = 105, completed = 1, pdfshowcover = 1 WHERE id = $id");
 		}
 		foreach (['completed = 1', 'cancelled = 1', 'state = 105', 'state = 106'] as $state) {

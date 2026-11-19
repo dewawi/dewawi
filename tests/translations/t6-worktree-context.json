@@ -1,0 +1,82 @@
+{
+  "initial_head": "1910ef01",
+  "initial_status": "clean",
+  "own_modified_tracked_paths": [
+    "tests/calendar/integration.php",
+    "tests/contacts/history-states.php",
+    "tests/documents/document-labels.php",
+    "tests/documents/document-viewing-fixtures.php",
+    "tests/security/fixtures/inquiry-pilot-http.php",
+    "tests/security/inquiry-catalog.php",
+    "tests/security/inquiry-variants.php",
+    "tests/security/notifications.php",
+    "tests/security/shop-inquiry-quote.php",
+    "tests/translations/README.md",
+    "tests/translations/summarize-t4.py",
+    "tests/translations/validate.py"
+  ],
+  "unrelated_modified_paths": [
+    "application/modules/admin/forms/Toolbar.php",
+    "application/modules/contacts/forms/Toolbar.php",
+    "application/modules/contacts/forms/ToolbarInline.php",
+    "application/modules/items/forms/Toolbar.php",
+    "application/modules/items/forms/ToolbarInline.php",
+    "application/modules/tasks/forms/Toolbar.php",
+    "application/modules/tasks/forms/ToolbarInline.php",
+    "tests/ui/apply-buttons.php",
+    "tests/ui/button-inventory.php",
+    "tests/ui/button-page-integration.py",
+    "tests/ui/button-release-audit.py",
+    "tests/ui/button-system-inventory.md",
+    "tests/ui/list-buttons.php",
+    "tests/ui/list-buttons.py",
+    "tests/ui/remaining-toolbars.php",
+    "tests/ui/tasks-toolbar.php",
+    "tests/ui/toolbar-buttons.php",
+    "tests/ui/toolbar-buttons.py"
+  ],
+  "unrelated_source_sha256": {
+    "application/modules/admin/forms/Toolbar.php": "256d582034336afc4201cda92cd26a5900c876cc57f1ec0ad76f2edb3b20dd20",
+    "application/modules/contacts/forms/Toolbar.php": "fd823f1c1e28224833f577383dcbfcfcaee3db1b65f8abe493b43c4ecace7448",
+    "application/modules/contacts/forms/ToolbarInline.php": "7cf13671cfdb1ee1fd099b62ff2b12741b1e2c74c653942e54d328c42b56a21c",
+    "application/modules/items/forms/Toolbar.php": "6eabbca97c646977419e4c31118b96f726c7c02d2ff511abf115f63bdf6fe365",
+    "application/modules/items/forms/ToolbarInline.php": "8ba8a4df7a26e0d7af998e95e9535c22d6576fa66d2171b1fe196a491198cb07",
+    "application/modules/tasks/forms/Toolbar.php": "a63653227ef1a7bf61013b14130cf8a4eaae00f08c2b99bbb0081ae7dafa2c31",
+    "application/modules/tasks/forms/ToolbarInline.php": "9a0df674504075f8adf805f25f1112e2b6f91ef53845f1e031c091b7b60e11bb",
+    "tests/ui/apply-buttons.php": "320d741eda8cdaa8f4ab99a156801cb51b6819d97d73f85d2fe78e260dd8efe4",
+    "tests/ui/button-inventory.php": "8f11e6731f4dae4044046b1e2b3ddac30ea81758f745be460de41b8171bad7c6",
+    "tests/ui/button-page-integration.py": "269f7f5d8f284fc63813fdafe4d89eda41df0a251a8bd092752fa8018784e95b",
+    "tests/ui/button-release-audit.py": "20cee6200d8cad9c8ea0032e7b4f6c02d664d3bd5d00ace2b7b137a9f2a96337",
+    "tests/ui/button-system-inventory.md": "d76307539b50319da31d08afdeae4a4bef44e570d3379bba81a5ad2c8370cae1",
+    "tests/ui/list-buttons.php": "f61c4d3acf344990709753c1a73fd13d02e2173bafbc120cf20bde20b6811a00",
+    "tests/ui/list-buttons.py": "c3d267df9030e22de8458b66a2bce09bbbb188c9129a32c2ff9e730cae88715f",
+    "tests/ui/remaining-toolbars.php": "b740be5e6cc92af35f47196fcec0e08e4fa9d848b4897a9b329e173c11d04d8e",
+    "tests/ui/tasks-toolbar.php": "a1802e2f92473a50da98e63ac2d0011118f32d664f897f6ec0a8809c2b502f23",
+    "tests/ui/toolbar-buttons.php": "e2074dac789eddef98aeea049667ba6cea1228c70355a78b79971a90a50f3c79",
+    "tests/ui/toolbar-buttons.py": "9572f514b7799a420aca6ab743b56a372b69d5d0bac0c1e5156ec9efc814472e"
+  },
+  "audited_production_differences_from_t5": [
+    "application/modules/admin/forms/Toolbar.php",
+    "application/modules/contacts/forms/Toolbar.php",
+    "application/modules/contacts/forms/ToolbarInline.php",
+    "application/modules/items/forms/Toolbar.php",
+    "application/modules/items/forms/ToolbarInline.php",
+    "application/modules/tasks/forms/Toolbar.php",
+    "application/modules/tasks/forms/ToolbarInline.php"
+  ],
+  "note": "Concurrent unrelated changes appeared after T6 started. They are neither changed nor staged by T6. A failing toolbar assertion is not accepted as baseline.",
+  "unrelated_work_confirmed_by_user": true,
+  "head_at_final_validation": "1910ef01938a1e70a30b03d02f85dd82579a21ce",
+  "audited_source_matches_current_files": true,
+  "final_validator": "passed",
+  "final_broad_suites": "8/8 passed",
+  "intermediate_toolbar_failure": "Retained in t6-intermediate-validation.json and t6-intermediate-suites.json; fixed by parallel work, not T6.",
+  "unrelated_untracked_paths": [
+    "tests/ui/delete-apply-browser.py",
+    "tests/ui/delete-apply-buttons.php"
+  ],
+  "unrelated_untracked_sha256": {
+    "tests/ui/delete-apply-browser.py": "0aa32505725afb2a2429bba20c4d9015903c87aac8e903b675a700e80ba8c9d5",
+    "tests/ui/delete-apply-buttons.php": "c54a02eac36f72fad4d1a9ce5f0dd42c767d2d851d21a6401fe93699ecdbf10c"
+  }
+}

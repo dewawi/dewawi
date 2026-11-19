@@ -37,6 +37,7 @@ Zend_Registry::set('Zend_Locale', new Zend_Locale('de_DE'));
 Zend_Registry::set('Zend_Currency', new Zend_Currency('EUR', 'de_DE'));
 $translator = new DEEC_Translate('de_DE');
 $translator->loadDir('default', $root.'/languages/de_DE/default');
+$translator->loadModule('shops');
 $translator->loadDir('country', $root.'/languages/de_DE/country');
 Zend_Registry::set('DEEC_Translate', $translator);
 require_once $root.'/application/modules/shops/controllers/InquiryController.php';

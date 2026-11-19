@@ -153,6 +153,7 @@ checkCatalog(!$excess['candidates'] && in_array('catalog_attribute_limit', $exce
 foreach([900 => $config, 901 => $trade] as $id => $fields) $adapter->insert('shopinquiryform', ['id' => $id, 'shopid' => 120, 'clientid' => 100, 'title' => 'Synthetic catalog form '.$id, 'fields' => json_encode($fields), 'quotetemplateid' => 100]);
 $view = new Zend_View();
 $view->addScriptPath($root.'/application/modules/shops/views/scripts');
+$view->addHelperPath($root.'/application/views/helpers', 'Zend_View_Helper');
 $view->addHelperPath($root.'/application/modules/shops/views/helpers', 'Zend_View_Helper');
 $rendered = $view->partial('inquiry/catalog.phtml', ['selection' => catalogResult($config, $values)]);
 checkCatalog(str_contains($rendered, 'Katalogvorschläge') && str_contains($rendered, 'data-itemid="1001"') && !str_contains($rendered, 'Berechneter Wert'), 'Generic catalog view depends on legacy calculation fields');

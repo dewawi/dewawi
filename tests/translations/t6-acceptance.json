@@ -1,0 +1,297 @@
+{
+  "base_commit": "1910ef01",
+  "acceptance": "passed",
+  "source_sha256": "3ef398fcd7f717a89c0b5582d537aaa588f1dd266a6db8754a04553d3439ecd0",
+  "counts": {
+    "passed": 235,
+    "failed": 0
+  },
+  "corrections": [
+    {
+      "id": 1,
+      "scenario": "login HTML language de_DE",
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "application/modules/users/views/scripts/user/login.phtml"
+      ],
+      "evidence": "t6-http-browser.json"
+    },
+    {
+      "id": 2,
+      "scenario": "failed login message en_US",
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "application/modules/users/controllers/UserController.php",
+        "languages/en_US/users/user.php"
+      ],
+      "evidence": "t6-http-browser.json"
+    },
+    {
+      "id": 3,
+      "scenario": "browser module ebay de_DE",
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "application/views/helpers/Breadcrumbs.php",
+        "application/modules/ebay/forms/Listing.php"
+      ],
+      "evidence": "t6-http-browser.json"
+    },
+    {
+      "id": 4,
+      "scenario": "browser module statistics de_DE",
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "application/views/helpers/Breadcrumbs.php"
+      ],
+      "evidence": "t6-http-browser.json"
+    },
+    {
+      "id": 5,
+      "scenario": "browser module users de_DE",
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "application/views/helpers/Breadcrumbs.php"
+      ],
+      "evidence": "t6-http-browser.json"
+    },
+    {
+      "id": 6,
+      "scenario": "English admin descriptions",
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "application/modules/admin/views/scripts/index/index.phtml",
+        "languages/en_US/admin/admin.php"
+      ],
+      "evidence": "t6-http-browser.json"
+    },
+    {
+      "id": 7,
+      "scenario": "browser module ebay en_US",
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "application/views/helpers/Breadcrumbs.php",
+        "application/modules/ebay/forms/Listing.php"
+      ],
+      "evidence": "t6-http-browser.json"
+    },
+    {
+      "id": 8,
+      "scenario": "browser module statistics en_US",
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "application/views/helpers/Breadcrumbs.php"
+      ],
+      "evidence": "t6-http-browser.json"
+    },
+    {
+      "id": 9,
+      "scenario": "browser module users en_US",
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "application/views/helpers/Breadcrumbs.php"
+      ],
+      "evidence": "t6-http-browser.json"
+    },
+    {
+      "id": 10,
+      "scenario": "English password dialog trigger",
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "application/modules/users/views/scripts/user/edit.phtml"
+      ],
+      "evidence": "t6-http-browser.json"
+    },
+    {
+      "id": 11,
+      "scenario": "public contact wording error en_US",
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "application/modules/shops/views/scripts/contact/error.phtml",
+        "languages/en_US/shops/shops.php"
+      ],
+      "evidence": "t6-http-browser.json"
+    },
+    {
+      "id": 12,
+      "scenario": "browser actual language selector reload",
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "js/global.js"
+      ],
+      "evidence": "t6-http-browser.json"
+    },
+    {
+      "id": 13,
+      "scenario": {
+        "pdf": [
+          "de_DE",
+          "en_US",
+          "quote"
+        ],
+        "check": "document_number_format"
+      },
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "library/DEEC/Pdf.php",
+        "application/modules/sales/services/DocumentPayloadService.php",
+        "application/modules/purchases/services/DocumentPayloadService.php",
+        "application/controllers/helpers/Currency.php",
+        "application/controllers/helpers/Calculate.php"
+      ],
+      "evidence": "t6-pdf.json"
+    },
+    {
+      "id": 14,
+      "scenario": {
+        "pdf": [
+          "de_DE",
+          "en_US",
+          "salesorder"
+        ],
+        "check": "document_number_format"
+      },
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "library/DEEC/Pdf.php",
+        "application/modules/sales/services/DocumentPayloadService.php",
+        "application/modules/purchases/services/DocumentPayloadService.php",
+        "application/controllers/helpers/Currency.php",
+        "application/controllers/helpers/Calculate.php"
+      ],
+      "evidence": "t6-pdf.json"
+    },
+    {
+      "id": 15,
+      "scenario": {
+        "pdf": [
+          "de_DE",
+          "en_US",
+          "invoice"
+        ],
+        "check": "document_number_format"
+      },
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "library/DEEC/Pdf.php",
+        "application/modules/sales/services/DocumentPayloadService.php",
+        "application/modules/purchases/services/DocumentPayloadService.php",
+        "application/controllers/helpers/Currency.php",
+        "application/controllers/helpers/Calculate.php"
+      ],
+      "evidence": "t6-pdf.json"
+    },
+    {
+      "id": 16,
+      "scenario": {
+        "pdf": [
+          "en_US",
+          "de_DE",
+          "quote"
+        ],
+        "check": "document_number_format"
+      },
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "library/DEEC/Pdf.php",
+        "application/modules/sales/services/DocumentPayloadService.php",
+        "application/modules/purchases/services/DocumentPayloadService.php",
+        "application/controllers/helpers/Currency.php",
+        "application/controllers/helpers/Calculate.php"
+      ],
+      "evidence": "t6-pdf.json"
+    },
+    {
+      "id": 17,
+      "scenario": {
+        "pdf": [
+          "en_US",
+          "de_DE",
+          "salesorder"
+        ],
+        "check": "document_number_format"
+      },
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "library/DEEC/Pdf.php",
+        "application/modules/sales/services/DocumentPayloadService.php",
+        "application/modules/purchases/services/DocumentPayloadService.php",
+        "application/controllers/helpers/Currency.php",
+        "application/controllers/helpers/Calculate.php"
+      ],
+      "evidence": "t6-pdf.json"
+    },
+    {
+      "id": 18,
+      "scenario": {
+        "pdf": [
+          "en_US",
+          "de_DE",
+          "invoice"
+        ],
+        "check": "document_number_format"
+      },
+      "before": "failed",
+      "after": "passed",
+      "files": [
+        "library/DEEC/Pdf.php",
+        "application/modules/sales/services/DocumentPayloadService.php",
+        "application/modules/purchases/services/DocumentPayloadService.php",
+        "application/controllers/helpers/Currency.php",
+        "application/controllers/helpers/Calculate.php"
+      ],
+      "evidence": "t6-pdf.json"
+    }
+  ],
+  "extended_browser": {
+    "passed": 12
+  },
+  "extended_numeric": {
+    "sales": {
+      "passed": 180,
+      "failed": 0
+    },
+    "purchases": {
+      "passed": 120,
+      "failed": 0
+    }
+  },
+  "module_language_contexts": 28,
+  "http_domain_and_text_comparisons": 39,
+  "existing_catalogue_keys_and_values_preserved": true,
+  "domain_order_preserved": true,
+  "baseline_failure_note": "Six former aborts investigated separately; see t6-readiness.json and before/after evidence. No baseline failures are accepted by the validator.",
+  "stage": "T6",
+  "hardcodes": {
+    "completed_t5": 133,
+    "technical_internal": 51,
+    "business_unclear": 2,
+    "dynamic_or_translated": 9,
+    "completed_t4": 9
+  },
+  "remaining_confirmed_ui_hardcodes": 0,
+  "cleanup": {
+    "passed": 86,
+    "failed": 0
+  },
+  "additional_browser_checks": 33,
+  "quality_policy_sha256": "5578671e971e270ef281410003ec8bae19699fb28927180a518f2147cf902765",
+  "production_sources_unchanged_from_t5": false,
+  "readiness_report": "T6-release-readiness.md"
+}

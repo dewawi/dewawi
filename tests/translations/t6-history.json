@@ -1,0 +1,125 @@
+{
+  "scope": "Read-only git blob comparison; runtime reproduction at pre-T1 and T5 is stored separately. Other stages are source history, not claimed full historical suite reruns.",
+  "stages": {
+    "pre_t1": {
+      "commit": "d68f7a8c",
+      "git_blobs": {
+        "tests/security/notifications.php": "48e2f156696187f15acad7f1c79286a91b526b6a",
+        "application/modules/sales/views/helpers/Finish.php": "d50c24a34fa4a98b19494d983e7e002536d4b827",
+        "tests/contacts/history-states.php": "921d2e518b5b698e31ab29396b5b052bfe42823b",
+        "application/modules/contacts/models/Get.php": "523411c60b7b8284382f2383d6d92bd2bff3c70b",
+        "tests/security/inquiry-catalog.php": "5d8715b4c6308a30d9a9bfc3cdbb778ccaed51be",
+        "application/modules/shops/views/scripts/inquiry/catalog.phtml": "c26be1a6eb120b59168a90dea9c8c62411811dd9",
+        "tests/calendar/integration.php": "3e41ae5b7dbe01be77b6e3b335a45a28c1eaa31b",
+        "install/config/update-1.1.7-1.1.8.sql": "d5ea2436b2a71bc582e4b8809d7034ac7af68214",
+        "tests/documents/document-labels.php": "225510756175e26f9b2e38420b0e1d99651c863b",
+        "tests/documents/document-viewing-fixtures.php": "13a714e65705f6c76992c177229c166cffb90462",
+        "library/DEEC/Pdf.php": "738a3dadc6cb915ec8c7c5ade21416f91e1f21b0"
+      }
+    },
+    "t1": {
+      "commit": "c6325897",
+      "git_blobs": {
+        "tests/security/notifications.php": "48e2f156696187f15acad7f1c79286a91b526b6a",
+        "application/modules/sales/views/helpers/Finish.php": "d50c24a34fa4a98b19494d983e7e002536d4b827",
+        "tests/contacts/history-states.php": "921d2e518b5b698e31ab29396b5b052bfe42823b",
+        "application/modules/contacts/models/Get.php": "523411c60b7b8284382f2383d6d92bd2bff3c70b",
+        "tests/security/inquiry-catalog.php": "5d8715b4c6308a30d9a9bfc3cdbb778ccaed51be",
+        "application/modules/shops/views/scripts/inquiry/catalog.phtml": "c26be1a6eb120b59168a90dea9c8c62411811dd9",
+        "tests/calendar/integration.php": "3e41ae5b7dbe01be77b6e3b335a45a28c1eaa31b",
+        "install/config/update-1.1.7-1.1.8.sql": "d5ea2436b2a71bc582e4b8809d7034ac7af68214",
+        "tests/documents/document-labels.php": "225510756175e26f9b2e38420b0e1d99651c863b",
+        "tests/documents/document-viewing-fixtures.php": "13a714e65705f6c76992c177229c166cffb90462",
+        "library/DEEC/Pdf.php": "738a3dadc6cb915ec8c7c5ade21416f91e1f21b0"
+      }
+    },
+    "t2a": {
+      "commit": "00a99d88",
+      "git_blobs": {
+        "tests/security/notifications.php": "48e2f156696187f15acad7f1c79286a91b526b6a",
+        "application/modules/sales/views/helpers/Finish.php": "d50c24a34fa4a98b19494d983e7e002536d4b827",
+        "tests/contacts/history-states.php": "921d2e518b5b698e31ab29396b5b052bfe42823b",
+        "application/modules/contacts/models/Get.php": "523411c60b7b8284382f2383d6d92bd2bff3c70b",
+        "tests/security/inquiry-catalog.php": "5d8715b4c6308a30d9a9bfc3cdbb778ccaed51be",
+        "application/modules/shops/views/scripts/inquiry/catalog.phtml": "c26be1a6eb120b59168a90dea9c8c62411811dd9",
+        "tests/calendar/integration.php": "3e41ae5b7dbe01be77b6e3b335a45a28c1eaa31b",
+        "install/config/update-1.1.7-1.1.8.sql": "d5ea2436b2a71bc582e4b8809d7034ac7af68214",
+        "tests/documents/document-labels.php": "225510756175e26f9b2e38420b0e1d99651c863b",
+        "tests/documents/document-viewing-fixtures.php": "13a714e65705f6c76992c177229c166cffb90462",
+        "library/DEEC/Pdf.php": "fa53efc37b1d22575a62a809d2db9cc32b6fdfff"
+      }
+    },
+    "t2b": {
+      "commit": "88eef4c0",
+      "git_blobs": {
+        "tests/security/notifications.php": "48e2f156696187f15acad7f1c79286a91b526b6a",
+        "application/modules/sales/views/helpers/Finish.php": "d50c24a34fa4a98b19494d983e7e002536d4b827",
+        "tests/contacts/history-states.php": "921d2e518b5b698e31ab29396b5b052bfe42823b",
+        "application/modules/contacts/models/Get.php": "523411c60b7b8284382f2383d6d92bd2bff3c70b",
+        "tests/security/inquiry-catalog.php": "5d8715b4c6308a30d9a9bfc3cdbb778ccaed51be",
+        "application/modules/shops/views/scripts/inquiry/catalog.phtml": "4833f3c019f0b29063c7c412aba7d2d3c9b91318",
+        "tests/calendar/integration.php": "3e41ae5b7dbe01be77b6e3b335a45a28c1eaa31b",
+        "install/config/update-1.1.7-1.1.8.sql": "d5ea2436b2a71bc582e4b8809d7034ac7af68214",
+        "tests/documents/document-labels.php": "225510756175e26f9b2e38420b0e1d99651c863b",
+        "tests/documents/document-viewing-fixtures.php": "13a714e65705f6c76992c177229c166cffb90462",
+        "library/DEEC/Pdf.php": "fa53efc37b1d22575a62a809d2db9cc32b6fdfff"
+      }
+    },
+    "t3": {
+      "commit": "87ac98c1",
+      "git_blobs": {
+        "tests/security/notifications.php": "48e2f156696187f15acad7f1c79286a91b526b6a",
+        "application/modules/sales/views/helpers/Finish.php": "d50c24a34fa4a98b19494d983e7e002536d4b827",
+        "tests/contacts/history-states.php": "921d2e518b5b698e31ab29396b5b052bfe42823b",
+        "application/modules/contacts/models/Get.php": "523411c60b7b8284382f2383d6d92bd2bff3c70b",
+        "tests/security/inquiry-catalog.php": "5d8715b4c6308a30d9a9bfc3cdbb778ccaed51be",
+        "application/modules/shops/views/scripts/inquiry/catalog.phtml": "4833f3c019f0b29063c7c412aba7d2d3c9b91318",
+        "tests/calendar/integration.php": "3e41ae5b7dbe01be77b6e3b335a45a28c1eaa31b",
+        "install/config/update-1.1.7-1.1.8.sql": "d5ea2436b2a71bc582e4b8809d7034ac7af68214",
+        "tests/documents/document-labels.php": "225510756175e26f9b2e38420b0e1d99651c863b",
+        "tests/documents/document-viewing-fixtures.php": "13a714e65705f6c76992c177229c166cffb90462",
+        "library/DEEC/Pdf.php": "fa53efc37b1d22575a62a809d2db9cc32b6fdfff"
+      }
+    },
+    "t4": {
+      "commit": "22bc7ab1",
+      "git_blobs": {
+        "tests/security/notifications.php": "48e2f156696187f15acad7f1c79286a91b526b6a",
+        "application/modules/sales/views/helpers/Finish.php": "d50c24a34fa4a98b19494d983e7e002536d4b827",
+        "tests/contacts/history-states.php": "921d2e518b5b698e31ab29396b5b052bfe42823b",
+        "application/modules/contacts/models/Get.php": "523411c60b7b8284382f2383d6d92bd2bff3c70b",
+        "tests/security/inquiry-catalog.php": "5d8715b4c6308a30d9a9bfc3cdbb778ccaed51be",
+        "application/modules/shops/views/scripts/inquiry/catalog.phtml": "4833f3c019f0b29063c7c412aba7d2d3c9b91318",
+        "tests/calendar/integration.php": "3e41ae5b7dbe01be77b6e3b335a45a28c1eaa31b",
+        "install/config/update-1.1.7-1.1.8.sql": "d5ea2436b2a71bc582e4b8809d7034ac7af68214",
+        "tests/documents/document-labels.php": "225510756175e26f9b2e38420b0e1d99651c863b",
+        "tests/documents/document-viewing-fixtures.php": "13a714e65705f6c76992c177229c166cffb90462",
+        "library/DEEC/Pdf.php": "e5d9163dbe7692b266e8f49d277fe1e94485269e"
+      }
+    },
+    "t5": {
+      "commit": "1910ef01",
+      "git_blobs": {
+        "tests/security/notifications.php": "338f94fad143d591ef125fe568846c1f9013f63e",
+        "application/modules/sales/views/helpers/Finish.php": "d50c24a34fa4a98b19494d983e7e002536d4b827",
+        "tests/contacts/history-states.php": "921d2e518b5b698e31ab29396b5b052bfe42823b",
+        "application/modules/contacts/models/Get.php": "523411c60b7b8284382f2383d6d92bd2bff3c70b",
+        "tests/security/inquiry-catalog.php": "5d8715b4c6308a30d9a9bfc3cdbb778ccaed51be",
+        "application/modules/shops/views/scripts/inquiry/catalog.phtml": "4833f3c019f0b29063c7c412aba7d2d3c9b91318",
+        "tests/calendar/integration.php": "3e41ae5b7dbe01be77b6e3b335a45a28c1eaa31b",
+        "install/config/update-1.1.7-1.1.8.sql": "d5ea2436b2a71bc582e4b8809d7034ac7af68214",
+        "tests/documents/document-labels.php": "225510756175e26f9b2e38420b0e1d99651c863b",
+        "tests/documents/document-viewing-fixtures.php": "13a714e65705f6c76992c177229c166cffb90462",
+        "library/DEEC/Pdf.php": "e5d9163dbe7692b266e8f49d277fe1e94485269e"
+      }
+    }
+  },
+  "causal_changes": {
+    "notifications": "e79ab895 (helper calls revision service absent in isolated fixture)",
+    "history": "e61722be and b32241c1 (authorization and contact ownership guards absent in fixture)",
+    "calendar": "e79ab895 (non-calendar append contains semicolon in SQL comment; fixture splits entire trailing migration)",
+    "shop": "88eef4c0 (real template translations require the shop catalogue and DEEC view helper in isolated fixture)",
+    "pdf_labels": "00a99d88 (marking fallback follows translator/document context)",
+    "pdf_viewing": "00a99d88 (document language takes precedence over UI for draft/copy marks)"
+  }
+}

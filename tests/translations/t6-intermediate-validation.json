@@ -1,0 +1,321 @@
+{
+  "stage": "T6",
+  "source_sha256": "3ef398fcd7f717a89c0b5582d537aaa588f1dd266a6db8754a04553d3439ecd0",
+  "baseline_summary": {
+    "locales": 2,
+    "application_modules": 13,
+    "catalogue_modules_including_default": 17,
+    "catalogue_files": 114,
+    "entries": 6206,
+    "unique_keys_union": 3607,
+    "by_locale": {
+      "de_DE": {
+        "files": 66,
+        "entries": 3526,
+        "unique_keys": 3513,
+        "catalogue_modules": 16
+      },
+      "en_US": {
+        "files": 48,
+        "entries": 2680,
+        "unique_keys": 2664,
+        "catalogue_modules": 14
+      }
+    },
+    "shared_unique_keys": 2570,
+    "missing_unique_keys_en_US": 943,
+    "missing_unique_keys_de_DE": 94,
+    "missing_files_en_US": 22,
+    "missing_files_de_DE": 4,
+    "literal_calls": 1443,
+    "literal_key_calls": 1429,
+    "unique_literal_keys": 830,
+    "dynamic_calls": 194,
+    "usage_classifications": {
+      "unresolved": 914,
+      "literal_call_found": 809,
+      "indirect_literal_candidate": 1781,
+      "possibly_dynamic": 103
+    },
+    "safely_unused": 0,
+    "hardcoded_candidates": 256,
+    "issue_counts": {
+      "catalogue_errors": 0,
+      "confirmed_spelling_errors": 17,
+      "duplicate_keys_in_file": 16,
+      "empty_keys": 0,
+      "empty_values": 0,
+      "german_in_english_candidates": 28,
+      "identical_locale_values": 318,
+      "identity_values": 0,
+      "invalid_utf8": 0,
+      "mojibake_candidates": 0,
+      "placeholder_mismatches": 0,
+      "placeholder_review": 0,
+      "source_scan_errors": 0,
+      "template_placeholder_mismatches": 0,
+      "utf8_bom": 0
+    }
+  },
+  "current_summary": {
+    "locales": 2,
+    "application_modules": 13,
+    "catalogue_modules_including_default": 18,
+    "catalogue_files": 142,
+    "entries": 7988,
+    "unique_keys_union": 3868,
+    "by_locale": {
+      "de_DE": {
+        "files": 71,
+        "entries": 3994,
+        "unique_keys": 3868,
+        "catalogue_modules": 18
+      },
+      "en_US": {
+        "files": 71,
+        "entries": 3994,
+        "unique_keys": 3868,
+        "catalogue_modules": 18
+      }
+    },
+    "shared_unique_keys": 3868,
+    "missing_unique_keys_en_US": 0,
+    "missing_unique_keys_de_DE": 0,
+    "missing_files_en_US": 0,
+    "missing_files_de_DE": 0,
+    "literal_calls": 1725,
+    "literal_key_calls": 1723,
+    "unique_literal_keys": 1025,
+    "dynamic_calls": 200,
+    "usage_classifications": {
+      "unresolved": 910,
+      "literal_call_found": 1024,
+      "indirect_literal_candidate": 1831,
+      "possibly_dynamic": 103
+    },
+    "safely_unused": 0,
+    "hardcoded_candidates": 59,
+    "issue_counts": {
+      "catalogue_errors": 0,
+      "confirmed_spelling_errors": 0,
+      "duplicate_keys_in_file": 0,
+      "empty_keys": 0,
+      "empty_values": 0,
+      "german_in_english_candidates": 0,
+      "identical_locale_values": 305,
+      "identity_values": 0,
+      "invalid_utf8": 0,
+      "mojibake_candidates": 0,
+      "placeholder_mismatches": 0,
+      "placeholder_review": 0,
+      "source_scan_errors": 0,
+      "template_placeholder_mismatches": 0,
+      "utf8_bom": 0
+    }
+  },
+  "commands": [
+    {
+      "command": "php -l (catalogues, affected PHP and audit fixtures)",
+      "files": 210,
+      "status": "passed",
+      "errors": []
+    },
+    {
+      "command": "python3 -B tests/translations/audit-test.py",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "",
+      "stderr": "..............................\n\nOK"
+    },
+    {
+      "command": "php tests/translations/runtime.php",
+      "exit_code": 0,
+      "status": "passed",
+      "checks": 157
+    },
+    {
+      "command": "php tests/translations/cleanup.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "{\n    \"scope\": \"Actual helpers, dynamic form, public checkout error and all installer templates; synthetic data only\",\n    \"counts\": {\n        \"passed\": 86,\n        \"failed\": 0\n    },\n    \"results\": [\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"shared empty media and upload\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"shared media placeholders\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"shared media values remain escaped\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"renderMobileDrawer accessible labels\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"renderDesktopTopbar accessible labels\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"renderDeleteButton label and data attributes\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"renderAddButton label and data attributes\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"dynamic inquiry first buttons and CSRF\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"dynamic inquiry last buttons and CSRF\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"public checkout failure without data\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"public checkout failure with escaped submitted data\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"cart shipping CMS link and stored amounts\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"public search form\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"inquiry suggestion warning and list price\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"inquiry suggestion warning and special price\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"contact selection review approved\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"contact selection review manual with unchanged reason codes\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"JS export MESSAGES_DELETE_CONFIRM\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"JS export MESSAGES_VARIANT_CREATE_FAILED\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"JS export MESSAGES_RECORD_UNAVAILABLE\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"JS export MESSAGES_SAVE_FAILED\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"localized error page ERROR_NOT_FOUND\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"localized error page ERROR_APPLICATION\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer header failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer header success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer introduction failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer introduction success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer license failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer license success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer requirements failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer requirements success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer filePermissions failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer filePermissions success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer database failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer database success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer importSQL failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer importSQL success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer done failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer done success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer footer failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer footer success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer translator preserves application context\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"de_DE\",\n            \"scenario\": \"installer interpolated database name escaped\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"shared empty media and upload\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"shared media placeholders\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"shared media values remain escaped\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"renderMobileDrawer accessible labels\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"renderDesktopTopbar accessible labels\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"renderDeleteButton label and data attributes\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"renderAddButton label and data attributes\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"dynamic inquiry first buttons and CSRF\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"dynamic inquiry last buttons and CSRF\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"public checkout failure without data\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"public checkout failure with escaped submitted data\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"cart shipping CMS link and stored amounts\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"public search form\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"inquiry suggestion warning and list price\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"inquiry suggestion warning and special price\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"contact selection review approved\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"contact selection review manual with unchanged reason codes\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"JS export MESSAGES_DELETE_CONFIRM\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"JS export MESSAGES_VARIANT_CREATE_FAILED\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"JS export MESSAGES_RECORD_UNAVAILABLE\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"JS export MESSAGES_SAVE_FAILED\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"localized error page ERROR_NOT_FOUND\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"localized error page ERROR_APPLICATION\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer header failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer header success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer introduction failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer introduction success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer license failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer license success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer requirements failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer requirements success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer filePermissions failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer filePermissions success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer database failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer database success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer importSQL failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer importSQL success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer done failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer done success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer footer failure\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer footer success\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer translator preserves application context\",\n            \"status\": \"passed\"\n        },\n        {\n            \"locale\": \"en_US\",\n            \"scenario\": \"installer interpolated database name escaped\",\n            \"status\": \"passed\"\n        }\n    ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/security/quote-email.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 364 quote email permission, recipient, resend and tenant-sharing checks\n",
+      "stderr": "Email transport did not confirm SMTP acceptance: Fixture SMTP rejection\nEmail transport did not confirm SMTP acceptance: Fixture AJAX SMTP rejection"
+    },
+    {
+      "command": "php tests/security/shop-email-content.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "OK (75 checks)\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/security/contact-data.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 39 tenant-safe contact data cases\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/security/form-input-validation.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 20 full-form, AJAX, decimal, integer and date validation cases\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/security/user-profile.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 126 user profile and password cases\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/ui/buttons.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 165 button presentation, pilot, legacy, translation and permission checks\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/ui/toolbar-buttons.php",
+      "exit_code": 255,
+      "status": "failed",
+      "stdout": "",
+      "stderr": "PHP Fatal error:  Uncaught RuntimeException: Toolbar migration escaped its bounded scope in /var/www/dewawi/tests/ui/buttons.php:32\nStack trace:\n#0 /var/www/dewawi/tests/ui/toolbar-buttons.php(171): check()\n#1 {main}\n  thrown in /var/www/dewawi/tests/ui/buttons.php on line 32"
+    },
+    {
+      "command": "php tests/sales/quote-monitoring.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 293 quote monitoring, defaults, customer actions, due dates and tenant cases\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/documents/pdf.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 208 PDF checks; canonical archive and historical originals preserved, tenant isolation retained\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/documents/pdf-totals.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 244 PDF checks including mixed-rate total boxes, exemption and balance\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/documents/document-labels.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 139 PDF label and document change schema checks; all UI/document locales, three pages, neutral colors and preserved content\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/security/notifications.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 382 notification rendering, flash, translation and email history checks\nPASS: 64 sales document helper rendering checks\nPASS: 24 purchases document helper rendering checks\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/contacts/history-states.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 49 history checks; both locales, selectable states and authorization/tenant guards\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 -B tests/translations/browser.py",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "{\n  \"status\": \"passed\",\n  \"checks\": 33,\n  \"locales\": [\n    \"de_DE\",\n    \"en_US\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 tests/translations/audit.py --fail-on-defects",
+      "exit_code": 0,
+      "status": "passed",
+      "static_model_matches": 28
+    },
+    {
+      "command": "repeat complete audit and compare JSON bytes",
+      "status": "passed"
+    }
+  ],
+  "database_changes": false,
+  "not_run": [
+    "production access",
+    "customer data",
+    "authenticated browser",
+    "live SMTP",
+    "database integration/migrations"
+  ],
+  "notes": [
+    "Former Notifications/History fixtures were repaired in T6; all failures now fail validation.",
+    "Runtime PDF payload and mail template contexts use isolated fixtures."
+  ],
+  "technical_block_commit": "00a99d88",
+  "t2a_summary": {
+    "locales": 2,
+    "application_modules": 13,
+    "catalogue_modules_including_default": 17,
+    "catalogue_files": 115,
+    "entries": 6206,
+    "unique_keys_union": 3607,
+    "by_locale": {
+      "de_DE": {
+        "files": 66,
+        "entries": 3526,
+        "unique_keys": 3513,
+        "catalogue_modules": 16
+      },
+      "en_US": {
+        "files": 49,
+        "entries": 2680,
+        "unique_keys": 2664,
+        "catalogue_modules": 14
+      }
+    },
+    "shared_unique_keys": 2570,
+    "missing_unique_keys_en_US": 943,
+    "missing_unique_keys_de_DE": 94,
+    "missing_files_en_US": 21,
+    "missing_files_de_DE": 4,
+    "literal_calls": 1444,
+    "literal_key_calls": 1430,
+    "unique_literal_keys": 829,
+    "dynamic_calls": 195,
+    "usage_classifications": {
+      "unresolved": 914,
+      "literal_call_found": 808,
+      "indirect_literal_candidate": 1782,
+      "possibly_dynamic": 103
+    },
+    "safely_unused": 0,
+    "hardcoded_candidates": 256,
+    "issue_counts": {
+      "catalogue_errors": 0,
+      "confirmed_spelling_errors": 17,
+      "duplicate_keys_in_file": 16,
+      "empty_keys": 0,
+      "empty_values": 0,
+      "german_in_english_candidates": 28,
+      "identical_locale_values": 318,
+      "identity_values": 0,
+      "invalid_utf8": 0,
+      "mojibake_candidates": 0,
+      "placeholder_mismatches": 0,
+      "placeholder_review": 0,
+      "source_scan_errors": 0,
+      "template_placeholder_mismatches": 0,
+      "utf8_bom": 0
+    }
+  }
+}
