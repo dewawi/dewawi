@@ -1,3 +1,13 @@
+# Final Release Integration Check
+
+Aktueller gemeinsamer Stand nach T1–T6 und abgeschlossenen Toolbar-/Button-Arbeiten:
+**GO**. [Abschlussbericht und Deployment-Schritte](FINAL-release-integration.md),
+[maschinenlesbare Testergebnisse](final-release-integration.json).
+235/235 Translation-Abnahme, 28/28 Sprachkontexte sowie die gemeinsamen
+Toolbar-/SVG-/AJAX-/Auto-Save-Regressionsprüfungen bestehen. Die Abschlusskorrekturen
+betreffen ausschließlich zwei Test-Fixtures; Produktcode und SQL bleiben unverändert.
+Die folgenden Abschnitte dokumentieren die historischen T6-/T5-/T2-/T3-/T4-Stände.
+
 # T6 – Translation Release Readiness
 
 Aktuell: [T6-Freigabeentscheidung und Ursachenanalyse](T6-release-readiness.md),

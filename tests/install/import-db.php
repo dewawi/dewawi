@@ -19,6 +19,9 @@ mkdir($work . '/install/templates', 0700);
 foreach (['importSQL.php', 'helper.php', 'templates/importSQL.php'] as $file) {
     copy($root . '/install/' . $file, $work . '/install/' . $file);
 }
+foreach (['library', 'languages'] as $directory) {
+    symlink($root . '/' . $directory, $work . '/' . $directory);
+}
 
 function check(bool $condition, string $message): void {
     if (!$condition) throw new RuntimeException($message);
@@ -141,6 +144,7 @@ $db->query('CREATE DATABASE contact_role_upgrade');
 $db->select_db('contact_role_upgrade');
 $db->query('CREATE TABLE client LIKE install_success.client');
 $db->query('CREATE TABLE item LIKE install_success.item');
+$db->query('CREATE TABLE invoice LIKE install_success.invoice');
 preg_match('/CREATE TABLE IF NOT EXISTS `calendarevent` .*?;/s', file_get_contents($root . '/install/config/update-1.1.2-1.1.3.sql'), $legacyCalendar);
 $db->query($legacyCalendar[0]);
 preg_match('/CREATE TABLE IF NOT EXISTS `emailmessage` .*?;/s', file_get_contents($root . '/install/config/structure.sql'), $legacyCalendarMail);

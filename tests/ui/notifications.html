@@ -1009,7 +1009,7 @@ $(function() {
     // Run the existing position-selection function in its actual iframe window context.
     var originalPositionsRead = getPositions, selectionReads = [];
     getPositions = function(parent, type, scroll) { selectionReads.push([parent, type, scroll]); };
-    frame.contentWindow.$ = $; frame.contentWindow.pushMessages = pushMessages;
+    frame.contentWindow.$ = $; frame.contentWindow.pushMessages = pushMessages; frame.contentWindow.Dewawi = Dewawi;
     frame.contentWindow.eval('var applyPosition = ' + applyPosition.toString());
     $('#frame-open').trigger('click'); calls = [];
     frame.contentWindow.applyPosition('invoice', 'pos', [50, 51], 1); frame.contentWindow.applyPosition('invoice', 'pos', [50, 51], 1);
