@@ -160,25 +160,74 @@ class DEEC_DocumentReview
 		} finally { flock($lock, LOCK_UN); fclose($lock); }
 	}
 
-	private function readStoredViewingCopy(array $snapshot, array $identity, string $locale, string $directory): ?array
+	public function inspectViewingCopies(int $id, string $module, string $controller): array
 	{
-		reviewSafePath($directory);
+		require_once __DIR__ . '/DocumentRecovery.php';
+		$snapshot = self::viewingSnapshot($id, $module, $controller);
+		$identity = ['clientid' => (int)$snapshot['data']['document']['clientid'], 'module' => $module, 'controller' => $controller, 'id' => $id];
+		$root = BASE_PATH . '/files/documents/.viewing-copies/' . $identity['clientid'] . '/' . $module . '/' . $controller . '/' . $id;
+		$copies = [];
+		foreach (['de_DE', 'en_US'] as $locale) {
+			$directory = $root . '/' . $snapshot['sha256'] . '/' . $locale;
+			$copy = $this->storedViewingCopyFile($snapshot, $identity, $locale, $directory);
+			if (($copy['reason'] ?? '') === 'copy_receipt_missing') foreach (new FilesystemIterator($directory, FilesystemIterator::SKIP_DOTS) as $entry) {
+				if (strtolower($entry->getExtension()) === 'pdf') { $copy = ['status' => 'invalid', 'reason' => 'copy_receipt_missing']; break; }
+			}
+			$copies[$locale] = $copy;
+		}
+		$statuses = array_column($copies, 'status');
+		$status = in_array('ok', $statuses, true) ? 'available' : 'not_generated';
+		foreach ($copies as $copy) if (!in_array($copy['status'], ['ok', 'not_generated'], true) && $status !== 'available') $status = $copy['status'];
+		if ($status === 'not_generated' && is_dir($root)) {
+			foreach (new FilesystemIterator($root, FilesystemIterator::SKIP_DOTS) as $entry) {
+				if ($entry->getFilename() !== $snapshot['sha256']) { $status = 'stale_snapshot'; break; }
+			}
+		}
+		return ['status' => $status, 'snapshot_sha256' => $snapshot['sha256'], 'copies' => $copies];
+	}
+
+	private function storedViewingCopyFile(array $snapshot, array $identity, string $locale, string $directory): array
+	{
+		try { reviewSafePath($directory); }
+		catch (RuntimeException $error) { return ['status' => 'unsafe', 'reason' => 'copy_path_unsafe']; }
 		$current = BASE_PATH . '/files/documents/.viewing-copies';
 		foreach (array_merge([''], explode('/', substr($directory, strlen($current) + 1))) as $part) {
 			if ($part !== '') $current .= '/' . $part;
 			clearstatcache(true, $current);
-			if (!file_exists($current)) return null;
-			if (!is_dir($current) || (fileperms($current) & 0777) !== 0700 || !is_readable($current) || !is_executable($current)) throw new RuntimeException('Viewing copy directory is not private or accessible');
+			if (!file_exists($current)) return ['status' => 'not_generated', 'reason' => 'copy_not_generated'];
+			if (!is_readable($current) || !is_executable($current)) return ['status' => 'unreadable', 'reason' => 'copy_directory_unreadable'];
+			if (!is_dir($current) || (fileperms($current) & 0777) !== 0700) return ['status' => 'unsafe', 'reason' => 'copy_directory_not_private'];
 		}
 		$recordPath = $directory . '/copy.json';
-		if (!file_exists($recordPath)) return null;
-		$record = self::read($recordPath);
+		try { reviewSafePath($recordPath); }
+		catch (RuntimeException $error) { return ['status' => 'unsafe', 'reason' => 'copy_receipt_unsafe']; }
+		if (!file_exists($recordPath)) return ['status' => 'not_generated', 'reason' => 'copy_receipt_missing'];
+		if (!is_readable($recordPath)) return ['status' => 'unreadable', 'reason' => 'copy_receipt_unreadable'];
+		try {
+			self::privateFile($recordPath);
+			if (filesize($recordPath) > 1048576) throw new RuntimeException('Oversized copy receipt');
+			$record = self::read($recordPath);
+		} catch (RuntimeException | JsonException $error) { return ['status' => 'invalid', 'reason' => 'copy_receipt_invalid']; }
 		if (($record['schema_version'] ?? null) !== 1 || ($record['identity'] ?? null) !== $identity || ($record['snapshot_sha256'] ?? '') !== $snapshot['sha256'] || ($record['locale'] ?? '') !== $locale
-			|| !in_array($record['status'] ?? '', ['historical_reconstructed_viewing_copy', 'historical_diagnostic_viewing_copy'], true) || ($record['original'] ?? null) !== false || ($record['archive_registration_allowed'] ?? null) !== false || !preg_match('/^[a-f0-9]{64}$/D', $record['sha256'] ?? '')) throw new RuntimeException('Invalid stored viewing copy record');
-		$path = $directory . '/' . $record['sha256'] . '.pdf'; self::privateFile($path);
-		$bytes = file_get_contents($path);
-		if ($bytes === false || strlen($bytes) !== $record['size'] || !hash_equals($record['sha256'], hash('sha256', $bytes)) || (new DEEC_DocumentArchive(BASE_PATH))->inspect($path, 'pdf')['status'] !== 'ok') throw new RuntimeException('Stored viewing copy integrity differs');
-		return ['bytes' => $bytes, 'status' => $record['status']];
+			|| !in_array($record['status'] ?? '', ['historical_reconstructed_viewing_copy', 'historical_diagnostic_viewing_copy'], true) || ($record['original'] ?? null) !== false || ($record['archive_registration_allowed'] ?? null) !== false || !is_string($record['sha256'] ?? null) || !preg_match('/^[a-f0-9]{64}$/D', $record['sha256'])) return ['status' => 'invalid', 'reason' => 'copy_receipt_identity_or_snapshot_invalid'];
+		$path = $directory . '/' . $record['sha256'] . '.pdf';
+		$file = (new DEEC_DocumentArchive(BASE_PATH))->inspect($path, 'pdf');
+		if ($file['status'] !== 'ok') return ['status' => $file['status'], 'reason' => 'copy_pdf_' . $file['status'], 'file' => $file];
+		try { self::privateFile($path); }
+		catch (RuntimeException $error) { return ['status' => 'unsafe', 'reason' => 'copy_pdf_not_private', 'file' => $file]; }
+		if ($file['size'] !== ($record['size'] ?? null) || !hash_equals($record['sha256'], $file['sha256'])) return ['status' => 'invalid', 'reason' => 'copy_pdf_integrity_differs', 'file' => $file];
+		return ['status' => 'ok', 'reason' => '', 'file' => $file, 'pdf_status' => $record['status']];
+	}
+
+	private function readStoredViewingCopy(array $snapshot, array $identity, string $locale, string $directory): ?array
+	{
+		$result = $this->storedViewingCopyFile($snapshot, $identity, $locale, $directory);
+		if ($result['status'] === 'not_generated') return null;
+		if ($result['status'] !== 'ok') throw new RuntimeException($result['reason']);
+		$file = $result['file'];
+		$bytes = file_get_contents($file['path']);
+		if ($bytes === false || strlen($bytes) !== $file['size'] || !hash_equals($file['sha256'], hash('sha256', $bytes))) throw new RuntimeException('Stored viewing copy integrity differs');
+		return ['bytes' => $bytes, 'status' => $result['pdf_status']];
 	}
 
 	public static function validateRoot(string $root, int $clientId): array
