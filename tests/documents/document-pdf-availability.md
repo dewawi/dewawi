@@ -163,3 +163,5 @@ The cookie-free K5 extension is covered by the same disposable suite: local prev
 Permission regressions execute as the unprivileged test account. Running the suite directly as `www-data` was unavailable in this environment because sudo requires a password; production execution must use that actual PHP account and pass the matching `--web-user`.
 
 Latest cookie-free K5 regression: `python3 tests/documents/document-recovery-db.py` passed 2924 checks (including 687 availability checks), plus 20 German/English desktop/mobile browser checks. PHP syntax checks for both changed PHP files, archive (129), review (80), migration configuration (79), permissions (415) and file-access (430) regressions also passed.
+
+Renderer 2 now stores readable user copies in `<locale>/v2/` with a version-bound receipt. Existing renderer-1 PDFs/receipts remain retained, but ordinary viewing and K5 prefer the new user view. Re-run the reviewed preview/apply flow with new report outputs to backfill the preferred version; old resume file hashes do not skip missing/different version-2 copies. See [readable historical copies](document-readable-viewing.md).

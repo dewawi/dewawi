@@ -181,16 +181,81 @@ class DEEC_Pdf
 	public function viewingCopy(int $id, string $module, string $controller): array
 	{
 		$snapshot = DEEC_DocumentReview::viewingSnapshot($id, $module, $controller);
-		try {
-			$result = $this->renderReconstruction($id, $module, $controller, $snapshot['data']['document'], (int)$snapshot['data']['document']['clientid'], true);
-			$result['status'] = 'historical_reconstructed_viewing_copy';
-		} catch (RuntimeException | InvalidArgumentException | Zend_Exception $error) {
-			error_log('Using stored document diagnostic view: ' . $error->getMessage());
-			$result = $this->renderDiagnostic($id, $module, $controller, $snapshot, true);
-			$result['status'] = 'historical_diagnostic_viewing_copy';
-		}
+		$result = $this->renderViewingCopy($id, $module, $controller, $snapshot);
 		if (DEEC_DocumentReview::viewingSnapshot($id, $module, $controller)['sha256'] !== $snapshot['sha256']) throw new RuntimeException('Stored document changed during viewing');
 		return $result;
+	}
+
+	private function renderViewingCopy(int $id, string $module, string $controller, array $snapshot): array
+	{
+		$document = $snapshot['data']['document'];
+		$this->useDocumentLanguage(array_replace($document, ['language' => DEEC_Translate::normalizeLocale((string)($document['language'] ?? ''), (string)Zend_Registry::get('Zend_Locale'))]), $module);
+		$diagnosis = $this->reconstructionDiagnosis($id, $module, $controller, $snapshot);
+		$calculated = $diagnosis['calculated_with_valid_saved_rules'];
+		$escape = static fn($value): string => htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+		$label = fn(string $key): string => $escape($this->translate($key));
+		$missing = $this->translate('DOCUMENTS_COPY_MISSING');
+		$numeric = static fn($value): bool => $value !== null && $value !== '' && is_numeric($value) && is_finite((float)$value);
+		$text = static function($value) use ($escape, $missing): string {
+			$plain = html_entity_decode(strip_tags(preg_replace('~<(?:br\s*/?|/p|/div|/li)>~i', "\n", (string)$value)), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+			return nl2br($escape(trim($plain) === '' ? $missing : $plain));
+		};
+		$locale = $this->locale ?? Zend_Registry::get('Zend_Locale');
+		$number = static fn($value, int $precision = 2): string => $numeric($value) ? Zend_Locale_Format::toNumber($value, ['precision' => $precision, 'locale' => $locale]) : $missing;
+		$currency = preg_match('/^[A-Z]{3}$/D', (string)($document['currency'] ?? '')) ? $document['currency'] : $this->translate('DOCUMENTS_COPY_CURRENCY_MISSING');
+		$money = static fn($value, ?string $code = null): string => $escape($number($value, $numeric($value) && round((float)$value, 2) != (float)$value ? 4 : 2) . ' ' . ($code ?? $currency));
+		$types = ['quote' => 'QUOTE', 'salesorder' => 'SALESORDER', 'invoice' => 'INVOICE', 'deliveryorder' => 'DELIVERY_ORDER', 'creditnote' => 'CREDIT_NOTE', 'reminder' => 'REMINDER', 'quoterequest' => 'QUOTE_REQUEST', 'purchaseorder' => 'PURCHASE_ORDER'];
+		$this->bootstrapTcpdf(); $pdf = $this->initPdf($this->translate($types[$controller])); $pdf->SetFont('dejavusans', '', 9);
+		$html = '<h1>' . $label($types[$controller]) . ' · ' . $label('DOCUMENTS_RECONSTRUCTED_MARK') . '</h1>';
+		if (!empty($document['cancelled']) || (int)($document['state'] ?? 0) === 106) $html .= '<h2>' . $label('DOCUMENTS_CANCELLED') . '</h2>';
+		$html .= '<p>' . $label('DOCUMENTS_REVIEW_DOCUMENT_NUMBER') . ': <strong>' . $text(empty($document[$controller . 'id']) ? null : $document[$controller . 'id']) . '</strong><br>';
+		$date = (string)($document[$controller . 'date'] ?? '');
+		$dateValid = preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', $date) && checkdate((int)substr($date, 5, 2), (int)substr($date, 8, 2), (int)substr($date, 0, 4));
+		$html .= $label('DOCUMENTS_REVIEW_DOCUMENT_DATE') . ': ' . $text($dateValid ? $date : null) . '</p>';
+		$html .= '<h2>' . $label('CORRECTION_RECIPIENT') . '</h2><p>';
+		foreach (['billingname1', 'billingname2', 'billingdepartment', 'billingstreet', 'billingpostcode', 'billingcity', 'billingcountry'] as $field) {
+			if (in_array($field, ['billingname2', 'billingdepartment'], true) && trim((string)($document[$field] ?? '')) === '') continue;
+			$fieldLabel = 'CORRECTION_FIELD_' . strtoupper($field);
+			if (trim((string)($document[$field] ?? '')) === '') $html .= ($field === 'billingcountry' ? $label('DOCUMENTS_COPY_COUNTRY') : $label($fieldLabel)) . ': ';
+			$html .= $text($document[$field] ?? null) . '<br>';
+		}
+		$html .= '</p><p>' . $label('DOCUMENTS_COPY_NOTICE') . '</p>';
+		foreach (['title', 'subject', 'reference', 'header'] as $field) if (trim((string)($document[$field] ?? '')) !== '') $html .= '<p>' . $text($document[$field]) . '</p>';
+		$pdf->writeHTML($html);
+		$positions = array_values(array_filter($snapshot['data']['pos'], static fn(array $position): bool => empty($position['deleted'])));
+		usort($positions, static fn(array $left, array $right): int => [(int)$left['ordering'], (int)$left['id']] <=> [(int)$right['ordering'], (int)$right['id']]);
+		$pdf->writeHTML('<h2>' . $label('DOCUMENTS_COPY_POSITIONS') . '</h2><p>' . $label('DOCUMENTS_COPY_DERIVED_NOTICE') . '</p>');
+		if (!$positions) $pdf->writeHTML('<p>' . $label('DOCUMENTS_COPY_POSITIONS_MISSING') . '</p>');
+		foreach ($positions as $index => $position) {
+			$positionId = (int)$position['id']; $comparison = $diagnosis['positions_reference_without_rules'][$positionId]['valid_saved_rules_comparison'] ?? null;
+			$net = $calculated[$positionId]['total'] ?? null;
+			$description = '<strong>' . ($index + 1) . '. ' . $text($position['title'] ?? null) . '</strong>';
+			if (!empty($position['sku'])) $description .= '<br>' . $label('DOCUMENTS_SKU') . ': ' . $text($position['sku']);
+			if (!empty($position['description'])) $description .= '<br>' . $text($position['description']);
+			$lineCurrency = (string)($position['currency'] ?? '');
+			$quantity = $position['quantity'] ?? null;
+			$quantityPrecision = $numeric($quantity) && floor((float)$quantity) == (float)$quantity ? 0 : ($numeric($quantity) && round((float)$quantity, 2) == (float)$quantity ? 2 : 4);
+			$html = '<table border="1" cellpadding="5"><tr><td width="100%">' . $description . '</td></tr></table>';
+			$html .= '<table cellpadding="4"><tr><td width="25%">' . $label('DOCUMENTS_QUANTITY') . ': ' . $escape($number($quantity, $quantityPrecision)) . ' ' . $text($position['uom'] ?? null) . '</td><td width="35%">' . $label('DOCUMENTS_PRICE_SINGLE') . ': ' . $money($position['price'] ?? null, $lineCurrency !== '' ? $lineCurrency : null) . '</td><td width="40%">' . $label('DOCUMENTS_COPY_DERIVED_NET') . ': ' . $money($net) . '</td></tr></table>';
+			$html .= '<p>' . $label('DOCUMENTS_COPY_STORED_POSITION') . ': ' . $money($position['total'] ?? null, $lineCurrency !== '' ? $lineCurrency : null) . '</p>';
+			if ($comparison !== null && abs($comparison['difference_to_net']) > 0.000001 && abs($comparison['difference_to_gross']) > 0.000001) $html .= '<p>' . $label('DOCUMENTS_COPY_POSITION_CONFLICT') . '</p>';
+			if ($lineCurrency !== '' && $lineCurrency !== ($document['currency'] ?? '')) $html .= '<p>' . $label('DOCUMENTS_COPY_POSITION_CURRENCY_CONFLICT') . ': ' . $text($lineCurrency) . '</p>';
+			$pdf->writeHTML($html);
+		}
+		$html = '<h2>' . $label('DOCUMENTS_COPY_SAVED_TOTALS') . '</h2><table cellpadding="5">';
+		foreach (['subtotal' => 'DOCUMENTS_SUBTOTAL', 'taxes' => 'DOCUMENTS_TAXES', 'total' => 'DOCUMENTS_TOTAL'] as $field => $key) $html .= '<tr><td width="65%">' . $label($key) . '</td><td width="35%" align="right">' . $money($document[$field] ?? null) . '</td></tr>';
+		$html .= '</table>';
+		$headerDiffers = false;
+		foreach ($diagnosis['header'] as $check) if ($check['difference'] !== null && abs($check['difference']) >= 0.005) $headerDiffers = true;
+		if ($numeric($document['subtotal'] ?? null) && $numeric($document['taxes'] ?? null) && $numeric($document['total'] ?? null) && abs((float)$document['subtotal'] + (float)$document['taxes'] - (float)$document['total']) >= 0.005) $headerDiffers = true;
+		if ($headerDiffers) {
+			$html .= '<p>' . $label('DOCUMENTS_COPY_HEADER_CONFLICT') . '</p>';
+			if ($calculated !== null) $html .= '<p>' . $label('DOCUMENTS_COPY_HEADER_COMPARISON') . ': ' . $label('DOCUMENTS_SUBTOTAL') . ' ' . $money($calculated['subtotal']) . ' / ' . $label('DOCUMENTS_TAXES') . ' ' . $money($calculated['taxes']['total']) . ' / ' . $label('DOCUMENTS_TOTAL') . ' ' . $money($calculated['total']) . '</p>';
+		}
+		if ($calculated === null) $html .= '<p>' . $label('DOCUMENTS_COPY_CALCULATION_UNAVAILABLE') . '</p>';
+		if (!empty($document['footer'])) $html .= '<p>' . $text($document['footer']) . '</p>';
+		$pdf->writeHTML($html); $this->markCopy($pdf, 'DOCUMENTS_RECONSTRUCTED_MARK');
+		return ['bytes' => $pdf->Output('', 'S'), 'status' => DEEC_DocumentReview::VIEWING_STATUS, 'snapshot_sha256' => $snapshot['sha256']];
 	}
 
 	private function renderReconstruction(int $id, string $module, string $controller, array $document, int $clientId, bool $viewing = false): array
@@ -236,7 +301,7 @@ class DEEC_Pdf
 		return $this->renderDiagnostic($id, $module, $controller, $snapshot);
 	}
 
-	private function renderDiagnostic(int $id, string $module, string $controller, array $snapshot, bool $viewing = false): array
+	private function reconstructionDiagnosis(int $id, string $module, string $controller, array $snapshot, bool $viewing = false): array
 	{
 		$data = $snapshot['data']; $document = $data['document'];
 		$identity = ['clientid' => (int)$document['clientid']];
@@ -299,6 +364,15 @@ class DEEC_Pdf
 			elseif ($delta !== null && abs($delta) > 0.000001) $issue('header_difference_not_accepted_as_rounding', $field, $header[$field]);
 		}
 		$diagnosis = ['schema_version' => 1, 'incomplete' => $incomplete, 'accounting_basis_verified' => false, 'issues' => $issues, 'header' => $header, 'positions_reference_without_rules' => $references, 'saved_price_rules' => $rules, 'calculated_with_valid_saved_rules' => $calculated];
+		return $diagnosis;
+	}
+
+	private function renderDiagnostic(int $id, string $module, string $controller, array $snapshot, bool $viewing = false): array
+	{
+		$diagnosis = $this->reconstructionDiagnosis($id, $module, $controller, $snapshot, $viewing);
+		$data = $snapshot['data']; $document = $data['document']; $identity = ['clientid' => (int)$document['clientid']];
+		$issues = $diagnosis['issues']; $header = $diagnosis['header'];
+		$references = $diagnosis['positions_reference_without_rules']; $rules = $diagnosis['saved_price_rules']; $calculated = $diagnosis['calculated_with_valid_saved_rules'];
 		$this->bootstrapTcpdf();
 		$pdf = $this->initPdf('Diagnosebeleg zur internen Prüfung');
 		$pdf->SetFont('dejavusans', '', 8);

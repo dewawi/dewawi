@@ -2,6 +2,8 @@
 
 class DEEC_DocumentReview
 {
+	public const VIEWING_RENDERER_VERSION = 2;
+	public const VIEWING_STATUS = 'historical_stored_viewing_copy';
 	public const STATUS = 'historical_reconstruction_pending_original_comparison';
 	public const DIAGNOSTIC_STATUS = 'historical_diagnostic_reconstruction';
 	public const UNREVIEWED_STATUS = 'historical_unreviewed_candidate';
@@ -119,7 +121,8 @@ class DEEC_DocumentReview
 	{
 		if ($clientId <= 0 || !preg_match('/^[a-f0-9]{64}$/D', $sha)) throw new RuntimeException('Invalid viewing copy identity');
 		// Orphaned files in this protected area remain non-originals as well.
-		return (bool)glob(BASE_PATH . '/files/documents/.viewing-copies/' . $clientId . '/*/*/*/*/*/' . $sha . '.pdf');
+		$pattern = BASE_PATH . '/files/documents/.viewing-copies/' . $clientId . '/*/*/*/*/*/';
+		return (bool)glob($pattern . $sha . '.pdf') || (bool)glob($pattern . 'v*/' . $sha . '.pdf');
 	}
 
 	private function storedViewingCopy(array $snapshot, int $id, string $module, string $controller, bool $generate): ?array
@@ -127,7 +130,7 @@ class DEEC_DocumentReview
 		require_once __DIR__ . '/DocumentRecovery.php';
 		$identity = ['clientid' => (int)$snapshot['data']['document']['clientid'], 'module' => $module, 'controller' => $controller, 'id' => $id];
 		$locale = str_starts_with((string)Zend_Registry::get('Zend_Locale'), 'en') ? 'en_US' : 'de_DE';
-		$directory = BASE_PATH . '/files/documents/.viewing-copies/' . $identity['clientid'] . '/' . $module . '/' . $controller . '/' . $id . '/' . $snapshot['sha256'] . '/' . $locale;
+		$directory = BASE_PATH . '/files/documents/.viewing-copies/' . $identity['clientid'] . '/' . $module . '/' . $controller . '/' . $id . '/' . $snapshot['sha256'] . '/' . $locale . '/v' . self::VIEWING_RENDERER_VERSION;
 		if (!$generate) return $this->readStoredViewingCopy($snapshot, $identity, $locale, $directory);
 		$privateRoot = BASE_PATH . '/files/documents/.viewing-copies'; reviewSafePath($privateRoot);
 		if (!is_dir($privateRoot) && !@mkdir($privateRoot, 0700, true) && !is_dir($privateRoot)) throw new RuntimeException('Viewing copy directory unavailable');
@@ -154,7 +157,7 @@ class DEEC_DocumentReview
 				}
 				$file = $archive->inspect($path, 'pdf');
 				if ($file['status'] !== 'ok' || $file['sha256'] !== $sha || $file['size'] !== strlen($result['bytes'])) throw new RuntimeException('Stored viewing copy differs');
-				reviewWrite($recordPath, self::json(['schema_version' => 1, 'identity' => $identity, 'snapshot_sha256' => $snapshot['sha256'], 'locale' => $locale, 'status' => $result['status'], 'sha256' => $sha, 'size' => $file['size'], 'generated_at' => gmdate('c'), 'generated_by' => (int)Zend_Registry::get('User')['id'], 'original' => false, 'archive_registration_allowed' => false]));
+				reviewWrite($recordPath, self::json(['schema_version' => 1, 'renderer_version' => self::VIEWING_RENDERER_VERSION, 'identity' => $identity, 'snapshot_sha256' => $snapshot['sha256'], 'locale' => $locale, 'status' => $result['status'], 'sha256' => $sha, 'size' => $file['size'], 'generated_at' => gmdate('c'), 'generated_by' => (int)Zend_Registry::get('User')['id'], 'original' => false, 'archive_registration_allowed' => false]));
 			}
 			return $this->readStoredViewingCopy($snapshot, $identity, $locale, $directory);
 		} finally { flock($lock, LOCK_UN); fclose($lock); }
@@ -166,14 +169,20 @@ class DEEC_DocumentReview
 		$snapshot = self::viewingSnapshot($id, $module, $controller);
 		$identity = ['clientid' => (int)$snapshot['data']['document']['clientid'], 'module' => $module, 'controller' => $controller, 'id' => $id];
 		$root = BASE_PATH . '/files/documents/.viewing-copies/' . $identity['clientid'] . '/' . $module . '/' . $controller . '/' . $id;
-		$copies = [];
+		$copies = []; $legacy = [];
 		foreach (['de_DE', 'en_US'] as $locale) {
 			$directory = $root . '/' . $snapshot['sha256'] . '/' . $locale;
-			$copy = $this->storedViewingCopyFile($snapshot, $identity, $locale, $directory);
-			if (($copy['reason'] ?? '') === 'copy_receipt_missing') foreach (new FilesystemIterator($directory, FilesystemIterator::SKIP_DOTS) as $entry) {
-				if (strtolower($entry->getExtension()) === 'pdf') { $copy = ['status' => 'invalid', 'reason' => 'copy_receipt_missing']; break; }
+			$versions = [];
+			foreach ([self::VIEWING_RENDERER_VERSION, 1] as $version) {
+				$path = $directory . ($version === 1 ? '' : '/v' . $version);
+				$copy = $this->storedViewingCopyFile($snapshot, $identity, $locale, $path, $version);
+				if (($copy['reason'] ?? '') === 'copy_receipt_missing') foreach (new FilesystemIterator($path, FilesystemIterator::SKIP_DOTS) as $entry) {
+					if (strtolower($entry->getExtension()) === 'pdf') { $copy = ['status' => 'invalid', 'reason' => 'copy_receipt_missing']; break; }
+				}
+				$versions[$version] = $copy + ['renderer_version' => $version];
 			}
-			$copies[$locale] = $copy;
+			$copies[$locale] = $versions[self::VIEWING_RENDERER_VERSION]['status'] === 'not_generated' ? $versions[1] : $versions[self::VIEWING_RENDERER_VERSION];
+			$legacy[$locale] = $versions[1];
 		}
 		$statuses = array_column($copies, 'status');
 		$status = in_array('ok', $statuses, true) ? 'available' : 'not_generated';
@@ -183,10 +192,10 @@ class DEEC_DocumentReview
 				if ($entry->getFilename() !== $snapshot['sha256']) { $status = 'stale_snapshot'; break; }
 			}
 		}
-		return ['status' => $status, 'snapshot_sha256' => $snapshot['sha256'], 'copies' => $copies];
+		return ['status' => $status, 'snapshot_sha256' => $snapshot['sha256'], 'copies' => $copies, 'legacy_copies' => $legacy];
 	}
 
-	private function storedViewingCopyFile(array $snapshot, array $identity, string $locale, string $directory): array
+	private function storedViewingCopyFile(array $snapshot, array $identity, string $locale, string $directory, int $rendererVersion): array
 	{
 		try { reviewSafePath($directory); }
 		catch (RuntimeException $error) { return ['status' => 'unsafe', 'reason' => 'copy_path_unsafe']; }
@@ -208,8 +217,8 @@ class DEEC_DocumentReview
 			if (filesize($recordPath) > 1048576) throw new RuntimeException('Oversized copy receipt');
 			$record = self::read($recordPath);
 		} catch (RuntimeException | JsonException $error) { return ['status' => 'invalid', 'reason' => 'copy_receipt_invalid']; }
-		if (($record['schema_version'] ?? null) !== 1 || ($record['identity'] ?? null) !== $identity || ($record['snapshot_sha256'] ?? '') !== $snapshot['sha256'] || ($record['locale'] ?? '') !== $locale
-			|| !in_array($record['status'] ?? '', ['historical_reconstructed_viewing_copy', 'historical_diagnostic_viewing_copy'], true) || ($record['original'] ?? null) !== false || ($record['archive_registration_allowed'] ?? null) !== false || !is_string($record['sha256'] ?? null) || !preg_match('/^[a-f0-9]{64}$/D', $record['sha256'])) return ['status' => 'invalid', 'reason' => 'copy_receipt_identity_or_snapshot_invalid'];
+		if (($record['renderer_version'] ?? 1) !== $rendererVersion || ($record['schema_version'] ?? null) !== 1 || ($record['identity'] ?? null) !== $identity || ($record['snapshot_sha256'] ?? '') !== $snapshot['sha256'] || ($record['locale'] ?? '') !== $locale
+			|| !in_array($record['status'] ?? '', $rendererVersion === 1 ? ['historical_reconstructed_viewing_copy', 'historical_diagnostic_viewing_copy'] : [self::VIEWING_STATUS], true) || ($record['original'] ?? null) !== false || ($record['archive_registration_allowed'] ?? null) !== false || !is_string($record['sha256'] ?? null) || !preg_match('/^[a-f0-9]{64}$/D', $record['sha256'])) return ['status' => 'invalid', 'reason' => 'copy_receipt_identity_or_snapshot_invalid'];
 		$path = $directory . '/' . $record['sha256'] . '.pdf';
 		$file = (new DEEC_DocumentArchive(BASE_PATH))->inspect($path, 'pdf');
 		if ($file['status'] !== 'ok') return ['status' => $file['status'], 'reason' => 'copy_pdf_' . $file['status'], 'file' => $file];
@@ -221,7 +230,7 @@ class DEEC_DocumentReview
 
 	private function readStoredViewingCopy(array $snapshot, array $identity, string $locale, string $directory): ?array
 	{
-		$result = $this->storedViewingCopyFile($snapshot, $identity, $locale, $directory);
+		$result = $this->storedViewingCopyFile($snapshot, $identity, $locale, $directory, self::VIEWING_RENDERER_VERSION);
 		if ($result['status'] === 'not_generated') return null;
 		if ($result['status'] !== 'ok') throw new RuntimeException($result['reason']);
 		$file = $result['file'];
@@ -296,23 +305,27 @@ class DEEC_DocumentReview
 		$root = $location['review'];
 		self::validateRoot($root, $clientId);
 		if (($location['binding_sha256'] ?? '') !== hash_file('sha256', $root . '/review.json')) throw new RuntimeException('Review area binding changed');
-		foreach ([false, true] as $diagnostic) foreach (glob(self::publicationDirectory($root, $identity, $diagnostic) . '/*.json') as $path) {
-			if ($diagnostic) $results['diagnostic_publications']++;
-			$sha = basename($path, '.json');
-			try {
-				$receipt = self::read($path);
-				$candidate = self::candidate($root, $root . '/' . $receipt['directory'], $identity, $snapshot, $sha, $diagnostic);
-				self::receipt($receipt, $identity, $candidate, $snapshot);
-				$results['candidates'][$sha] = $candidate + ['receipt' => $receipt];
-			} catch (RuntimeException | InvalidArgumentException | JsonException $error) {
-				$results['invalid'][$sha] = $error->getMessage();
-				error_log('Historical review candidate unavailable: ' . $error->getMessage());
+		foreach ([false, true] as $diagnostic) {
+			if ($diagnostic && !$permission->hasPermission($module, $controller, 'edit')) continue;
+			foreach (glob(self::publicationDirectory($root, $identity, $diagnostic) . '/*.json') as $path) {
+				if ($diagnostic) $results['diagnostic_publications']++;
+				$sha = basename($path, '.json');
+				try {
+					$receipt = self::read($path);
+					$candidate = self::candidate($root, $root . '/' . $receipt['directory'], $identity, $snapshot, $sha, $diagnostic);
+					self::receipt($receipt, $identity, $candidate, $snapshot);
+					$results['candidates'][$sha] = $candidate + ['receipt' => $receipt];
+				} catch (RuntimeException | InvalidArgumentException | JsonException $error) {
+					$results['invalid'][$sha] = $error->getMessage();
+					error_log('Historical review candidate unavailable: ' . $error->getMessage());
+				}
 			}
 		}
 		try {
 			$recovery = new DEEC_DocumentRecovery();
 			foreach ($recovery->unreviewed($recovery->job($id, $module, $controller), $snapshot) as $sha => $candidate) if (!isset($results['candidates'][$sha])) $results['candidates'][$sha] = $candidate;
 		} catch (RuntimeException | InvalidArgumentException | JsonException $error) { $results['invalid']['review_context'] = $error->getMessage(); }
+		if (!$permission->hasPermission($module, $controller, 'edit')) $results['candidates'] = array_filter($results['candidates'], static fn(array $candidate): bool => $candidate['status'] !== self::DIAGNOSTIC_STATUS);
 		return $results;
 	}
 

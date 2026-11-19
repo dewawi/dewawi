@@ -80,7 +80,7 @@ try {
 		$row = $rows[reviewKey($identity)];
 		recoveryTestCheck($row['http_verified'] && (!empty($row['verification_reused']) || $row['http']['download']['sha256'] === $row['http']['preview']['sha256']), 'Download/preview returned different protected PDFs');
 		if ($identity['id'] !== 1) {
-			$records = glob($base . '/files/documents/.viewing-copies/7/' . reviewKey($identity) . '/*/de_DE/copy.json'); recoveryTestCheck(count($records) === 1, 'Concurrent backfill duplicated a copy');
+			$records = glob($base . '/files/documents/.viewing-copies/7/' . reviewKey($identity) . '/*/de_DE/v2/copy.json'); recoveryTestCheck(count($records) === 1, 'Concurrent backfill duplicated a copy');
 			$record = recoveryJsonFile($records[0]); $copyPath = dirname($records[0]) . '/' . $record['sha256'] . '.pdf';
 			recoveryTestCheck(fileowner($copyPath) === posix_geteuid() && (fileperms($copyPath) & 0777) === 0600 && (fileperms(dirname($copyPath)) & 0777) === 0700, 'Private copy ownership or permissions changed');
 			foreach (viewingPdfPages(file_get_contents($copyPath)) as $page) recoveryTestCheck(str_contains($page, 'KOPIE'), 'Bulk copy lacks its mark on every page');
@@ -92,7 +92,7 @@ try {
 	$wrongResume = str_replace('"publication_uid":' . posix_geteuid(), '"publication_uid":0', file_get_contents($applied[0]['report'])); reviewWrite($availabilityPrivate . '/wrong-resume.jsonl', $wrongResume);
 	availabilityTestCli($apply + ['resume' => $availabilityPrivate . '/wrong-resume.jsonl'], 1);
 	$availablePreview = availabilityTestCli(); recoveryTestCheck($availablePreview['coverage']['classifications'] === ['copy_available' => 9, 'original_available' => 1], 'Durable copies were not available after backfill');
-	$recordPaths = glob($base . '/files/documents/.viewing-copies/7/sales/quote/8001/*/de_DE/copy.json'); $record = recoveryJsonFile($recordPaths[0]); $broken = dirname($recordPaths[0]) . '/' . $record['sha256'] . '.pdf'; $saved = file_get_contents($broken); file_put_contents($broken, 'Broken synthetic copy');
+	$recordPaths = glob($base . '/files/documents/.viewing-copies/7/sales/quote/8001/*/de_DE/v2/copy.json'); $record = recoveryJsonFile($recordPaths[0]); $broken = dirname($recordPaths[0]) . '/' . $record['sha256'] . '.pdf'; $saved = file_get_contents($broken); file_put_contents($broken, 'Broken synthetic copy');
 	$damaged = availabilityTestCli([], 2); recoveryTestCheck($damaged['coverage']['blocked'] === 1, 'Damaged stored copy was silently replaced or reported available'); file_put_contents($broken, $saved);
 	chmod(dirname($broken), 0755); $unsafe = availabilityTestCli([], 2); recoveryTestCheck($unsafe['coverage']['blocked'] === 1, 'Non-private copy directory was reported available'); chmod(dirname($broken), 0700);
 	$registered = $pdo->query("SELECT * FROM documentarchive WHERE documentid = 1 AND module = 'sales' AND controller = 'quote' AND format = 'pdf'")->fetch(PDO::FETCH_ASSOC);
@@ -141,8 +141,8 @@ try {
 	$localEnglish = availabilityTestCli($localOptions + ['locale' => 'en_US']);
 	$localEnglishApply = $localOptions + ['action' => 'apply', 'locale' => 'en_US', 'plan' => $localEnglish['report'], 'confirm-plan' => $localEnglish['report_sha256']];
 	$englishRows = []; foreach (availabilityReportRows($localEnglish['report']) as $row) if ($row['kind'] === 'document') $englishRows[reviewKey($row['identity'])] = $row;
-	$englishDirectory = $base . '/files/documents/.viewing-copies/7/sales/quote/8001/' . $englishRows['sales/quote/8001']['snapshot_sha256'] . '/en_US';
-	mkdir($englishDirectory, 0700); chmod($englishDirectory, 0500);
+	$englishDirectory = $base . '/files/documents/.viewing-copies/7/sales/quote/8001/' . $englishRows['sales/quote/8001']['snapshot_sha256'] . '/en_US/v2';
+	mkdir($englishDirectory, 0700, true); chmod($englishDirectory, 0500);
 	$writeDenied = availabilityTestCli($localEnglishApply + ['limit' => 1], 2);
 	recoveryTestCheck($writeDenied['coverage']['blocked'] === 1 && $writeDenied['coverage']['http_verified'] === 0, 'Local backfill ignored missing directory write permission'); chmod($englishDirectory, 0700);
 	$englishLimited = availabilityTestCli($localEnglishApply + ['limit' => 3], 2);
@@ -150,7 +150,7 @@ try {
 	$englishComplete = availabilityTestCli($localEnglishApply + ['resume' => $englishLimited['report']]);
 	recoveryTestCheck($englishComplete['coverage']['every_scoped_document_local_verified'] && $englishComplete['coverage']['local_verified'] === 10 && $englishComplete['coverage']['http_verified'] === 0, 'New local copies were not completely verified');
 	foreach ($availabilityScope as $identity) if ($identity['id'] !== 1) {
-		$englishCopies = glob($base . '/files/documents/.viewing-copies/7/' . reviewKey($identity) . '/*/en_US/copy.json');
+		$englishCopies = glob($base . '/files/documents/.viewing-copies/7/' . reviewKey($identity) . '/*/en_US/v2/copy.json');
 		recoveryTestCheck(count($englishCopies) === 1, 'Local backfill did not create one receipt per new copy');
 		$englishReceipt = recoveryJsonFile($englishCopies[0]); $englishPath = dirname($englishCopies[0]) . '/' . $englishReceipt['sha256'] . '.pdf';
 		recoveryTestCheck(hash_file('sha256', $englishPath) === $englishReceipt['sha256'] && filesize($englishPath) === $englishReceipt['size'] && fileowner($englishPath) === posix_geteuid() && (fileperms($englishPath) & 0777) === 0600 && (fileperms(dirname($englishPath)) & 0777) === 0700, 'Local copy PDF/receipt/private permissions differ');

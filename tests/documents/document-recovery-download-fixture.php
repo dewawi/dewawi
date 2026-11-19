@@ -41,7 +41,7 @@ if (in_array($action, ['reconstructed', 'preview', 'download'], true)) {
 	require_once $root . '/application/modules/' . (($_GET['module'] ?? 'sales') === 'purchases' ? 'purchases' : 'sales') . '/controllers/helpers/Positions.php';
 }
 class RecoveryDownloadFixtureController extends DEEC_Controller_DocumentAction {
-	public function init() { $this->view = new RecoveryDocumentViewFixture(); $this->_user = Zend_Registry::get('User'); Zend_Controller_Action_HelperBroker::getStaticHelper('ViewRenderer')->view = $this->view; }
+	public function init() { $this->_flashMessenger = $this->_helper->getHelper('FlashMessenger'); $this->view = new RecoveryDocumentViewFixture(); $this->_user = Zend_Registry::get('User'); Zend_Controller_Action_HelperBroker::getStaticHelper('ViewRenderer')->view = $this->view; }
 	protected function disableView(): void {}
 }
 class RecoveryDocumentViewFixture extends Zend_View {

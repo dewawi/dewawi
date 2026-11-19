@@ -142,3 +142,5 @@ Actual follow-up verification with synthetic fixtures and disposable local datab
 | `php tests/documents/pdf.php` | 208 checks |
 
 PHP syntax checks passed for the three changed/new PHP files. No production inventory, PDFs or database were accessed, and no SQL migration or production recovery was performed. Applying a pre-follow-up preview requires a fresh preview and administrator review. The content/parser/provenance limitations above remain explicit manual review decisions.
+
+Normal historical viewing now uses the separate [renderer-2 user copy](document-readable-viewing.md), stored below the existing locale directory in `v2/`. Legacy copies and diagnostic review PDFs remain private evidence. Original recovery, K3 approval and GoBD originals retain their existing checks; viewing copies from either layout cannot become originals. Technical diagnostic review PDFs require document view and edit permission.

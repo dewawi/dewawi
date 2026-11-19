@@ -75,14 +75,14 @@ try {
 		$viewingHashes[] = hash('sha256', $response['bytes']);
 		$download = recoveryTestDownload($query + ['action' => 'download']);
 		recoveryTestCheck($download['code'] === 200 && $download['bytes'] === $response['bytes'] && str_contains($download['headers'], 'attachment;'), 'Normal Download did not reuse the permanent copy');
-		$pages = viewingCheckMarks($response, 'KOPIE', 2);
-		recoveryTestCheck(str_contains($response['headers'], 'historical_reconstructed_viewing_copy') && str_contains(implode('', $pages), 'Stored viewing buyer') && str_contains(implode('', $pages), 'Stored viewing position'), 'Stored content was not reconstructed: ' . json_encode($query));
+		$pages = viewingCheckMarks($response, 'KOPIE');
+		recoveryTestCheck(str_contains($response['headers'], DEEC_DocumentReview::VIEWING_STATUS) && str_contains(implode('', $pages), 'Stored viewing buyer') && str_contains(implode('', $pages), 'Stored viewing position'), 'Stored content was not reconstructed: ' . json_encode($query));
 		recoveryTestCheck(!str_contains(implode('', $pages), 'MUSTER'), 'Finalized viewing copy was marked as a draft');
 		recoveryTestCheck(recoveryTestDownload($query + ['action' => 'reconstructed'], 42, 'HEAD')['bytes'] === '' && recoveryTestDownload($query + ['action' => 'reconstructed'], 42, 'POST')['code'] === 405, 'Viewing method restrictions failed');
 		recoveryTestCheck(recoveryTestDownload($query + ['action' => 'reconstructed'], 43)['code'] === 404 && recoveryTestDownload($query + ['action' => 'reconstructed'], 44)['code'] === 404 && recoveryTestDownload($query + ['action' => 'reconstructed'], null)['code'] === 401, 'Viewing tenant/authentication isolation failed');
 	}
 	$quoteQuery = $viewingDocuments[0];
-	$copyRecords = glob($base . '/files/documents/.viewing-copies/7/sales/quote/601/*/de_DE/copy.json');
+	$copyRecords = glob($base . '/files/documents/.viewing-copies/7/sales/quote/601/*/de_DE/v2/copy.json');
 	recoveryTestCheck(count($copyRecords) === 1, 'Permanent copy receipt missing');
 	$initialCopy = recoveryJsonFile($copyRecords[0]); $initialCopyPath = dirname($copyRecords[0]) . '/' . $initialCopy['sha256'] . '.pdf';
 	$initialCopyBytes = file_get_contents($initialCopyPath);
@@ -138,21 +138,21 @@ try {
 		file_put_contents($work . '/viewing-panel-' . $locale . '.html', '<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="file://' . $root . '/css/ui.css"><body>' . $panel['bytes'] . '</body></html>');
 	}
 	recoveryTestCheck($pdo->query('SELECT language FROM quote WHERE id = 601')->fetchColumn() === 'de_DE', 'German document fixture lost its explicit stored language');
-	viewingCheckMarks(recoveryTestDownload($quoteQuery + ['action' => 'reconstructed', 'locale' => 'en_US']), 'KOPIE', 2);
-	foreach (['de_DE', 'en_US'] as $uiLocale) viewingCheckMarks(recoveryTestDownload(['module' => 'sales', 'controller' => 'quote', 'id' => 691, 'action' => 'reconstructed', 'locale' => $uiLocale]), 'COPY', 2);
-	// Missing stored amounts, contradictory totals and unavailable layouts remain visible as raw data.
+	viewingCheckMarks(recoveryTestDownload($quoteQuery + ['action' => 'reconstructed', 'locale' => 'en_US']), 'KOPIE');
+	foreach (['de_DE', 'en_US'] as $uiLocale) viewingCheckMarks(recoveryTestDownload(['module' => 'sales', 'controller' => 'quote', 'id' => 691, 'action' => 'reconstructed', 'locale' => $uiLocale]), 'COPY');
+	// Missing stored amounts and contradictory totals stay readable without technical diagnostics.
 	foreach (['UPDATE quotepos SET total = NULL WHERE parentid = 601', 'UPDATE quote SET total = 200 WHERE id = 601', 'UPDATE quote SET templateid = 999999 WHERE id = 601', "UPDATE quote SET currency = '' WHERE id = 601", "UPDATE quote SET billingstreet = '' WHERE id = 601", 'UPDATE quote SET quoteid = NULL, quotedate = NULL WHERE id = 601', 'UPDATE quotepos SET deleted = 1 WHERE parentid = 601'] as $sql) {
 		$pdo->exec($sql);
 		$response = recoveryTestDownload($quoteQuery + ['action' => 'reconstructed']);
-		$pages = viewingCheckMarks($response, 'KOPIE', 2);
-		recoveryTestCheck(str_contains($response['headers'], 'historical_diagnostic_viewing_copy') && str_contains(implode('', $pages), 'Gespeicherte Daten: document'), 'Unreliable reconstruction did not expose stored data');
+		$pages = viewingCheckMarks($response, 'KOPIE');
+		recoveryTestCheck(str_contains($response['headers'], DEEC_DocumentReview::VIEWING_STATUS) && !str_contains(implode('', $pages), 'Gespeicherte Daten: document') && str_contains(implode('', $pages), 'Gespeicherte Belegsummen'), 'Incomplete document did not retain a readable, nontechnical viewing copy');
 		$pdo->exec("UPDATE quote SET quoteid = 9601, quotedate = '2010-01-02', total = 119, templateid = 1, currency = 'EUR', billingstreet = 'Stored street' WHERE id = 601");
 		$pdo->exec('UPDATE quotepos SET total = 100, deleted = 0 WHERE parentid = 601');
 	}
 	// An authorized child uses its own document and the permitted parent contact owner.
 	$childView = recoveryTestDownload(['module' => 'sales', 'controller' => 'quote', 'id' => 609, 'action' => 'reconstructed'], 44);
 	$childPages = viewingCheckMarks($childView, 'KOPIE');
-	recoveryTestCheck(str_contains($childView['headers'], 'historical_reconstructed_viewing_copy') && str_contains(implode('', $childPages), $childViewing['billingname1']), 'Parent contact sharing lost the stored child recipient');
+	recoveryTestCheck(str_contains($childView['headers'], DEEC_DocumentReview::VIEWING_STATUS) && str_contains(implode('', $childPages), $childViewing['billingname1']), 'Parent contact sharing lost the stored child recipient');
 	$pdo->exec("UPDATE permission SET sales = '{}' WHERE userid = 42");
 	recoveryTestCheck(recoveryTestDownload($quoteQuery + ['action' => 'reconstructed'])['code'] === 404, 'Viewing ignored document permissions');
 	$pdo->prepare('UPDATE permission SET sales = ? WHERE userid = 42')->execute([$viewPermissions['sales']]);
@@ -181,7 +181,7 @@ try {
 	$reportedQuery = ['module' => 'sales', 'controller' => 'invoice', 'id' => 59505];
 	$reportedDownload = recoveryTestDownload($reportedQuery + ['action' => 'download']); viewingCheckMarks($reportedDownload, 'KOPIE');
 	recoveryTestCheck(str_contains($reportedDownload['headers'], 'attachment; filename="Rechnung-112326.pdf"') && !str_contains($reportedDownload['headers'], 'reconstructed-copy') && !str_contains($reportedDownload['headers'], '59505.pdf'), 'Synthetic invoice download lost its stored normal filename');
-	$reportedRecords = glob($base . '/files/documents/.viewing-copies/7/sales/invoice/59505/*/de_DE/copy.json');
+	$reportedRecords = glob($base . '/files/documents/.viewing-copies/7/sales/invoice/59505/*/de_DE/v2/copy.json');
 	$reportedReceipt = file_get_contents($reportedRecords[0]); $reportedCopy = recoveryJsonFile($reportedRecords[0]); $reportedCopyPath = dirname($reportedRecords[0]) . '/' . $reportedCopy['sha256'] . '.pdf'; $reportedCopyState = [hash_file('sha256', $reportedCopyPath), filemtime($reportedCopyPath)];
 	$reportedPreview = recoveryTestDownload($reportedQuery + ['action' => 'preview']);
 	recoveryTestCheck($reportedPreview['code'] === 200 && $reportedPreview['bytes'] === $reportedDownload['bytes'] && str_contains($reportedPreview['headers'], 'inline; filename="Rechnung-112326.pdf"') && str_contains($reportedPreview['headers'], 'nosniff') && str_contains($reportedPreview['headers'], 'sandbox;'), 'Normal inline preview differs from the protected Download copy');
@@ -255,9 +255,9 @@ $viewingZip->close(); Zend_Registry::set('User', $viewingUser); $viewingDb->clos
 $viewingDb = recoveryBoot(migrationConfig($work . '/database.ini', 'production') + ['unix_socket' => $socket], $base, 7, 42);
 require_once $root . '/application/modules/sales/controllers/helpers/Positions.php';
 $changingRenderer = new class extends DEEC_Pdf {
-	protected function renderPayload(TCPDF $pdf, array $payload): void
+	protected function markCopy(TCPDF $pdf, string $key): void
 	{
-		parent::renderPayload($pdf, $payload);
+		parent::markCopy($pdf, $key);
 		global $pdo;
 		$pdo->exec("UPDATE quote SET notes = 'Concurrent stored-data change' WHERE id = 601");
 	}
