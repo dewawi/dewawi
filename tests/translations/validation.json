@@ -1,0 +1,104 @@
+{
+  "date": "2026-11-19",
+  "php_version": "8.3.6",
+  "python_version": "3.12.3",
+  "source_sha256": "e209079d31951b5b79c57d24347b724da90a35d1cf5f396ee1b4c8236aaab02e",
+  "commands": [
+    {
+      "command": "php -l (all languages/**/*.php and tests/translations/*.php)",
+      "exit_code": 0,
+      "files": 116
+    },
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 tests/translations/audit-test.py",
+      "exit_code": 0,
+      "tests": 18
+    },
+    {
+      "command": "python3 tests/translations/audit.py",
+      "exit_code": 0,
+      "runtime_checks": 110,
+      "static_model_matches": 28
+    },
+    {
+      "command": "php tests/translations/runtime.php --benchmark",
+      "exit_code": 0,
+      "checks": 110
+    },
+    {
+      "command": "php tests/ui/buttons.php",
+      "exit_code": 0,
+      "checks": 165
+    },
+    {
+      "command": "php tests/ui/toolbar-buttons.php",
+      "exit_code": 0,
+      "checks": 2259,
+      "also_includes_button_checks": 165
+    },
+    {
+      "command": "php tests/sales/quote-monitoring.php",
+      "exit_code": 0,
+      "checks": 293
+    },
+    {
+      "command": "php tests/security/quote-email.php",
+      "exit_code": 0,
+      "checks": 364,
+      "stderr": "Two expected fixture SMTP acceptance rejections"
+    },
+    {
+      "command": "php tests/security/form-input-validation.php",
+      "exit_code": 0,
+      "checks": 20
+    },
+    {
+      "command": "php tests/security/notifications.php",
+      "exit_code": 255,
+      "successful_main_checks_before_failure": 370,
+      "status": "pre_existing_failure",
+      "error": "Document helper subprocess: Sales_Service_DocumentRevisionService not found in application/modules/sales/views/helpers/Finish.php:12; tests/security/notifications.php:67,211"
+    },
+    {
+      "command": "php tests/contacts/history-states.php",
+      "exit_code": 255,
+      "status": "pre_existing_failure",
+      "error": "Undefined history[states] at tests/contacts/history-states.php:57; Missing history status: 100 at :69"
+    },
+    {
+      "command": "cmp report.json (two consecutive complete audit runs)",
+      "exit_code": 0,
+      "result": "byte-identical"
+    },
+    {
+      "command": "python3 tests/translations/audit.py --no-runtime --fail-on-findings",
+      "exit_code": 1,
+      "status": "expected_findings_exit"
+    }
+  ],
+  "cli_benchmark": {
+    "de_DE": {
+      "fresh_translators": 280,
+      "total_ms": 213.768,
+      "mean_ms": 0.763
+    },
+    "en_US": {
+      "fresh_translators": 280,
+      "total_ms": 150.195,
+      "mean_ms": 0.536
+    },
+    "opcache_enable_cli": "0",
+    "process_peak_memory_bytes": 6291456
+  },
+  "not_run": [
+    "authenticated HTTP/browser flows",
+    "production or customer databases",
+    "DB integration/migration suites",
+    "outgoing email",
+    "PDF generation"
+  ],
+  "production_changes": false,
+  "database_changes": false,
+  "push_performed": false,
+  "snapshot_commit": "d68f7a8c"
+}
