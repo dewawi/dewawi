@@ -5,7 +5,7 @@
 	'DZ' => 'Algeria',
 	'AD' => 'Andorra',
 	'AO' => 'Angola',
-	'AG' => 'Antigua und Barbuda',
+	'AG' => 'Antigua and Barbuda',
 	'GQ' => 'Equatorial Guinea',
 	'AR' => 'Argentina',
 	'AM' => 'Armenia',

@@ -1,6 +1,6 @@
 <?php return array(
 	'ORDERING_CREATION' => 'Creation',
-	'ORDERING_TITLE' => 'Titel',
+	'ORDERING_TITLE' => 'Title',
 	'ORDERING_NAME' => 'Name',
 	'ORDERING_CONTACT_ID' => 'Contact ID.',
 	'ORDERING_CONTACT' => 'Contact',
@@ -20,6 +20,7 @@
 	'ORDERING_MODIFIED' => 'Modified',
 	'ORDERING_TOTAL' => 'Total',
 	'ORDERING_STATE' => 'State',
-	'ORDERING_ASC' => 'aufsteigend 0..9/A-Z',
-	'ORDERING_DESC' => 'absteigend 9..0/Z-A'
+	'ORDERING_ASC' => 'ascending 0..9/A–Z',
+	'ORDERING_DESC' => 'descending 9..0/Z–A',
+	'ORDERING_DOCUMENT_ID' => 'Document number',
 );

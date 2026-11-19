@@ -558,7 +558,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					'#MESSAGES_ALL_RIGHTS_RESERVED#' => date('Y') . ' ' . htmlspecialchars($shop['title']),
 					'#ORDER_NUMBER#' => htmlspecialchars($data['orderid']),
 					'#ORDER_DATE#' => htmlspecialchars($data['orderdate']),
-					'#PAYMENT_METHOD#' => htmlspecialchars('Überweisung'),
+					'#PAYMENT_METHOD#' => htmlspecialchars($translate('SHOPS_PAYMENT_BANK_TRANSFER')),
 					'#BILLING_COMPANY#' => htmlspecialchars($formData['billingcompany']),
 					'#BILLING_DEPARTMENT#' => htmlspecialchars($formData['billingdepartment']),
 					'#BILLING_NAME#' => htmlspecialchars($formData['billingname']),

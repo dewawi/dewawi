@@ -7,7 +7,7 @@
 	'TASKS' => 'Aufgaben',
 	'TASKS_ID' => 'ID',
 	'TASKS_NEW_TASK' => 'Neue Aufgabe',
-	'TASKS_TITLE' => 'Title',
+	'TASKS_TITLE' => 'Titel',
 	'TASKS_PRIORITY' => 'Priorität',
 	'TASKS_PRIORITY_LOWEST' => 'Niedrigster',
 	'TASKS_PRIORITY_LOW' => 'Niedrig',
@@ -86,8 +86,6 @@
 	'TASKS_CONTACT_PERSON' => 'Sachbearbeiter',
 	'TASKS_MODIFIED' => 'le. Änderung',
 	'TASKS_STATE' => 'Status',
-	'TASKS_SUBTOTAL' => 'Nettobetrag',
-	'TASKS_TAXES' => 'Umsatzsteuer',
 	'TASKS_AMOUNT' => 'Betrag',
 	'TASKS_SUBTOTAL' => 'Nettobetrag',
 	'TASKS_TAXES' => 'Umsatzsteuer',
@@ -112,5 +110,9 @@
 	'TASKS_EDIT_POSITIONS_SEPARATELY' => 'Positionen einzeln bearbeiten',
 	'TASKS_NONE' => 'keine',
 	'TASKS_EMPTY' => 'leer',
-	'TASKS_ACTIVE_FILTER' => 'active Filter'
+	'TASKS_ACTIVE_FILTER' => 'Aktiver Filter',
+	'TASKS_TASK_DATE' => 'Aufgabendatum',
+	'TASKS_TASKDATE' => 'Aufgabendatum',
+	'TASKS_DUEDATE' => 'Fälligkeitsdatum',
+	'TASKS_COMPLETED' => 'Abgeschlossen',
 );

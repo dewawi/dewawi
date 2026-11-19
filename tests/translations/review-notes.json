@@ -1,0 +1,18 @@
+{
+  "scope": "Open terminology and content-source reviews after T2; these are not catalogue parity defects.",
+  "items": [
+    {"file": "languages/en_US/sales/salesorder.php", "key": "SALES_ORDER", "reason": "The existing workflow combines order confirmation and pro forma invoice. Both terms are retained; choosing a single legal/business document type needs a product decision."},
+    {"file": "languages/de_DE/purchases/purchaseorder.php", "key": "PURCHASE_ORDERS_PREPAYMENT", "reason": "Erhaltene Anzahlung in a purchase workflow may mean a payment made rather than received. Confirm accounting direction before changing the established label."},
+    {"file": "languages/de_DE/purchases/quoterequest.php", "key": "QUOTE_REQUESTS_PREPAYMENT", "reason": "Same prepayment-direction review as purchase orders; no business amount or historical value changed."},
+    {"file": "languages/de_DE/items/attribute.php", "key": "ITEMS_ATTRIBUTE_ORDERING", "reason": "Existing Anzahl may label ordering rather than quantity. Confirm the form's business meaning before replacing it."},
+    {"file": "languages/de_DE/items/option.php", "key": "ITEMS_OPTION_ORDERING", "reason": "Same ordering/quantity terminology review as item attributes."},
+    {"file": "languages/en_US/ebay/ebay.php", "key": "DE_DeutschePostByendung", "reason": "Ambiguous historical external shipping-product identifier. Preserve the existing product name and API code pending provider-specific confirmation."},
+    {"file": "languages/en_US/ebay/ebay.php", "key": "DE_DHLStarPaeckchen", "reason": "Historical branded shipping-product name retained. English explanatory descriptions were translated separately."},
+    {"file": "application/modules/sales/services/EmailFormFactory.php", "reason": "Persisted customer email templates are user-authored content. T2 does not translate stored bodies, subjects, signatures, or historical sent email."},
+    {"file": "application/modules/shops/controllers/InquiryController.php", "reason": "CMS inquiry field labels, descriptions, arbitrary request values and published product descriptions can come from tenant data. No customer data read or changed."},
+    {"file": "application/modules/shops/views/scripts/inquiry/variants.phtml", "reason": "Existing number_format price formatting remains unchanged; T2 translates labels without changing price calculations or stored monetary values."}
+  ],
+  "hardcoded_candidates": "See report.json: each remaining candidate has a file, line, text and manual_review certainty. Candidates include legacy UI, attributes, technical fixtures and false positives; they are not certified unused or all confirmed defects.",
+  "identical_values": "See report.json: branded names, country names, acronyms and common UI terms can legitimately match across locales.",
+  "deletions": "No catalogue key removed. Only overwritten duplicate definitions were removed, preserving their former effective value."
+}

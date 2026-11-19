@@ -17,8 +17,9 @@ class Zend_Auth
 class Zend_Session_Namespace
 {
 	public static $selectedLanguage = null;
+	public static $lastStorage;
 	public $storage;
-	public function __construct($namespace) { $this->storage = (object)['language' => self::$selectedLanguage]; }
+	public function __construct($namespace) { $this->storage = (object)['language' => self::$selectedLanguage]; self::$lastStorage = $this->storage; }
 }
 class Zend_Application_Bootstrap_Bootstrap
 {
@@ -39,6 +40,14 @@ require BASE_PATH . '/application/Bootstrap.php';
 require BASE_PATH . '/application/plugins/Translate.php';
 require BASE_PATH . '/application/views/helpers/Translate.php';
 require BASE_PATH . '/application/views/helpers/Messages.php';
+require BASE_PATH . '/application/modules/users/controllers/UserController.php';
+require BASE_PATH . '/application/controllers/helpers/Email.php';
+
+class TranslationAuditUserController extends Users_UserController { public function init() {} }
+class Shops_Model_DbTable_Emailtemplate
+{
+	public function getEmailtemplate(string $module, string $controller): array { return ['subject' => 't#tMESSAGES_THANK_YOU_CONTACTING_USt#t', 'body' => '#HELLO_NAME# t#tSHOPS_CONTACT_FORMt#t']; }
+}
 
 class TranslationAuditBootstrap extends Bootstrap
 {
@@ -237,6 +246,43 @@ try {
 	$messages = new Zend_View_Helper_Messages(); $messages->setView($view);
 	$observations['javascript_export_keys'] = array_keys($messages->getTranslations());
 	translationCheck(count($messages->getTranslations()) > 0 && !in_array('TOOLBAR_SAVE', $observations['javascript_export_keys'], true), 'JS message export is a fixed subset of registry translations');
+	Zend_Controller_Action_HelperBroker::getStaticHelper('viewRenderer')->view = $view;
+	Zend_Registry::set('DEEC_Translate', $de);
+	$mail = new ReflectionMethod(Application_Controller_Action_Helper_Email::class, 'getEmailBody');
+	foreach (['de_DE', 'en_US'] as $locale) {
+		Zend_Registry::set('Shop', ['language' => $locale, 'title' => 'Fixture', 'url' => 'https://example.invalid', 'emailsender' => 'fixture@example.invalid']);
+		[$body, $subject] = $mail->invoke(new Application_Controller_Action_Helper_Email(), 'shops', 'contact', [], ['name' => 'Ada', 'subject' => 'Fixture', 'message' => 'Fixture'], []);
+		$expected = $locale === 'de_DE' ? 'Hallo Ada' : 'Hello Ada';
+		translationCheck(str_contains($body, $expected) && !str_contains($subject, 't#t'), $locale . ': actual background shop email body and subject follow shop language');
+		translationCheck(Zend_Registry::get('DEEC_Translate') === $de, $locale . ': email locale does not replace UI translator');
+	}
+	Zend_Layout::startMvc();
+	Zend_Controller_Front::getInstance()->setControllerDirectory(['users' => APPLICATION_PATH . '/modules/users/controllers']);
+	foreach (['../application', 'fr_FR', ['en_US'], 'en-US', 'de_DE'] as $input) {
+		$request = new Zend_Controller_Request_Simple('language', 'user', 'users', ['language' => $input]);
+		$response = new Zend_Controller_Response_Http();
+		$controller = new TranslationAuditUserController($request, $response, ['noViewRenderer' => true]);
+		$controller->languageAction();
+		$valid = is_string($input) && in_array($input, ['en-US', 'de_DE'], true);
+		translationCheck($valid ? Zend_Session_Namespace::$lastStorage->language === DEEC_Translate::normalizeLocale($input) : $response->getHttpResponseCode() === 400, 'language endpoint validates input ' . json_encode($input));
+	}
+	$forward = new TranslationAuditTranslator('en_US'); $forward->loadModule('default');
+	Zend_Registry::set('DEEC_Translate', $forward);
+	$plugin->preDispatch(new Zend_Controller_Request_Simple('index', 'index', 'contacts'));
+	translationCheck(in_array('contacts', $forward->domains(), true) && !in_array('sales', $forward->domains(), true), 'forward loads actual detail module without unrelated details');
+	$view->addScriptPath(APPLICATION_PATH . '/modules/shops/views/scripts');
+	foreach (['de_DE', 'en_US'] as $locale) {
+		$tr = new DEEC_Translate($locale); $tr->loadModule('shops'); Zend_Registry::set('DEEC_Translate', $tr);
+		$catalog = ['reasons' => ['catalog_inputs_incomplete'], 'conditions' => [['status' => 'missing_input', 'label' => '<script>fixture</script>']], 'candidates' => [], 'has_more' => false, 'summary' => false, 'item_field' => 'item'];
+		$html = $view->partial('inquiry/catalog.phtml', ['selection' => $catalog]);
+		translationCheck(str_contains($html, $tr->t('SHOPS_CATALOG_HEADING')) && !str_contains($html, 'SHOPS_') && !str_contains($html, '<script>fixture'), $locale . ': real catalog partial translates and escapes metadata');
+		$variant = ['variant_field' => 'variant', 'base' => null, 'reasons' => ['variant_inputs_incomplete'], 'candidates' => [], 'editable' => true,
+			'selected' => ['sku' => 'FIX', 'title' => '<script>fixture</script>'],
+			'options' => [['title' => 'Fixture', 'status' => 'priced', 'included' => false, 'price' => 10, 'currency' => 'EUR', 'uom' => 'unit', 'quantity' => 2]],
+			'commercial' => ['pricing_status' => 'complete', 'positions' => [['price' => 10, 'uom' => 'unit', 'price_source' => 'item.specialprice']], 'currency' => 'EUR', 'totals' => ['subtotal' => 10, 'total' => 11.9]]];
+		$html = $view->partial('inquiry/variants.phtml', ['selection' => $variant]);
+		translationCheck(str_contains($html, $tr->t('SHOPS_VARIANT_HEADING')) && str_contains($html, $tr->t('SHOPS_VARIANT_STORED_PRICE')) && !str_contains($html, 'SHOPS_') && !str_contains($html, '<script>fixture'), $locale . ': real variant and price partial translates and escapes metadata');
+	}
 	$result = ['status' => 'passed', 'php_version' => PHP_VERSION, 'checks' => count($checks), 'passed_checks' => $checks,
 		'known_defects_are_characterized_not_fixed' => false, 'observations' => $observations];
 	Zend_Registry::getInstance()->offsetUnset('SiteContext');

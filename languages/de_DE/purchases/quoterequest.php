@@ -62,4 +62,13 @@
 	'QUOTE_REQUESTS_PDF_SHOW_COVER' => 'Deckblatt anzeigen',
 	'QUOTE_REQUESTS_PDF_SHOW_IMAGES' => 'Bilder und Zeichnungen anzeigen',
 	'QUOTE_REQUESTS_PDF_SHOW_POSITION_IMAGES' => 'Positionsbilder anzeigen',
+	'MENU_QUOTE_REQUESTS' => 'Anfragen',
+	'ACTIONS_CREATE_QUOTE_REQUEST' => 'Anfrage erstellen',
+	'ACTIONS_GENERATE_QUOTE_REQUEST' => 'Anfrage generieren',
+	'QUOTEREQUEST' => 'Anfrage',
+	'QUOTE_REQUEST' => 'Anfrage',
+	'QUOTE_REQUESTS' => 'Anfragen',
+	'QUOTE_REQUESTS_NEW_ORDER' => 'Neue Bestellung',
+	'QUOTE_REQUESTS_SAVE_AND_BOOK' => 'Speichern und buchen',
+	'QUOTE_REQUESTS_DOWNLOAD_PDF' => 'PDF herunterladen',
 );

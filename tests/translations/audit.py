@@ -341,6 +341,16 @@ def run_audit(runtime=True):
                         'Vendor language packs are inventoried by path, not audited for upstream translation correctness.',
                         'Runtime tests exercise production translator/plugin/helper code with isolated context fixtures, not authenticated HTTP, database or outgoing mail/PDF generation.'],
     }
+    report['intentional_literal_fallbacks'] = [dict(c, reason='Application brand name') for c in report['literal_calls_absent_from_all_catalogues'] if c['key'] == 'DEWAWI']
+    report['defect_counts'] = {name: len(issues[name]) for name in ['catalogue_errors', 'invalid_utf8', 'utf8_bom', 'source_scan_errors', 'empty_keys', 'empty_values', 'duplicate_keys_in_file', 'placeholder_mismatches', 'template_placeholder_mismatches', 'confirmed_spelling_errors']}
+    report['defect_counts'].update({
+        'missing_en_US_keys': len(de - en), 'missing_de_DE_keys': len(en - de),
+        'missing_files': report['summary']['missing_files_en_US'] + report['summary']['missing_files_de_DE'],
+        'unresolved_request_calls': len(reachable_missing),
+        'unresolved_literal_calls': sum(c['key'] != 'DEWAWI' for c in report['literal_calls_absent_from_all_catalogues']),
+        'unresolved_label_candidates': len(missing_metadata),
+        'conflicting_loaded_values': sum(c['different_values'] for route in route_reports for c in route['cross_domain_collisions']) + sum(c['earlier']['value'] != c['winner']['value'] for route in route_reports for c in route['within_domain_overwrites']),
+    })
     return report
 
 
@@ -349,6 +359,7 @@ def main():
     parser.add_argument('--no-runtime', action='store_true', help='Only tokenize and compare; execute no application classes')
     parser.add_argument('--summary', action='store_true', help='Print just coverage and runtime outcomes')
     parser.add_argument('--fail-on-findings', action='store_true', help='Exit 1 for catalogue/parity/loading findings (expected on T1 baseline)')
+    parser.add_argument('--fail-on-defects', action='store_true', help='Exit 1 for actionable defects; retain informational/manual review candidates')
     args = parser.parse_args()
     report = run_audit(not args.no_runtime)
     output = {'source_sha256': report['source_sha256'], 'summary': report['summary'], 'runtime': report['runtime']} if args.summary else report
@@ -358,6 +369,8 @@ def main():
         return 2
     if report['issues'].get('catalogue_errors') or report['issues'].get('invalid_utf8') or report['issues'].get('source_scan_errors'):
         return 2
+    if args.fail_on_defects and any(report['defect_counts'].values()):
+        return 1
     if args.fail_on_findings and (report['summary']['missing_unique_keys_en_US'] or report['summary']['missing_unique_keys_de_DE'] or report['unresolved_request_calls'] or any(report['issues'].values())):
         return 1
     return 0

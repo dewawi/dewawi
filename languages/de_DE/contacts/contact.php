@@ -124,5 +124,12 @@
 	'CONTACTS_CUSTOMERS' => 'Kunden',
 	//Suppliers
 	'CONTACTS_SUPPLIER' => 'Lieferant',
-	'CONTACTS_SUPPLIERS' => 'Lieferanten'
+	'CONTACTS_SUPPLIERS' => 'Lieferanten',
+	'MENU_CONTACTS' => 'Kontakte',
+	'CONTACT' => 'Kontakt',
+	'CONTACTS' => 'Kontakte',
+	'CONTACTS_BANK_ACCOUNT' => 'Bankverbindung',
+	'CONTACTS_IBAN_BIC' => 'IBAN/BIC',
+	'CONTACTS_DISCOUNT' => 'Rabatt',
+	'CONTACTS_DISCOUNT_RULE' => 'Rabattregel',
 );

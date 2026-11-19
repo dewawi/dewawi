@@ -15,4 +15,8 @@
 	'ITEMS_PRICE_RULES_TO_PERCENT' => 'Aufpreis in Prozent',
 	'ITEMS_PRICE_RULES_TO_FIXED' => 'Festbetrag-Aufpreis',
 	'ITEMS_PRICE_RULES_MASTER' => 'Auf Optionen Anwenden',
+	'MENU_STOCK_MOVEMENTS' => 'Lagerbewegungen',
+	'ITEMS_TAGS' => 'Tags',
+	'ITEMS_PRICE_RULES_APPLY' => 'Preisregeln anwenden',
+	'TAG_ALREADY_EXISTS' => 'Dieser Tag ist bereits vorhanden.',
 );

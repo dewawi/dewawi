@@ -114,6 +114,14 @@ class AuditTests(unittest.TestCase):
         self.assertTrue(audit.KEY.fullmatch('DOCUMENTS_QUOTE_ID_%s_FROM_%s'))
         self.assertFalse(audit.KEY.fullmatch('Translate this text'))
 
+    def test_original_catalogue_keys_preserved(self):
+        baseline = json.loads(subprocess.check_output(['git', 'show', 'c6325897:tests/translations/report.json'], cwd=audit.ROOT))
+        original = {e['key'] for c in baseline['catalogues'].values() for e in c['entries']}
+        current = audit.php_inspect('catalogues', sorted((audit.ROOT / 'languages').rglob('*.php')))
+        for locale in ['de_DE', 'en_US']:
+            keys = {e['key'] for path, c in current.items() if f'/{locale}/' in path for e in c['entries']}
+            self.assertFalse(original - keys, locale + ': removed or untranslated original keys')
+
 
 if __name__ == '__main__':
     unittest.main()

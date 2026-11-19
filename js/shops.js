@@ -8,7 +8,7 @@ $(document).ready(function () {
 	const cartCount = $('#cart-count');
 
 	// Define the locale and currency
-	const userLocale = 'de-DE'; // German locale
+	const userLocale = document.documentElement.lang || 'de-DE';
 	const userCurrency = 'EUR'; // Euro currency
 
 	function formatCurrency(value, locale, currency) {
@@ -486,7 +486,7 @@ function selectInquiryCatalogItem(button, notify = true) {
 	$form.find('[name="titel"]').val($button.attr('data-title'));
 	$form.find('.select-catalog-suggestion').attr('aria-pressed', 'false');
 	if ($button.hasClass('select-catalog-suggestion')) $button.attr('aria-pressed', 'true');
-	$form.find('.inquiry-catalog-choice').text($button.attr('data-itemid') ? 'Für Ihre Anfrage vorgemerkt: ' + $button.attr('data-sku') + ' – ' + $button.attr('data-title') : 'Keine Artikelauswahl vorgemerkt.');
+	$form.find('.inquiry-catalog-choice').text($button.attr('data-itemid') ? $form.attr('data-inquiry-selected') + ' ' + $button.attr('data-sku') + ' – ' + $button.attr('data-title') : $form.attr('data-inquiry-unselected'));
 	if (notify) $input.trigger('change');
 	return true;
 }
@@ -498,7 +498,7 @@ function invalidateInquiryVariant(form) {
 	$form.find(':input').filter(function () { return this.name === name; }).val('');
 	$selection.find('.select-inquiry-variant').attr('aria-pressed', 'false');
 	$selection.find('.variant-current-selection, .variant-pricing, .variant-review-reasons').hide();
-	$selection.find('.variant-pending').text('Auswahl geändert. Bitte aktualisieren Sie die Konfiguration; Preis und Zuordnung werden erneut geprüft.');
+	$selection.find('.variant-pending').text($form.attr('data-inquiry-changed'));
 }
 
 function selectInquiryVariant(button) {
@@ -552,11 +552,11 @@ function submitStep(formElement, currentStep, preview = false) {
 				newContainer.attr('tabindex', '-1').trigger('focus');
 			}
 		} else if (!response || response.status !== 'ok') {
-			window.alert((response && response.message) || 'Das Formular konnte nicht verarbeitet werden.');
+			window.alert((response && response.message) || $form.attr('data-inquiry-failed'));
 		}
 	}, 'json').fail(function (xhr) {
 		const response = xhr.responseJSON || {};
-		window.alert(response.message || 'Das Formular konnte nicht verarbeitet werden. Bitte laden Sie die Seite neu.');
+		window.alert(response.message || $form.attr('data-inquiry-failed'));
 	}).always(function () {
 		$form.data('submitting', false);
 		$buttons.prop('disabled', false);
@@ -640,7 +640,7 @@ function goBackStep(currentStep) {
 		}
 	}, 'json').fail(function (xhr) {
 		const response = xhr.responseJSON || {};
-		window.alert(response.message || 'Das Formular konnte nicht verarbeitet werden. Bitte laden Sie die Seite neu.');
+		window.alert(response.message || $form.attr('data-inquiry-failed'));
 	}).always(function () {
 		$form.data('submitting', false);
 		$buttons.prop('disabled', false);

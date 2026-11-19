@@ -26,4 +26,8 @@
 	'POSITIONS_PROFIT' => 'Rohertrag',
 	'POSITIONS_MARGIN'=> 'Marge',
 	'POSITIONS_COST_MISSING' => 'Einkaufspreis fehlt',
+	'POSITIONS_PRICE_RULE_AMOUNT' => 'Preisregel',
+	'POSITIONS_PRICE_RULE_APPLY' => 'Anwenden',
+	'POSITIONS_COPY' => 'Positionen kopieren',
+	'POSITIONS_SET' => 'Positionsgruppe',
 );

@@ -1,6 +1,6 @@
 {
-  "stage": "T2A",
-  "source_sha256": "f03758ef6b1b9927638bbd523ca0cb225f0ee70acfc1f59a1387d8c6f984b00e",
+  "stage": "T2B",
+  "source_sha256": "e703c2380fb7993bbd809fdf9dcb810a23ba17b3db3961db9d8c176eac120819",
   "baseline_summary": {
     "locales": 2,
     "application_modules": 13,
@@ -61,6 +61,197 @@
     "locales": 2,
     "application_modules": 13,
     "catalogue_modules_including_default": 17,
+    "catalogue_files": 140,
+    "entries": 7732,
+    "unique_keys_union": 3740,
+    "by_locale": {
+      "de_DE": {
+        "files": 70,
+        "entries": 3866,
+        "unique_keys": 3740,
+        "catalogue_modules": 17
+      },
+      "en_US": {
+        "files": 70,
+        "entries": 3866,
+        "unique_keys": 3740,
+        "catalogue_modules": 17
+      }
+    },
+    "shared_unique_keys": 3740,
+    "missing_unique_keys_en_US": 0,
+    "missing_unique_keys_de_DE": 0,
+    "missing_files_en_US": 0,
+    "missing_files_de_DE": 0,
+    "literal_calls": 1525,
+    "literal_key_calls": 1523,
+    "unique_literal_keys": 907,
+    "dynamic_calls": 197,
+    "usage_classifications": {
+      "unresolved": 912,
+      "literal_call_found": 906,
+      "indirect_literal_candidate": 1819,
+      "possibly_dynamic": 103
+    },
+    "safely_unused": 0,
+    "hardcoded_candidates": 204,
+    "issue_counts": {
+      "catalogue_errors": 0,
+      "confirmed_spelling_errors": 0,
+      "duplicate_keys_in_file": 0,
+      "empty_keys": 0,
+      "empty_values": 0,
+      "german_in_english_candidates": 0,
+      "identical_locale_values": 301,
+      "identity_values": 0,
+      "invalid_utf8": 0,
+      "mojibake_candidates": 0,
+      "placeholder_mismatches": 0,
+      "placeholder_review": 0,
+      "source_scan_errors": 0,
+      "template_placeholder_mismatches": 0,
+      "utf8_bom": 0
+    }
+  },
+  "commands": [
+    {
+      "command": "php -l (catalogues, affected PHP and audit fixtures)",
+      "files": 165,
+      "status": "passed",
+      "errors": []
+    },
+    {
+      "command": "python3 -B tests/translations/audit-test.py",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "",
+      "stderr": "...................\n\nOK"
+    },
+    {
+      "command": "php tests/translations/runtime.php",
+      "exit_code": 0,
+      "status": "passed",
+      "checks": 157
+    },
+    {
+      "command": "php tests/security/quote-email.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 364 quote email permission, recipient, resend and tenant-sharing checks\n",
+      "stderr": "Email transport did not confirm SMTP acceptance: Fixture SMTP rejection\nEmail transport did not confirm SMTP acceptance: Fixture AJAX SMTP rejection"
+    },
+    {
+      "command": "php tests/security/shop-email-content.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "OK (75 checks)\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/security/contact-data.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 39 tenant-safe contact data cases\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/security/form-input-validation.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 20 full-form, AJAX, decimal, integer and date validation cases\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/security/user-profile.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 126 user profile and password cases\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/ui/buttons.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 165 button presentation, pilot, legacy, translation and permission checks\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/ui/toolbar-buttons.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 165 button presentation, pilot, legacy, translation and permission checks\nPASS: 2259 shared toolbar, layout, SVG, translation, permissions, readonly and exclusion checks\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/sales/quote-monitoring.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 293 quote monitoring, defaults, customer actions, due dates and tenant cases\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/documents/pdf.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 208 PDF checks; canonical archive and historical originals preserved, tenant isolation retained\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/documents/pdf-totals.php",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 244 PDF checks including mixed-rate total boxes, exemption and balance\n",
+      "stderr": ""
+    },
+    {
+      "command": "php tests/security/notifications.php",
+      "exit_code": 255,
+      "status": "baseline_failure",
+      "stdout": "PASS: 370 notification rendering, flash, translation and email history checks\n",
+      "stderr": "PHP Fatal error:  Uncaught Error: Class \"Sales_Service_DocumentRevisionService\" not found in /var/www/dewawi/application/modules/sales/views/helpers/Finish.php:12\nStack trace:\n#0 /var/www/dewawi/tests/security/notifications.php(67): Zend_View_Helper_Finish->finish()\n#1 {main}\n  thrown in /var/www/dewawi/application/modules/sales/views/helpers/Finish.php on line 12\nPHP Fatal error:  Uncaught RuntimeException: Document helper fixture failed: sales in /var/www/dewawi/tests/security/notifications.php:211\nStack trace:\n#0 {main}\n  thrown in /var/www/dewawi/tests/security/notifications.php on line 211"
+    },
+    {
+      "command": "php tests/contacts/history-states.php",
+      "exit_code": 255,
+      "status": "baseline_failure",
+      "stdout": "",
+      "stderr": "PHP Warning:  Undefined array key \"states\" in /var/www/dewawi/tests/contacts/history-states.php on line 57\nPHP Fatal error:  Uncaught RuntimeException: Missing history status: 100 in /var/www/dewawi/tests/contacts/history-states.php:23\nStack trace:\n#0 /var/www/dewawi/tests/contacts/history-states.php(69): check()\n#1 {main}\n  thrown in /var/www/dewawi/tests/contacts/history-states.php on line 23"
+    },
+    {
+      "command": "python3 -B tests/translations/browser.py",
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "{\n  \"status\": \"passed\",\n  \"checks\": 13,\n  \"locales\": [\n    \"de_DE\",\n    \"en_US\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 tests/translations/audit.py --fail-on-defects",
+      "exit_code": 0,
+      "status": "passed",
+      "static_model_matches": 28
+    },
+    {
+      "command": "repeat complete audit and compare JSON bytes",
+      "status": "passed"
+    }
+  ],
+  "database_changes": false,
+  "not_run": [
+    "production access",
+    "customer data",
+    "authenticated browser",
+    "live SMTP",
+    "database integration/migrations"
+  ],
+  "notes": [
+    "Baseline failures are retained separately, never counted as passing checks.",
+    "Runtime PDF payload and mail template contexts use isolated fixtures."
+  ],
+  "technical_block_commit": "00a99d88",
+  "t2a_summary": {
+    "locales": 2,
+    "application_modules": 13,
+    "catalogue_modules_including_default": 17,
     "catalogue_files": 115,
     "entries": 6206,
     "unique_keys_union": 3607,
@@ -112,118 +303,5 @@
       "template_placeholder_mismatches": 0,
       "utf8_bom": 0
     }
-  },
-  "commands": [
-    {
-      "command": "php -l (catalogues, affected PHP and audit fixtures)",
-      "files": 128,
-      "status": "passed",
-      "errors": []
-    },
-    {
-      "command": "python3 -B tests/translations/audit-test.py",
-      "exit_code": 0,
-      "status": "passed",
-      "stdout": "",
-      "stderr": "..................\n\nOK"
-    },
-    {
-      "command": "php tests/translations/runtime.php",
-      "exit_code": 0,
-      "status": "passed",
-      "checks": 143
-    },
-    {
-      "command": "php tests/security/quote-email.php",
-      "exit_code": 0,
-      "status": "passed",
-      "stdout": "PASS: 364 quote email permission, recipient, resend and tenant-sharing checks\n",
-      "stderr": "Email transport did not confirm SMTP acceptance: Fixture SMTP rejection\nEmail transport did not confirm SMTP acceptance: Fixture AJAX SMTP rejection"
-    },
-    {
-      "command": "php tests/security/shop-email-content.php",
-      "exit_code": 0,
-      "status": "passed",
-      "stdout": "OK (66 checks)\n",
-      "stderr": ""
-    },
-    {
-      "command": "php tests/security/contact-data.php",
-      "exit_code": 0,
-      "status": "passed",
-      "stdout": "PASS: 39 tenant-safe contact data cases\n",
-      "stderr": ""
-    },
-    {
-      "command": "php tests/security/form-input-validation.php",
-      "exit_code": 0,
-      "status": "passed",
-      "stdout": "PASS: 20 full-form, AJAX, decimal, integer and date validation cases\n",
-      "stderr": ""
-    },
-    {
-      "command": "php tests/security/user-profile.php",
-      "exit_code": 0,
-      "status": "passed",
-      "stdout": "PASS: 126 user profile and password cases\n",
-      "stderr": ""
-    },
-    {
-      "command": "php tests/ui/buttons.php",
-      "exit_code": 0,
-      "status": "passed",
-      "stdout": "PASS: 165 button presentation, pilot, legacy, translation and permission checks\n",
-      "stderr": ""
-    },
-    {
-      "command": "php tests/ui/toolbar-buttons.php",
-      "exit_code": 0,
-      "status": "passed",
-      "stdout": "PASS: 165 button presentation, pilot, legacy, translation and permission checks\nPASS: 2259 shared toolbar, layout, SVG, translation, permissions, readonly and exclusion checks\n",
-      "stderr": ""
-    },
-    {
-      "command": "php tests/sales/quote-monitoring.php",
-      "exit_code": 0,
-      "status": "passed",
-      "stdout": "PASS: 293 quote monitoring, defaults, customer actions, due dates and tenant cases\n",
-      "stderr": ""
-    },
-    {
-      "command": "php tests/security/notifications.php",
-      "exit_code": 255,
-      "status": "baseline_failure",
-      "stdout": "PASS: 370 notification rendering, flash, translation and email history checks\n",
-      "stderr": "PHP Fatal error:  Uncaught Error: Class \"Sales_Service_DocumentRevisionService\" not found in /var/www/dewawi/application/modules/sales/views/helpers/Finish.php:12\nStack trace:\n#0 /var/www/dewawi/tests/security/notifications.php(67): Zend_View_Helper_Finish->finish()\n#1 {main}\n  thrown in /var/www/dewawi/application/modules/sales/views/helpers/Finish.php on line 12\nPHP Fatal error:  Uncaught RuntimeException: Document helper fixture failed: sales in /var/www/dewawi/tests/security/notifications.php:211\nStack trace:\n#0 {main}\n  thrown in /var/www/dewawi/tests/security/notifications.php on line 211"
-    },
-    {
-      "command": "php tests/contacts/history-states.php",
-      "exit_code": 255,
-      "status": "baseline_failure",
-      "stdout": "",
-      "stderr": "PHP Warning:  Undefined array key \"states\" in /var/www/dewawi/tests/contacts/history-states.php on line 57\nPHP Fatal error:  Uncaught RuntimeException: Missing history status: 100 in /var/www/dewawi/tests/contacts/history-states.php:23\nStack trace:\n#0 /var/www/dewawi/tests/contacts/history-states.php(69): check()\n#1 {main}\n  thrown in /var/www/dewawi/tests/contacts/history-states.php on line 23"
-    },
-    {
-      "command": "python3 tests/translations/audit.py",
-      "exit_code": 0,
-      "status": "passed",
-      "static_model_matches": 28
-    },
-    {
-      "command": "repeat complete audit and compare JSON bytes",
-      "status": "passed"
-    }
-  ],
-  "database_changes": false,
-  "not_run": [
-    "production access",
-    "customer data",
-    "authenticated browser",
-    "live SMTP",
-    "database integration/migrations"
-  ],
-  "notes": [
-    "Baseline failures are retained separately, never counted as passing checks.",
-    "Runtime PDF payload and mail template contexts use isolated fixtures."
-  ]
+  }
 }

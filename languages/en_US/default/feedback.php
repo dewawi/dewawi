@@ -26,4 +26,7 @@
 	'FEEDBACK_HISTORY_OPEN' => 'Open',
 	'FEEDBACK_HISTORY_ANSWERED' => 'Answered',
 	'FEEDBACK_HISTORY_RESPONDED' => 'Response received',
+	'FEEDBACK_EMAIL_QUOTE_TITLE' => 'What is the current status of our quotation?',
+	'FEEDBACK_EMAIL_QUOTE_TEXT' => 'You can send us your feedback with a single click.',
+	'FEEDBACK_EMAIL_OPEN' => 'Open feedback online',
 );

@@ -22,5 +22,12 @@
 	'POSITIONS_SUBTOTAL' => 'Subtotal',
 	'POSITIONS_TAXES' => 'Taxes',
 	'POSITIONS_TOTAL' => 'Total',
-	'POSITIONS_NONE' => 'None'
+	'POSITIONS_NONE' => 'None',
+	'POSITIONS_OPTIONS' => 'Options',
+	'POSITIONS_COST' => 'Purchase price',
+	'POSITIONS_PROFIT' => 'Gross profit',
+	'POSITIONS_MARGIN' => 'Margin',
+	'POSITIONS_COST_MISSING' => 'Purchase price missing',
+	'POSITIONS_COPY' => 'Copy line items',
+	'POSITIONS_SET' => 'Line item group',
 );

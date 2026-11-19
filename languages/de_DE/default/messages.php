@@ -135,4 +135,9 @@
 	'MESSAGES_ITEM_VARIANT_OPTIONS_REQUIRED' => 'Für eine Variante muss mindestens eine Option ausgewählt werden.',
 	'MESSAGES_ITEM_VARIANT_EXISTS' => 'Diese Variantenkombination existiert bereits.',
 	'MESSAGES_ITEM_OPTION_INVALID' => 'Die ausgewählte Variantenoption ist ungültig.',
+	'MESSAGES_ACCESS_DENIED_%1$s' => 'Zugriff verweigert! Der Eintrag wird von %1$s bearbeitet.',
+	'MESSAGES_PROCESSES_SUCCESFULLY_GENERATED' => 'Vorgang erfolgreich generiert.',
+	'MESSAGES_INVALID_REQUEST' => 'Ungültige Anfrage.',
+	'MESSAGES_ELEMENT_DOES_NOT_EXISTS' => 'Der Eintrag ist nicht vorhanden.',
+	'MESSAGES_HISTORY_EMPTY' => 'Es sind noch keine Aktivitäten vorhanden.',
 );

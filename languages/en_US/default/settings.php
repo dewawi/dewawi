@@ -9,7 +9,7 @@
 	'SETTINGS_OVERVIEW' => 'Overview',
 	'SETTINGS_CLIENTS' => 'Clients',
 	'SETTINGS_COUNTRIES' => 'Countries',
-	'SETTINGS_COUNTRY_CODE' => 'Coundtry code',
+	'SETTINGS_COUNTRY_CODE' => 'Country code',
 	'SETTINGS_MANUFACTURER' => 'Manufacturer',
 	'SETTINGS_MANUFACTURERS' => 'Manufacturers',
 	'SETTINGS_PAYMENT_METHOD' => 'Payment method',

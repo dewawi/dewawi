@@ -58,5 +58,17 @@
 	'TOOLBAR_COUNTRY' => 'Country',
 	'TOOLBAR_ORDERING' => 'Ordering',
 	'TOOLBAR_EMPTY' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;',
-	'TOOLBAR_TAG' => 'Tag'
+	'TOOLBAR_TAG' => 'Tag',
+	'TOOLBAR_NEW_SET' => 'New group',
+	'TOOLBAR_COPY_SET' => 'Copy group',
+	'TOOLBAR_DELETE_SET' => 'Delete group',
+	'TOOLBAR_CREATED' => 'Created on',
+	'TOOLBAR_NAME' => 'Name',
+	'TOOLBAR_TITLE' => 'Title',
+	'TOOLBAR_DOCUMENT_ID' => 'Document number',
+	'TOOLBAR_TAGS' => 'Tags',
+	'TOOLBAR_OPEN' => 'Open',
+	'TOOLBAR_COMPLETED' => 'Completed',
+	'TOOLBAR_CANCELLED' => 'Cancelled',
+	'TOOLBAR_ADD' => 'Add',
 );

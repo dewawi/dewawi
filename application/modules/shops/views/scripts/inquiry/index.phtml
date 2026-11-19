@@ -13,23 +13,23 @@ $categories = $this->{'categories'};
 
 <section id="about" class="py-5">
 	<div class="container">
-		<h2><?= htmlspecialchars(($this->formRow['title'] ?? 'Anfrage')) ?></h2>
+		<h2><?= htmlspecialchars(($this->formRow['title'] ?? $this->translate('SHOPS_INQUIRY_FORM'))) ?></h2>
 		<div class="row g-4">
 			<div class="col-12">
 				<div id="form-container">
 					<div class="form-step">
-						<form method="post" id="inquiry-form" data-current-step="<?php echo $this->escape((string)$this->step); ?>">
+						<form method="post" id="inquiry-form" data-inquiry-selected="<?php echo $this->escape($this->translate('SHOPS_CATALOG_SELECTED')); ?>" data-inquiry-unselected="<?php echo $this->escape($this->translate('SHOPS_CATALOG_UNSELECTED')); ?>" data-inquiry-changed="<?php echo $this->escape($this->translate('SHOPS_VARIANT_CHANGED')); ?>" data-inquiry-failed="<?php echo $this->escape($this->translate('SHOPS_FORM_PROCESSING_FAILED')); ?>" data-current-step="<?php echo $this->escape((string)$this->step); ?>">
 							<p><?= htmlspecialchars(($this->formRow['description'] ?? '')) ?></p>
 
 							<?php if (!empty($this->errors)): ?>
 								<div class="alert alert-danger" role="alert">
-									Bitte prüfen Sie Ihre Eingaben. Es sind Fehler aufgetreten.
+									<?php echo $this->escape($this->translate('SHOPS_INQUIRY_INPUT_ERRORS')); ?>
 								</div>
 							<?php endif; ?>
 
 							<?php if (!empty($this->requestValues)): ?>
 							<div class="alert alert-info">
-								<h5>Ihre Angaben:</h5>
+								<h5><?php echo $this->escape($this->translate('SHOPS_INQUIRY_YOUR_INPUT')); ?></h5>
 								<ul>
 									<?php foreach ($this->requestValues as $key => $val): ?>
 										<li><strong><?= htmlspecialchars($key) ?>:</strong> <?= htmlspecialchars($val) ?></li>
@@ -43,8 +43,8 @@ $categories = $this->{'categories'};
 
 							<?php if (!empty($this->suggestions)): ?>
 								<div class="alert alert-info">
-									<h5>Unverbindliche Geräteauswahl:</h5>
-								<p>Zusätzliche Anforderungen und Ausstattung müssen vor einem verbindlichen Angebot technisch und kaufmännisch geprüft werden.</p>
+									<h5><?php echo $this->escape($this->translate('SHOPS_SUGGESTED_DEVICES')); ?></h5>
+								<p><?php echo $this->escape($this->translate('SHOPS_SUGGESTED_REVIEW')); ?></p>
 									<div class="row">
 										<?php foreach ($this->suggestedItems as $item): ?>
 											<?php

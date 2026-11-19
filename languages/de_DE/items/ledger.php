@@ -14,7 +14,7 @@
 	'ITEMS_LEDGER_DATE' => 'Buchungsdatum',
 	'ITEMS_LEDGER_MODIFIED' => 'le. Änderung',
 	'ITEMS_LEDGER_PRICE' => 'Preis',
-	'ITEMS_LEDGER_UOM' => 'Messeinheit',
+	'ITEMS_LEDGER_UOM' => 'Mengeneinheit',
 	'ITEMS_LEDGER_ACTIVATED' => 'Bestandsführung aktivieren',
 	'ITEMS_LEDGER_REASON' => 'Buchungsgrund',
 	'ITEMS_LEDGER_REASON_RECEIPT' => 'Wareneingang',
@@ -44,4 +44,8 @@
 	'ITEMS_MOVEMENT_BOOK_CORRECTION' => 'Bestand korrigieren',
 	'ITEMS_MOVEMENT_PLAN_INCOMING' => 'Zulauf planen',
 	'ITEMS_MOVEMENT_RESERVE_ITEM' => 'Artikel reservieren',
+	'MENU_LEDGER' => 'Buchungsverlauf',
+	'MENU_STOCK_MOVEMENTS' => 'Lagerbewegungen',
+	'ITEMS_LEDGER' => 'Buchungsverlauf',
+	'ITEMS_LEDGER_EMPTY' => 'Keine Buchungen vorhanden.',
 );

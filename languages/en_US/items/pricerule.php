@@ -25,5 +25,11 @@
 	'PRICE_RULES_CONTACT_APPLY_TO_SUBCATEGORIES' => 'Apply to subcategories',
 	'PRICE_RULES_ITEMS_ALL_CATEGORIES' => 'All categories',
 	'PRICE_RULES_ITEMS_ALL_TYPES' => 'All types',
-	'PRICE_RULES_ITEMS_ALL_MANUFACTURERS' => 'All manufacturers'
+	'PRICE_RULES_ITEMS_ALL_MANUFACTURERS' => 'All manufacturers',
+	'PRICE_RULES' => 'Price rules',
+	'PRICE_RULES_NONE' => 'None',
+	'PRICE_RULES_BY_PERCENT' => 'Percentage discount',
+	'PRICE_RULES_BY_FIXED' => 'Fixed-amount discount',
+	'PRICE_RULES_TO_PERCENT' => 'Percentage surcharge',
+	'PRICE_RULES_TO_FIXED' => 'Fixed-amount surcharge',
 );

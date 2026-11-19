@@ -2277,14 +2277,14 @@ function handleEditError(resp, params) {
 	// 3) message (save_failed etc.)
 	if (resp && resp.message) {
 		// du kannst hier übersetzen, wenn du willst
-		if (resp.message === 'save_failed') pushMessages(['Speichern fehlgeschlagen.']);
+		if (resp.message === 'save_failed') pushMessages([Dewawi.message('MESSAGES_SAVE_FAILED')]);
 		else pushMessages([resp.message]);
 		unlock(params['id']);
 		return true;
 	}
 
 	// 4) unbekannt
-	pushMessages(['Speichern nicht möglich.']);
+	pushMessages([Dewawi.message('MESSAGES_SAVE_FAILED')]);
 	unlock(params['id']);
 	return true;
 }

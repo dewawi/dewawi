@@ -48,4 +48,8 @@
 	'STATISTICS_REPORTING_NOTE' => 'Alle Auswertungen berücksichtigen den gewählten Zeitraum. Es werden abgeschlossene, nicht stornierte Rechnungen und Gutschriften verwendet. Kundenkategorien entsprechen dem aktuellen Kontaktstamm. Einzelne Jahre können unvollständig sein.',
 	'STATISTICS_REPORTING_AUDIT_WARNING' => 'Datenprüfung: Auffälligkeiten erkannt',
 	'STATISTICS_REPORTING_EXPORT_XLSX' => 'Excel exportieren',
+	'MENU_STATISTICS' => 'Statistiken',
+	'STATISTICS' => 'Statistiken',
+	'STATISTICS_TURNOVER' => 'Umsatz',
+	'STATISTICS_TURNOVER_CUSTOMER_GROUPS' => 'Umsatz nach Kundengruppen',
 );

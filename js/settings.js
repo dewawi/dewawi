@@ -162,7 +162,7 @@ function applyContact(contactId) {
 		$("#tabFiles").empty();
 		$("#tabFiles").append('<div id="elfinder'+data['id']+'"></div>');
 		$('#elfinder'+data['id']).elfinder({
-			lang: 'de',
+			lang: typeof language === 'string' ? language.slice(0, 2) : 'de',
 			url : baseUrl+'/library/elFinder/php/connector.php',
 			customData : { contactid : data['id'] },
 			rememberLastDir : false,

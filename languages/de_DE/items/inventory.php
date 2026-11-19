@@ -12,6 +12,6 @@
 	'ITEMS_INVENTORY_DATE' => 'Buchungsdatum',
 	'ITEMS_INVENTORY_MODIFIED' => 'le. Änderung',
 	'ITEMS_INVENTORY_PRICE' => 'Preis',
-	'ITEMS_INVENTORY_UOM' => 'Messeinheit',
+	'ITEMS_INVENTORY_UOM' => 'Mengeneinheit',
 	'ITEMS_INVENTORY_ACTIVATED' => 'Bestandsführung aktivieren'
 );

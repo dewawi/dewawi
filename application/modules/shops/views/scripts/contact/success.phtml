@@ -14,13 +14,13 @@ $this->headTitle($this->title);
 		<div class="row justify-content-center">
 			<div class="col-md-8 text-center">
 				<i class="icon-check fas fa-check-circle"></i>
-				<h1>Vielen Dank für Ihre Kontaktaufnahme!</h1>
+				<h1><?php echo $this->escape($this->translate('SHOPS_CONTACT_SUCCESS_TITLE')); ?></h1>
 				<?php if (!empty($this->stored)): ?>
-					<p>Ihre Anfrage ist bei uns eingegangen. Wir werden uns schnellstmöglich bei Ihnen melden.</p>
+					<p><?php echo $this->escape($this->translate('SHOPS_CONTACT_RECEIVED')); ?></p>
 					<?php if ($this->notificationSent === false): ?>
-						<p>Ihre Anfrage wurde gespeichert. Leider konnten wir derzeit keine E-Mail-Bestätigung versenden. Bitte senden Sie Ihre Anfrage nicht erneut.</p>
+						<p><?php echo $this->escape($this->translate('SHOPS_INQUIRY_EMAIL_FAILED')); ?></p>
 					<?php elseif (!empty($this->duplicate)): ?>
-						<p>Diese Anfrage war bereits gespeichert und wurde nicht erneut angelegt.</p>
+						<p><?php echo $this->escape($this->translate('SHOPS_INQUIRY_DUPLICATE')); ?></p>
 					<?php endif; ?>
 				<?php endif; ?>
 			</div>
@@ -28,8 +28,8 @@ $this->headTitle($this->title);
 
 		<?php if (!empty($this->downloadUrl)): ?>
 		  <div class="alert alert-success">
-			<strong>Ihr Angebot ist fertig.</strong>
-			<a href="<?= $this->escape($this->downloadUrl) ?>" target="_blank" rel="noopener">PDF herunterladen</a>
+			<strong><?php echo $this->escape($this->translate('SHOPS_QUOTE_READY')); ?></strong>
+			<a href="<?= $this->escape($this->downloadUrl) ?>" target="_blank" rel="noopener"><?php echo $this->escape($this->translate('SHOPS_DOWNLOAD_PDF')); ?></a>
 		  </div>
 		<?php endif; ?>
 
@@ -40,7 +40,7 @@ $this->headTitle($this->title);
 					<div class="card-header" id="headingOne">
 						<h2 class="mb-0">
 							<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-								Ihre Kontaktdaten
+								<?php echo $this->escape($this->translate('SHOPS_YOUR_CONTACT_DATA')); ?>
 							</button>
 						</h2>
 					</div>
@@ -65,13 +65,13 @@ $this->headTitle($this->title);
 					</div>
 				</div>
 			<?php else: ?>
-				<p>Keine Kontaktdaten verfügbar.</p>
+				<p><?php echo $this->escape($this->translate('SHOPS_NO_CONTACT_DATA')); ?></p>
 			<?php endif; ?>
 		</div>
 
 		<div class="row justify-content-center mt-4">
 			<div class="col-md-8 text-center">
-				<a href="<?php echo $this->escape($this->url([], 'shop_home')); ?>" class="btn btn-success btn-lg">Zurück zur Startseite</a>
+				<a href="<?php echo $this->escape($this->url([], 'shop_home')); ?>" class="btn btn-success btn-lg"><?php echo $this->escape($this->translate('SHOPS_BACK_HOME')); ?></a>
 			</div>
 		</div>
 	</div>

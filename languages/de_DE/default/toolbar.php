@@ -69,5 +69,6 @@
 	'TOOLBAR_COUNTRY' => 'Land',
 	'TOOLBAR_ORDERING' => 'Anordnung',
 	'TOOLBAR_EMPTY' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;',
-	'TOOLBAR_TAG' => 'Tag'
+	'TOOLBAR_TAG' => 'Tag',
+	'TOOLBAR_ADD' => 'Hinzufügen',
 );

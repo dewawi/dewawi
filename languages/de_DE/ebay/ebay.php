@@ -135,5 +135,8 @@
 	'DE_VersicherterExpressVersandInternational' => 'Versicherter Express - Versand',
 	'DE_VersicherterSonderversandZBMobelKFZ' => 'Versicherter Sonderversand (z.B. Mobel, KFZ)',
 	'DE_VersicherterVersandInternational' => 'Versicherter Versand',
-	'DE_Writing' => '(description not yet available)'
+	'DE_Writing' => '(description not yet available)',
+	'MENU_EBAY' => 'eBay',
+	'EBAY_SKU' => 'Artikelnummer',
+	'EBAY_ITEM_ID' => 'Artikel-ID',
 );

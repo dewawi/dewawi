@@ -1,38 +1,38 @@
 <?php
 $selection = $this->selection;
 $messages = [
-	'variant_base_unavailable' => 'Der Basisartikel ist nicht mehr verfügbar. Bitte gehen Sie zurück und wählen Sie erneut.',
-	'variant_catalog_unavailable' => 'Die öffentliche Artikelauswahl ist derzeit nicht verfügbar.',
-	'variant_scan_limit' => 'Die Konfiguration ist zu umfangreich für eine eindeutige Onlineprüfung.',
-	'variant_inputs_incomplete' => 'Bitte wählen Sie die gewünschte Ausstattung und aktualisieren Sie die Konfiguration.',
-	'variant_no_match' => 'Zu dieser Ausstattung ist keine passende freigegebene Variante hinterlegt.',
-	'variant_ambiguous' => 'Mehrere Varianten haben dieselbe Ausstattung. Eine manuelle Klärung ist erforderlich.',
-	'variant_selection_invalid' => 'Die Auswahl ist veraltet oder unzulässig. Bitte prüfen Sie Varianten und Optionen erneut.',
-	'variant_relations_unverified' => 'Einzelne Varianten haben ungeklärte Optionszuordnungen und werden nicht zur Auswahl angeboten.',
-	'variant_group_rules_unknown' => 'Die Kombinationsregeln einzelner Optionsgruppen müssen manuell geprüft werden.',
-	'variant_group_rules_conflict' => 'Die hinterlegten Kombinationsregeln widersprechen sich.',
-	'variant_group_conflict' => 'Die gewählten Optionen derselben Gruppe schließen sich aus.',
-	'variant_duplicate_option' => 'Dieselbe Option wurde mehrfach zugeordnet.',
-	'variant_option_pricing_review' => 'Preis, Verfügbarkeit oder Zuordnung zusätzlicher Ausstattung müssen geprüft werden.',
-	'variant_pricing_review' => 'Ein vollständiger verlässlicher Preis kann derzeit nicht angegeben werden.',
+	'variant_base_unavailable' => 'SHOPS_VARIANT_BASE_UNAVAILABLE',
+	'variant_catalog_unavailable' => 'SHOPS_VARIANT_CATALOG_UNAVAILABLE',
+	'variant_scan_limit' => 'SHOPS_VARIANT_SCAN_LIMIT',
+	'variant_inputs_incomplete' => 'SHOPS_VARIANT_INPUTS_INCOMPLETE',
+	'variant_no_match' => 'SHOPS_VARIANT_NO_MATCH',
+	'variant_ambiguous' => 'SHOPS_VARIANT_AMBIGUOUS',
+	'variant_selection_invalid' => 'SHOPS_VARIANT_SELECTION_INVALID',
+	'variant_relations_unverified' => 'SHOPS_VARIANT_RELATIONS_UNVERIFIED',
+	'variant_group_rules_unknown' => 'SHOPS_VARIANT_GROUP_RULES_UNKNOWN',
+	'variant_group_rules_conflict' => 'SHOPS_VARIANT_GROUP_RULES_CONFLICT',
+	'variant_group_conflict' => 'SHOPS_VARIANT_GROUP_CONFLICT',
+	'variant_duplicate_option' => 'SHOPS_VARIANT_DUPLICATE_OPTION',
+	'variant_option_pricing_review' => 'SHOPS_VARIANT_OPTION_PRICING_REVIEW',
+	'variant_pricing_review' => 'SHOPS_VARIANT_PRICING_REVIEW',
 ];
 ?>
-<section class="inquiry-variants inquiry-catalog" aria-label="Variantenkonfiguration" data-variant-field="<?= $this->escape($selection['variant_field']); ?>">
-	<h3>Varianten und Ausstattung</h3>
-	<p>Die Auswahl vorhandener Varianten bestätigt keine technische Eignung. Ihre Anfrage wird technisch und kaufmännisch manuell geprüft. Es wird kein automatisches Angebot erstellt.</p>
+<section class="inquiry-variants inquiry-catalog" aria-label="<?= $this->escape($this->translate('SHOPS_VARIANT_TITLE')); ?>" data-variant-field="<?= $this->escape($selection['variant_field']); ?>">
+	<h3><?php echo $this->escape($this->translate('SHOPS_VARIANT_HEADING')); ?></h3>
+	<p><?php echo $this->escape($this->translate('SHOPS_VARIANT_REVIEW_NOTE')); ?></p>
 	<?php if($selection['base']): ?><h4><?= $this->escape($selection['base']['sku'].' – '.$selection['base']['title']); ?></h4><?php endif; ?>
 	<ul class="variant-review-reasons" role="status">
 	<?php foreach($selection['reasons'] as $reason): if(!isset($messages[$reason])) continue; ?>
-		<li><?= $this->escape($messages[$reason]); ?></li>
+		<li><?= $this->escape($this->translate($messages[$reason])); ?></li>
 	<?php endforeach; ?>
 	</ul>
 	<div class="inquiry-catalog-items">
 	<?php foreach($selection['candidates'] as $variant): ?>
 		<article class="inquiry-catalog-item">
 			<h4><?= $this->escape($variant['sku'].' – '.$variant['title']); ?></h4>
-			<p>Hinterlegte Ausstattung: <?= $this->escape(implode(', ', $variant['option_labels']) ?: 'Keine eindeutige Zuordnung'); ?></p>
+			<p><?php echo $this->escape($this->translate('SHOPS_VARIANT_STORED_OPTIONS')); ?> <?= $this->escape(implode(', ', $variant['option_labels']) ?: $this->translate('SHOPS_VARIANT_NO_ASSIGNMENT')); ?></p>
 			<?php if($selection['editable']): ?>
-			<button type="button" class="btn btn-outline-primary select-inquiry-variant" aria-pressed="<?= ($selection['selected']['itemid'] ?? null) === $variant['itemid'] ? 'true' : 'false'; ?>" data-variantid="<?= $variant['itemid']; ?>" data-field-values="<?= $this->escape(json_encode($variant['field_values'])); ?>"<?= !$variant['configurable'] ? ' disabled' : ''; ?>>Diese Variante konfigurieren</button>
+			<button type="button" class="btn btn-outline-primary select-inquiry-variant" aria-pressed="<?= ($selection['selected']['itemid'] ?? null) === $variant['itemid'] ? 'true' : 'false'; ?>" data-variantid="<?= $variant['itemid']; ?>" data-field-values="<?= $this->escape(json_encode($variant['field_values'])); ?>"<?= !$variant['configurable'] ? ' disabled' : ''; ?>><?php echo $this->escape($this->translate('SHOPS_VARIANT_CONFIGURE')); ?></button>
 			<?php endif; ?>
 		</article>
 	<?php endforeach; ?>
@@ -40,24 +40,24 @@ $messages = [
 	<p class="variant-pending" aria-live="polite"></p>
 	<?php if($selection['selected']): ?>
 	<div class="variant-current-selection">
-		<h4>Zur Prüfung vorgemerkt: <?= $this->escape($selection['selected']['sku'].' – '.$selection['selected']['title']); ?></h4>
+		<h4><?php echo $this->escape($this->translate('SHOPS_VARIANT_SELECTED')); ?> <?= $this->escape($selection['selected']['sku'].' – '.$selection['selected']['title']); ?></h4>
 		<ul><?php foreach($selection['options'] as $option): ?>
 			<li><?= $this->escape($option['title']); ?>:
-				<?php if($option['status'] === 'unavailable'): ?>Nicht verfügbar
-				<?php elseif($option['status'] === 'on_request'): ?>Preis auf Anfrage
-				<?php elseif($option['included']): ?>Im Variantenpreis enthalten<?= $option['catalog_price'] === 0.0 ? ' (kostenlose Ausstattung)' : ''; ?>
-				<?php elseif($option['status'] === 'priced'): ?>Zusätzlich <?= number_format($option['price'], 2, ',', '.'); ?> <?= $this->escape($option['currency']); ?> netto je <?= $this->escape($option['uom']); ?> (Menge <?= $this->escape((string)$option['quantity']); ?>)
-				<?php else: ?>Manuelle Preis- und Verfügbarkeitsprüfung erforderlich<?php endif; ?>
+				<?php if($option['status'] === 'unavailable'): ?><?php echo $this->escape($this->translate('SHOPS_VARIANT_NOT_AVAILABLE')); ?>
+				<?php elseif($option['status'] === 'on_request'): ?><?php echo $this->escape($this->translate('SHOPS_VARIANT_PRICE_ON_REQUEST')); ?>
+				<?php elseif($option['included']): ?><?php echo $this->escape($this->translate('SHOPS_VARIANT_INCLUDED')); ?><?= $option['catalog_price'] === 0.0 ? $this->translate('SHOPS_VARIANT_FREE') : ''; ?>
+				<?php elseif($option['status'] === 'priced'): ?><?php echo $this->escape($this->translate('SHOPS_VARIANT_EXTRA')); ?> <?= number_format($option['price'], 2, ',', '.'); ?> <?= $this->escape($option['currency']); ?> <?php echo $this->escape($this->translate('SHOPS_VARIANT_NET_PER')); ?> <?= $this->escape($option['uom']); ?> (<?= $this->escape($this->translate('SHOPS_VARIANT_QUANTITY')); ?> <?= $this->escape((string)$option['quantity']); ?>)
+				<?php else: ?><?php echo $this->escape($this->translate('SHOPS_VARIANT_MANUAL_PRICE')); ?><?php endif; ?>
 			</li>
 		<?php endforeach; ?></ul>
 	</div>
 	<?php endif; ?>
 	<?php if(($selection['commercial']['pricing_status'] ?? '') === 'complete'): $pricing = $selection['commercial']; ?>
 	<div class="variant-pricing">
-		<p>Gespeicherter Variantenpreis: <?= number_format($pricing['positions'][0]['price'], 2, ',', '.'); ?> <?= $this->escape($pricing['currency']); ?> netto je <?= $this->escape($pricing['positions'][0]['uom']); ?><?= $pricing['positions'][0]['price_source'] === 'item.specialprice' ? ' (Sonderpreis)' : ''; ?></p>
-		<p>Unverbindliche Summe der Ausstattung: <?= number_format($pricing['totals']['subtotal'], 2, ',', '.'); ?> <?= $this->escape($pricing['currency']); ?> netto; <?= number_format($pricing['totals']['total'], 2, ',', '.'); ?> <?= $this->escape($pricing['currency']); ?> einschließlich hinterlegter Steuern.</p>
-		<p>Lieferland, Versand, Verfügbarkeit und sämtliche technischen Anforderungen sind noch zu prüfen.</p>
+		<p><?php echo $this->escape($this->translate('SHOPS_VARIANT_STORED_PRICE')); ?> <?= number_format($pricing['positions'][0]['price'], 2, ',', '.'); ?> <?= $this->escape($pricing['currency']); ?> <?php echo $this->escape($this->translate('SHOPS_VARIANT_NET_PER')); ?> <?= $this->escape($pricing['positions'][0]['uom']); ?><?= $pricing['positions'][0]['price_source'] === 'item.specialprice' ? $this->translate('SHOPS_VARIANT_SPECIAL_PRICE') : ''; ?></p>
+		<p><?php echo $this->escape($this->translate('SHOPS_VARIANT_EQUIPMENT_TOTAL')); ?> <?= number_format($pricing['totals']['subtotal'], 2, ',', '.'); ?> <?= $this->escape($pricing['currency']); ?> <?php echo $this->escape($this->translate('SHOPS_VARIANT_NET')); ?> <?= number_format($pricing['totals']['total'], 2, ',', '.'); ?> <?= $this->escape($pricing['currency']); ?> <?php echo $this->escape($this->translate('SHOPS_VARIANT_TAX_NOTE')); ?></p>
+		<p><?php echo $this->escape($this->translate('SHOPS_VARIANT_DELIVERY_REVIEW')); ?></p>
 	</div>
 	<?php endif; ?>
-	<?php if($selection['editable']): ?><button type="button" class="btn btn-outline-primary preview-inquiry-variant">Konfiguration aktualisieren</button><?php endif; ?>
+	<?php if($selection['editable']): ?><button type="button" class="btn btn-outline-primary preview-inquiry-variant"><?php echo $this->escape($this->translate('SHOPS_VARIANT_UPDATE')); ?></button><?php endif; ?>
 </section>

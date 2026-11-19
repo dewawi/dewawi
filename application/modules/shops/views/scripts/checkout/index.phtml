@@ -24,10 +24,10 @@ $checkout = $this->CheckoutForm($this->translate('SHOPS_ORDER_FORM'));
 					<div id="cart-container">
 						<?php if (!empty($this->items)) : ?>
 							<div class="cart-header d-flex justify-content-between align-items-center">
-								<span><?php echo $this->translate('Product'); ?></span>
-								<span><?php echo $this->translate('Price'); ?></span>
-								<span><?php echo $this->translate('Quantity'); ?></span>
-								<span><?php echo $this->translate('Total'); ?></span>
+								<span><?php echo $this->translate('SHOPS_PRODUCT'); ?></span>
+								<span><?php echo $this->translate('SHOPS_PRICE'); ?></span>
+								<span><?php echo $this->translate('SHOPS_QUANTITY'); ?></span>
+								<span><?php echo $this->translate('SHOPS_TOTAL'); ?></span>
 							</div>
 							<div id="cart-items">
 								<?php foreach ($this->items as $id => $item) : ?>
@@ -43,7 +43,7 @@ $checkout = $this->CheckoutForm($this->translate('SHOPS_ORDER_FORM'));
 								<?php endforeach; ?>
 							</div>
 							<div class="cart-summary d-flex justify-content-between align-items-center mt-3">
-								<h4><?php echo $this->translate('Total:'); ?> <span id="cart-total"><?php echo $this->total; ?></span></h4>
+								<h4><?php echo $this->translate('SHOPS_TOTAL') . ':'; ?> <span id="cart-total"><?php echo $this->total; ?></span></h4>
 								<button id="edit-btn" class="btn btn-success" type="button"><?php echo $this->translate('SHOPS_SHOPPING_CART_EDIT'); ?></button><br>
 							</div>
 							<div class="mt-3">

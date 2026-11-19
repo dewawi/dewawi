@@ -52,8 +52,16 @@ class ShopEmailContentTestView
     public bool $stored = true;
     public bool $duplicate = false;
     public string $title = '';
+    public string $locale = 'de_DE';
 
-    public function translate(string $message): string { return $message; }
+    public function translate(string $message): string {
+        static $translators = [];
+        if (!isset($translators[$this->locale])) {
+            $translators[$this->locale] = new DEEC_Translate($this->locale);
+            $translators[$this->locale]->loadModule('shops');
+        }
+        return $translators[$this->locale]->t($message);
+    }
     public function headTitle(string $title): void {}
     public function Messages(): string { return ''; }
     public function escape($value): string { return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8'); }
@@ -119,6 +127,13 @@ $checkoutFailure = renderSuccess('checkout', false);
 $checkoutFailureText = 'Ihre Bestellung wurde gespeichert. Leider konnten wir derzeit keine E-Mail-Bestätigung versenden. Bitte geben Sie Ihre Bestellung nicht erneut auf.';
 check(substr_count($checkoutFailure, $checkoutFailureText) === 1, 'Checkout failure message is missing or duplicated');
 checkNoTechnicalStatus($checkoutFailure, 'Checkout failure');
+
+foreach (['contact', 'inquiry', 'checkout'] as $type) {
+    $english = renderSuccess($type, false, ['locale' => 'en_US']);
+    check(str_contains($english, 'Thank you'), $type . ': English success heading missing');
+    check(str_contains($english, 'confirmation email'), $type . ': English email failure missing');
+    check(!str_contains($english, 'Vielen Dank') && !str_contains($english, 'SHOPS_'), $type . ': unresolved or German success text');
+}
 
 Zend_Registry::set('Shop', [
     'title' => 'Example Shop',

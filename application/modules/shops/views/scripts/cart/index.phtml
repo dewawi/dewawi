@@ -6,11 +6,11 @@
 			<div id="cart-container">
 				<?php if (!empty($this->items)) : ?>
 					<div class="cart-header d-flex justify-content-between align-items-center">
-						<span><?php echo $this->translate('Product'); ?></span>
-						<span><?php echo $this->translate('Price'); ?></span>
-						<span><?php echo $this->translate('Quantity'); ?></span>
-						<span><?php echo $this->translate('Total'); ?></span>
-						<span><?php echo $this->translate('Actions'); ?></span>
+						<span><?php echo $this->translate('SHOPS_PRODUCT'); ?></span>
+						<span><?php echo $this->translate('SHOPS_PRICE'); ?></span>
+						<span><?php echo $this->translate('SHOPS_QUANTITY'); ?></span>
+						<span><?php echo $this->translate('SHOPS_TOTAL'); ?></span>
+						<span><?php echo $this->translate('SHOPS_ACTIONS'); ?></span>
 					</div>
 					<div id="cart-items" aria-live="polite" data-quantity-label="<?php echo $this->translate('SHOPS_QUANTITY'); ?>" data-remove-label="<?php echo $this->translate('SHOPS_REMOVE'); ?>" data-empty-label="<?php echo $this->translate('SHOPS_SHOPPING_CART_EMPTY'); ?>">
 						<?php foreach ($this->items as $id => $item) : ?>
@@ -40,7 +40,7 @@
 						<?php endforeach; ?>
 					</div>
 					<div class="cart-summary d-flex justify-content-between align-items-center mt-3">
-						<h4><?php echo $this->translate('Total:'); ?> <span id="cart-total"><?php echo $this->total; ?></span></h4>
+						<h4><?php echo $this->translate('SHOPS_TOTAL') . ':'; ?> <span id="cart-total"><?php echo $this->total; ?></span></h4>
 						<?php $shippingPage = $this->PageByType('shipping'); ?>
 						<?php if($shippingPage) : ?>
 							<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->SlugUrl('page', (int)$shippingPage['id']); ?>" target="_blank">Versandkosten</a></span>

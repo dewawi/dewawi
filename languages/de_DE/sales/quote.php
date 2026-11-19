@@ -101,4 +101,13 @@
 	'QUOTES_MONITORING_FOLLOWUP_TODAY' => 'Nachfassen heute fällig',
 	'QUOTES_MONITORING_FOLLOWUP_OVERDUE' => 'Nachfassen überfällig',
 	'QUOTES_MONITORING_VIEW_RESPONSE' => 'Antwort ansehen',
+	'MENU_QUOTES' => 'Angebote',
+	'ACTIONS_CREATE_QUOTE' => 'Angebot erstellen',
+	'ACTIONS_GENERATE_QUOTE' => 'Angebot generieren',
+	'QUOTE' => 'Angebot',
+	'QUOTES' => 'Angebote',
+	'QUOTES_SAVE_AND_BOOK' => 'Speichern und buchen',
+	'QUOTES_DOWNLOAD_PDF' => 'PDF herunterladen',
+	'QUOTES_THERE_IS_NO_CONTACT' => 'Es wurde kein Kontakt hinzugefügt!',
+	'QUOTES_THERE_ARE_NO_POSITIONS' => 'Es wurden keine Positionen hinzugefügt!',
 );

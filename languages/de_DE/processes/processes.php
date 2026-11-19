@@ -1,7 +1,7 @@
 <?php return array(
 	'PROCESSES_PROCESS_ID' => 'ID',
 	'PROCESSES_NEW_PROCESS' => 'Neues Vorgang',
-	'PROCESSES_TITLE' => 'Title',
+	'PROCESSES_TITLE' => 'Titel',
 	'PROCESSES_OVERVIEW' => 'Übersicht',
 	'PROCESSES_CONTACT' => 'Kontakt',
 	'PROCESSES_CUSTOMER' => 'Kunde',
@@ -77,7 +77,6 @@
 	'PROCESSES_CONTACT_PERSON' => 'Sachbearbeiter',
 	'PROCESSES_MODIFIED' => 'le. Änderung',
 	'PROCESSES_STATE' => 'Status',
-	'PROCESSES_SUBTOTAL' => 'Nettobetrag',
 	'PROCESSES_TAXES' => 'Umsatzsteuer',
 	'PROCESSES_TAX_FREE' => 'Umsatzsteuer frei',
 	'PROCESSES_CURRENCY' => 'Währung',
@@ -104,5 +103,13 @@
 	'PROCESSES_EDIT_POSITIONS_SEPARATELY' => 'Positionen einzeln bearbeiten',
 	'PROCESSES_NONE' => 'keine',
 	'PROCESSES_EMPTY' => 'leer',
-	'PROCESSES_ACTIVE_FILTER' => 'active Filter'
+	'PROCESSES_ACTIVE_FILTER' => 'Aktiver Filter',
+	'MENU_PROCESSES' => 'Vorgänge',
+	'ACTIONS_CREATE_PROCESS' => 'Vorgang erstellen',
+	'ACTIONS_GENERATE_PROCESS' => 'Vorgang generieren',
+	'PROCESS' => 'Vorgang',
+	'PROCESSES' => 'Vorgänge',
+	'PROCESSES_ID' => 'ID',
+	'PROCESSES_PARTIAL_DElIVERED' => 'Teillieferung erfolgt',
+	'PROCESSES_PROCESS_DATE' => 'Vorgangsdatum',
 );

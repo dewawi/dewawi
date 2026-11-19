@@ -40,4 +40,12 @@
 	'ITEMS_MOVEMENT_BOOK_CORRECTION' => 'Correct stock',
 	'ITEMS_MOVEMENT_PLAN_INCOMING' => 'Plan incoming stock',
 	'ITEMS_MOVEMENT_RESERVE_ITEM' => 'Reserve item',
+	'ITEMS_LEDGER_ID' => 'Stock movement number',
+	'ITEMS_LEDGER_DOCUMENT' => 'Document',
+	'ITEMS_LEDGER_WAREHOUSE' => 'Warehouses',
+	'ITEMS_LEDGER_MODIFIED' => 'Last modified',
+	'ITEMS_LEDGER_PRICE' => 'Price',
+	'ITEMS_LEDGER_UOM' => 'Unit of measure',
+	'ITEMS_LEDGER_ACTIVATED' => 'Activate inventory management',
+	'ITEMS_LEDGER_EMPTY' => 'No stock movements available.',
 );

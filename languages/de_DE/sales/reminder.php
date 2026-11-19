@@ -65,4 +65,13 @@
 	'REMINDERS_PDF_SHOW_COVER' => 'Deckblatt anzeigen',
 	'REMINDERS_PDF_SHOW_IMAGES' => 'Bilder und Zeichnungen anzeigen',
 	'REMINDERS_PDF_SHOW_POSITION_IMAGES' => 'Positionsbilder anzeigen',
+	'MENU_REMINDERS' => 'Mahnungen',
+	'ACTIONS_CREATE_REMINDER' => 'Mahnung erstellen',
+	'ACTIONS_GENERATE_REMINDER' => 'Mahnung generieren',
+	'REMINDER' => 'Mahnung',
+	'REMINDERS' => 'Mahnungen',
+	'REMINDERS_SAVE_AND_BOOK' => 'Speichern und buchen',
+	'REMINDERS_DOWNLOAD_PDF' => 'PDF herunterladen',
+	'REMINDERS_THERE_IS_NO_CONTACT' => 'Es wurde kein Kontakt hinzugefügt!',
+	'REMINDERS_THERE_ARE_NO_POSITIONS' => 'Es wurden keine Positionen hinzugefügt!',
 );

@@ -29,5 +29,7 @@
 	'PRICE_RULES_CONTACT_APPLY_TO_SUBCATEGORIES' => 'Auf Unterkategorien anwenden',
 	'PRICE_RULES_ITEMS_ALL_CATEGORIES' => 'Alle Kategorien',
 	'PRICE_RULES_ITEMS_ALL_TYPES' => 'Alle Typen',
-	'PRICE_RULES_ITEMS_ALL_MANUFACTURERS' => 'Alle Hersteller'
+	'PRICE_RULES_ITEMS_ALL_MANUFACTURERS' => 'Alle Hersteller',
+	'MENU_PRICE_RULES' => 'Preisregeln',
+	'ITEMS_PRICE_RULES' => 'Preisregeln',
 );

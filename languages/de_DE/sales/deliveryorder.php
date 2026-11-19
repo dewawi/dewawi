@@ -63,4 +63,13 @@
 	'DELIVERY_ORDERS_PDF_SHOW_COVER' => 'Deckblatt anzeigen',
 	'DELIVERY_ORDERS_PDF_SHOW_IMAGES' => 'Bilder und Zeichnungen anzeigen',
 	'DELIVERY_ORDERS_PDF_SHOW_POSITION_IMAGES' => 'Positionsbilder anzeigen',
+	'MENU_DELIVERY_ORDERS' => 'Lieferscheine',
+	'ACTIONS_CREATE_DELIVERY_ORDER' => 'Lieferschein erstellen',
+	'ACTIONS_GENERATE_DELIVERY_ORDER' => 'Lieferschein generieren',
+	'DELIVERYORDER' => 'Lieferschein',
+	'DELIVERY_ORDER' => 'Lieferschein',
+	'DELIVERY_ORDERS' => 'Lieferscheine',
+	'DELIVERY_ORDERS_NEW_ORDER' => 'Neue Bestellung',
+	'DELIVERY_ORDERS_SAVE_AND_BOOK' => 'Speichern und buchen',
+	'DELIVERY_ORDERS_DOWNLOAD_PDF' => 'PDF herunterladen',
 );

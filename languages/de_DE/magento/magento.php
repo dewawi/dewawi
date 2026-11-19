@@ -33,5 +33,9 @@
 	'MAGENTO_GENERATE_INVOICE' => 'Rechnung generieren',
 	'MAGENTO_CREATE_CUSTOMER_AND_GENERATE_INVOICE' => 'Kunde anlegen und Rechnung generieren',
 	'MAGENTO_INVOICE_GENERATED' => 'Rechnung generiert',
-	'MAGENTO_INVOICE_CREATED' => 'Rechnung erstellt'
+	'MAGENTO_INVOICE_CREATED' => 'Rechnung erstellt',
+	'MENU_MAGENTO' => 'Magento',
+	'MENU_MAGENTO_ORDERS' => 'Bestellungen',
+	'MENU_MAGENTO_ITEMS' => 'Artikel',
+	'MENU_MAGENTO_CUSTOMERS' => 'Kunden',
 );

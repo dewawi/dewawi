@@ -1,576 +1,433 @@
-# T2A – Technische Reparatur (19. November 2026)
+# DEWAWI – T2: Übersetzungsreparatur und Vervollständigung
 
-T1-Ausgangspunkt: `c6325897`. Die nachfolgenden T1-Abschnitte bleiben als historische
-Bestandsaufnahme erhalten; `report.json` und `validation.json` bilden den aktuellen T2A-Stand ab.
+Stand: 19. November 2026. Ausgangspunkt: T1 `c6325897`. Technischer Block T2A:
+`00a99d88` (`stabilize translation loading and locale contexts`). Maßgeblich ist der lokale
+Arbeitsstand. Parallel vorhandene Dashboard-/Button-Arbeiten wurden weder überschrieben
+noch in die Übersetzungscommits aufgenommen.
 
-Behoben: PHP-8-Formatfehler, instabile Locale-Auswahl und Pfadwerte, alte Katalogdaten nach
-Locale-Wechsel, dauerhaft gesperrte Domains nach fehlgeschlagenen Loads sowie gemeinsam
-benötigte Kontakttexte. Die bisherigen Prioritäten bleiben erhalten. `loadModule()` bündelt
-die vorhandenen globalen Common-Abhängigkeiten installierter Module und das angeforderte
-Detailmodul. Dateiinhalte werden innerhalb einer Instanz nur einmal ausgewertet; spätere
-Forwards laden ihren tatsächlichen Modulkontext im `preDispatch` nach.
-
-PDF-Rendering und neue Standardbelegtitel verwenden einen eigenen Translator für die
-Dokumentensprache. Gespeicherte Belege und Beträge werden nicht verändert. Der öffentliche
-Shop schaltet erst nach dem Routing auf die Site-Sprache, sodass ERP-Routen ihre Benutzer-
-Locale behalten. Shop-Mailmarker und Betreffmarker können auch ohne HTTP-Plugin der
-konfigurierten Shop-Sprache folgen. Feedback akzeptiert dieselben geprüften Locale-Aliase.
-
-Unterstützt: `de_DE` und `en_US`, mit den Aliasen `de`/`de-DE` und `en`/`en-US`.
-Ungültige Benutzerauswahl wird mit HTTP 400 abgelehnt; ungültige gespeicherte Werte fallen
-auf die gültige Mandantenkonfiguration bzw. explizit `de_DE` zurück. `setLocale()` verwirft
-alte Domains; anschließend muss der neue Kontext geladen werden. Fehler sind über
-`getIssues()` beobachtbar. Bewusst kein automatischer Sprachwechsel bei fehlenden Schlüsseln:
-Eine deutsche Ersatzausgabe in einem englischen Beleg würde dessen Sprachkontext verschleiern.
-Unbekannte Schlüssel bleiben sichtbar und werden im Audit weiterhin ohne Fallback gezählt.
-
-Nach T2A: 115 Dateien (eine englische gemeinsame Kontaktdatei ergänzt), unverändert 6.206
-Definitionen / 3.607 Schlüssel und 943 fehlende englische Schlüssel. Fehlende englische
-Dateigegenstücke: 22 → 21. Die redaktionelle Vervollständigung folgt in T2B.
-143 isolierte Laufzeitprüfungen und alle 28 Modellkontexte bestanden. Die relevanten
-Bestandstests bestanden, außer den beiden getrennt protokollierten T1-Baselinefehlern.
-
-Reproduzierbare Validierung:
-
-```bash
-python3 tests/translations/validate.py --stage T2A > /tmp/translations-validation.json
-```
-
-Keine Datenbankänderung oder Migration. Keine Schlüssel gelöscht. Der fremde unversionierte
-Dashboard-Test bleibt außerhalb des Commitumfangs.
-
----
-
-# T1 – Audit des Übersetzungssystems
-
-Stand: 19. November 2026, lokaler Workspace `/var/www/dewawi`, Ausgangscommit `c59fa45d`.
-Der lokale Arbeitsstand einschließlich bereits vorhandener Änderungen war maßgeblich.
-Während des Audits wurden fremde Änderungen separat bis `d68f7a8c` committed; der
-Fingerabdruck der untersuchten Produktquellen blieb dabei identisch. Der Abschlusslauf
-verwendet diesen aktuellen lokalen Stand.
-Produktivcode, Sprachdateien, Datenbanken und Migrationen wurden in T1 nicht geändert.
-
-## Ausführen und Berichte lesen
+## Ausführen und Artefakte
 
 ```bash
 cd /var/www/dewawi
-python3 tests/translations/audit.py > /tmp/dewawi-translations-audit.json
+python3 tests/translations/audit.py --fail-on-defects > /tmp/translations-report.json
+python3 tests/translations/validate.py --stage T2B --browser > /tmp/translations-validation.json
+```
+
+Weitere Aufrufe:
+
+```bash
 python3 tests/translations/audit.py --summary
-PYTHONDONTWRITEBYTECODE=1 python3 tests/translations/audit-test.py
+python3 tests/translations/audit.py --no-runtime
+python3 -B tests/translations/audit-test.py
 php tests/translations/runtime.php
-php tests/translations/runtime.php --benchmark
+python3 tests/translations/browser.py
 ```
 
-Python 3 und PHP CLI mit den bestehenden ZF1-Abhängigkeiten genügen; keine neue Bibliothek.
-`audit.py` schreibt ausschließlich JSON auf stdout. Kataloge werden mit PHP `token_get_all`
-und `TOKEN_PARSE` untersucht, ohne sie auszuführen. Zulässig sind ausschließlich direkt
-zurückgegebene Arrays aus String-Schlüsseln und String-Werten. Andere Ausdrücke werden
-als Fehler gemeldet; es gibt kein `eval`. Die Syntax-/Formatprüfung bewahrt doppelte
-Definitionen, die ein gewöhnliches `require` bereits überschreiben würde.
+[report.json](report.json) enthält alle Katalogtexte einschließlich Dateipfaden, Zeilen,
+SHA-256, Datei-/Schlüsseldifferenzen, Verwendungen, dynamischen Aufrufen, Kollisionen und
+Laufzeitkontexten. [validation.json](validation.json) ist der tatsächliche, wiederholbar
+mit `validate.py` erzeugte Prüflauf einschließlich T1-/T2A-/T2B-Kennzahlen.
+[review-notes.json](review-notes.json) benennt verbleibende fachliche Entscheidungen.
+Die ursprünglichen T1-Berichte bleiben über `git show c6325897:tests/translations/report.json`
+und die entsprechende README/validation erhalten; der T2A-Stand über `00a99d88`.
 
-Standardmäßig folgt ein isolierter CLI-Lauf der echten Übersetzungs-, Bootstrap-Locale-,
-Plugin- und Helper-Methoden. Authentifizierung, Sessionbeschaffung, Bootstrap-Ressourcen
-und Konfigurationsmodell sind dabei Fixtures. Keine Datenbankverbindung, HTTP-Anfrage,
-echte Sitzung, Mailzustellung oder PDF-Erzeugung wird gestartet. Nur bekannte Testdateien
-werden in einem eigenen zufälligen `/tmp`-Verzeichnis angelegt und wieder entfernt.
-`--no-runtime` überspringt auch diesen Anwendungscode und führt nur die statische Analyse aus.
-`runtime.php` allein setzt vertrauenswürdige lokale PHP-Kataloge voraus; `audit.py` prüft
-deren Arrayformat und Encoding vor dem Laufzeittest.
+Der Audit liest ausschließlich Produktquellen/Kataloge. `inspect.php` prüft PHP-Syntax
+und das direkt zurückgegebene String-Array mit PHP-Tokens, ohne Katalogcode auszuführen.
+Auch Unicode-Escapes, Kommentare und doppelte Definitionen werden berücksichtigt. Es
+wird kein Übersetzungscode per `eval` ausgeführt. Der Audit schreibt JSON auf stdout;
+`--no-runtime` führt keine Anwendungsklassen aus. Normale Runtimeprüfungen verwenden
+bekannte lokale Kataloge erst nach ihrer Format-/Encodingprüfung.
 
-Exitcodes von `audit.py`: **0** = Audit erfolgreich ausgeführt, vorhandene Befunde sind
-weiterhin im Bericht; **1** = Befunde mit `--fail-on-findings` (für diesen T1-Stand erwartet);
-**2** = Katalog-/Encodingfehler oder fehlgeschlagener Laufzeit-/Modellabgleich.
-Ein grüner Charakterisierungstest bedeutet ausdrücklich nicht, dass die dokumentierten
-Produktfehler behoben sind. Ein fehlendes PHP/Python oder ein Prozessfehler bricht den Lauf ab.
+Die Runtime-/Regressionsprüfungen verwenden isolierte Auth-/Konfigurations-/Session-
+Fixtures, In-Memory-Adapter und eigene temporäre Dateien. Kein Produktionsbootstrap,
+keine produktive Datenbank, keine echten E-Mail-Empfänger und keine Kundendaten.
+Chromium lädt ausschließlich lokale Dateien; externe Hosts sind gesperrt. `--browser`
+benötigt ein ausführbares Chromium. Manche Sandboxen blockieren dessen interne Sockets;
+der reine PHP-/Python-Audit benötigt keine Browserfreigabe.
 
-Der eingecheckte [report.json](report.json) enthält das vollständige datei- und zeilengenaue
-Inventar samt Texten, Datei-/Schlüsseldifferenzen, Überschreibungen, Verwendungen,
-dynamischen Aufrufen, Kandidaten und Laufzeitresultaten. Der Hash `source_sha256`
-bezieht sich auf die gelesenen Produktquellen und Kataloge; Einzelhashes und Hashes der
-Auditprogramme erlauben den Abgleich eines späteren lokalen Laufs. Keine Zeitstempel
-oder Benchmarkzeiten werden in den normalen Bericht eingefügt.
-[validation.json](validation.json) protokolliert zusätzlich tatsächlich ausgeführte
-Bestandstests und den einmaligen CLI-Benchmark.
+Exitcodes von `audit.py`: 0 = Prüfung ausgeführt; 2 = Syntax-/Encoding-/Scan-/Runtimefehler.
+`--fail-on-defects` liefert zusätzlich 1 bei fehlender Parität, Duplikaten, widersprüchlichen
+geladenen Texten, Platzhalter-/Schreibfehlern oder unaufgelösten Aufrufen/Labelkandidaten.
+Die beabsichtigte Markenrückgabe `DEWAWI` bleibt dabei einzeln sichtbar und wird begründet
+ausgenommen. `--fail-on-findings` zählt weiterhin auch allgemeine manuelle Kandidaten,
+z. B. identische Eigennamen; dessen Exit 1 ist deshalb keine Aussage über einen bestätigten
+Produktfehler. Der Validator akzeptiert die beiden T1-Baselinefehler ausschließlich bei
+passender Fehlersignatur; andere Fehler derselben Dateien gelten als neue Fehler.
 
-Wichtige JSON-Felder:
+## Architektur und technische Korrekturen
 
-| Feld | Bedeutung |
-| --- | --- |
-| `catalogues` | Alle PHP-Dateien, SHA-256, Bytes, Einträge einschließlich doppelter Definitionen |
-| `file_pairs`, `missing_unique_keys` | Dateivergleich und sprachweiter Schlüsselvergleich getrennt |
-| `module_language_matrix` | Vorhandene Kataloge und tatsächliche Anwendungsmodule |
-| `request_loading` | Ladefolge, require-Anzahl, effektive Schlüssel und Kollisionen je Requestkontext |
-| `unresolved_request_calls` | Statisch modellierte Ladelücken mit `exists_elsewhere` zur Unterscheidung von Kataloglücken |
-| `usage`, `dynamic_calls` | Direkte und indirekte Belege; keine Löschfreigabe |
-| `issues` | Encoding, Syntax/Format, Duplikate, Platzhalter, Sprach- und Schreibbefunde |
-| `hardcoded_candidates`, `indirect_translation_candidates_absent_from_catalogues` | Manuell zu prüfende UI-/Formularfundstellen |
-| `javascript_bridge` | JS-Schlüssel gegenüber dem tatsächlich ausgeführten Message-Export |
-| `runtime.static_model_comparisons` | Abgleich aller effektiven Texte mit den echten Klassen für 28 Kontexte |
+Das bestehende System aus `DEEC_Translate`, Registry, ZF1-Plugin und View-Helper bleibt
+bestehen. Keine neue Übersetzungsarchitektur, Datenbankstruktur oder Bibliothek.
 
-## Architektur und tatsächliche Ladefolge
+1. `application/Bootstrap.php::_initLocale()` wählt eine geprüfte Session-Locale vor der
+   Mandantenkonfiguration, sonst ausdrücklich `de_DE`. Kein `scandir()[2]` und kein
+   `file_exists` mit Benutzereingaben mehr. `DEEC_Translate::normalizeLocale()` unterstützt
+   `de_DE`, `en_US` sowie die Aliasformen `de`/`de-DE`, `en`/`en-US`. Andere Sprachen
+   wurden nicht eingeführt. `UserController::languageAction()` lehnt ungültige und
+   nicht skalare Werte mit HTTP 400 ab. Benutzerrechte und Sprachauswahl bleiben getrennt.
+2. Der Bootstrap lädt `languages/<locale>/default`. Die Registry-Einträge
+   `DEEC_Translate`, `Zend_Locale` und `Zend_Currency` bleiben unverändert benannt.
+3. `application/plugins/Translate.php` delegiert die vorhandene Ladepolitik an
+   `DEEC_Translate::loadModule()`: `default`, dann alphabetisch die `common.php`-Dateien
+   tatsächlich installierter Module, dann ausschließlich die Detaildateien des
+   angeforderten Moduls. Das ist keine Komplettladung aller Modulkataloge.
+4. Common-Dateien bleiben bewusst modulübergreifend verfügbar: Navigation und gemeinsame
+   Komponenten benötigen sie. Es gibt keine Filterung dieser allgemeinen Texte nach
+   Feature-Abonnement. Die eigentliche Berechtigungs-/Mandantenprüfung bleibt unabhängig.
+   Externe Erweiterungen können explizit über die bestehenden `load`-/`loadDir`-APIs laden.
+5. `preDispatch()` lädt nach Forwards den tatsächlich verwendeten Modulkontext nach.
+   AJAX-Controller, Partials und geteilte Komponenten verwenden denselben Requesttranslator;
+   sie führen keinen konkurrierenden Loader ein. Die drei gemeinsamen Kontaktbezeichner
+   `CONTACTS_PHONE`, `CONTACTS_INTERNET`, `CONTACTS_CONTACT_DATA` wurden aus den
+   Contacts-Details in `contacts/common.php` beider Sprachen verschoben.
 
-1. [application/Bootstrap.php](../../application/Bootstrap.php), `_initLocale()` ab Zeile 128,
-   bootstrapped zunächst den Mandantenkontext. Die Locale stammt vorrangig aus
-   `Zend_Auth`-Session `storage->language`, danach aus der Mandantenkonfiguration.
-   Voraussetzung ist lediglich `file_exists(languages/<Wert>)`. Sonst wird der dritte
-   `scandir`-Eintrag gewählt: aktuell `de_DE`, ohne explizite Priorität oder Sprachen-Allowlist.
-   `Zend_Locale` und `Zend_Currency` werden in der Registry hinterlegt; Konfiguration und
-   Zeitzone werden nur für angemeldete Benutzer herangezogen.
-2. Eine neue Instanz [DEEC_Translate](../../library/DEEC/Translate.php) erhält die Locale.
-   `languages/<locale>/default/*.php` wird sortiert unter Domain `default` geladen und
-   unter `DEEC_Translate` in der Registry registriert. Kein `Zend_Translate`-Adapter und
-   keine Registrierung als `Zend_Translate`/`Zend_Translate_Adapter`.
-3. [application/plugins/Translate.php](../../application/plugins/Translate.php),
-   `routeShutdown()`, lädt **alle** vorhandenen `<module>/common.php`, außer `default`,
-   in alphabetischer Verzeichnisreihenfolge als `<module>_common`. Das ist eine explizite
-   modulübergreifende Basis für Menüs und geteilte Bezeichner; Berechtigungen und
-   Feature-Abonnements filtern diese Dateien nicht.
-4. Danach lädt der Plugin alle PHP-Dateien des gerouteten aktiven Moduls sortiert in
-   dessen Domain. Ein aktives `common.php` wird dabei nochmals per `require` ausgewertet,
-   unter einer zweiten Domain. Bei `default` verhindert das bestehende Loaded-Flag eine
-   zweite Verzeichnisauswertung. Es wird nicht rekursiv nachgeladen.
-5. Der Plugin setzt die View-Sprache. Nur bei vorhandener `User`-Registry wird der
-   Sprachumschalter über [Language.php](../../application/models/DbTable/Language.php)
-   aus mandantengefilterten, nicht gelöschten Datenbanksprachen aufgebaut. Das ist eine
-   andere Sprachenmenge als die tatsächlich vorhandenen Verzeichnisse. Die Beispieldaten
-   in `install/config/data.sql:280` installieren nur `de_DE` als Mandantensprache.
+**Prioritäten bleiben:** letzte Definition innerhalb einer Datei; alphabetisch spätere
+Datei innerhalb einer Domain; zuerst geladene Domain vor späteren Domains. Explizite
+Domainlisten in `t()` behalten ihre Suchreihenfolge. Vor T2B blieben sämtliche zuvor
+aufgelösten Texte in allen 28 Kontexten unverändert. T2B korrigiert gezielt Textwerte;
+abweichende geladene Definitionen wurden auf den gewünschten gemeinsamen Wert abgestimmt.
+Das betrifft insbesondere den englischen Cookiehinweis und den Plural `Purchase orders`.
 
-**Wesentliche Priorität:** Innerhalb einer Datei gewinnt die letzte doppelte Definition;
-innerhalb einer Domain gewinnt die alphabetisch spätere Datei. Zwischen Domains gewinnt
-hingegen die **zuerst** geladene Domain: `default` vor allen Common-Domains vor aktivem
-Modul. `t($key, $args, $domains)` kann eine andere Suchreihenfolge explizit vorgeben.
-`load()`/`loadDir()` erlauben nach erfolgreicher Markierung einer Domain keine Ergänzung.
+`DEEC_Translate` fängt Formatfehler einschließlich PHP-8-`ValueError` ab und gibt den rohen
+Text zurück. `getIssues()` macht unbekannte Schlüssel, Formatfehler und Ladefehler
+beobachtbar, ohne Kundentexte in globale Logs zu schreiben. Fehlende/ungültige Dateien
+sperren die Domain nicht mehr; ein späterer gültiger Load bleibt möglich. Verzeichnisse
+werden erst nach erfolgreichem Lesen aller enthaltenen Arrays übernommen. Ungültige
+Rückgabetypen und nicht-stringförmige Werte werden verworfen und diagnostiziert.
 
-Die Standard-Domains lauten aktuell:
+`setLocale()` normalisiert die neue Locale und verwirft bei einem Wechsel Daten,
+Loaded-Flags, Dateicache und Diagnosen. Danach muss der gewünschte Kontext erneut geladen
+werden, z. B. `loadModule('sales')`. Ein Wechsel darf keine alten Texte behalten.
+Gleiche Locale-Aliase löschen gültige Daten nicht. Der Dateicache gilt nur für die
+Instanz und verhindert doppelte Auswertung gemeinsamer Dateien in mehreren Domains.
+Neue Instanzen sehen Dateiänderungen; es gibt keinen zusätzlichen persistenten Cache
+und keine Kopplung an `Zend_Cache`. Langlebige Jobs müssen ihre Locale/Instanz ausdrücklich
+festlegen. Die 28 Kontextprüfungen kontrollieren auch die Anzahl gelesener Dateien.
 
-```text
-de_DE: default → calendar_common → contacts_common → items_common
-       → processes_common → purchases_common → sales_common
-       → statistics_common → users_common → [aktives Modul]
-en_US: default → calendar_common → items_common → [aktives Modul]
-```
+**Fallbackentscheidung:** Kein automatisches Deutsch in englischen Belegen und kein
+Englisch in deutschen Belegen. Eine solche Ersatzsprache würde fehlende Übersetzungen
+verschleiern. Stattdessen sind beide Katalogbestände vollständig angeglichen. Unbekannte
+Schlüssel bleiben als Schlüssel sichtbar, werden diagnostiziert und im Audit weiterhin
+ungefiltert als fehlende Definitionen erfasst. Leere gültige Werte bleiben leer.
 
-Das eng gefasste Ziel „nur globale und tatsächlich benötigte Modulübersetzungen“ wird
-damit **nicht vollständig erfüllt**. Nur die Detaildateien bleiben auf das aktive Modul
-begrenzt; alle Common-Kataloge sind globale Abhängigkeiten. Ein Wechsel zu ausschließlich
-aktivem Common würde bestehende Menüs brechen. T2 sollte die benötigten gemeinsamen
-Schlüssel bestimmen und die bestehende modulabhängige Architektur beibehalten.
+## Getrennte Sprachkontexte und Kompatibilität
 
-### Helper, Komponenten und Sonderpfade
+- UI/AJAX: Session-/Mandanten-Locale bleibt maßgeblich. Form-/List-/View-APIs und die
+  bisherigen jQuery-/`data-*`-Verträge bleiben erhalten. `Form::setLocale()` ist weiterhin
+  ein Formatierungskontext; Übersetzer werden ausdrücklich injiziert oder aus der Registry
+  bezogen. Bestehende Komponenten behalten ihr einmal bezogenes Translatorobjekt.
+- PDF: `DEEC_Pdf::buildDocumentPayload()` wählt für unterstützte Dokumentensprachen einen
+  eigenen Translator vor dem Rendern. Korrekturdokumente und Revisionsbezeichnungen
+  verwenden dieselbe Locale-Normalisierung. Die UI-Registry wird nicht umgestellt.
+  Neue Sales-/Purchases-Standardbelegtitel folgen ihrer primären Dokumentensprache.
+  Gespeicherte Titel, Beträge, Sprachen und Originaldateien werden nicht verändert.
+- Historische Dokumente: vorhandene Originale werden vor neuem Rendering unverändert
+  zurückgegeben. Die PDF-Tests prüfen Originalschutz, Mandantenisolation, gemischte
+  Steuersätze und gespeicherte Summen. Keine Neuübersetzung archivierter Originale.
+- Öffentlicher Shop/CMS: Erst die geroutete `shops`-Anfrage verwendet die Site-Locale
+  einschließlich `Zend_Locale`/`Zend_Currency`. ERP-Routen behalten die UI-Auswahl.
+  HTML-Sprache, Shoptexte und JavaScript-Währungsdarstellung stimmen dadurch zusammen.
+- E-Mail/Jobs: Shop-Mailmarker und Betreffmarker verwenden einen eigenen Translator nach
+  der konfigurierten Shop-Sprache, auch ohne HTTP-Plugin. Feedback normalisiert die
+  angeforderte Locale; Kalender-Einladungen behalten ihren eigenen geprüften Translator.
+  Explizit gespeicherte Sales-/Purchases-Mailtemplates werden nicht automatisch umgeschrieben.
+- CLI: bestehende explizite Registrierungen funktionieren weiter. `loadModule()` kann den
+  notwendigen Kontext ohne Bootstrap und ohne Datenbankzugriff herstellen.
 
-| Pfad | Verhalten und Grenze |
-| --- | --- |
-| `application/views/helpers/Translate.php:3` | Projektklasse heißt wie ZF1 `Zend_View_Helper_Translate`; `configs/application.ini:13` weist auf den Projekthelper. Keine Registry/falscher Typ: unveränderter Schlüssel. Keine automatische HTML-Escapierung. |
-| `library/DEEC/Form.php:358`, `List.php:149`, `Pdf.php:47` | Expliziter Translator vor Registry; das einmal ermittelte Objekt bleibt in der Komponente. `Form::setLocale()` steuert keine Katalogauswahl. Die üblichen Labels, Optionswerte und Validierungsfehler werden indirekt übersetzt. |
-| `application/forms/Language.php`, `Client.php` | Restliche `Zend_Form`-Selektoren neben den DEEC-Formularen. Kein allgemeiner ZF1-Translator registriert; Optionsnamen kommen aus den jeweiligen Datenquellen. |
-| `application/plugins/ListResponse.php:5` | AJAX-Suche rendert Content und Toolbar im bereits geladenen Requestkontext; kein zusätzlicher Katalogloader. |
-| `application/views/scripts/partials/*`, modulübergreifende Helper | Partials und gemeinsam verwendete Komponenten laden keine Herkunftsmodulkataloge selbst. Maßgeblich bleibt das geroutete Modul. |
-| `library/Zend/Controller/Front.php:923` und `:941` | `routeShutdown` liegt vor der Dispatch-Schleife. Ein späteres Forward/Modulwechsel löst keinen erneuten Übersetzungs-Route-Hook aus. Dynamische Forwards deshalb gesondert testen. |
-| `application/cli/contact-geocoding-dry-run.php:86` | CLI lädt ausdrücklich `de_DE/default` und `de_DE/contacts`; kein HTTP-Plugin. Andere Geocoding-CLI-Pfade verwenden eigene Bootstrap-/Workerlogik. |
-| `tools/document-pdf-availability.php:105` | Eigenständige Registrierung mit nur `default`; in T1 nicht ausgeführt, da Werkzeug Dokumente/DB verarbeitet. |
-| `application/modules/calendar/models/Invitation.php:16,28` | Explizite Allowlist `de_DE/en_US`, separater Translator nur für `calendar`; Mails erhalten dessen Texte. Keine automatische globale Domain in diesem Translator. |
-| `library/DEEC/Feedback.php:213` | Eigener `default`-Translator bei vorhandenem Locale-Verzeichnis; sonst Registry. Feedback-E-Mail-Blöcke können der Dokumentensprache folgen. |
-| `application/modules/sales/services/CreateDataFactory.php:35`, entsprechende Purchases-/Processes-Services | Standardbelegtitel werden über den Registry-Translator erzeugt, unabhängig von der primären Dokumentensprache aus der Sprachentabelle. |
+## Inhaltliche Bereinigung
 
-E-Mail: `application/controllers/helpers/Email.php:485–625` ersetzt im Shop-Body zuerst
-fachliche Platzhalter, dann `t#tKEYt#t` mittels des aktuellen View-Translators. Der Betreff
-wird dort unverändert aus dem Template übernommen. `#HELLO_NAME#` wird über den
-View-Translator aufgebaut; `#PAYMENT_METHOD#` ist fest `Überweisung` (`:555`).
-Sales/Purchases/Processes `services/EmailFormFactory.php` verwenden gespeicherte Templates
-und ersetzen unter anderem `[DOCID]`/`[CONTACTID]`. Eine allgemeine Auswahl eines
-E-Mail-Katalogs nach Dokumentensprache ist dort nicht implementiert. Gespeicherte
-Templateinhalte und die real aktivierten Sprachen wurden ohne Datenbankzugriff nicht geprüft.
+Alle 943 ursprünglich fehlenden englischen Schlüssel wurden bearbeitet. Dafür wurden
+509 unterschiedliche deutsche Ausgangstexte geprüft; eindeutige vorhandene englische
+Zuordnungen wurden wiederverwendet und darin erkannte Fehler korrigiert. Keine externe
+Übersetzungs-API, keine deutschen Ersatzkopien als Englisch. Sämtliche 22 fehlenden
+englischen Dateigegenstücke und die vier umgekehrten Gegenstücke sind vorhanden,
+einschließlich beibehaltener Legacy-/Erweiterungskataloge.
 
-PDF: `DEEC_Pdf::translate()` verwendet normalerweise den injizierten/Registry-Translator;
-`document['language']` allein wechselt ihn nicht. `correction()` lädt dagegen in
-`library/DEEC/Pdf.php:140` einen neuen `default`-Translator nach `en* → en_US`, sonst `de_DE`.
-Auch `Sales_Service_DocumentPayloadService::build()` ab Zeile 40 verwendet diese Zuordnung
-für die Revisionsbezeichnung. `Pdf.php:425–428` enthält einen weiteren lokalen Fallback
-auf `default/document.php` für einen speziellen Textpfad. Dadurch können UI-Sprache,
-Dokumentenüberschrift, Korrekturtext und Zahlenformatierung voneinander abweichen.
-Die tatsächliche vollständige PDF-Ausgabe wurde nicht erzeugt; das Verhalten des
-Übersetzungsadapters und die genannten Codepfade sind belegt. Historische Originale
-dürfen in T2 nicht durch Nachübersetzen oder Neuberechnung verändert werden.
+Die 16 überschriebenen Wiederholungsdefinitionen wurden entfernt, wobei jeweils ihr
+bisheriger letzter, tatsächlich wirksamer Wert erhalten blieb. Kein Katalogschlüssel
+wurde gelöscht. Ein zusätzlicher Test vergleicht den gesamten ursprünglichen
+Schlüsselbestand aus T1 mit beiden aktuellen Sprachen, auch ohne Verwendungsnachweis.
 
-Shop/CMS: `DEEC_Site_Context::getLanguage()` (`library/DEEC/Site/Context.php:38`) speist
-HTML-Sprache und Metadaten (`application/layouts/scripts/site.phtml:8`,
-`application/modules/shops/views/helpers/SiteMetadata.php:172`), aber nicht `_initLocale()`.
-Für einen anonymen englischen SiteContext wählt der Bootstrap im Test dennoch `de_DE`.
-Shop-Sprachen/Dateinamen, Produkt- und CMS-Inhalte liegen zusätzlich in mandanten-/shopbezogenen
-Datenbanktabellen. Sie sind kein PHP-Katalog und wurden nicht aus Kundendaten gelesen.
+Korrigiert wurden die 17 bestätigten Schreibfehler, neun deutsche PDF-Referenztexte im
+englischen Katalog, Sortier-/Ländernamen, E-Mail-Texte und englische Versandbeschreibungen.
+Historische API-Schlüssel wie `*_PAYED`/`*_SUCCESFULLY_*` bleiben kompatibel erhalten.
+Fachliche Labels berücksichtigen Kontakte, Lager, Einkauf/Verkauf, Belege, Kalender,
+Prozesse, Aufgaben, Statistik, Shop/CMS und Formulare. Mehrdeutige fachliche Entscheidungen
+werden in `review-notes.json` ausdrücklich offen gehalten.
 
-## Fallback, Fehler und Cache
+Neu angebunden wurden fehlende Formular-/Toolbar-/Statusbezeichner sowie Shop-Erfolgs-
+und Fehlermeldungen, Anfrage-/Katalog-/Variantenhinweise, Warenkorb-/Checkout-Bezeichner,
+Suchplatzhalter und leere Historien. Shop-Auftragsviews verwenden die eigenen `SHOPS_*`
+statt ungeladener `EBAY_*`-Bezeichner. JavaScript erhält seine übersetzten Anfragehinweise
+über Attribute des tatsächlichen Formulars; das funktioniert auch nach AJAX-Ersetzung.
+Der bestehende globale Message-Export bleibt erhalten. Node war nicht vorhanden;
+Syntaxprüfung aller drei geänderten JS-Dateien und reale jQuery-Interaktionen erfolgten
+im Offline-Chromium-Test für Deutsch und Englisch.
 
-| Fall | Nachgewiesenes Verhalten | Priorität |
-| --- | --- | --- |
-| Schlüssel/Domain fehlt | Schlüssel selbst; kein `en_US → de_DE`, kein Region-zu-Basissprache-Fallback, kein Missing-Key-Logging | P1 |
-| Wert ist leer | Leerer String, kein Fallback. Aktuelle Kataloge haben keine leeren Werte | P2 |
-| Formatargumente fehlen | Ohne Argumentliste bleibt der rohe Formattext stehen | P2 |
-| Zu wenige Argumente / ungültiges Format mit Argumenten | PHP 8.3 wirft `ValueError`; `catch (Exception)` in `Translate.php` fängt dies nicht. Synthetisch reproduziert; keine aktuell fehlerhaften Katalogplatzhalter gefunden | P1 |
-| `setLocale()` | Ändert nur den Namen; Daten und Loaded-Flags bleiben alt. `setLocale('')` ergibt `de`, obwohl nur `de_DE` existiert | P1 für wiederverwendete Instanzen |
-| Fehlende Datei bei `load()` | Domain wird trotzdem dauerhaft als geladen markiert; spätere gültige Datei ignoriert | P1 |
-| Fehlendes Verzeichnis bei `loadDir()` | Nicht markiert, späterer Versuch möglich | dokumentierte Asymmetrie |
-| Falscher Rückgabetyp | Lautlos ignoriert, Domain danach gesperrt | P1 |
-| Syntaxfehler in Katalog | `ParseError` propagiert, keine lokale Behandlung | P1 |
-| Ungültige Session-Locale mit existierendem Pfad | `../application` besteht `file_exists`, wird in ZF1 zu `root`, danach `Zend_Currency_Exception`. Keine Feststellung einer beliebigen Dateiausführung oder eines Mandantenzugriffs | P1 |
+## Offene Prüfungen und fachliche Grenzen
 
-`application/modules/users/controllers/UserController.php:356` speichert den angeforderten
-Sprachwert ungeprüft in die Session. T2: gegen installierte/erlaubte Locale-Codes prüfen
-und einen expliziten gültigen Default wählen. Benutzerrechte, Sprachverfügbarkeit und
-SaaS-Abonnements dabei weiterhin getrennt halten.
+`review-notes.json` beschreibt verbleibende Entscheidungen: Auftragsbestätigung gegenüber
+Proformarechnung, erhaltene/geleistete Anzahlungen im Einkauf, Reihenfolge gegenüber
+Mengenbezeichnung und unklare historische Versandproduktnamen. Hier wurden keine
+Geschäftsregeln oder numerischen Werte geraten.
 
-`DEEC_Translate` besitzt nur einen Instanzcache (`data`, `loaded`). Der separat initialisierte
-`Zend_Cache` aus `Bootstrap::_initCache()` wird hier nicht genutzt. Neue Instanzen lesen
-geänderte Dateien erneut; geladene Instanzen sehen Änderungen nicht. PHP-OPcache kann
-die Kompilierung beeinflussen, ersetzt aber keinen Übersetzungsdaten-/Locale-Cache.
-Für langlebige Worker sind deshalb pro Locale/Verarbeitungsschritt getrennte Instanzen
-oder eine ausdrücklich geprüfte Lebensdauer nötig. Geocoding-/Kalender-DB-Worker wurden
-nicht gegen laufende Datenbanken gestartet.
+Verbleibende identische Texte und Hardcode-Kandidaten sind vollständige Prüflisten im
+Bericht, keine pauschal bestätigten Fehler oder Löschfreigaben. Sie umfassen Eigennamen,
+Abkürzungen, Ländernamen, technische Werte und weitere Legacy-Oberflächen. Die klar
+abgegrenzten genannten UI-Flows wurden übersetzt; eine vollständige redaktionelle
+Abnahme jeder Oberfläche ist nicht behauptet. Weitere alte Preisfragmente behalten
+ihre bisherige Zahlenformatierung; geändert wurden Texte, nicht Preisberechnungen.
 
-## Sichere Fehler und Korrekturempfehlungen
+Keine produktive Datenbank oder Kundendaten wurden gelesen/geändert. Gespeicherte
+Mail-/CMS-Texte, Produktbeschreibungen, Feldnamen und bisher versandte E-Mails bleiben
+unverändert. Vollständige authentifizierte Browserflows und echte SMTP-Zustellung wurden
+nicht ausgeführt. DB-Integrations-/Migrationstests waren ohne Schemaänderung nicht nötig.
+Keine neue Migration oder manuelle Datenbanknacharbeit erforderlich.
 
-P1 bezeichnet funktionale Anzeige-/Laufzeitprobleme; P2 redaktionelle oder wartungsbezogene
-Fehler. Eine bestätigte fehlende Definition ist von der Sichtbarkeit eines bestimmten
-Requestpfads zu unterscheiden. Die vollständigen Fundstellen stehen im JSON.
+## Verifikation
 
-| Befund | Konkrete Belege | Empfehlung für T2 |
-| --- | --- | --- |
-| Englische Navigation verliert gemeinsame Modultexte | `en_US/sales/common.php`, `contacts/common.php`, `purchases/common.php` usw. fehlen; `MENU_SALES` bleibt auf einem englischen `default`-Request als Schlüssel stehen. Mit echtem Plugin reproduziert | Gemeinsame Bezeichner für beide Sprachen vervollständigen; Menüs außerhalb des eigenen Moduls testen |
-| Geteilte Kontaktanzeige hat ungeladene Schlüssel | `application/modules/sales/views/helpers/ContactData.php:8,11,23`, Purchases `:8,11,27`: `CONTACTS_CONTACT_DATA`, `CONTACTS_PHONE`, `CONTACTS_INTERNET` liegen in Contacts-Details. `CONTACTS_PHONE` fällt in beiden Sprachen im Sales-Kontext auf den Schlüssel zurück | Tatsächlich gemeinsam benötigte Kontaktbezeichner in den bestehenden gemeinsamen Katalogbereich einordnen |
-| Beide Sprachen enthalten unaufgelöste direkte Schlüssel | 28 Aufrufstellen / 21 verschiedene Schlüssel fehlen in sämtlichen Katalogen; u. a. `ADMIN_NEW_COUNTRY`, `STOCKS`, `POSITIONS_SET`, `ITEMS_DATA_SHEET`, `TOOLBAR_ADD`, `SUBMIT` | Jeden fachlichen Aufrufer prüfen; bestehende äquivalente Schlüssel bevorzugen. `DEWAWI` ist ein beabsichtigter Markenfallback, kein Übersetzungsfehler |
-| Fehlende Formularbezeichner | 33 Kandidaten an Label-/Heading-Sinks; z. B. `SAVE` in `application/modules/users/forms/Password.php:52`, `ADMIN_CATEGORY_HEADER` in `admin/forms/Category.php:202` | Nach Renderingprüfung richtige Definition/Verwendung ergänzen; Metadatenkandidaten nicht pauschal als sichtbaren Fehler zählen |
-| Englische Passworttexte fehlen | `USERS_PASSWORD_ACTUAL/NEW/CONFIRM` sind in `de_DE/default/common.php`, aber weder in `en_US/default/user.php` noch anderswo englisch vorhanden | Englische Passwortformulare einschließlich Submit und Validierung prüfen |
-| Deutsche PDF-Texte im englischen Katalog | Neun Werte `DOCUMENTS_*_ID_%s_FROM_%s` in `languages/en_US/default/document.php:190–198`, etwa „Angebotsnummer %s vom %s“ | Alle neun fachlich korrekt übersetzen; Formatargumente unverändert erhalten |
-| Weitere klar fremdsprachige Werte | `en_US/default/order.php:23–24` „aufsteigend“/„absteigend“; `en_US/default/countries.php:8` „Antigua und Barbuda“; `en_US/ebay/ebay.php:23` „Nachricht vom Käufer“; auch `ebiztrader/ebiztrader.php:23` | Sichtbare Texte übersetzen; Marken-/Versandproduktnamen gesondert beurteilen |
-| Deutscher E-Mail-Text bleibt englisch | `languages/de_DE/default/common.php:25`: `EMAIL_MESSAGE => Message` | „Nachricht“; bestehende E-Mail-Abläufe beibehalten |
-| Bestätigte Schreibfehler | 17 Definitionsstellen, vollständig unter `issues.confirmed_spelling_errors`; u. a. `Reflesh`, `succesfully`, `Dowland PDF`, `Billding address`, `COuntry`, `DoCument`, `Payed`, `Messeinheit` | Nur Werte korrigieren; historisch falsch geschriebene Schlüssel nicht umbenennen |
-| Duplikate überschreiben Texte | 16 Wiederholungsdefinitionen innerhalb von Dateien, davon fünf mit anderem Wert; z. B. `DOCUMENTS_PHONE` in `de_DE/default/document.php:146,180` („Telefon“ → „Tel.“), `CONTROL_PANEL_DOCUMENT_MODIFIED` `:12,16`, drei englische `*_DELIVERY_DATE`-Werte („Delivery date“ → „Delivery date:“) | Gewinner und gewünschte Ausgabe ausdrücklich festlegen; in T1 keine Löschung |
-| Globaler Katalog überschattet Modulwert | `SHOPS_FOOTER_COOKIE_NOTICE`: `en_US/default/common.php:70` gewinnt gegen `en_US/shops/shops.php:17` mit abweichendem Wortlaut | Gewollte gemeinsame Definition klären, Suchreihenfolge nicht ungeprüft umdrehen |
-| UI-Texte umgehen Kataloge | Beispiele im folgenden Abschnitt; 256 automatisch gefundene Kandidaten, keine pauschal bestätigte Fehlerzahl | Nach Oberfläche priorisieren, vorhandene jQuery-/data-Attribut-Verträge erhalten |
+Der vollständige Validator läuft mit `--stage T2B --browser`. Er prüft Syntax aller
+140 Kataloge sowie der betroffenen PHP-/PHTML-Dateien, Auditparser, Locale-/Format-/Retry-
+Logik, alle 28 Modul-/Sprachkontexte einschließlich SHA-256 sämtlicher effektiver Texte,
+Forward-/Mandantenkontext, echte Sprachwechsel-Endpunkte, isolierte E-Mail-/PDF-/Shop-
+Partialkontexte und den Erhalt aller ursprünglichen Schlüssel.
 
-### Redaktionelle und fachliche Prüfung
+Die beiden unveränderten T1-Baselinefehler bleiben gesondert ausgewiesen:
 
-Alle 6.206 Definitionen wurden auf Encoding, Form, Duplikate, Leerwerte und Platzhalter
-geprüft. Alle 114 Dateien gingen in den Sprach-/Schlüsselvergleich ein. 318 gleichlautende
-DE/EN-Definitionen und 28 deutsche Worttreffer in englischen Werten sind **Prüflisten**,
-keine Anzahl falscher Übersetzungen: Ländernamen, Marken, API-Versandnamen, HTML-Abstände
-und „Standard“ können korrekt identisch sein. Die expliziten Textfehler oben wurden am
-Quelltext bestätigt. Eine vollständige redaktionelle Abnahme jedes ERP-Textes durch einen
-Fachübersetzer ist durch diese technische Prüfung nicht ersetzt.
+- `tests/security/notifications.php`: nach 370 erfolgreichen Hauptprüfungen fehlt im
+  Dokumenthelper-Subprozess `Sales_Service_DocumentRevisionService` (`Finish.php:12`).
+- `tests/contacts/history-states.php`: fehlendes `history['states']` (`:57`), danach
+  `Missing history status: 100` (`:69`).
 
-Folgende fachliche Entscheidungen sind vor einer Vereinheitlichung erforderlich:
+Andere Fehler gelten als neue Fehler. Diese beiden Gesamttests werden nicht als bestanden
+gezählt. Die folgenden Tabellen geben die aktuellen exakten Zahlen und Ergebnisse wieder.
 
-| Fundstelle | Auffälligkeit | Einstufung / Vorschlag |
-| --- | --- | --- |
-| `en_US/sales/salesorder.php:9` gegenüber `:10`, `de_DE/sales/common.php:22–24` | Proformarechnung, Auftragsbestätigung und „Sales order“ bezeichnen unterschiedliche Vorgänge | Manuelle Fachentscheidung; Dokumenttitel und Menütitel bewusst unterscheiden |
-| `en_US/sales/deliveryorder.php`, `default/document.php:141` | „Delivery order“ für Lieferschein | Terminologieprüfung: meist „Delivery note“; Bedeutung im konkreten Workflow bestätigen |
-| `en_US/sales/reminder.php:8`, `default/document.php:144` | „Reminder“ für Mahnung | „Payment reminder“/„Dunning notice“ je Mahnstufe; Kalendererinnerung nicht gleichsetzen |
-| `en_US/purchases/purchaseorder.php:10` | `PURCHASE_ORDERS` hat Singularwert „Purchase order“, Menü ist plural | In Listenüberschriften „Purchase orders“ prüfen |
-| `de_DE/purchases/purchaseorder.php:57`, `quoterequest.php:55` | „Erhaltene Anzahlung“ im Einkaufsworkflow | Richtung prüfen: regelmäßig „Geleistete Anzahlung“; keine automatische Werteänderung |
-| `de_DE/items/attribute.php:9`, `option.php:9` | `*_ORDERING => Anzahl` | Reihenfolge/Sortierung gegenüber Menge im tatsächlichen Formular prüfen |
-| `de_DE/items/item.php:17`, `en_US/items/item.php:20` | Einkaufspreis ↔ „Cost“ | Entscheiden, ob Beschaffungspreis oder Kostenbasis gemeint ist |
-| `de_DE/default/common.php:7–8`, `en_US/default/common.php:8–9` | Sprachennamen Deutsch/Englisch bleiben in beiden Locales deutsch | Bewusste Eigennamen oder übersetzte Namen als UI-Konvention festlegen |
-| Sales/Default allgemein | Quote/Quotation, Contact/Customer, Tax/Taxes/VAT, UOM/Mengeneinheit | Glossar aufbauen; Belegpositionen sind fachlich eher „line items“, kein blindes Ersetzen aller „Position“-Vorkommen |
+## Vorher / nach T2A / nach T2B
 
-### Fest codierte Oberflächentexte und JavaScript
-
-Bestätigte Beispiele unabhängig von der heuristischen Kandidatenliste:
-
-- `application/layouts/scripts/site.phtml:91`: Suchplatzhalter „Was suchen Sie?“.
-- `application/modules/shops/views/scripts/inquiry/catalog.phtml:9`, `variants.phtml:22,62`,
-  `success.phtml:18–38,79`: deutsche Hinweise, Erfolgs-/Fehlertexte und Buttons.
-- `js/shops.js:489,501,555,559,643`: deutsche Auswahl-/Validierungs-/Fehlermeldungen.
-- `js/global.js:2280,2287`: deutsche Fallbacks im bestehenden Fehlerhandler.
-- `js/shops.js:11` setzt `de-DE` für Währungsformatierung; `js/settings.js:165` setzt `lang: 'de'`.
-- `application/modules/shops/views/scripts/cart/index.phtml:9–13,43` und Checkout `:27–30,46`
-  rufen `translate('Product')`, `translate('Price')` usw. ohne entsprechende Katalogeinträge
-  auf. Dadurch bleiben englische Fallbacktexte auch in deutscher UI stehen.
-- `application/views/scripts/partials/history.phtml:127` übersetzt einen nicht katalogisierten
-  deutschen Vollsatz; er bleibt auch auf Englisch deutsch.
-
-`application/views/helpers/Messages.php:5` exportiert 76 explizit aufgezählte Schlüssel;
-`layout.phtml:40` und `plain.phtml:32` serialisieren sie mit `JSON_HEX_*` nach `dwMessages`.
-`Dewawi.message()` in `js/global.js:27` hat nur den Schlüssel als Fallback und kein
-automatisches Nachladen/Formatieren. Alle 36 unmittelbar literal übergebenen JS-Schlüssel
-der untersuchten Quellen sind in diesem Export vorhanden. Bedingte/dynamische Argumente
-werden gesondert inventarisiert; daraus folgt keine Vollabdeckung aller JS-Pfade.
-Kalender/Shop/Map nutzen zusätzlich serverseitige `data-*`-Texte bzw. eigene Textobjekte.
-AJAX-Fragmente erhalten keinen neuen globalen Katalog allein durch Einfügen ins DOM.
-
-## Verwendungen und Grenzen der Unbenutztanalyse
-
-Untersucht wurden 1.085 Produktquelldateien: 837 PHP, 217 PHTML, zehn JavaScript,
-15 SQL, vier INI, eine JSON und eine HTML. Darin wurden 1.443 literale
-Übersetzungsaufrufe erkannt: 1.429 schlüsselartige und 14 Volltext-/Marken-/Textfallback-
-Aufrufe. 830 unterschiedliche schlüsselartige Literale verteilen sich auf 809 definierte
-und 21 nirgends definierte Schlüssel. 194 Aufrufe sind dynamisch/indirekt und werden
-mit Ausdruck und ggf. zusammengesetztem Präfix ausgegeben.
-
-Die 3.607 verschiedenen Katalogschlüssel werden konservativ klassifiziert:
-
-| Klasse im Bericht | Anzahl | Aussage |
-| --- | ---: | --- |
-| `literal_call_found` | 809 | Direkter literaler Aufruf gefunden |
-| `indirect_literal_candidate` | 1.781 | Literal in Metadaten, Optionen, SQL-/Templatekonfiguration oder anderem Produktcode; Datenfluss manuell prüfen |
-| `possibly_dynamic` | 103 | Dynamisches Präfix oder Länder-/Regionscode als möglicher Verbraucher |
-| `unresolved` | 914 | Kein hinreichender Verwendungsbeleg im untersuchten Quellumfang |
-| sicher unbenutzt | **0** | Kein Löschkandidat ist durch dieses Audit freigegeben |
-
-Beispiele dynamischer Quellen: `Form::renderElement()`/Optionsbezeichner,
-`List::renderCell()`, `Pdf.php` mit `DOCUMENTS_ . strtoupper($controller)`,
-Korrekturfeldnamen, Kalender-/Validierungsfehlercodes, Länder aus der DB
-(`application/models/DbTable/Country.php:28`), Menüs und Mailmarker aus Templates.
-Auch englische `DE_*`-Versandcodes sind nicht durch einen reinen Großbuchstabenpräfix
-vollständig erfassbar. Texte externer Erweiterungen und Datenbankinhalte bleiben offen.
-Testfixtures zählen nicht als Beleg produktiver Schlüsselverwendung.
-
-Kataloge ohne gegenwärtiges Anwendungsmodul (`magento`, `portals`, `ebiztrader`) werden
-vollständig inventarisiert. Sie sind keine belegten toten Dateien: Installationsmenüs,
-historische Erweiterungen oder externe Module können Verbraucher sein. Sie werden in
-einem normalen Request ohne entsprechendes aktives Modul nicht geladen.
-
-## Tests, Sicherheit und verbleibende Prüfungen
-
-Die Tests entsprechen der vorhandenen Infrastruktur eigenständiger PHP-CLI-Skripte und
-Python-Runner. Keine neue Testplattform. Tatsächliche Ergebnisse stehen zusätzlich
-maschinenlesbar in `validation.json`.
-
-| Ausgeführt | Ergebnis |
-| --- | --- |
-| `php -l` für alle 114 Kataloge und die beiden neuen PHP-Auditdateien | 116/116 erfolgreich |
-| `audit-test.py` | 18 erfolgreiche Tests: Tokenisierung einschließlich Unicode-Escapes, nicht ausgeführter Fremdcode, Duplikate, Formate, dynamische Schlüssel, Domainreihenfolge, Kandidatentrennung |
-| `runtime.php` | 110 erfolgreiche Charakterisierungsprüfungen einschließlich bekannter Fehler |
-| Vollständiger Audit | Erfolgreich; alle 28 Kontexte stimmen bei Domainfolge, Schlüsselzahl und SHA-256 der effektiven Texte mit dem statischen Modell überein |
-| `tests/ui/buttons.php` | 165 Prüfungen erfolgreich |
-| `tests/ui/toolbar-buttons.php` | 2.259 Prüfungen erfolgreich; dessen eingebundener Button-Test meldet zusätzlich 165 |
-| `tests/sales/quote-monitoring.php` | 293 Prüfungen erfolgreich |
-| `tests/security/quote-email.php` | 364 Prüfungen erfolgreich; zwei erwartete Fixture-SMTP-Ablehnungen auf stderr |
-| `tests/security/form-input-validation.php` | 20 Prüfungen erfolgreich |
-| `tests/security/notifications.php` | **Vorhandener Fehler:** nach 370 erfolgreichen Hauptprüfungen scheitert der zusätzliche Dokumenthelper-Subprozess: `Sales_Service_DocumentRevisionService` nicht geladen, `Finish.php:12`, Aufruf `notifications.php:67`; Elternprozess bricht `:211` ab |
-| `tests/contacts/history-states.php` | **Vorhandener Fehler:** `history['states']` fehlt (`:57`), dann „Missing history status: 100“ (`:69`). Kein Beleg eines Übersetzungsdefekts; Fixture-/History-Vertrag getrennt prüfen |
-
-Die beiden Bestandsfehler wurden unverändert belassen: T1 ändert keine ihrer produktiven
-Abhängigkeiten. Sie dürfen nicht als bestandene Gesamttests ausgegeben werden.
-Isolierte Kontextprüfungen bestätigen unveränderte `Client`-/`Config`-Registrywerte in allen
-28 Kontexten; sie simulieren keinen vollständigen angemeldeten Mehrmandantenrequest.
-Der bestehende Quote-E-Mail-Test deckt zusätzlich Rechte, Empfänger und Parent-Child-Sharing
-mit In-Memory-Fixtures ab. Zugriffskontrolle und Feature-Prüfungen bleiben im Produktcode
-unverändert. Übersetzungsstrings allein gewähren keine Modulberechtigung.
-
-Offene manuelle/Integrationstests für T2: authentifizierter Sprachwechsel pro Mandant,
-abweichende Dokumentensprache, tatsächliche PDF-/E-Mail-Ausgabe mit Testdaten,
-englischer öffentlicher Shop/CMS, Datenbankmenüs/-templates, XHR-/Forwardpfade und
-Erweiterungen. Browser/Chromium, SMTP, echte Dokumentgenerierung, DB- und Migrationstests
-wurden nicht gestartet, da keine entsprechenden Produktänderungen vorgenommen wurden
-und keine isolierte Datenbank für diesen Auftrag verwendet wurde. Kein Produktionszugriff.
-
-## T2: empfohlene Reihenfolge
-
-1. Reproduzierte Lade-/Fallbackfehler gezielt absichern: Formatfehler unter PHP 8,
-   Locale-Allowlist/Default, Domain-Lebensdauer und fehlgeschlagene Loads. Gewünschte
-   Fallbackpolitik ausdrücklich festlegen; keine implizite Umstellung aller Anzeigen.
-2. Englische gemeinsame Bezeichner und die tatsächlich verwendeten fehlenden Schlüssel
-   vervollständigen. Geteilte Kontaktkomponenten, Navigation, Passwortformulare und
-   Shop-Erfolgs-/Fehlermeldungen zuerst; Modulgrenzen erhalten.
-3. Die bestätigten falschen Sprach-/Schreibwerte korrigieren, Platzhalter und vorhandene
-   Schlüssel beibehalten. ERP-Glossar und Dokumenttitel fachlich abstimmen.
-4. UI-/Dokument-/Mail-/Site-Sprachen in isolierten End-to-End-Fixtures prüfen. Freigegebene
-   historische Dokumente unverändert erhalten; Datenbanktemplates nur separat autorisiert bearbeiten.
-5. Kollisionen und Duplikate mit gewünschter Gewinnerdefinition bereinigen; ungeklärte
-   Schlüssel und externe Kataloge nicht löschen. Erst danach Performanceoptimierung bewerten.
-
-Keine Migration und keine manuellen Datenbanknacharbeiten erforderlich. Die folgenden
-Tabellen bilden die vollständige lokale Datei-/Modulbestandsaufnahme ab.
-
-## Bestandszahlen und Modul-/Sprachmatrix
-
-| Kennzahl | de_DE | en_US |
-| --- | ---: | ---: |
-| PHP-Katalogdateien | 66 | 48 |
-| Definitionen einschließlich Duplikaten | 3526 | 2680 |
-| Verschiedene Schlüssel innerhalb der Sprache | 3513 | 2664 |
-| Katalogverzeichnisse einschließlich default | 16 | 14 |
-
-Gesamt: **zwei Anwendungssprachen, 13 Anwendungsmodule, 17 Katalogbereiche einschließlich
-default, 114 Dateien, 6.206 Definitionen und 3.607 verschiedene Schlüssel**. 2.570 Schlüssel
-existieren in beiden Sprachen. Englisch fehlen sprachweit 943 der 3.513 deutschen Schlüssel;
-94 englische Schlüssel fehlen im Deutschen. Die englische Abdeckung des deutschen
-Schlüsselbestands beträgt exakt 2.570 / 3.513 = 73.16 % (gerundet). Dies ist
-Schlüsselparität, keine Aussage über korrekte Texte oder erreichbare Übersetzungen.
-
-Matrix: `Dateien / Definitionen / verschiedene Schlüssel`; `common` bedeutet tatsächlich
-vorhandene Common-Datei. „Extern/Altbestand“ bezeichnet fehlendes aktuelles Modulverzeichnis.
-
-| Bereich | Anwendung | de_DE | de common | en_US | en common |
-| --- | --- | ---: | --- | ---: | --- |
-| admin | ja | 4 / 250 / 250 | – | 2 / 157 / 157 | – |
-| calendar | ja | 1 / 147 / 147 | ja | 1 / 147 / 147 | ja |
-| campaigns | ja | 1 / 148 / 146 | – | 1 / 50 / 50 | – |
-| contacts | ja | 9 / 451 / 449 | ja | 4 / 409 / 409 | – |
-| default | ja | 18 / 927 / 924 | ja | 16 / 836 / 836 | ja |
-| ebay | ja | 1 / 135 / 135 | – | 1 / 131 / 131 | – |
-| ebiztrader | Extern/Altbestand | 0 / 0 / 0 | – | 1 / 43 / 43 | – |
-| items | ja | 12 / 314 / 313 | ja | 8 / 260 / 258 | ja |
-| magento | Extern/Altbestand | 1 / 34 / 34 | – | 1 / 38 / 38 | – |
-| portals | Extern/Altbestand | 1 / 28 / 28 | – | 0 / 0 / 0 | – |
-| processes | ja | 2 / 110 / 109 | ja | 1 / 100 / 98 | – |
-| purchases | ja | 3 / 139 / 139 | ja | 3 / 101 / 99 | – |
-| sales | ja | 7 / 512 / 512 | ja | 7 / 387 / 385 | – |
-| shops | ja | 1 / 157 / 156 | – | 1 / 16 / 16 | – |
-| statistics | ja | 2 / 52 / 52 | ja | 1 / 5 / 5 | – |
-| tasks | ja | 1 / 112 / 110 | – | 0 / 0 / 0 | – |
-| users | ja | 2 / 10 / 10 | ja | 0 / 0 / 0 | – |
-
-### Vollständiges Dateiinventar und Parität
-
-Format aller 114 Anwendungskataloge: UTF-8 ohne BOM, ausführbare PHP-Datei mit
-direkt zurückgegebenem String-Array. Keine weiteren Dateiformate unter `languages/`.
-`de_DE/admin/client.php`, `en_US/admin/client.php` und `de_DE/users/common.php` geben
-gültige leere Arrays zurück; dies sind keine leeren Übersetzungswerte oder Syntaxfehler.
-In der Tabelle stehen Definitionen einschließlich Wiederholungen. Fehlmengen vergleichen
-Schlüssel in derselben relativen Datei; verschobene Definitionen können sprachweit vorhanden
-sein. Deshalb sind 22 fehlende englische Gegenstücke nicht gleichbedeutend mit 22 vollständig
-unübersetzten Funktionsbereichen. Umgekehrt kann eine vorhandene Datei sehr unvollständig sein.
-
-| Relativ unter languages/&lt;locale&gt;/ | de Einträge | en Einträge | Schlüssel nur in de-Datei | Schlüssel nur in en-Datei |
-| --- | ---: | ---: | ---: | ---: |
-| admin/admin.php | 239 | 157 | 82 | 0 |
-| admin/client.php | 0 | 0 | 0 | 0 |
-| admin/menu.php | 9 | – | 9 | 0 |
-| admin/page.php | 2 | – | 2 | 0 |
-| calendar/common.php | 147 | 147 | 0 | 0 |
-| campaigns/campaigns.php | 148 | 50 | 96 | 0 |
-| contacts/bankaccount.php | 4 | – | 4 | 0 |
-| contacts/comment.php | 2 | – | 2 | 0 |
-| contacts/common.php | 21 | – | 20 | 0 |
-| contacts/contact.php | 127 | 120 | 14 | 7 |
-| contacts/contactperson.php | 23 | 23 | 0 | 0 |
-| contacts/download.php | 6 | – | 6 | 0 |
-| contacts/inquiry.php | 244 | 244 | 0 | 0 |
-| contacts/map.php | 22 | 22 | 0 | 0 |
-| contacts/pricerule.php | 2 | – | 2 | 0 |
-| default/category.php | 16 | 16 | 0 | 0 |
-| default/comment.php | 2 | – | 2 | 0 |
-| default/common.php | 54 | 85 | 10 | 41 |
-| default/controlpanel.php | 25 | – | 23 | 0 |
-| default/countries.php | 202 | 202 | 0 | 0 |
-| default/document.php | 213 | 196 | 24 | 8 |
-| default/feedback.php | 30 | 27 | 3 | 0 |
-| default/menu.php | 31 | – | 31 | 0 |
-| default/messages.php | 136 | 117 | 21 | 2 |
-| default/months.php | 12 | 12 | 0 | 0 |
-| default/order.php | 24 | 23 | 1 | 0 |
-| default/pagination.php | 5 | 5 | 0 | 0 |
-| default/position.php | 26 | 23 | 5 | 2 |
-| default/settings.php | 28 | 28 | 0 | 0 |
-| default/state.php | 11 | 11 | 0 | 0 |
-| default/tabs.php | 34 | 18 | 16 | 0 |
-| default/toolbar.php | 70 | 59 | 11 | 0 |
-| default/user.php | – | 6 | 0 | 6 |
-| default/validation.php | 8 | 8 | 0 | 0 |
-| ebay/ebay.php | 135 | 131 | 5 | 1 |
-| ebiztrader/ebiztrader.php | – | 43 | 0 | 43 |
-| items/attribute.php | 8 | – | 8 | 0 |
-| items/common.php | 13 | 2 | 12 | 1 |
-| items/import.php | 10 | – | 10 | 0 |
-| items/inventory.php | 14 | 13 | 1 | 0 |
-| items/item.php | 64 | 65 | 6 | 7 |
-| items/itemlist.php | 20 | 20 | 0 | 0 |
-| items/ledger.php | 45 | 41 | 7 | 3 |
-| items/option.php | 8 | – | 8 | 0 |
-| items/pricerule.php | 30 | 26 | 6 | 2 |
-| items/stock.php | 24 | 24 | 0 | 0 |
-| items/stockplanning.php | 69 | 69 | 0 | 0 |
-| items/variant.php | 9 | – | 9 | 0 |
-| magento/magento.php | 34 | 38 | 0 | 4 |
-| portals/portal.php | 28 | – | 28 | 0 |
-| processes/common.php | 4 | – | 4 | 0 |
-| processes/processes.php | 106 | 100 | 14 | 7 |
-| purchases/common.php | 11 | – | 11 | 0 |
-| purchases/purchaseorder.php | 65 | 49 | 26 | 9 |
-| purchases/purchases.php | – | 2 | 0 | 2 |
-| purchases/quoterequest.php | 63 | 50 | 23 | 9 |
-| sales/common.php | 38 | – | 38 | 0 |
-| sales/creditnote.php | 66 | 49 | 27 | 10 |
-| sales/deliveryorder.php | 64 | 49 | 25 | 9 |
-| sales/invoice.php | 114 | 99 | 25 | 10 |
-| sales/quote.php | 102 | 90 | 21 | 9 |
-| sales/reminder.php | 66 | 49 | 27 | 9 |
-| sales/sales.php | – | 2 | 0 | 2 |
-| sales/salesorder.php | 62 | 49 | 23 | 10 |
-| shops/shops.php | 157 | 16 | 140 | 0 |
-| statistics/common.php | 3 | – | 3 | 0 |
-| statistics/statistics.php | 49 | 5 | 48 | 4 |
-| tasks/tasks.php | 112 | – | 110 | 0 |
-| users/common.php | 0 | – | 0 | 0 |
-| users/user.php | 10 | – | 10 | 0 |
-
-Die vier nur englisch vorhandenen Dateien sind `default/user.php`,
-`ebiztrader/ebiztrader.php`, `purchases/purchases.php` und `sales/sales.php`.
-Kritische fehlende englische Gegenstücke: `default/menu.php`, `default/controlpanel.php`,
-`contacts/common.php`, `sales/common.php`, `purchases/common.php`, sämtliche `tasks`- und
-`users`-Dateien; zusätzlich fehlen `admin/menu.php`, `admin/page.php`, Contacts-Nebenkataloge,
-vier Items-Kataloge, `default/comment.php`, `processes/common.php`, `statistics/common.php`
-und `portals/portal.php`. Die Tabelle führt jedes Gegenstück einzeln auf.
-
-### Zusatzinventar von Drittbibliotheken
-
-602 Dateien in bestehenden `lang`/`langs`/`i18n`/`cultures`/`localization`-Verzeichnissen:
-jQuery 278, CKEditor 170, TCPDF 48, FileManager 37, MediaManager 37, elFinder 30, TinyMCE zwei.
-Diese Zahlen enthalten auch README-/Statusdateien und bedeuten nicht 602 unterstützte Sprachen.
-Der vollständige Pfadbestand steht unter `scan.vendor_localization_files`. Die Pakete verwenden
-eigene JS-Localeobjekte bzw. TCPDF-Spracharrays; sie werden nicht von DEEC_Translate geladen.
-Zusätzlich sind 726 ZF1-CLDR-XML-Dateien unter `Zend/Locale/Data` inventarisiert: Format-/
-Lokalemetadaten, keine 726 verfügbaren ERP-Übersetzungen. Die semantische Qualität fremder
-Sprachpakete ist nicht Teil der de_DE/en_US-Katalogabnahme. TinyMCE enthält `de.js` und eine
-README; Englisch verwendet die Bibliotheksvorgabe. Die ERP-Layouts wählen Datepicker und
-formatCurrency-Dateien mit umgewandeltem Sprachcode; `de-DE`/`en-US`-Dateien sind vorhanden.
-
-### Tatsächliche Requestabdeckung und Ladeaufwand
-
-Spalten: `require-Aufrufe / verschiedene Dateien / effektive Schlüssel / unaufgelöste
-direkte Modulaufrufe`. Unaufgelöste Aufrufstellen sind statische Befunde im frischen
-Requestmodell, keine Anzahl tatsächlich besuchter Fehlerseiten. Globale Komponenten und
-dynamische Argumente sind hier nicht als direkter Modulaufruf gezählt.
-
-| Aktives Modul | de_DE | en_US | Direkte schlüsselartige Modulaufrufe |
+| Kennzahl | T1 | T2A | T2B |
 | --- | ---: | ---: | ---: |
-| default | 26 / 26 / 1160 / 0 | 18 / 18 / 985 / 0 | 0 |
-| admin | 30 / 30 / 1410 / 6 | 20 / 20 / 1142 / 54 | 160 |
-| calendar | 27 / 26 / 1160 / 0 | 19 / 18 / 985 / 0 | 24 |
-| campaigns | 27 / 27 / 1306 / 1 | 19 / 19 / 1035 / 33 | 66 |
-| contacts | 35 / 34 / 1588 / 2 | 22 / 22 / 1393 / 42 | 169 |
-| ebay | 27 / 27 / 1295 / 1 | 19 / 19 / 1116 / 9 | 70 |
-| items | 38 / 37 / 1460 / 7 | 26 / 25 / 1241 / 30 | 112 |
-| processes | 28 / 27 / 1265 / 2 | 19 / 19 / 1083 / 32 | 61 |
-| purchases | 29 / 28 / 1288 / 4 | 21 / 21 / 1084 / 14 | 31 |
-| sales | 33 / 32 / 1634 / 4 | 25 / 25 / 1370 / 22 | 113 |
-| shops | 27 / 27 / 1316 / 9 | 19 / 19 / 994 / 105 | 170 |
-| statistics | 28 / 27 / 1209 / 0 | 19 / 19 / 990 / 45 | 56 |
-| tasks | 27 / 27 / 1270 / 3 | 18 / 18 / 985 / 43 | 59 |
-| users | 28 / 27 / 1170 / 0 | 18 / 18 / 985 / 0 | 8 |
+| Sprachen | 2 | 2 | 2 |
+| Anwendungsmodule | 13 | 13 | 13 |
+| Katalogdateien | 114 | 115 | 140 |
+| Definitionen inkl. dateiübergreifender Wiederholungen | 6206 | 6206 | 7732 |
+| Verschiedene Schlüssel (Vereinigung) | 3607 | 3607 | 3740 |
+| Fehlende englische Schlüssel | 943 | 943 | 0 |
+| Fehlende deutsche Schlüssel | 94 | 94 | 0 |
+| Fehlende englische Dateien | 22 | 21 | 0 |
+| Fehlende deutsche Dateien | 4 | 4 | 0 |
+| Doppelte Definitionen in einer Datei | 16 | 16 | 0 |
+| Bestätigte Schreibfehler | 17 | 17 | 0 |
+| Platzhalterabweichungen | 0 | 0 | 0 |
+| Hardcode-Kandidaten (manuell prüfen) | 256 | 256 | 204 |
 
-Von 1.099 direkt schlüsselartig übersetzenden Modulaufrufen sind im Modell 39 deutsche
-und 429 englische Aufrufstellen nicht erreichbar definiert. Davon liegen 15 deutsche
-und 116 englische Aufrufstellen auf Schlüsseln, die in anderen Katalogen derselben Sprache
-existieren: **Ladeproblem statt fehlender Übersetzung**. Die übrigen 24/313 haben in der
-jeweiligen Sprache keine Definition. Ein später injizierter Translator oder alternativer
-Aufrufkontext kann einen einzelnen statischen Befund verändern; konkrete Shared-Helper-
-und Navigationsfehler sind zusätzlich zur Modellzählung im Laufzeittest reproduziert.
+Aktuell enthält jede Sprache **70 Dateien, 3.866 Definitionen und 3.740 verschiedene Schlüssel**.
+Alle 3.607 ursprünglichen Schlüssel sind in beiden Sprachen erhalten. 133 zusätzliche
+Schlüssel beheben vorher fehlende Labels bzw. binden sichtbare Texte an. Sprachparität:
+3.740 / 3.740 = 100 %. Dies bedeutet keine automatische redaktionelle Zertifizierung
+sämtlicher Produkt-, Datenbank- oder Drittbibliothekstexte. Alle `defect_counts` sind null.
 
-Schon `default` erfordert 26 Dateien / 67.790 eingelesene Quellbytes auf Deutsch und
-18 Dateien / 53.496 Bytes auf Englisch. Items benötigt 38/26 require-Aufrufe; Sales 33/25.
-Das aktive Common wird, soweit vorhanden, zweimal in verschiedenen Domains geladen.
-Vollständige Ladepfade und Bytezahlen stehen unter `request_loading`; keine andere
-Moduldetaildatei wird im normalen Request pauschal eingelesen.
+### Modul-/Sprachmatrix
 
-Ein isolierter warmer CLI-Lauf ohne OPcache (`opcache.enable_cli=0`) maß jeweils
-280 frische Translator-/Plugin-Kontexte, 20 Durchläufe über alle 14 Requestmodule:
-de_DE 213.768 ms insgesamt / 0.763 ms je Kontext;
-en_US 150.195 ms / 0.536 ms. Prozessspitze: 6.291.456 Bytes.
-Das sind Messwerte dieses Hosts, kein Produktionsbenchmark, keine Kaltstartmessung und
-kein isolierter Speicherbedarf pro Übersetzer. Ohne HTTP/DB-Last lässt sich daraus kein
-relevanter Anwendungsengpass belegen. Die unnötigen Common-Doppelladungen sind dagegen
-strukturell nachgewiesen. Erst die Abhängigkeiten und Sprachparität korrigieren, dann optimieren.
+Spalten: Dateien / Definitionen / verschiedene Schlüssel. Bereiche ohne aktuelles
+Anwendungsmodul bleiben als Legacy-/Erweiterungsbestand erhalten und werden nicht global geladen.
 
-Audit-Quellfingerabdruck: `e209079d31951b5b79c57d24347b724da90a35d1cf5f396ee1b4c8236aaab02e`.
+| Bereich | Anwendung | de_DE | en_US |
+| --- | --- | ---: | ---: |
+| admin | ja | 4 / 267 / 267 | 4 / 267 / 267 |
+| calendar | ja | 1 / 147 / 147 | 1 / 147 / 147 |
+| campaigns | ja | 1 / 148 / 148 | 1 / 148 / 148 |
+| contacts | ja | 9 / 458 / 454 | 9 / 458 / 454 |
+| default | ja | 19 / 993 / 984 | 19 / 993 / 984 |
+| ebay | ja | 1 / 138 / 138 | 1 / 138 / 138 |
+| ebiztrader | Legacy/Erweiterung | 1 / 43 / 43 | 1 / 43 / 43 |
+| items | ja | 12 / 336 / 330 | 12 / 336 / 330 |
+| magento | Legacy/Erweiterung | 1 / 38 / 38 | 1 / 38 / 38 |
+| portals | Legacy/Erweiterung | 1 / 28 / 28 | 1 / 28 / 28 |
+| processes | ja | 2 / 117 / 113 | 2 / 117 / 113 |
+| purchases | ja | 4 / 159 / 148 | 4 / 159 / 148 |
+| sales | ja | 8 / 571 / 536 | 8 / 571 / 536 |
+| shops | ja | 1 / 243 / 243 | 1 / 243 / 243 |
+| statistics | ja | 2 / 56 / 53 | 2 / 56 / 53 |
+| tasks | ja | 1 / 114 / 114 | 1 / 114 / 114 |
+| users | ja | 2 / 10 / 10 | 2 / 10 / 10 |
+
+### Vollständiges aktuelles Dateiinventar
+
+Alle Anwendungskataloge sind UTF-8 ohne BOM und geben ein String-Array zurück. Leere
+Arrays in `admin/client.php` und `users/common.php` sind zulässige Stubkataloge, keine leeren
+Übersetzungswerte. Die Schlüsselmenge ist auch in jeder korrespondierenden Datei identisch.
+
+| Relativ unter languages/&lt;locale&gt;/ | de Definitionen | en Definitionen | fehlende Schlüssel je Datei |
+| --- | ---: | ---: | ---: |
+| admin/admin.php | 256 | 256 | 0 |
+| admin/client.php | 0 | 0 | 0 |
+| admin/menu.php | 9 | 9 | 0 |
+| admin/page.php | 2 | 2 | 0 |
+| calendar/common.php | 147 | 147 | 0 |
+| campaigns/campaigns.php | 148 | 148 | 0 |
+| contacts/bankaccount.php | 4 | 4 | 0 |
+| contacts/comment.php | 2 | 2 | 0 |
+| contacts/common.php | 24 | 24 | 0 |
+| contacts/contact.php | 131 | 131 | 0 |
+| contacts/contactperson.php | 23 | 23 | 0 |
+| contacts/download.php | 6 | 6 | 0 |
+| contacts/inquiry.php | 244 | 244 | 0 |
+| contacts/map.php | 22 | 22 | 0 |
+| contacts/pricerule.php | 2 | 2 | 0 |
+| default/category.php | 16 | 16 | 0 |
+| default/comment.php | 2 | 2 | 0 |
+| default/common.php | 99 | 99 | 0 |
+| default/controlpanel.php | 23 | 23 | 0 |
+| default/countries.php | 202 | 202 | 0 |
+| default/document.php | 220 | 220 | 0 |
+| default/feedback.php | 30 | 30 | 0 |
+| default/menu.php | 31 | 31 | 0 |
+| default/messages.php | 141 | 141 | 0 |
+| default/months.php | 12 | 12 | 0 |
+| default/order.php | 24 | 24 | 0 |
+| default/pagination.php | 5 | 5 | 0 |
+| default/position.php | 30 | 30 | 0 |
+| default/settings.php | 28 | 28 | 0 |
+| default/state.php | 11 | 11 | 0 |
+| default/tabs.php | 34 | 34 | 0 |
+| default/toolbar.php | 71 | 71 | 0 |
+| default/user.php | 6 | 6 | 0 |
+| default/validation.php | 8 | 8 | 0 |
+| ebay/ebay.php | 138 | 138 | 0 |
+| ebiztrader/ebiztrader.php | 43 | 43 | 0 |
+| items/attribute.php | 8 | 8 | 0 |
+| items/common.php | 17 | 17 | 0 |
+| items/import.php | 10 | 10 | 0 |
+| items/inventory.php | 14 | 14 | 0 |
+| items/item.php | 75 | 75 | 0 |
+| items/itemlist.php | 21 | 21 | 0 |
+| items/ledger.php | 49 | 49 | 0 |
+| items/option.php | 8 | 8 | 0 |
+| items/pricerule.php | 32 | 32 | 0 |
+| items/stock.php | 24 | 24 | 0 |
+| items/stockplanning.php | 69 | 69 | 0 |
+| items/variant.php | 9 | 9 | 0 |
+| magento/magento.php | 38 | 38 | 0 |
+| portals/portal.php | 28 | 28 | 0 |
+| processes/common.php | 4 | 4 | 0 |
+| processes/processes.php | 113 | 113 | 0 |
+| purchases/common.php | 11 | 11 | 0 |
+| purchases/purchaseorder.php | 74 | 74 | 0 |
+| purchases/purchases.php | 2 | 2 | 0 |
+| purchases/quoterequest.php | 72 | 72 | 0 |
+| sales/common.php | 38 | 38 | 0 |
+| sales/creditnote.php | 76 | 76 | 0 |
+| sales/deliveryorder.php | 73 | 73 | 0 |
+| sales/invoice.php | 124 | 124 | 0 |
+| sales/quote.php | 111 | 111 | 0 |
+| sales/reminder.php | 75 | 75 | 0 |
+| sales/sales.php | 2 | 2 | 0 |
+| sales/salesorder.php | 72 | 72 | 0 |
+| shops/shops.php | 243 | 243 | 0 |
+| statistics/common.php | 3 | 3 | 0 |
+| statistics/statistics.php | 53 | 53 | 0 |
+| tasks/tasks.php | 114 | 114 | 0 |
+| users/common.php | 0 | 0 | 0 |
+| users/user.php | 10 | 10 | 0 |
+
+### Tatsächliche Ladeabdeckung
+
+Spalten: tatsächlich ausgewertete Dateien / logische Dateieingänge der Domains /
+effektive Schlüssel / unaufgelöste direkte Modulaufrufe. Gemeinsam geladene Dateien
+werden trotz ihrer Verwendung in zwei Domains nur einmal ausgewertet. Die vollständige
+sortierte Ladefolge, Quellbytes, Gewinner und SHA-256 der Texte stehen im JSON.
+
+| Aktives Modul | de_DE | en_US |
+| --- | ---: | ---: |
+| default | 27 / 27 / 1227 / 0 | 27 / 27 / 1227 / 0 |
+| admin | 31 / 31 / 1494 / 0 | 31 / 31 / 1494 / 0 |
+| calendar | 27 / 28 / 1227 / 0 | 27 / 28 / 1227 / 0 |
+| campaigns | 28 / 28 / 1375 / 0 | 28 / 28 / 1375 / 0 |
+| contacts | 35 / 36 / 1655 / 0 | 35 / 36 / 1655 / 0 |
+| ebay | 28 / 28 / 1364 / 0 | 28 / 28 / 1364 / 0 |
+| items | 38 / 39 / 1537 / 0 | 38 / 39 / 1537 / 0 |
+| processes | 28 / 29 / 1335 / 0 | 28 / 29 / 1335 / 0 |
+| purchases | 30 / 31 / 1361 / 0 | 30 / 31 / 1361 / 0 |
+| sales | 34 / 35 / 1725 / 0 | 34 / 35 / 1725 / 0 |
+| shops | 28 / 28 / 1433 / 0 | 28 / 28 / 1433 / 0 |
+| statistics | 28 / 29 / 1276 / 0 | 28 / 29 / 1276 / 0 |
+| tasks | 28 / 28 / 1341 / 0 | 28 / 28 / 1341 / 0 |
+| users | 28 / 29 / 1236 / 0 | 28 / 29 / 1236 / 0 |
+
+Sämtliche 28 Kontexte stimmen mit dem echten Translator-/Plugin-Ergebnis überein.
+Keine ungelöste direkte Modulverwendung und keine unterschiedlich belegte geladene
+Definition bleibt zurück. Der allgemeine Markenfallback `DEWAWI` ist explizit dokumentiert.
+
+### Verwendungen und konservative Unbenutztanalyse
+
+Untersucht: 1085 Produktquelldateien; 1525 literale und 197 dynamische Aufrufe.
+Methoden-/Formular-/Listenmetadaten, Länder aus der DB, zusammengesetzte PDF-/Fehlercodes,
+SQL-Menüs und E-Mail-Marker bleiben indirekte Verbraucher. Testfixtures zählen nicht als
+Produktverwendung. Die Klassifizierung aller Katalogschlüssel lautet:
+
+| Klasse | Schlüssel |
+| --- | ---: |
+| unresolved | 912 |
+| literal_call_found | 906 |
+| indirect_literal_candidate | 1819 |
+| possibly_dynamic | 103 |
+| sicher unbenutzt / Löschfreigabe | **0** |
+
+301 identische DE/EN-Definitionen und 204 verbleibende Hardcode-Kandidaten werden mit
+Datei-/Zeilenbeleg zur manuellen Prüfung ausgegeben. Keine dieser Listen wird als
+automatischer Löschbeweis oder pauschale Fehlerzahl verwendet.
+
+### Drittbibliotheken
+
+Unverändert separat inventarisiert: 602 Dateien in Sprachverzeichnissen von jQuery, CKEditor,
+TCPDF, FileManager, MediaManager, elFinder und TinyMCE sowie 726 ZF1-CLDR-XML-Dateien.
+README-/Statusdateien und Formatierungsmetadaten zählen nicht als zusätzliche ERP-Sprachen.
+Die vollständigen Pfade stehen unter `scan`; deren sprachliche Qualität wird nicht als
+abgenommen behauptet. Keine Fremdbibliothek wurde geändert.
+
+### Tatsächlich ausgeführte Tests
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| `php -l (catalogues, affected PHP and audit fixtures)` | 165 Syntaxprüfungen bestanden |
+| `python3 -B tests/translations/audit-test.py` | 19 Prüfungen bestanden |
+| `php tests/translations/runtime.php` | 157 Prüfungen bestanden |
+| `php tests/security/quote-email.php` | PASS: 364 quote email permission, recipient, resend and tenant-sharing checks |
+| `php tests/security/shop-email-content.php` | OK (75 checks) |
+| `php tests/security/contact-data.php` | PASS: 39 tenant-safe contact data cases |
+| `php tests/security/form-input-validation.php` | PASS: 20 full-form, AJAX, decimal, integer and date validation cases |
+| `php tests/security/user-profile.php` | PASS: 126 user profile and password cases |
+| `php tests/ui/buttons.php` | PASS: 165 button presentation, pilot, legacy, translation and permission checks |
+| `php tests/ui/toolbar-buttons.php` | PASS: 165 button presentation, pilot, legacy, translation and permission checks; PASS: 2259 shared toolbar, layout, SVG, translation, permissions, readonly and exclusion checks |
+| `php tests/sales/quote-monitoring.php` | PASS: 293 quote monitoring, defaults, customer actions, due dates and tenant cases |
+| `php tests/documents/pdf.php` | PASS: 208 PDF checks; canonical archive and historical originals preserved, tenant isolation retained |
+| `php tests/documents/pdf-totals.php` | PASS: 244 PDF checks including mixed-rate total boxes, exemption and balance |
+| `php tests/security/notifications.php` | Bekannter T1-Fehler mit bestätigter Fehlersignatur; nicht bestanden |
+| `php tests/contacts/history-states.php` | Bekannter T1-Fehler mit bestätigter Fehlersignatur; nicht bestanden |
+| `python3 -B tests/translations/browser.py` | 13 Offline-Chromium-Prüfungen bestanden, beide Sprachen |
+| `python3 tests/translations/audit.py --fail-on-defects` | 28/28 Modelle stimmen überein; strenger Defektcheck bestanden |
+| `repeat complete audit and compare JSON bytes` | Zwei vollständige Berichte byteidentisch |
+
+Der Browser prüft die Syntax von `global.js`, `shops.js`, `settings.js` und die echten
+jQuery-Funktionen für Auswahl-/Leer-/Variantenhinweise. Die PHP-Fixtures rendern außerdem
+die realen Katalog-/Variantenpartials einschließlich Preiszweig und HTML-Escapierung in
+beiden Sprachen. Das sind keine vollständigen authentifizierten HTTP-Tests.
+
+### Relevante geänderte Dateien
+
+- Technik: `library/DEEC/Translate.php`, `Pdf.php`, `Feedback.php`; `application/Bootstrap.php`,
+  `application/plugins/Translate.php`, `application/modules/users/controllers/UserController.php`;
+  Sales-/Purchases-`services/CreateDataFactory.php`, Sales-`DocumentPayloadService.php` und
+  `application/controllers/helpers/Email.php`.
+- Kataloge: die in der Inventartabelle aufgeführten Bereiche unter `languages/de_DE` und
+  `languages/en_US`; alle neuen englischen/deutschen Gegenstücke sowie vorhandene korrigierte Dateien.
+- UI: `application/layouts/scripts/site.phtml`, `application/views/scripts/partials/history.phtml`,
+  Shop-Views `cart/index`, `checkout/index`, `checkout/success`, `contact/success`,
+  `inquiry/index`, `inquiry/success`, `inquiry/catalog`, `inquiry/variants`, `order/index`;
+  `js/global.js`, `js/shops.js`, `js/settings.js`.
+- Verifikation/Dokumentation: `tests/translations/*` und der um echte Übersetzungen/englische
+  Ausgaben erweiterte Bestandstest `tests/security/shop-email-content.php`.
+
+Quellfingerabdruck: `e703c2380fb7993bbd809fdf9dcb810a23ba17b3db3961db9d8c176eac120819`.
+Der Fingerabdruck enthält den maßgeblichen lokalen Produktstand, einschließlich separat
+bearbeiteter UI-Dateien; deren Änderungen wurden nicht in diesen Commit übernommen.

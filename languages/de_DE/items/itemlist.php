@@ -19,5 +19,6 @@
 	'ITEM_LISTS_CREATED' => 'Erstellzeit',
 	'ITEM_LISTS_MODIFIED' => 'le. Änderung',
 	'ITEM_LISTS_SAVE' => 'Speichern',
-	'ITEM_LISTS_DELETE' => 'Löschen'
+	'ITEM_LISTS_DELETE' => 'Löschen',
+	'ITEMS_PARAMETERS' => 'Parameter',
 );

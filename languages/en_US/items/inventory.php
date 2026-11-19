@@ -2,7 +2,7 @@
 	//Inventory
 	'ITEMS_INVENTORY' => 'Inventory',
 	'ITEMS_INVENTORY_ID' => 'Inventory ID',
-	'ITEMS_INVENTORY_DOCUMENT' => 'DoCument',
+	'ITEMS_INVENTORY_DOCUMENT' => 'Document',
 	'ITEMS_INVENTORY_COMMENT' => 'Comment',
 	'ITEMS_INVENTORY_QUANTITY' => 'Quantity',
 	'ITEMS_INVENTORY_TYPE' => 'Type',
@@ -12,5 +12,6 @@
 	'ITEMS_INVENTORY_MODIFIED' => 'Modified',
 	'ITEMS_INVENTORY_PRICE' => 'Price',
 	'ITEMS_INVENTORY_UOM' => 'UOM',
-	'ITEMS_INVENTORY_ACTIVATED' => 'Activate inventory management'
+	'ITEMS_INVENTORY_ACTIVATED' => 'Activate inventory management',
+	'ITEMS_NEW_INVENTORY' => 'New stock booking',
 );

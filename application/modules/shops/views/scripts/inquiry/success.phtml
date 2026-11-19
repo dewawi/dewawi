@@ -15,27 +15,27 @@ $offerStatus = $this->offerStatus ?? null;
 		<div class="row justify-content-center">
 			<div class="col-md-8 text-center">
 				<i class="icon-check fas fa-check-circle"></i>
-				<h1>Vielen Dank für Ihre Anfrage!</h1>
-				<p>Ihre Anfrage wurde gespeichert. Wir werden sie schnellstmöglich bearbeiten.</p>
+				<h1><?php echo $this->escape($this->translate('SHOPS_INQUIRY_SUCCESS_TITLE')); ?></h1>
+				<p><?php echo $this->escape($this->translate('SHOPS_INQUIRY_STORED')); ?></p>
 				<?php if ($this->notificationSent === false): ?>
-					<p>Ihre Anfrage wurde gespeichert. Leider konnten wir derzeit keine E-Mail-Bestätigung versenden. Bitte senden Sie Ihre Anfrage nicht erneut.</p>
+					<p><?php echo $this->escape($this->translate('SHOPS_INQUIRY_EMAIL_FAILED')); ?></p>
 				<?php elseif (!empty($this->duplicate)): ?>
-					<p>Diese Anfrage war bereits gespeichert und wurde nicht erneut angelegt.</p>
+					<p><?php echo $this->escape($this->translate('SHOPS_INQUIRY_DUPLICATE')); ?></p>
 				<?php endif; ?>
 			</div>
 		</div>
 
 		<?php if (!empty($this->downloadUrl)): ?>
 			<div class="alert alert-success">
-				<strong>Ihr Angebot ist fertig.</strong>
-				<a href="<?php echo $this->escape($this->downloadUrl); ?>" target="_blank" rel="noopener">PDF herunterladen</a>
+				<strong><?php echo $this->escape($this->translate('SHOPS_QUOTE_READY')); ?></strong>
+				<a href="<?php echo $this->escape($this->downloadUrl); ?>" target="_blank" rel="noopener"><?php echo $this->escape($this->translate('SHOPS_DOWNLOAD_PDF')); ?></a>
 			</div>
 		<?php elseif ($offerStatus === 'manual_review'): ?>
-			<div class="alert alert-info">Ihre Anfrage wurde gespeichert. Die technische oder kaufmännische Konfiguration muss noch geprüft werden. Sie erhalten Ihr Angebot nach dieser Prüfung.</div>
+			<div class="alert alert-info"><?php echo $this->escape($this->translate('SHOPS_INQUIRY_MANUAL_REVIEW')); ?></div>
 		<?php elseif ($offerStatus === 'quote_failed'): ?>
-			<div class="alert alert-warning">Ihre Anfrage wurde gespeichert, das Angebot konnte jedoch noch nicht erstellt werden. Bitte senden Sie die Anfrage nicht erneut.</div>
+			<div class="alert alert-warning"><?php echo $this->escape($this->translate('SHOPS_INQUIRY_QUOTE_FAILED')); ?></div>
 		<?php elseif ($offerStatus === 'pdf_failed'): ?>
-			<div class="alert alert-warning">Ihr Angebot wurde erstellt, das PDF ist derzeit jedoch nicht verfügbar. Bitte senden Sie die Anfrage nicht erneut.</div>
+			<div class="alert alert-warning"><?php echo $this->escape($this->translate('SHOPS_INQUIRY_PDF_FAILED')); ?></div>
 		<?php endif; ?>
 
 		<!-- Accordion to display form data -->
@@ -45,7 +45,7 @@ $offerStatus = $this->offerStatus ?? null;
 					<div class="card-header" id="headingOne">
 						<h2 class="mb-0">
 							<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-								Ihre Kontaktdaten
+								<?php echo $this->escape($this->translate('SHOPS_YOUR_CONTACT_DATA')); ?>
 							</button>
 						</h2>
 					</div>
@@ -70,13 +70,13 @@ $offerStatus = $this->offerStatus ?? null;
 					</div>
 				</div>
 			<?php else: ?>
-				<p>Keine Kontaktdaten verfügbar.</p>
+				<p><?php echo $this->escape($this->translate('SHOPS_NO_CONTACT_DATA')); ?></p>
 			<?php endif; ?>
 		</div>
 
 		<div class="row justify-content-center mt-4">
 			<div class="col-md-8 text-center">
-				<a href="<?php echo $this->escape($this->url([], 'shop_home')); ?>" class="btn btn-success btn-lg">Zurück zur Startseite</a>
+				<a href="<?php echo $this->escape($this->url([], 'shop_home')); ?>" class="btn btn-success btn-lg"><?php echo $this->escape($this->translate('SHOPS_BACK_HOME')); ?></a>
 			</div>
 		</div>
 	</div>
