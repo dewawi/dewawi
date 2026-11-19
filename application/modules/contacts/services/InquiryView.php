@@ -29,7 +29,7 @@ class Contacts_Service_InquiryView
 			if (in_array($name, ['origin', 'source_path', '_quote'], true)) continue;
 
 			if($name === '_selection') {
-				$fields[] = ['name' => 'selection_review', 'label' => 'Technische und kaufmännische Prüfung', 'value' => !empty($value['eligible']) ? 'Automatische Auswahl freigegeben' : 'Manuelle Prüfung erforderlich: '.implode(', ', (array)($value['reasons'] ?? [])), 'translate_value' => false];
+				$fields[] = ['name' => 'selection_review', 'label' => 'CONTACT_SELECTION_REVIEW', 'value' => !empty($value['eligible']) ? 'CONTACT_SELECTION_ALLOWED' : 'CONTACT_SELECTION_MANUAL', 'value_args' => [implode(', ', (array)($value['reasons'] ?? []))], 'translate_value' => true];
 				continue;
 			}
 			$definition = $definitions[$name] ?? [];

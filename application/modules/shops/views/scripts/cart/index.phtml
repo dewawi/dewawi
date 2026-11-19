@@ -43,7 +43,7 @@
 						<h4><?php echo $this->translate('SHOPS_TOTAL') . ':'; ?> <span id="cart-total"><?php echo $this->total; ?></span></h4>
 						<?php $shippingPage = $this->PageByType('shipping'); ?>
 						<?php if($shippingPage) : ?>
-							<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->SlugUrl('page', (int)$shippingPage['id']); ?>" target="_blank">Versandkosten</a></span>
+							<span style="font-size: 0.8rem;"><?php echo $this->translate('SHOPS_NET_PRICE_NOTICE'); ?> <a href="<?php echo $this->SlugUrl('page', (int)$shippingPage['id']); ?>" target="_blank"><?php echo $this->translate('SHOPS_SHIPPING_COSTS'); ?></a></span>
 						<?php endif; ?>
 						<button class="btn btn-warning" id="clear-cart" type="button"><?php echo $this->translate('SHOPS_SHOPPING_CART_CLEAR'); ?></button>
 						<button id="checkout-btn" class="btn btn-success" type="button"><?php echo $this->translate('SHOPS_CHECKOUT'); ?></button>

@@ -1,14 +1,20 @@
+<?php
+require_once dirname(__DIR__, 4) . '/library/DEEC/Translate.php';
+$tr = Zend_Registry::isRegistered('DEEC_Translate') ? Zend_Registry::get('DEEC_Translate') : new DEEC_Translate('en_US');
+if (!Zend_Registry::isRegistered('DEEC_Translate')) $tr->loadDir('default', dirname(__DIR__, 4) . '/languages/' . $tr->getLocale() . '/default');
+$t = fn($key) => $this->escape($tr->t($key));
+?>
 <!doctype html>
-<html lang="en">
+<html lang="<?= $this->escape(substr($tr->getLocale(), 0, 2)); ?>">
 <head>
 	<meta charset="UTF-8">
 	<meta name="robots" content="noindex, nofollow">
 	<title>DEWAWI</title>
 </head>
 <body>
-	<h1>An error occurred</h1>
-	<h2><?php echo $this->escape($this->message) ?></h2>
-	<p>Please try again later or contact your administrator.</p>
+	<h1><?= $t('ERROR_OCCURRED'); ?></h1>
+	<h2><?php echo $t(['Page not found' => 'ERROR_NOT_FOUND', 'Application error' => 'ERROR_APPLICATION'][$this->message] ?? 'ERROR_APPLICATION') ?></h2>
+	<p><?= $t('ERROR_RETRY'); ?></p>
 
 	<?php if(defined('APPLICATION_ENV') && APPLICATION_ENV === 'development' && isset($this->exception)): ?>
 

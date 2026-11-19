@@ -14,7 +14,7 @@ $hasErrors = (bool)array_filter($preview, static fn(array $row): bool => $row['s
 		<input type="hidden" name="redirect_action" value="create">
 		<div class="dw-form-row">
 			<label for="legacy-old-path"><?php echo $this->escape($this->translate('ADMIN_LEGACY_OLD_PATH')); ?></label>
-			<input id="legacy-old-path" type="text" name="old_path" maxlength="2048" required placeholder="alte-seite">
+			<input id="legacy-old-path" type="text" name="old_path" maxlength="2048" required placeholder="<?php echo $this->escape($this->translate('ADMIN_REDIRECT_PATH_EXAMPLE')); ?>">
 		</div>
 		<div class="dw-form-row">
 			<label for="legacy-response-type"><?php echo $this->escape($this->translate('ADMIN_LEGACY_RESPONSE_TYPE')); ?></label>

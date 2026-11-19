@@ -1,11 +1,30 @@
 <?php
 
+
+function installerTranslate(string $key, array $args = []): string
+{
+    require_once dirname(__DIR__) . '/library/DEEC/Translate.php';
+    $selected = $_SESSION['installer_locale'] ?? 'en_US';
+    $locale = DEEC_Translate::normalizeLocale(is_string($selected) ? $selected : '', 'en_US');
+    static $translators = [];
+    if (!isset($translators[$locale])) {
+        $translators[$locale] = new DEEC_Translate($locale);
+        $translators[$locale]->loadDir('installer', dirname(__DIR__) . '/languages/' . $locale . '/installer');
+    }
+    return $translators[$locale]->t($key, $args);
+}
+
+function installerText(string $key, array $args = []): string
+{
+    return htmlspecialchars(installerTranslate($key, $args), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
 ini_set('display_errors', getenv('APPLICATION_ENV') === 'development' ? '1' : '0');
 ini_set('display_startup_errors', getenv('APPLICATION_ENV') === 'development' ? '1' : '0');
 ini_set('log_errors', '1');
 set_exception_handler(static function (Throwable $exception): void {
     error_log((string)$exception);
-    $message = 'Installation failed. Please check the server logs or contact your administrator.';
+    $message = installerTranslate('INSTALL_FAILURE');
     if (PHP_SAPI === 'cli') {
         fwrite(STDERR, $message . "\n");
         exit(1);

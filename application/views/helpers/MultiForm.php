@@ -184,7 +184,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract
 			. ' data-id="' . $this->escape($rowId) . '"'
 			. ' data-module="' . $this->escape($module) . '"'
 			. ' data-controller="' . $this->escape($controller) . '"'
-			. ' aria-label="Löschen"'
+			. ' aria-label="' . $this->escape($this->view->translate('TOOLBAR_DELETE')) . '"'
 			. '></button>';
 	}
 
@@ -199,7 +199,7 @@ class Zend_View_Helper_MultiForm extends Zend_View_Helper_Abstract
 			. ' data-action="multi-add"'
 			. ' data-module="' . $this->escape($module) . '"'
 			. ' data-controller="' . $this->escape($controller) . '"'
-			. ' aria-label="Hinzufügen"'
+			. ' aria-label="' . $this->escape($this->view->translate('TOOLBAR_ADD')) . '"'
 			. '></button>'
 			. '</div>';
 	}

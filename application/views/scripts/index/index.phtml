@@ -211,7 +211,7 @@ echo $this->Messages();
 												</td>
 												<td class="dw-col-state">
 													<?php if ($task->duedate && strtotime($task->duedate) < time()) : ?>
-														<span class="dw-badge dw-badge--danger">überfällig</span>
+														<span class="dw-badge dw-badge--danger"><?php echo $this->translate('CONTROL_PANEL_OVERDUE'); ?></span>
 													<?php endif; ?>
 												</td>
 												<td class="dw-col-actions">

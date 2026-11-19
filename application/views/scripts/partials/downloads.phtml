@@ -23,7 +23,7 @@ $attachments = is_array($this->attachments) || $this->attachments instanceof Tra
 				<?= $this->emailForm->subject; ?>
 
 				<dt id="attachment-label">
-					<label for="attachment" class="optional">Anhang</label>
+					<label for="attachment" class="optional"><?php echo $this->translate('EMAIL_ATTACHMENT'); ?></label>
 				</dt>
 
 				<dd id="attachment-element">
@@ -47,7 +47,7 @@ $attachments = is_array($this->attachments) || $this->attachments instanceof Tra
 
 				<?= $this->emailForm->body; ?>
 
-				<button type="button" class="send" onclick="sendMessage()">Senden</button>
+				<button type="button" class="send" onclick="sendMessage()"><?php echo $this->translate('EMAIL_SEND'); ?></button>
 			</dl>
 		</div>
 

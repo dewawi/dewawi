@@ -18,15 +18,15 @@
 			{
 				switch ($char)
 				{
-					case "r": if (!is_readable($file)) $error = "Not readable"; break;
-					case "w": if (!is_writable($file)) $error = "Not writeable"; break;
+					case "r": if (!is_readable($file)) $error = installerTranslate('INSTALL_NOT_READABLE'); break;
+					case "w": if (!is_writable($file)) $error = installerTranslate('INSTALL_NOT_WRITABLE'); break;
 					// funzt bei manchen servern nicht richtig...
 					// case "x": if (!is_executable($file)) $error = "Not executeable"; break;
 				}
 			}
 		}
 		else
-			$error = "File doesnt exist!";
+			$error = installerTranslate('INSTALL_FILE_MISSING');
 		
 		// combine string for user easy reading
 		$showRequired = array();
@@ -34,9 +34,9 @@
 		{
 			switch ($char)
 			{
-				case "r": $showRequired[] = "Read"; break;
-				case "w": $showRequired[] = "Write"; break;
-				case "x": $showRequired[] = "Execute"; break; 
+				case "r": $showRequired[] = installerTranslate('INSTALL_READ'); break;
+				case "w": $showRequired[] = installerTranslate('INSTALL_WRITE'); break;
+				case "x": $showRequired[] = installerTranslate('INSTALL_EXECUTE'); break;
 			}
 		}
 		

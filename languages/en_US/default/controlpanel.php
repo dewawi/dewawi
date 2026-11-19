@@ -22,4 +22,5 @@
 	'CONTROL_PANEL_TASK_DUE_DATE' => 'Due on',
 	'CONTROL_PANEL_CONTACT_ID' => 'Contact number',
 	'CONTROL_PANEL_CONTACT' => 'Contact',
+	'CONTROL_PANEL_OVERDUE' => 'overdue',
 );

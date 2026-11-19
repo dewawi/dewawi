@@ -1,0 +1,41 @@
+{
+  "scope": "No independent failure is converted into a pass or bypassed. Validator failures are separately marked baseline_failure.",
+  "comparisons": [
+    {
+      "command": "tests/security/shop-inquiry-quote.py",
+      "status": "failed",
+      "baseline_signature_matches": true,
+      "signature": "Generic catalog view depends on legacy calculation fields",
+      "baseline": "t4-suites.json",
+      "current": "t5-suites.json"
+    },
+    {
+      "command": "tests/calendar/run.py",
+      "status": "failed",
+      "baseline_signature_matches": true,
+      "signature": "original business rows and archive versions are retained.",
+      "baseline": "t4-suites.json",
+      "current": "t5-suites.json"
+    },
+    {
+      "command": [
+        "php",
+        "tests/documents/document-labels.php"
+      ],
+      "status": "failed",
+      "baseline_signature_matches": true,
+      "signature": "Exact label or body missing",
+      "baseline": "t4-document-regressions.json",
+      "current": "t5-document-regressions.json"
+    }
+  ],
+  "not_repeated": [
+    "tests/documents/document-recovery-db.py (independent COPY/KOPIE fixture issue; see t4-recovery-baseline.json)"
+  ],
+  "unavailable": [
+    "external SMTP/TLS delivery",
+    "production/customer templates and extension data",
+    "calendar browser/SMTP continuation after existing fixture failure",
+    "shop inquiry full HTTP/browser continuation after existing fixture failure"
+  ]
+}

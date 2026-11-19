@@ -140,4 +140,10 @@
 	'MESSAGES_INVALID_REQUEST' => 'Invalid request.',
 	'MESSAGES_ELEMENT_DOES_NOT_EXISTS' => 'The entry does not exist.',
 	'MESSAGES_HISTORY_EMPTY' => 'There are no activities yet.',
+	'MESSAGES_VARIANT_CREATE_FAILED' => 'The variant could not be created.',
+	'MESSAGES_RECORD_UNAVAILABLE' => 'The record was not found or is no longer available.',
+	'ERROR_OCCURRED' => 'An error occurred',
+	'ERROR_RETRY' => 'Please try again later or contact your administrator.',
+	'ERROR_NOT_FOUND' => 'Page not found',
+	'ERROR_APPLICATION' => 'Application error',
 );

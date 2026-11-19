@@ -1,16 +1,16 @@
-<h3>File permissions</h3>
+<h3><?= installerText('INSTALL_FILE_PERMISSIONS'); ?></h3>
 
 <?php if (!$goToNextStep) { ?>
-	<div class="error">The Installer has insufficient file permissions on this server! Please check your chmod permissions or contact support to get this issue resolved.</div>
+	<div class="error"><?= installerText('INSTALL_PERMISSIONS_ERROR'); ?></div>
 <?php } ?>
 
 <table>
 	<thead>
 		<tr>
-			<th>Name</th>
-			<th>Real Path</th>
-			<th>Required</th>
-			<th>Status</th>
+			<th><?= installerText('INSTALL_NAME'); ?></th>
+			<th><?= installerText('INSTALL_REAL_PATH'); ?></th>
+			<th><?= installerText('INSTALL_REQUIRED'); ?></th>
+			<th><?= installerText('INSTALL_STATUS'); ?></th>
 		</tr>
 	</thead>
 	<tbody>
@@ -28,7 +28,7 @@
 
 
 <a href="index.php" class="button negative">
-	<img src="css/blueprint/plugins/buttons/icons/cross.png" alt=""/> Cancel
+	<img src="css/blueprint/plugins/buttons/icons/cross.png" alt=""/> <?= installerText('INSTALL_CANCEL'); ?>
 </a>
 
 <?php if ($goToNextStep) { ?>
@@ -36,7 +36,7 @@
 	<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['installer_csrf'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 	<input type="hidden" name="nextStep" value="database">
 	<button type="submit" class="button positive">
-		<img src="css/blueprint/plugins/buttons/icons/tick.png" alt=""/> Next
+		<img src="css/blueprint/plugins/buttons/icons/tick.png" alt=""/> <?= installerText('INSTALL_NEXT'); ?>
 	</button>
 </form>
 <?php } else { ?>
@@ -44,7 +44,7 @@
 	<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['installer_csrf'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 		<input type="hidden" name="nextStep" value="filePermissions">
 		<button type="submit" class="button positive">
-			<img src="css/blueprint/plugins/buttons/icons/tick.png" alt=""/> Retry
+			<img src="css/blueprint/plugins/buttons/icons/tick.png" alt=""/> <?= installerText('INSTALL_RETRY'); ?>
 		</button>
 	</form>
 <?php } ?>

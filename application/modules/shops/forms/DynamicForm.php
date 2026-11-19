@@ -33,14 +33,14 @@ class Shops_Form_DynamicForm extends DEEC_Form
 		}
 
 		if((string)array_key_first($config) !== (string)$step) $this->addElement([
-			'name' => 'back', 'type' => 'button', 'label' => 'Zurück',
+			'name' => 'back', 'type' => 'button', 'label' => 'TOOLBAR_BACK',
 			'attribs' => ['class' => 'btn btn-outline-secondary', 'data-inquiry-back' => '1'],
 		]);
 
 		$this->addElement([
 			'name' => 'next',
 			'type' => 'submit',
-			'label' => (string)array_key_last($config) === (string)$step ? 'Anfrage absenden' : 'Weiter',
+			'label' => (string)array_key_last($config) === (string)$step ? 'SHOPS_SEND_INQUIRY' : 'SHOPS_FORM_NEXT',
 			'attribs' => ['class' => 'btn btn-primary'],
 		]);
 	}

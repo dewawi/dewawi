@@ -1,0 +1,439 @@
+{
+    "scope": "Actual helpers, dynamic form, public checkout error and all installer templates; synthetic data only",
+    "counts": {
+        "passed": 86,
+        "failed": 0
+    },
+    "results": [
+        {
+            "locale": "de_DE",
+            "scenario": "shared empty media and upload",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "shared media placeholders",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "shared media values remain escaped",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "renderMobileDrawer accessible labels",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "renderDesktopTopbar accessible labels",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "renderDeleteButton label and data attributes",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "renderAddButton label and data attributes",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "dynamic inquiry first buttons and CSRF",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "dynamic inquiry last buttons and CSRF",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "public checkout failure without data",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "public checkout failure with escaped submitted data",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "cart shipping CMS link and stored amounts",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "public search form",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "inquiry suggestion warning and list price",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "inquiry suggestion warning and special price",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "contact selection review approved",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "contact selection review manual with unchanged reason codes",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "JS export MESSAGES_DELETE_CONFIRM",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "JS export MESSAGES_VARIANT_CREATE_FAILED",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "JS export MESSAGES_RECORD_UNAVAILABLE",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "JS export MESSAGES_SAVE_FAILED",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "localized error page ERROR_NOT_FOUND",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "localized error page ERROR_APPLICATION",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer header failure",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer header success",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer introduction failure",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer introduction success",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer license failure",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer license success",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer requirements failure",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer requirements success",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer filePermissions failure",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer filePermissions success",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer database failure",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer database success",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer importSQL failure",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer importSQL success",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer done failure",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer done success",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer footer failure",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer footer success",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer translator preserves application context",
+            "status": "passed"
+        },
+        {
+            "locale": "de_DE",
+            "scenario": "installer interpolated database name escaped",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "shared empty media and upload",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "shared media placeholders",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "shared media values remain escaped",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "renderMobileDrawer accessible labels",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "renderDesktopTopbar accessible labels",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "renderDeleteButton label and data attributes",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "renderAddButton label and data attributes",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "dynamic inquiry first buttons and CSRF",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "dynamic inquiry last buttons and CSRF",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "public checkout failure without data",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "public checkout failure with escaped submitted data",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "cart shipping CMS link and stored amounts",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "public search form",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "inquiry suggestion warning and list price",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "inquiry suggestion warning and special price",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "contact selection review approved",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "contact selection review manual with unchanged reason codes",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "JS export MESSAGES_DELETE_CONFIRM",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "JS export MESSAGES_VARIANT_CREATE_FAILED",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "JS export MESSAGES_RECORD_UNAVAILABLE",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "JS export MESSAGES_SAVE_FAILED",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "localized error page ERROR_NOT_FOUND",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "localized error page ERROR_APPLICATION",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer header failure",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer header success",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer introduction failure",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer introduction success",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer license failure",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer license success",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer requirements failure",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer requirements success",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer filePermissions failure",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer filePermissions success",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer database failure",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer database success",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer importSQL failure",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer importSQL success",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer done failure",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer done success",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer footer failure",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer footer success",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer translator preserves application context",
+            "status": "passed"
+        },
+        {
+            "locale": "en_US",
+            "scenario": "installer interpolated database name escaped",
+            "status": "passed"
+        }
+    ]
+}

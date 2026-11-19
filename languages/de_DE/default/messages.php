@@ -140,4 +140,10 @@
 	'MESSAGES_INVALID_REQUEST' => 'Ungültige Anfrage.',
 	'MESSAGES_ELEMENT_DOES_NOT_EXISTS' => 'Der Eintrag ist nicht vorhanden.',
 	'MESSAGES_HISTORY_EMPTY' => 'Es sind noch keine Aktivitäten vorhanden.',
+	'MESSAGES_VARIANT_CREATE_FAILED' => 'Variante konnte nicht erstellt werden.',
+	'MESSAGES_RECORD_UNAVAILABLE' => 'Datensatz nicht gefunden oder nicht mehr verfügbar.',
+	'ERROR_OCCURRED' => 'Ein Fehler ist aufgetreten',
+	'ERROR_RETRY' => 'Bitte versuchen Sie es später erneut oder wenden Sie sich an Ihre Administration.',
+	'ERROR_NOT_FOUND' => 'Seite nicht gefunden',
+	'ERROR_APPLICATION' => 'Anwendungsfehler',
 );

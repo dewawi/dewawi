@@ -263,4 +263,5 @@
 	'ADMIN_DASHBOARD_USERS_DESCRIPTION' => 'Benutzer und Zugriffsrechte verwalten.',
 	'ADMIN_DASHBOARD_DESIGN_DESCRIPTION' => 'Vorlagen und Fußzeilen verwalten.',
 	'ADMIN_DASHBOARD_SYSTEM_DESCRIPTION' => 'Systeminformationen und installierte Module verwalten.',
+	'ADMIN_REDIRECT_PATH_EXAMPLE' => 'alte-seite',
 );

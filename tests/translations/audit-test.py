@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('translation_audit', Path(__file__).with_name('audit.py'))
 audit = importlib.util.module_from_spec(spec)
@@ -14,6 +15,101 @@ spec.loader.exec_module(audit)
 
 
 class AuditTests(unittest.TestCase):
+    def fixture_audit(self, mutate=None):
+        with tempfile.TemporaryDirectory(prefix='dewawi-quality-gate-') as directory:
+            root = Path(directory)
+            for locale in ['de_DE', 'en_US']:
+                for area in ['default', 'sales']:
+                    path = root / f'languages/{locale}/{area}/{area}.php'
+                    path.parent.mkdir(parents=True)
+                    path.write_text("<?php return ['TITLE' => 'Hello %s'];" if area == 'default' else '<?php return [];')
+            (root / 'application/modules/sales/views/scripts').mkdir(parents=True)
+            policy = root / 'tests/translations/quality-policy.json'
+            policy.parent.mkdir(parents=True)
+            policy.write_text(json.dumps({'required_catalogues': ['default/default.php', 'sales/sales.php'], 'common_domains': [], 'exceptions': []}))
+            if mutate:
+                mutate(root)
+            def inspect(mode, paths):
+                return {p.relative_to(root).as_posix(): self.inspect(mode, p.read_text()) for p in paths}
+            source_paths = audit.source_paths
+            with patch.object(audit, 'ROOT', root), patch.object(audit, 'php_inspect', inspect), patch.object(audit, 'source_paths', lambda: source_paths(root)):
+                return audit.run_audit(False)
+
+    def test_quality_gate_accepts_clean_fixture(self):
+        self.assertFalse(any(self.fixture_audit()['defect_counts'].values()))
+
+    def test_quality_gate_rejects_invalid_policy(self):
+        for value in ['{invalid', '[]', '{"required_catalogues": 1}']:
+            with self.subTest(value=value):
+                report = self.fixture_audit(lambda root: (root / 'tests/translations/quality-policy.json').write_text(value))
+                self.assertEqual(report['quality_gate'], [{'type': 'quality_policy_invalid'}])
+
+    def test_quality_gate_rejects_catalogue_mutations(self):
+        cases = [
+            ("<?php return ['TITLE' => ''];", 'empty_values'),
+            ("<?php return ['' => 'Text'];", 'empty_keys'),
+            ("<?php return ['TITLE' => 'A', 'TITLE' => 'B'];", 'duplicate_keys_in_file'),
+            ("<?php return ['TITLE' => 'Hello %Q'];", 'invalid_format_placeholders'),
+            ("<?php return ['TITLE' => 'Hello %d'];", 'placeholder_mismatches'),
+            ("<?php return ['OTHER' => 'Text'];", 'missing_en_US_keys'),
+            ("<?php return ['TITLE' => null];", 'catalogue_errors'),
+            ('<?php return false;', 'catalogue_errors'),
+            ("<?php return ['TITLE' => ;", 'catalogue_errors'),
+        ]
+        for source, category in cases:
+            with self.subTest(source=source):
+                result = self.fixture_audit(lambda root: (root / 'languages/en_US/default/default.php').write_text(source))
+                self.assertGreater(result['defect_counts'][category], 0)
+
+    def test_quality_gate_detects_missing_files_in_both_languages(self):
+        def remove(root):
+            for locale in ['de_DE', 'en_US']:
+                (root / f'languages/{locale}/sales/sales.php').unlink()
+        self.assertTrue(any(f['type'] == 'required_catalogue_missing' for f in self.fixture_audit(remove)['quality_gate']))
+
+    def test_quality_gate_detects_one_missing_counterpart(self):
+        report = self.fixture_audit(lambda root: (root / 'languages/en_US/sales/sales.php').unlink())
+        self.assertEqual(report['defect_counts']['missing_files'], 1)
+
+    def test_quality_gate_detects_new_visible_text(self):
+        report = self.fixture_audit(lambda root: (root / 'application/modules/sales/views/scripts/new.phtml').write_text('<button>Speichern</button>'))
+        self.assertEqual(report['quality_gate'][0]['type'], 'unreviewed_visible_candidate')
+
+    def test_disabled_html_is_not_a_permanent_visible_exception(self):
+        def add(root, markup):
+            (root / 'application/modules/sales/views/scripts/new.phtml').write_text(markup)
+        disabled = self.fixture_audit(lambda root: add(root, '<!-- <iframe title="Video player"></iframe> -->'))
+        self.assertEqual(disabled['quality_gate'], [])
+        enabled = self.fixture_audit(lambda root: add(root, '<iframe title="Video player"></iframe>'))
+        self.assertEqual(enabled['quality_gate'][0]['type'], 'unreviewed_visible_candidate')
+
+    def test_quality_exceptions_are_exact_and_counted(self):
+        candidate = {'file': 'a.php', 'kind': 'html_text', 'text': 'Example brand'}
+        exception = dict(candidate, classification='technical_internal', reason='Attribution brand', occurrences=1)
+        policy = {'required_catalogues': [], 'common_domains': [], 'exceptions': [exception]}
+        self.assertEqual(audit.quality_findings({}, [candidate], [], policy), [])
+        self.assertTrue(audit.quality_findings({}, [candidate, candidate], [], policy))
+        self.assertTrue(audit.quality_findings({}, [dict(candidate, file='b.php')], [], policy))
+        self.assertTrue(audit.quality_findings({}, [], [], policy))
+        exception['reason'] = ''
+        self.assertTrue(audit.quality_findings({}, [candidate], [], policy))
+
+    def test_quality_gate_pins_domain_order(self):
+        policy = {'required_catalogues': [], 'common_domains': ['items_common'], 'exceptions': []}
+        route = {'locale': 'en_US', 'module': 'sales', 'domains': ['sales', 'default', 'items_common']}
+        self.assertEqual(audit.quality_findings({}, [], [route], policy)[0]['type'], 'domain_order_changed')
+
+    def test_comment_filter_preserves_urls_and_ignores_commented_ui(self):
+        source = "const url='https://example.invalid'; // alert('Falsch');\nalert('Visible message'); /* confirm('Ignored'); */"
+        cleaned = audit.javascript_without_comments(source)
+        self.assertIn('https://example.invalid', cleaned)
+        self.assertEqual([c['text'] for c in audit.hardcoded_candidates('test.js', cleaned)], ['Visible message'])
+
+    def test_installer_calls_and_phpdoc_are_tokenized(self):
+        result = self.inspect('source', "<?php /** 'label' => 'Example documentation' */ installerText('INSTALL_NEXT'); function installerText($key) {}")
+        self.assertEqual([c['key'] for c in result['calls']], ['INSTALL_NEXT'])
+        self.assertNotIn('Example documentation', result['clean_source'])
+
     def inspect(self, mode, source):
         with tempfile.TemporaryDirectory(prefix='dewawi-translation-parser-') as directory:
             path = Path(directory) / 'catalogue.php'

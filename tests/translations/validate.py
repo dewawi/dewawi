@@ -27,19 +27,23 @@ PHP_CODE += ['application/modules/shops/views/scripts/' + path + '.phtml' for pa
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--stage', choices=['T2A', 'T2B'], required=True)
+    parser.add_argument('--stage', choices=['T2A', 'T2B', 'T5'], required=True)
     parser.add_argument('--browser', action='store_true', help='Include offline Chromium fixtures')
     args = parser.parse_args()
     baseline = json.loads(subprocess.check_output(['git', 'show', 'c6325897:tests/translations/report.json'], cwd=ROOT))
     results = []
+    cleanup_paths = {row['file'] for row in json.loads((ROOT / 'tests/translations/t5-hardcodes.json').read_text())['candidates'] if row['status'] == 'completed_t5' and Path(row['file']).suffix in ['.php', '.phtml']}
+    cleanup_paths.update(['install/helper.php', 'install/index.php', 'install/database.php', 'install/filePermissions.php',
+                          'application/views/helpers/Messages.php', 'application/modules/contacts/views/scripts/inquiry/detail.phtml',
+                          'application/modules/contacts/views/scripts/inquiry/technical.phtml', 'application/modules/contacts/views/scripts/inquiry/technical-comparison.phtml'])
     lint_paths = sorted(set(PHP_CODE) | {str(p.relative_to(ROOT)) for p in (ROOT / 'languages').rglob('*.php')} |
-                        {str(p.relative_to(ROOT)) for p in (ROOT / 'tests/translations').glob('*.php')})
+                        {str(p.relative_to(ROOT)) for p in (ROOT / 'tests/translations').glob('*.php')} | cleanup_paths)
     lint_errors = []
     for path in lint_paths:
         process = subprocess.run(['php', '-l', path], cwd=ROOT, capture_output=True, text=True)
         if process.returncode: lint_errors.append({'file': path, 'output': process.stdout + process.stderr})
     results.append({'command': 'php -l (catalogues, affected PHP and audit fixtures)', 'files': len(lint_paths), 'status': 'failed' if lint_errors else 'passed', 'errors': lint_errors})
-    commands = [[sys.executable, '-B', 'tests/translations/audit-test.py'], ['php', 'tests/translations/runtime.php']]
+    commands = [[sys.executable, '-B', 'tests/translations/audit-test.py'], ['php', 'tests/translations/runtime.php'], ['php', 'tests/translations/cleanup.php']]
     commands += [['php', path] for path in TESTS]
     if args.browser: commands.append([sys.executable, '-B', 'tests/translations/browser.py'])
     for command in commands:
@@ -55,7 +59,7 @@ def main():
             result['stdout'] = process.stdout
             result['stderr'] = '\n'.join(line for line in process.stderr.splitlines() if not line.startswith('Ran ') and not line.startswith('----'))
         results.append(result)
-    audit_command = [sys.executable, 'tests/translations/audit.py'] + (['--fail-on-defects'] if args.stage == 'T2B' else [])
+    audit_command = [sys.executable, 'tests/translations/audit.py'] + (['--fail-on-defects'] if args.stage in ['T2B', 'T5'] else [])
     process = subprocess.run(audit_command, cwd=ROOT, capture_output=True, text=True)
     report = json.loads(process.stdout)
     results.append({'command': ' '.join(['python3' if c == sys.executable else c for c in audit_command]), 'exit_code': process.returncode, 'status': 'passed' if process.returncode == 0 else 'failed',
@@ -65,7 +69,7 @@ def main():
     output = {'stage': args.stage, 'source_sha256': report['source_sha256'], 'baseline_summary': baseline['summary'], 'current_summary': report['summary'], 'commands': results,
               'database_changes': False, 'not_run': ['production access', 'customer data', 'authenticated browser', 'live SMTP', 'database integration/migrations'],
               'notes': ['Baseline failures are retained separately, never counted as passing checks.', 'Runtime PDF payload and mail template contexts use isolated fixtures.']}
-    if args.stage == 'T2B':
+    if args.stage in ['T2B', 'T5']:
         output['technical_block_commit'] = '00a99d88'
         output['t2a_summary'] = json.loads(subprocess.check_output(['git', 'show', '00a99d88:tests/translations/report.json'], cwd=ROOT))['summary']
     json.dump(output, sys.stdout, ensure_ascii=False, indent=2)

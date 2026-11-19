@@ -243,4 +243,7 @@
 	'CONTACT_COMPARE_GAP_OPERATING_RELEASE' => 'Freigabe jeder vorgesehenen Betriebsart für die konkrete Maschinenkonfiguration nachweisen.',
 	'CONTACT_COMPARE_AREA_OEM_REFERENCES' => 'Hersteller-/OEM-Referenzwerte',
 	'CONTACT_COMPARE_GAP_OEM_REFERENCES' => 'Reale Maschinenmessung oder Herstellerreferenz mit exakter Maschinenrevision und technischer Abnahme eindeutig binden. Mathematische Komponentenreferenzen genügen nicht.',
+	'CONTACT_SELECTION_REVIEW' => 'Technische und kaufmännische Prüfung',
+	'CONTACT_SELECTION_ALLOWED' => 'Automatische Auswahl freigegeben',
+	'CONTACT_SELECTION_MANUAL' => 'Manuelle Prüfung erforderlich: %s',
 ];

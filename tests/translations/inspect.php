@@ -61,12 +61,18 @@ function translationAuditSource(string $source): array
 {
 	$tokens = translationAuditTokens($source, false);
 	$literals = []; $calls = []; $html = [];
+	$cleanSource = '';
+	foreach (token_get_all($source) as $part) {
+		$value = is_array($part) ? $part[1] : $part;
+		$cleanSource .= is_array($part) && in_array($part[0], [T_COMMENT, T_DOC_COMMENT], true) ? preg_replace('/[^\r\n]/', ' ', $value) : $value;
+	}
 	foreach ($tokens as $i => $token) {
 		[$id, $value, $line] = $token;
 		if ($id === T_CONSTANT_ENCAPSED_STRING) $literals[] = ['value' => translationAuditString($value), 'line' => $line];
 		if ($id === T_INLINE_HTML) $html[] = ['value' => $value, 'line' => $line];
-		if ($id !== T_STRING || !in_array(strtolower($value), ['t', 'translate'], true) || ($tokens[$i + 1][1] ?? '') !== '(') continue;
-		if (!in_array($tokens[$i - 1][0] ?? 0, [T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON], true)) continue;
+		if ($id !== T_STRING || !in_array(strtolower($value), ['t', 'translate', 'installertext', 'installertranslate'], true) || ($tokens[$i + 1][1] ?? '') !== '(') continue;
+		if (($tokens[$i - 1][0] ?? 0) === T_FUNCTION) continue;
+		if (!in_array(strtolower($value), ['installertext', 'installertranslate'], true) && !in_array($tokens[$i - 1][0] ?? 0, [T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON], true)) continue;
 		$arg = []; $depth = 0;
 		for ($j = $i + 2; isset($tokens[$j]); $j++) {
 			$current = $tokens[$j];
@@ -79,7 +85,7 @@ function translationAuditSource(string $source): array
 		$prefix = !$literal && ($arg[0][0] ?? 0) === T_CONSTANT_ENCAPSED_STRING && ($arg[1][1] ?? '') === '.' ? translationAuditString($arg[0][1]) : null;
 		$calls[] = ['method' => $value, 'line' => $line, 'key' => $literal ? translationAuditString($arg[0][1]) : null, 'prefix' => $prefix, 'expression' => substr(implode('', array_column($arg, 1)), 0, 300)];
 	}
-	return ['literals' => $literals, 'calls' => $calls, 'html' => $html];
+	return ['literals' => $literals, 'calls' => $calls, 'html' => $html, 'clean_source' => $cleanSource];
 }
 
 if (realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) {

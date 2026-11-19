@@ -45,4 +45,5 @@
 	'ACTIONS_GENERATE_REMINDER' => 'Mahnung generieren',
 	'ACTIONS_CREATE_SALES_ORDER' => 'Auftragsbestätigung erstellen',
 	'ACTIONS_GENERATE_SALES_ORDER' => 'Auftragsbestätigung generieren',
+	'ACTIONS_GENERATE_DOCUMENTS' => 'Belege generieren',
 );

@@ -18,7 +18,7 @@ if (isset($_POST['database'])) {
 	$host = trim((string) ($_POST['host'] ?? ''));
 
 	if ($database === '' || $username === '' || $host === '' || $password === '') {
-		$error = 'Please fill in all database connection fields.';
+		$error = installerTranslate('INSTALL_CONNECTION_FIELDS');
 	} else {
 		try {
 			mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
@@ -45,24 +45,24 @@ if (isset($_POST['database'])) {
 
 			switch ((int) $e->getCode()) {
 				case 1044:
-					$error = 'Database access denied. Please check the user permissions.';
+					$error = installerTranslate('INSTALL_ACCESS_DENIED');
 					break;
 
 				case 1045:
-					$error = 'Invalid database username or password.';
+					$error = installerTranslate('INSTALL_BAD_CREDENTIALS');
 					break;
 
 				case 1049:
-					$error = 'The specified database does not exist.';
+					$error = installerTranslate('INSTALL_MISSING_DATABASE');
 					break;
 
 				case 2002:
 				case 2003:
-					$error = 'Database server not reachable. Please check the hostname and server status.';
+					$error = installerTranslate('INSTALL_SERVER_UNREACHABLE');
 					break;
 
 				default:
-					$error = 'Database connection failed. Please check your settings.';
+					$error = installerTranslate('INSTALL_CONNECTION_FAILED');
 					break;
 			}
 		}

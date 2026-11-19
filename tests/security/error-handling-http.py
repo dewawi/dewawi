@@ -179,6 +179,8 @@ with tempfile.TemporaryDirectory(prefix="dewawi-errors-http-") as temp:
         target = temp / "installer/install" / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(root / "install" / relative, target)
+    (temp / "installer/library").symlink_to(root / "library", target_is_directory=True)
+    (temp / "installer/languages").symlink_to(root / "languages", target_is_directory=True)
     for name in ["FileManager", "MediaManager"]:
         manager = site / "library" / name
         for relative in ["config/config.php", "upload.php", "include/utils.php", "include/Response.php", "include/mime_type_lib.php", "lang/en_EN.php", "lang/languages.php"]:
@@ -229,7 +231,7 @@ with tempfile.TemporaryDirectory(prefix="dewawi-errors-http-") as temp:
                     body = None
                     if data is not None:
                         if path.startswith('/install/'):
-                            data = dict(data, csrf_token=installer['token'])
+                            data = {'csrf_token': installer['token'], **data}
                             headers['Cookie'] = installer['cookie']
                         headers["Content-Type"] = "application/x-www-form-urlencoded"
                         body = urlencode(data)
@@ -317,6 +319,16 @@ with tempfile.TemporaryDirectory(prefix="dewawi-errors-http-") as temp:
                     request("/install/index.php", {"nextStep": step}, status=400)
                 body, _ = request("/install/index.php", {"nextStep": "requirements"}, status=200)
                 assert "PHP Extensions" in body
+                body, _ = request("/install/index.php", {"nextStep": "introduction", "installer_locale": "de_DE"}, status=200)
+                assert '<html lang="de">' in body and 'Sprache' in body
+                body, _ = request("/install/index.php", {"nextStep": "requirements"}, status=200)
+                assert 'PHP-Erweiterungen' in body and 'PHP Extensions' not in body
+                request("/install/index.php", {"nextStep": "introduction", "installer_locale": "fr_FR"}, status=400)
+                request("/install/index.php", {"nextStep": "introduction", "installer_locale": "en_US", "csrf_token": "invalid"}, status=403)
+                body, _ = request("/install/index.php", {"nextStep": "introduction"}, status=200)
+                assert '<html lang="de">' in body, 'Rejected locale change modified the session'
+                body, _ = request("/install/index.php", {"nextStep": "introduction", "installer_locale": "en_US"}, status=200)
+                assert '<html lang="en">' in body and 'Language' in body
             except Exception:
                 server_log.seek(0)
                 print(server_log.read()[-3000:])

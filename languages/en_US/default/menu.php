@@ -30,4 +30,8 @@
 	'MENU_STATISTICS_QUOTE' => 'Quotes',
 	'MENU_STATISTICS_REPORTING' => 'Reporting',
 	'MENU_TASKS' => 'Tasks',
+	'NAV_MOBILE' => 'Mobile navigation',
+	'NAV_CLOSE_MENU' => 'Close menu',
+	'NAV_MAIN' => 'Main navigation',
+	'NAV_MENU' => 'Menu',
 );

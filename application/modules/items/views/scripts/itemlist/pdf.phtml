@@ -2,7 +2,7 @@
 if(isset($this->template) && $this->template['filename'] && file_exists(BASE_PATH.'/templates/modules/items/itemlist/'.$this->template['filename'].'.phtml')) {
 	include BASE_PATH.'/templates/modules/items/itemlist/'.$this->template['filename'].'.phtml';
 } else {
-	$this->title = 'Price List';
+	$this->title = $this->translate('ITEM_LISTS_PRICE_LIST');
 	$this->headTitle($this->title);
 
 	//Config

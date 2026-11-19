@@ -18,6 +18,40 @@ FORMAT = re.compile(r"%(?:(\d+)\$)?[-+ 0]*(?:'[^\n])?(?:\d+|\*)?(?:\.(?:\d+|\*))
 SUFFIXES = {'.php', '.phtml', '.js', '.json', '.ini', '.xml', '.sql', '.html', '.yaml', '.yml'}
 
 
+def javascript_without_comments(text):
+    pattern = r'''"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|(?<!\\)//[^\n]*|/\*[\s\S]*?\*/'''
+    return re.sub(pattern, lambda m: re.sub(r'[^\r\n]', ' ', m[0]) if m[0].startswith(('//', '/*')) else m[0], text)
+
+
+def quality_findings(catalogues, candidates, routes, policy):
+    """Require explicit, counted exceptions; no blanket file/directory exclusions."""
+    findings = []
+    for locale in ['de_DE', 'en_US']:
+        for path in policy['required_catalogues']:
+            full = f'languages/{locale}/{path}'
+            if full not in catalogues:
+                findings.append({'type': 'required_catalogue_missing', 'file': full})
+    grouped = defaultdict(list)
+    for candidate in candidates:
+        grouped[(candidate['file'], candidate['kind'], candidate['text'])].append(candidate)
+    exceptions = {(item['file'], item['kind'], item['text']): item for item in policy['exceptions']}
+    for identity, rows in grouped.items():
+        exception = exceptions.get(identity)
+        if not exception or not exception.get('reason') or exception.get('classification') not in ['technical_internal', 'dynamic_or_translated', 'business_unclear']:
+            findings.extend(dict(row, type='unreviewed_visible_candidate') for row in rows)
+        elif len(rows) != exception['occurrences']:
+            findings.append({'type': 'exception_occurrence_changed', 'file': identity[0], 'text': identity[2], 'actual': len(rows), 'allowed': exception['occurrences']})
+    for identity in exceptions.keys() - grouped.keys():
+        findings.append({'type': 'unused_exception', 'file': identity[0], 'text': identity[2]})
+    for route in routes:
+        expected = ['default'] + policy['common_domains']
+        if route['module'] != 'default':
+            expected += [route['module']]
+        if route['domains'] != expected:
+            findings.append({'type': 'domain_order_changed', 'locale': route['locale'], 'module': route['module'], 'expected': expected, 'actual': route['domains']})
+    return findings
+
+
 def php_inspect(mode, paths):
     result = subprocess.run(['php', str(ROOT / 'tests/translations/inspect.php')],
                             input=json.dumps({'mode': mode, 'files': [str(p) for p in paths]}),
@@ -77,6 +111,7 @@ def location(path, line, **extra):
 
 def hardcoded_candidates(path, text, base_line=1):
     result = []
+    text = re.sub(r'<!--[\s\S]*?-->', lambda match: re.sub(r'[^\r\n]', ' ', match[0]), text)
     # Deliberately narrow UI sinks; these remain candidates until manually reviewed.
     patterns = [
         ('html_text', r'>\s*([^<>\n]*[A-Za-zÄÖÜäöüß][^<>\n]*)\s*<'),
@@ -243,13 +278,14 @@ def run_audit(runtime=True):
             for block in data['html']:
                 hardcoded.extend(hardcoded_candidates(relative, block['value'], block['line']))
             # Includes string-built HTML and form descriptions; all require manual confirmation.
-            hardcoded.extend(c for c in hardcoded_candidates(relative, text) if c['kind'] in ['form_label', 'html_attribute'])
+            hardcoded.extend(c for c in hardcoded_candidates(relative, data['clean_source']) if c['kind'] in ['form_label', 'html_attribute'])
         else:
             non_php_files.append(relative)
             for literal in QUOTED.finditer(text):
                 if literal[2] in all_keys or KEY.fullmatch(literal[2]):
                     indirect[literal[2]].append(location(relative, text.count('\n', 0, literal.start()) + 1))
             if path.suffix == '.js':
+                text = javascript_without_comments(text)
                 for match in re.finditer(r'\b(Dewawi\.message|[\w.]+\.translate)\s*\(\s*([\'\"])([^\'\"\n]*)\2\s*([,)])', text):
                     calls.append(location(relative, text.count('\n', 0, match.start()) + 1, key=match[3], method=match[1]))
                 for match in re.finditer(r'\bDewawi\.message\s*\(([^\n;]*)', text):
@@ -350,7 +386,26 @@ def run_audit(runtime=True):
         'unresolved_literal_calls': sum(c['key'] != 'DEWAWI' for c in report['literal_calls_absent_from_all_catalogues']),
         'unresolved_label_candidates': len(missing_metadata),
         'conflicting_loaded_values': sum(c['different_values'] for route in route_reports for c in route['cross_domain_collisions']) + sum(c['earlier']['value'] != c['winner']['value'] for route in route_reports for c in route['within_domain_overwrites']),
+        'invalid_format_placeholders': len(issues['placeholder_review']),
+        'javascript_keys_not_exported': len(report['javascript_bridge']['literal_keys_not_exported'] or []),
     })
+    policy_path = ROOT / 'tests/translations/quality-policy.json'
+    if policy_path.is_file():
+        report['quality_policy_sha256'] = hashlib.sha256(policy_path.read_bytes()).hexdigest()
+        try:
+            policy = json.loads(policy_path.read_text())
+            assert all(isinstance(policy[key], list) for key in ['required_catalogues', 'common_domains', 'exceptions'])
+            assert all(isinstance(path, str) for path in policy['required_catalogues'] + policy['common_domains'])
+            identities = [(item['file'], item['kind'], item['text']) for item in policy['exceptions']]
+            assert len(identities) == len(set(identities))
+            assert all(isinstance(item['occurrences'], int) and item['occurrences'] > 0 for item in policy['exceptions'])
+            report['quality_gate'] = quality_findings(catalogues, hardcoded, route_reports, policy)
+        except (ValueError, TypeError, KeyError, AssertionError):
+            report['quality_gate'] = [{'type': 'quality_policy_invalid'}]
+        report['defect_counts']['quality_gate'] = len(report['quality_gate'])
+    else:
+        report['quality_gate'] = [{'type': 'quality_policy_missing'}]
+        report['defect_counts']['quality_gate'] = 1
     return report
 
 

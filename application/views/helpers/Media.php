@@ -50,23 +50,23 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 								<input type="text"
 									   name="title"
 									   value="<?php echo $v->escape($file['title'] ?? ''); ?>"
-									   placeholder="Title"
+									   placeholder="<?php echo $v->escape($v->translate('TOOLBAR_TITLE')); ?>"
 									   class="media-input js-media-field" />
 
 								<textarea name="description"
-										  placeholder="Description"
+										  placeholder="<?php echo $v->escape($v->translate('MEDIA_DESCRIPTION')); ?>"
 										  class="media-input js-media-field"><?php echo $v->escape($file['description'] ?? ''); ?></textarea>
 
 								<input type="text"
 									   name="target"
 									   value="<?php echo $v->escape($file['target'] ?? ''); ?>"
-									   placeholder="Target URL"
+									   placeholder="<?php echo $v->escape($v->translate('MEDIA_TARGET_URL')); ?>"
 									   class="media-input js-media-field" />
 
 								<input type="number"
 									   name="ordering"
 									   value="<?php echo (int)($file['ordering'] ?? 0); ?>"
-									   placeholder="Ordering"
+									   placeholder="<?php echo $v->escape($v->translate('TOOLBAR_ORDERING')); ?>"
 									   class="media-input js-media-field" />
 
 							</div>
@@ -97,7 +97,7 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 					<?php endforeach; ?>
 				</div>
 			<?php else: ?>
-				<p>No media available.</p>
+				<p><?php echo $v->translate('MEDIA_EMPTY'); ?></p>
 			<?php endif; ?>
 		</div>
 
@@ -113,7 +113,7 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 			<input type="file" name="media[]" multiple />
 
 			<select name="subfolder">
-				<option value="0">Main Folder</option>
+				<option value="0"><?php echo $v->translate('MEDIA_MAIN_FOLDER'); ?></option>
 				<?php foreach ($subfolders as $subfolder): ?>
 					<option value="<?php echo $v->escape($subfolder); ?>">
 						<?php echo $v->escape($subfolder); ?>
@@ -128,7 +128,7 @@ class Zend_View_Helper_Media extends Zend_View_Helper_Abstract
 			<input type="hidden" name="path" value="<?php echo $v->escape($path); ?>" />
 			<input type="hidden" name="admin" value="1" />
 
-			<button type="submit">Upload</button>
+			<button type="submit"><?php echo $v->translate('UPLOAD'); ?></button>
 		</form>
 
 		<?php

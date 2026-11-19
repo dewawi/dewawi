@@ -1,3 +1,40 @@
+# DEWAWI – Übersetzungssystem und Qualitätsprüfungen
+
+Aktueller Stand T5 (19. November 2026): [Abnahme und Qualitätsregeln](T5-acceptance.md),
+[Hardcode-Bilanz aller 204 Kandidaten](t5-hardcodes.json),
+[aktueller Audit](t5-report.json), [Validator](t5-validation.json),
+[235/235 Abnahmeprüfungen](t5-acceptance.json).
+
+133 verbleibende UI-Fundstellen sind bereinigt (63 Anwendung, 70 Installer);
+9 waren bereits durch T4 erledigt. 51 technische, 9 dynamische und 2 fachlich
+ungeklärte Kandidaten bleiben bewusst erhalten. Zwei bisher als UI klassifizierte
+Kommentare wurden anhand der Quelle als technisch eingeordnet. Kein bestätigter
+UI-Hardcode dieser Liste bleibt offen. Die fachlichen Fragen betreffen die
+initialisierten Geschäftsnamen `Vorlage` und `Hauptlager`.
+
+Der vorhandene strikte Audit prüft Katalogstruktur, Vollständigkeit, Duplikate,
+Platzhalter, JavaScript-Export und Domain-Priorität sowie neue ungeprüfte UI-Senken.
+`quality-policy.json` enthält den Pflichtbestand und exakt gezählte, begründete
+Ausnahmen. Neue sichtbare Texte über das vorhandene DEEC-System anbinden;
+Ausnahmen nur nach Quellenprüfung dokumentieren. 30 Parser-/Gate-Tests mit
+negativen Fixtures sichern die Regeln ab. Keine pauschalen Pfadausnahmen.
+
+```bash
+python3 -B tests/translations/validate.py --stage T5 --browser > /tmp/translations-validation.json
+python3 -B tests/translations/audit.py --fail-on-defects > /tmp/translations-report.json
+```
+
+Der Validator und der bestehende `acceptance-suites.py` enthalten diese Gates.
+Aktuell: 2 Sprachen, 13 Anwendungsmodule, 142 Katalogdateien, 3.868 eindeutige
+Schlüssel je Sprache, 28/28 geprüfte Modul-/Sprachkontexte. Die zusätzlichen
+75 Installer-Schlüssel je Sprache liegen in einem eigenen, ausschließlich im
+Installer explizit geladenen Katalog. Domain-Priorität und Modul-Ladeverhalten
+bleiben erhalten. Strukturelle Defekte: 0. Unabhängige Suite-Abbrüche und Grenzen
+der statischen UI-Erkennung stehen ausdrücklich im T5-Bericht.
+
+Die folgenden Abschnitte dokumentieren die historischen T2-/T3-/T4-Stände;
+deren damalige Kennzahlen und Artefakte bleiben nachvollziehbar erhalten.
+
 # DEWAWI – T2: Übersetzungsreparatur und Vervollständigung
 
 Stand: 19. November 2026. Ausgangspunkt: T1 `c6325897`. Technischer Block T2A:

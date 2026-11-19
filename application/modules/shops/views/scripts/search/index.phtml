@@ -26,7 +26,7 @@ $url = static function(int $page, string $filter = '') use ($query, $searchPath)
 		<form class="dw-search-page__form" action="<?php echo $this->url([], 'search', true); ?>" method="get" role="search">
 			<label class="sr-only" for="search-page-query"><?php echo $this->translate('SHOPS_SEARCH_LABEL'); ?></label>
 			<div class="input-group input-group-lg">
-				<input id="search-page-query" class="form-control" type="search" name="q" value="<?php echo $this->escape($query); ?>" placeholder="Was suchen Sie?" maxlength="100">
+				<input id="search-page-query" class="form-control" type="search" name="q" value="<?php echo $this->escape($query); ?>" placeholder="<?php echo $this->escape($this->translate('SHOPS_SEARCH_PLACEHOLDER')); ?>" maxlength="100">
 				<div class="input-group-append">
 					<button class="btn btn-primary" type="submit">
 						<span aria-hidden="true">&#128269;</span>

@@ -14,4 +14,5 @@
 	'ITEMS_INVENTORY_UOM' => 'UOM',
 	'ITEMS_INVENTORY_ACTIVATED' => 'Activate inventory management',
 	'ITEMS_NEW_INVENTORY' => 'New stock booking',
+	'INVENTORY_INTERNAL_INFO' => 'Internal information is not displayed on quotes, invoices or other documents.',
 );

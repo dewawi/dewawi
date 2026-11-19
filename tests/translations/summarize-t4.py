@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Verify unchanged T3 acceptance criteria and link every original failure to its T4 result."""
 from collections import Counter
+import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -12,10 +14,14 @@ def read(name):
 
 
 def main():
-    before, after = read('t3-http-browser.json'), read('t4-http-browser.json')
-    pdf_before, pdf_after = read('t3-pdf.json'), read('t4-pdf.json')
-    mail_before, mail_after = read('t3-mail.json'), read('t4-mail.json')
-    audit, old_audit = read('t4-report.json'), read('report.json')
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--stage', choices=['T4', 'T5'], default='T4')
+    args = parser.parse_args()
+    prefix = args.stage.lower()
+    before, after = read('t3-http-browser.json'), read(prefix + '-http-browser.json')
+    pdf_before, pdf_after = read('t3-pdf.json'), read(prefix + '-pdf.json')
+    mail_before, mail_after = read('t3-mail.json'), read(prefix + '-mail.json')
+    audit, old_audit = read(prefix + '-report.json'), read('t4-report.json' if args.stage == 'T5' else 'report.json')
     assert Counter(r['scenario'] for r in before['results']) == Counter(r['scenario'] for r in after['results'])
     paths = {
         'login HTML language de_DE': ['application/modules/users/views/scripts/user/login.phtml'],
@@ -33,7 +39,7 @@ def main():
         files = paths.get(row['scenario'], ['application/views/helpers/Breadcrumbs.php'])
         if row['scenario'].startswith('browser module ebay'):
             files += ['application/modules/ebay/forms/Listing.php']
-        corrections.append({'id': len(corrections) + 1, 'scenario': row['scenario'], 'before': row['status'], 'after': current['status'], 'files': files, 'evidence': 't4-http-browser.json'})
+        corrections.append({'id': len(corrections) + 1, 'scenario': row['scenario'], 'before': row['status'], 'after': current['status'], 'files': files, 'evidence': prefix + '-http-browser.json'})
     identity = lambda row: (row['ui_locale'], row['document_locale'], row['type'])
     assert {identity(r): set(r['checks']) for r in pdf_before['results']} == {identity(r): set(r['checks']) for r in pdf_after['results']}
     for row in pdf_before['results']:
@@ -41,7 +47,7 @@ def main():
         for check, ok in row['checks'].items():
             if not ok:
                 corrections.append({'id': len(corrections) + 1, 'scenario': {'pdf': identity(row), 'check': check}, 'before': 'failed', 'after': 'passed' if current['checks'][check] else 'failed',
-                                    'files': ['library/DEEC/Pdf.php', 'application/modules/sales/services/DocumentPayloadService.php', 'application/modules/purchases/services/DocumentPayloadService.php', 'application/controllers/helpers/Currency.php', 'application/controllers/helpers/Calculate.php'], 'evidence': 't4-pdf.json'})
+                                    'files': ['library/DEEC/Pdf.php', 'application/modules/sales/services/DocumentPayloadService.php', 'application/modules/purchases/services/DocumentPayloadService.php', 'application/controllers/helpers/Currency.php', 'application/controllers/helpers/Calculate.php'], 'evidence': prefix + '-pdf.json'})
     assert {r['locale']: set(r['checks']) for r in mail_before['results']} == {r['locale']: set(r['checks']) for r in mail_after['results']}
     counts = {status: sum(result['counts'].get(status, 0) for result in [after, pdf_after, mail_after]) for status in ['passed', 'failed']}
     assert counts == {'passed': 235, 'failed': 0}
@@ -55,13 +61,32 @@ def main():
         assert old.items() <= new.items(), path
     old_domains = {(r['locale'], r['module']): r['domains'] for r in old_audit['runtime']['observations']['request_contexts']}
     assert all(r['domains'] == old_domains[r['locale'], r['module']] for r in audit['runtime']['observations']['request_contexts'])
-    numeric = {module: read('t4-' + module + '-format.json')['counts'] for module in ['sales', 'purchases']}
+    numeric = {module: read(prefix + '-' + module + '-format.json')['counts'] for module in ['sales', 'purchases']}
     assert all(count['failed'] == 0 for count in numeric.values())
     output = {'base_commit': '87ac98c1', 'acceptance': 'passed', 'source_sha256': audit['source_sha256'], 'counts': counts, 'corrections': corrections,
               'extended_browser': after['extended_counts'], 'extended_numeric': numeric,
               'module_language_contexts': 28, 'http_domain_and_text_comparisons': 39,
               'existing_catalogue_keys_and_values_preserved': True, 'domain_order_preserved': True,
               'baseline_failure_note': 'Independent suite failures remain failures; see t4-suites.json, t4-document-regressions.json and t4-recovery-baseline.json. This acceptance is the targeted 235-case contract.'}
+    if args.stage == 'T5':
+        ledger = read('t5-hardcodes.json')
+        original = {row['id']: row for row in read('t3-hardcodes.json')['candidates']}
+        assert len(ledger['candidates']) == len(original) == 204
+        assert Counter(row['status'] for row in ledger['candidates']) == ledger['counts']
+        assert ledger['counts'] == {'completed_t4': 9, 'completed_t5': 133, 'technical_internal': 51, 'dynamic_or_translated': 9, 'business_unclear': 2}
+        root = BASE.parents[1]
+        keys = {entry['key'] for catalogue in audit['catalogues'].values() for entry in catalogue['entries']}
+        for row in ledger['candidates']:
+            assert all(row[field] == original[row['id']][field] for field in ['file', 'line', 'kind', 'text'])
+            source = (root / row['file']).read_bytes()
+            assert hashlib.sha256(source).hexdigest() == row['current_source_sha256'], row['id']
+            if row['status'].startswith('completed_'):
+                assert row['translation_key'] in keys and row['translation_key'] in source.decode(), row['id']
+        cleanup, browser = read('t5-cleanup.json'), read('t5-browser.json')
+        assert cleanup['counts']['failed'] == 0 and browser['status'] == 'passed'
+        output.update(stage='T5', base_commit='22bc7ab1', hardcodes=ledger['counts'], remaining_confirmed_ui_hardcodes=0,
+                      cleanup=cleanup['counts'], additional_browser_checks=browser['checks'], quality_policy_sha256=audit['quality_policy_sha256'],
+                      baseline_failure_note='Independent suite failures remain failures; see t5-suites.json and t5-document-regressions.json. No global acceptance of these suites is claimed.')
     print(json.dumps(output, ensure_ascii=False, indent=2))
 
 

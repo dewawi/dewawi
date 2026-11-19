@@ -378,7 +378,7 @@ $(document).ready(function(){
 					|| response.ok !== true
 				) {
 					pushMessages([
-						'Variante konnte nicht erstellt werden.'
+						Dewawi.message('MESSAGES_VARIANT_CREATE_FAILED')
 					]);
 
 					return;
@@ -394,7 +394,7 @@ $(document).ready(function(){
 			})
 			.fail(function() {
 				pushMessages([
-					'Variante konnte nicht erstellt werden.'
+					Dewawi.message('MESSAGES_VARIANT_CREATE_FAILED')
 				]);
 			});
 		}
@@ -1588,7 +1588,7 @@ function applyPosition(parent, type, itemIds, setid) {
 				if (!response || response.ok !== true) {
 					if ($dialog) $dialog.removeData('dw-modal-pending');
 					pushMessages([
-						'Position konnte nicht hinzugefügt werden.'
+						Dewawi.message('MESSAGES_POSITION_ADD_FAILED')
 					]);
 					return;
 				}
@@ -1600,7 +1600,7 @@ function applyPosition(parent, type, itemIds, setid) {
 			error: function() {
 				if ($dialog) $dialog.removeData('dw-modal-pending');
 				pushMessages([
-					'Position konnte nicht hinzugefügt werden.'
+					Dewawi.message('MESSAGES_POSITION_ADD_FAILED')
 				]);
 			}
 		});
@@ -2260,7 +2260,7 @@ $(document).on('click', '.dw-alert__close', function () {
 function handleEditError(resp, params) {
 	// 1) not_found -> Meldung + optional redirect
 	if (resp && resp.message === 'not_found') {
-		pushMessages(['Datensatz nicht gefunden oder nicht mehr verfügbar.']);
+		pushMessages([Dewawi.message('MESSAGES_RECORD_UNAVAILABLE')]);
 		// optional: sofort zurück zur Liste
 		// setLocation(baseUrl+'/'+module+'/'+controller);
 		unlock(params['id']);
@@ -3950,7 +3950,7 @@ function markFieldSaved($field) {
 		},
 
 		deleteMedia: function (selection, $button) {
-			if (!confirm('Are you sure you want to delete this file?')) {
+			if (!confirm(Dewawi.message('MESSAGES_DELETE_CONFIRM'))) {
 				return;
 			}
 
@@ -3958,7 +3958,7 @@ function markFieldSaved($field) {
 			var url = $button.data('url');
 
 			if (!url) {
-				pushMessages(['Delete URL fehlt.']);
+				pushMessages([Dewawi.message('MESSAGES_CANNOT_BE_DELETED')]);
 				return;
 			}
 
@@ -3969,14 +3969,14 @@ function markFieldSaved($field) {
 				cache: false,
 				success: function (response) {
 					if (!response || response.ok === false) {
-						pushMessages([response && response.message ? response.message : 'Delete failed.']);
+						pushMessages([response && response.message ? response.message : Dewawi.message('MESSAGES_CANNOT_BE_DELETED')]);
 						return;
 					}
 
 					$image.remove();
 				},
 				error: function () {
-					pushMessages(['Delete failed.']);
+					pushMessages([Dewawi.message('MESSAGES_CANNOT_BE_DELETED')]);
 				}
 			});
 		},
@@ -4504,11 +4504,11 @@ $(document).on('change blur', '.js-media-field', function () {
 		data: data,
 		success: function (response) {
 			if (!response || !response.ok) {
-				alert(response && response.message ? response.message : 'Save failed.');
+				alert(response && response.message ? response.message : Dewawi.message('MESSAGES_SAVE_FAILED'));
 			}
 		},
 		error: function () {
-			alert('Save failed.');
+			alert(Dewawi.message('MESSAGES_SAVE_FAILED'));
 		}
 	});
 });

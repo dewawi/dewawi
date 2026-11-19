@@ -243,4 +243,7 @@
 	'CONTACT_COMPARE_GAP_OPERATING_RELEASE' => 'Provide approval of each intended mode for the exact machine configuration.',
 	'CONTACT_COMPARE_AREA_OEM_REFERENCES' => 'Manufacturer / OEM references',
 	'CONTACT_COMPARE_GAP_OEM_REFERENCES' => 'Bind real machine measurements or manufacturer references to the exact machine revision and engineering approval. Mathematical component references are insufficient.',
+	'CONTACT_SELECTION_REVIEW' => 'Technical and commercial review',
+	'CONTACT_SELECTION_ALLOWED' => 'Automatic selection approved',
+	'CONTACT_SELECTION_MANUAL' => 'Manual review required: %s',
 ];

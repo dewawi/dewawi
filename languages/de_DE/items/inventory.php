@@ -13,5 +13,6 @@
 	'ITEMS_INVENTORY_MODIFIED' => 'le. Änderung',
 	'ITEMS_INVENTORY_PRICE' => 'Preis',
 	'ITEMS_INVENTORY_UOM' => 'Mengeneinheit',
-	'ITEMS_INVENTORY_ACTIVATED' => 'Bestandsführung aktivieren'
+	'ITEMS_INVENTORY_ACTIVATED' => 'Bestandsführung aktivieren',
+	'INVENTORY_INTERNAL_INFO' => 'Interne Informationen werden nicht auf Angeboten, Rechnungen etc. angezeigt.',
 );

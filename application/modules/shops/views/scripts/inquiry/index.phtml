@@ -79,29 +79,29 @@ $categories = $this->{'categories'};
 															<p class="card-text"><?= $this->escape($item['item']['description']); ?></p>
 															<?php if(isset($item['required'])): ?>
 															<p class="text-muted">
-																Anforderung: <?= number_format($item['required'], 2, ',', '.') ?> <?= $this->escape($item['unit'] ?? ''); ?>
+																<?php echo $this->translate('SHOPS_REQUIREMENT'); ?> <?= number_format($item['required'], 2, ',', '.') ?> <?= $this->escape($item['unit'] ?? ''); ?>
 															</p>
 															<?php endif; ?>
 															<p>
-																<strong>Berechneter Wert: <?= number_format($item['value'], 2, ',', '.') ?> <?= $this->escape($item['unit'] ?? ''); ?> (<?= number_format($this->escape($item['percent']), 2, ',', '.') ?> %)</strong>
+																<strong><?php echo $this->translate('SHOPS_CALCULATED_VALUE'); ?> <?= number_format($item['value'], 2, ',', '.') ?> <?= $this->escape($item['unit'] ?? ''); ?> (<?= number_format($this->escape($item['percent']), 2, ',', '.') ?> %)</strong>
 															</p>
 															<?php if(isset($item['required']) && ($item['capacity_raw'] ?? $item['value']) < $item['required']): ?>
-															<p>Die berechnete Leistung liegt unter Ihrer Anforderung. Eine manuelle Prüfung ist erforderlich.</p>
+															<p><?php echo $this->translate('SHOPS_PERFORMANCE_REVIEW'); ?></p>
 															<?php endif; ?>
 															<?php if ($hasSpecial): ?>
-																<p class="fw-bold"><strong style="color:#008000;font-size:1.3rem;">Sonderpreis: <?= number_format($special, 2, ',', '.') ?> <?= $this->escape($item['item']['currency'] ?? ''); ?></strong>
+																<p class="fw-bold"><strong style="color:#008000;font-size:1.3rem;"><?php echo $this->translate('SHOPS_SPECIAL_PRICE'); ?> <?= number_format($special, 2, ',', '.') ?> <?= $this->escape($item['item']['currency'] ?? ''); ?></strong>
 																<?php if ($discountPct !== null): ?>
 																	<span class="badge bg-danger ms-2" style="color: #ffffff;">-<?= $discountPct; ?>%</span>
 																<?php endif; ?>
 																</p>
-																<p class="fw-bold">Listenpreis: <?= number_format($base, 2, ',', '.') ?> <?= $this->escape($item['item']['currency'] ?? ''); ?></p>
+																<p class="fw-bold"><?php echo $this->translate('SHOPS_LIST_PRICE'); ?> <?= number_format($base, 2, ',', '.') ?> <?= $this->escape($item['item']['currency'] ?? ''); ?></p>
 															<?php else: ?>
-																<p class="fw-bold"><span style="text-decoration:line-through;font-size:1.3rem;">Listenpreis: <?= number_format($base, 2, ',', '.') ?> <?= $this->escape($item['item']['currency'] ?? ''); ?></span></p>
+																<p class="fw-bold"><span style="text-decoration:line-through;font-size:1.3rem;"><?php echo $this->translate('SHOPS_LIST_PRICE'); ?> <?= number_format($base, 2, ',', '.') ?> <?= $this->escape($item['item']['currency'] ?? ''); ?></span></p>
 															<?php endif; ?>
 															<button type="button" class="btn btn-outline-primary mt-2 select-suggestion"
 																	data-sku="<?= $this->escape($item['item']['sku']) ?>"
 																	data-title="<?= $this->escape($item['item']['title']) ?>">
-																Dieses Gerät auswählen
+																<?php echo $this->translate('SHOPS_SELECT_DEVICE'); ?>
 															</button>
 														</div>
 													</div>

@@ -107,4 +107,10 @@
 	'SUBMIT' => 'Absenden',
 	'STOCKS' => 'Lagerbestände',
 	'DOWNLOADS' => 'Downloads',
+	'APP_DESCRIPTION' => 'DEWAWI Open Source Warenwirtschaftssystem',
+	'MEDIA_DESCRIPTION' => 'Beschreibung',
+	'MEDIA_TARGET_URL' => 'Ziel-URL',
+	'MEDIA_EMPTY' => 'Keine Medien verfügbar.',
+	'MEDIA_MAIN_FOLDER' => 'Hauptordner',
+	'EMAIL_ATTACHMENT_UPLOAD' => 'Anhang hochladen',
 );

@@ -20,4 +20,5 @@
 	'ITEM_LISTS_SAVE' => 'Save',
 	'ITEM_LISTS_DELETE' => 'Delete',
 	'ITEMS_PARAMETERS' => 'Parameters',
+	'ITEM_LISTS_PRICE_LIST' => 'Price list',
 );

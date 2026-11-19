@@ -9,7 +9,7 @@ class Zend_View_Helper_Breadcrumbs extends Zend_View_Helper_Abstract
 		$items = $this->getItems();
 		if (count($items) < 2) return '';
 
-		$html = '<section id="breadcrumb"><div class="container"><nav aria-label="breadcrumb"><ol class="breadcrumb mb-0">';
+		$html = '<section id="breadcrumb"><div class="container"><nav aria-label="' . $this->view->escape($this->view->translate('SHOPS_BREADCRUMB')) . '"><ol class="breadcrumb mb-0">';
 		$last = count($items) - 1;
 
 		foreach ($items as $index => $item) {

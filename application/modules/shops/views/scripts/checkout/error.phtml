@@ -14,8 +14,8 @@ $this->headTitle($this->title);
 		<div class="row justify-content-center">
 			<div class="col-md-8 text-center">
 				<i class="icon-check fas fa-check-circle"></i>
-				<h1>Es ist ein Fehler aufgetreten!</h1>
-				<p>Es gab ein Problem beim Senden Ihrer Nachricht. Bitte überprüfen Sie die Fehler und versuchen Sie es erneut.</p>
+				<h1><?php echo $this->translate('SHOPS_CONTACT_ERROR_TITLE'); ?></h1>
+				<p><?php echo $this->translate('SHOPS_CONTACT_ERROR_MESSAGE'); ?></p>
 			</div>
 		</div>
 
@@ -26,7 +26,7 @@ $this->headTitle($this->title);
 					<div class="card-header" id="headingOne">
 						<h2 class="mb-0">
 							<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-								Ihre Kontaktdaten
+								<?php echo $this->translate('SHOPS_YOUR_CONTACT_DATA'); ?>
 							</button>
 						</h2>
 					</div>
@@ -35,29 +35,29 @@ $this->headTitle($this->title);
 						<div class="card-body">
 							<ul class="list-group">
 								<?php if (isset($this->formData['name'])): ?>
-									<li class="list-group-item">Name: <?php echo $this->escape($this->formData['name']); ?></li>
+									<li class="list-group-item"><?php echo $this->translate('SHOPS_PLACEHOLDER_NAME'); ?>: <?php echo $this->escape($this->formData['name']); ?></li>
 								<?php endif; ?>
 								<?php if (isset($this->formData['email'])): ?>
-									<li class="list-group-item">Email: <?php echo $this->escape($this->formData['email']); ?></li>
+									<li class="list-group-item"><?php echo $this->translate('SHOPS_PLACEHOLDER_EMAIL'); ?>: <?php echo $this->escape($this->formData['email']); ?></li>
 								<?php endif; ?>
 								<?php if (isset($this->formData['subject'])): ?>
-									<li class="list-group-item">Betreff: <?php echo $this->escape($this->formData['subject']); ?></li>
+									<li class="list-group-item"><?php echo $this->translate('SHOPS_PLACEHOLDER_SUBJECT'); ?>: <?php echo $this->escape($this->formData['subject']); ?></li>
 								<?php endif; ?>
 								<?php if (isset($this->formData['message'])): ?>
-									<li class="list-group-item">Nachricht: <?php echo $this->escape($this->formData['message']); ?></li>
+									<li class="list-group-item"><?php echo $this->translate('SHOPS_PLACEHOLDER_MESSAGE'); ?>: <?php echo $this->escape($this->formData['message']); ?></li>
 								<?php endif; ?>
 							</ul>
 						</div>
 					</div>
 				</div>
 			<?php else: ?>
-				<p>Keine Kontaktdaten verfügbar.</p>
+				<p><?php echo $this->translate('SHOPS_NO_CONTACT_DATA'); ?></p>
 			<?php endif; ?>
 		</div>
 
 		<div class="row justify-content-center mt-4">
 			<div class="col-md-8 text-center">
-				<a href="<?php echo $this->escape($this->url([], 'shop_home')); ?>" class="btn btn-error btn-lg">Zurück zur Startseite</a>
+				<a href="<?php echo $this->escape($this->url([], 'shop_home')); ?>" class="btn btn-error btn-lg"><?php echo $this->translate('SHOPS_BACK_HOME'); ?></a>
 			</div>
 		</div>
 	</div>

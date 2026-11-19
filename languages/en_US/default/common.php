@@ -106,4 +106,10 @@
 	'SUBMIT' => 'Submit',
 	'STOCKS' => 'Stock levels',
 	'DOWNLOADS' => 'Downloads',
+	'APP_DESCRIPTION' => 'DEWAWI open source ERP system',
+	'MEDIA_DESCRIPTION' => 'Description',
+	'MEDIA_TARGET_URL' => 'Target URL',
+	'MEDIA_EMPTY' => 'No media available.',
+	'MEDIA_MAIN_FOLDER' => 'Main folder',
+	'EMAIL_ATTACHMENT_UPLOAD' => 'Attachment upload',
 );

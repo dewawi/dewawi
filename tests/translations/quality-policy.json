@@ -1,0 +1,512 @@
+{
+  "schema_version": 1,
+  "required_catalogues": [
+    "admin/admin.php",
+    "admin/client.php",
+    "admin/menu.php",
+    "admin/page.php",
+    "calendar/common.php",
+    "campaigns/campaigns.php",
+    "contacts/bankaccount.php",
+    "contacts/comment.php",
+    "contacts/common.php",
+    "contacts/contact.php",
+    "contacts/contactperson.php",
+    "contacts/download.php",
+    "contacts/inquiry.php",
+    "contacts/map.php",
+    "contacts/pricerule.php",
+    "default/category.php",
+    "default/comment.php",
+    "default/common.php",
+    "default/controlpanel.php",
+    "default/countries.php",
+    "default/document.php",
+    "default/feedback.php",
+    "default/menu.php",
+    "default/messages.php",
+    "default/months.php",
+    "default/order.php",
+    "default/pagination.php",
+    "default/position.php",
+    "default/settings.php",
+    "default/state.php",
+    "default/tabs.php",
+    "default/toolbar.php",
+    "default/user.php",
+    "default/validation.php",
+    "ebay/ebay.php",
+    "ebiztrader/ebiztrader.php",
+    "installer/installer.php",
+    "items/attribute.php",
+    "items/common.php",
+    "items/import.php",
+    "items/inventory.php",
+    "items/item.php",
+    "items/itemlist.php",
+    "items/ledger.php",
+    "items/option.php",
+    "items/pricerule.php",
+    "items/stock.php",
+    "items/stockplanning.php",
+    "items/variant.php",
+    "magento/magento.php",
+    "portals/portal.php",
+    "processes/common.php",
+    "processes/processes.php",
+    "purchases/common.php",
+    "purchases/purchaseorder.php",
+    "purchases/purchases.php",
+    "purchases/quoterequest.php",
+    "sales/common.php",
+    "sales/creditnote.php",
+    "sales/deliveryorder.php",
+    "sales/invoice.php",
+    "sales/quote.php",
+    "sales/reminder.php",
+    "sales/sales.php",
+    "sales/salesorder.php",
+    "shops/shops.php",
+    "statistics/common.php",
+    "statistics/statistics.php",
+    "tasks/tasks.php",
+    "users/common.php",
+    "users/user.php"
+  ],
+  "common_domains": [
+    "calendar_common",
+    "contacts_common",
+    "items_common",
+    "processes_common",
+    "purchases_common",
+    "sales_common",
+    "statistics_common",
+    "users_common"
+  ],
+  "exceptions": [
+    {
+      "file": "application/layouts/scripts/layout.phtml",
+      "kind": "html_text",
+      "text": "Version 1.1.7",
+      "classification": "technical_internal",
+      "reason": "Version identifier; Version is usable in both locales. Do not translate the release number.",
+      "occurrences": 1
+    },
+    {
+      "file": "application/layouts/scripts/site.phtml",
+      "kind": "html_text",
+      "text": "dispatchSiteConversionElement(document.getElementById('site-conversion-events'));",
+      "classification": "technical_internal",
+      "reason": "Inline JavaScript function call misread as HTML text; no literal UI wording.",
+      "occurrences": 1
+    },
+    {
+      "file": "application/modules/admin/models/Service/ClientInitializer.php",
+      "kind": "form_label",
+      "text": "Hauptlager",
+      "classification": "business_unclear",
+      "reason": "Persisted initial warehouse name. Tenant/business naming policy required; never rename existing records.",
+      "occurrences": 1
+    },
+    {
+      "file": "application/modules/admin/models/Service/ClientInitializer.php",
+      "kind": "form_label",
+      "text": "Vorlage",
+      "classification": "business_unclear",
+      "reason": "Persisted initial template name. Decide whether seed business names should follow tenant language; never rename existing records.",
+      "occurrences": 1
+    },
+    {
+      "file": "application/modules/calendar/views/scripts/index/participants.phtml",
+      "kind": "html_text",
+      "text": "Deutsch",
+      "classification": "dynamic_or_translated",
+      "reason": "Intentional German language endonym in invitation-language selector.",
+      "occurrences": 1
+    },
+    {
+      "file": "application/modules/calendar/views/scripts/index/participants.phtml",
+      "kind": "html_text",
+      "text": "English",
+      "classification": "dynamic_or_translated",
+      "reason": "Intentional English language endonym in invitation-language selector.",
+      "occurrences": 1
+    },
+    {
+      "file": "application/modules/contacts/views/scripts/contact/map.phtml",
+      "kind": "html_text",
+      "text": "Geoapify",
+      "classification": "technical_internal",
+      "reason": "Geoapify service/attribution brand, not a sentence to translate.",
+      "occurrences": 1
+    },
+    {
+      "file": "application/modules/contacts/views/scripts/inquiry/technical-comparison.phtml",
+      "kind": "html_text",
+      "text": "review_required · eligible=false",
+      "classification": "technical_internal",
+      "reason": "Rendered diagnostic enum and eligibility flag; preserve machine identifiers.",
+      "occurrences": 1
+    },
+    {
+      "file": "application/modules/contacts/views/scripts/inquiry/technical.phtml",
+      "kind": "html_text",
+      "text": "review_required · eligible=false",
+      "classification": "technical_internal",
+      "reason": "Rendered diagnostic enum and eligibility flag; preserve machine identifiers.",
+      "occurrences": 1
+    },
+    {
+      "file": "application/modules/shops/models/Search.php",
+      "kind": "html_attribute",
+      "text": "LOWER(TRIM(COALESCE(NULLIF(i.shoptitle,",
+      "classification": "technical_internal",
+      "reason": "SQL expression inside model code; scanner false positive.",
+      "occurrences": 1
+    },
+    {
+      "file": "application/modules/statistics/controllers/CustomerController.php",
+      "kind": "form_label",
+      "text": "Top",
+      "classification": "dynamic_or_translated",
+      "reason": "Top plus computed row limit; language-neutral ranking title, not untranslated German prose.",
+      "occurrences": 1
+    },
+    {
+      "file": "application/views/helpers/MultiForm.php",
+      "kind": "html_attribute",
+      "text": "E-Mail",
+      "classification": "dynamic_or_translated",
+      "reason": "E-Mail accessible link label already understandable in DE/EN; optional English house-style Email is editorial.",
+      "occurrences": 1
+    },
+    {
+      "file": "application/views/scripts/error/error.phtml",
+      "kind": "html_text",
+      "text": "Exception information:",
+      "classification": "technical_internal",
+      "reason": "Developer-only exception diagnostics guarded by APPLICATION_ENV=development; not public production error text.",
+      "occurrences": 1
+    },
+    {
+      "file": "application/views/scripts/error/error.phtml",
+      "kind": "html_text",
+      "text": "Message:",
+      "classification": "technical_internal",
+      "reason": "Developer-only exception diagnostics guarded by APPLICATION_ENV=development.",
+      "occurrences": 1
+    },
+    {
+      "file": "application/views/scripts/error/error.phtml",
+      "kind": "html_text",
+      "text": "Stack trace:",
+      "classification": "technical_internal",
+      "reason": "Developer-only stack-trace heading guarded by APPLICATION_ENV=development.",
+      "occurrences": 1
+    },
+    {
+      "file": "install/templates/footer.php",
+      "kind": "html_text",
+      "text": "DEWAWI Open Source",
+      "classification": "technical_internal",
+      "reason": "DEWAWI Open Source product/brand name in installer footer.",
+      "occurrences": 1
+    },
+    {
+      "file": "js/calendar.js",
+      "kind": "html_text",
+      "text": "').val(contact.id).text(contact.name + '",
+      "classification": "dynamic_or_translated",
+      "reason": "JavaScript interpolates contact name/email; no fixed wording. Personal data must not be translated.",
+      "occurrences": 1
+    },
+    {
+      "file": "js/contacts-map.js",
+      "kind": "html_text",
+      "text": "OpenStreetMap",
+      "classification": "technical_internal",
+      "reason": "OpenStreetMap attribution/brand; preserve attribution.",
+      "occurrences": 1
+    },
+    {
+      "file": "js/global.js",
+      "kind": "html_text",
+      "text": "' + escapeDocumentValidationText(issue.text || issue.message || '') + '",
+      "classification": "dynamic_or_translated",
+      "reason": "Escaped validation issue supplied by server; upstream message codes still require API/browser coverage.",
+      "occurrences": 1
+    },
+    {
+      "file": "js/global.js",
+      "kind": "html_text",
+      "text": "' + escapeDocumentValidationText(validation.title || '') + '",
+      "classification": "dynamic_or_translated",
+      "reason": "Escaped document validation title supplied by server; no literal text at this location.",
+      "occurrences": 1
+    },
+    {
+      "file": "js/global.js",
+      "kind": "html_text",
+      "text": "'+shown+'",
+      "classification": "dynamic_or_translated",
+      "reason": "Auto-save interpolates response display/option text; inspect upstream translations, not this concatenation.",
+      "occurrences": 1
+    },
+    {
+      "file": "js/global.js",
+      "kind": "html_text",
+      "text": "= 200 && request.status",
+      "classification": "technical_internal",
+      "reason": "HTTP status comparison parsed as HTML text; scanner false positive.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Addresses assigned to customer master records.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Commercial quotations issued to customers.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Credit note containing this position.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Customer credit notes issued in relation to previous sales transactions.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Customer invoices issued by the company.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Customer master records used by sales and accounting documents.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Customer number referenced by the credit note.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Customer number referenced by the invoice.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Customer number referenced by the quote.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Customer number referenced by the sales order.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Customer orders confirmed by the company.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Customer owning this address.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Individual goods and service positions belonging to customer invoices.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Individual goods and service positions belonging to quotations.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Individual goods and service positions belonging to sales orders.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Individual positions belonging to customer credit notes.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Invoice containing this position.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Invoice referenced by the credit note, if available.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Item description.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Item master record referenced by the position, if available.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 4
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Item master records referenced by document positions.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Payment methods configured in Dewawi.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Position description stored on the document.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Preceding quote, if available.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 3
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Preceding sales order, if available.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 2
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Quote containing this position.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Sales order containing this position.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Shipping and delivery methods configured in Dewawi.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Tax rate assigned to the item, if available.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Export/Gobd.php",
+      "kind": "form_label",
+      "text": "Tax rates configured in Dewawi.",
+      "classification": "technical_internal",
+      "reason": "GoBD export data-dictionary description/schema metadata, not ERP UI. Localized export specifications require a separate compatibility decision.",
+      "occurrences": 1
+    },
+    {
+      "file": "library/DEEC/Form.php",
+      "kind": "html_attribute",
+      "text": "E-Mail",
+      "classification": "dynamic_or_translated",
+      "reason": "E-Mail accessible mailto label already usable in DE/EN; optional editorial normalization only.",
+      "occurrences": 1
+    }
+  ]
+}

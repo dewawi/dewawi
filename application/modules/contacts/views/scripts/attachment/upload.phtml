@@ -37,7 +37,7 @@ $this->headTitle($this->title);
 					type="button"
 					class="dw-btn dw-btn--icon delete nolabel" aria-label="<?= $this->escape($this->translate('TOOLBAR_DELETE')); ?>"
 					onclick="deleteAttachment('<?= (int) $id; ?>', deleteConfirm, 'attachment', 'contacts', this);">
-					Delete
+					<?php echo $this->translate('TOOLBAR_DELETE'); ?>
 				</button>
 			</div>
 		<?php endforeach; ?>

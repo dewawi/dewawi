@@ -90,4 +90,5 @@
 
 	'STATISTICS_TURNOVER' => 'Umsatz',
 	'STATISTICS_TURNOVER_CUSTOMER_GROUPS' => 'Umsatz nach Kundengruppen',*/
+	'CONTROL_PANEL_OVERDUE' => 'überfällig',
 );

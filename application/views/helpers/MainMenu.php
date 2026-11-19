@@ -302,12 +302,12 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 		$html = '';
 		$html .= '<div class="dw-mobile-nav">';
 		$html .= '<input id="doc-drawer-checkbox" class="drawer" value="On" type="checkbox">';
-		$html .= '<label for="doc-drawer-checkbox" class="dw-mobile-nav__toggle dw-btn">Menü</label>';
+		$html .= '<label for="doc-drawer-checkbox" class="dw-mobile-nav__toggle dw-btn">'.$this->view->escape($this->view->translate('NAV_MENU')).'</label>';
 		$html .= '<div class="dw-drawer-backdrop"></div>';
-		$html .= '<nav id="nav-drawer" class="dw-drawer" aria-label="Mobile navigation">';
+		$html .= '<nav id="nav-drawer" class="dw-drawer" aria-label="'.$this->view->escape($this->view->translate('NAV_MOBILE')).'">';
 		$html .= '<div class="dw-drawer__header">';
-		$html .= '<h3 class="dw-drawer__title">Menü</h3>';
-		$html .= '<label for="doc-drawer-checkbox" class="dw-drawer__close" aria-label="Menü schließen">&times;</label>';
+		$html .= '<h3 class="dw-drawer__title">'.$this->view->escape($this->view->translate('NAV_MENU')).'</h3>';
+		$html .= '<label for="doc-drawer-checkbox" class="dw-drawer__close" aria-label="'.$this->view->escape($this->view->translate('NAV_CLOSE_MENU')).'">&times;</label>';
 		$html .= '</div>';
 		$html .= '<div class="dw-drawer__body">';
 
@@ -345,7 +345,7 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 	{
 		$html = '';
 		$html .= '<div class="dw-topbar-wrap">';
-		$html .= '<header class="dw-topbar" aria-label="Main navigation">';
+		$html .= '<header class="dw-topbar" aria-label="'.$this->view->escape($this->view->translate('NAV_MAIN')).'">';
 		$html .= '<nav class="dw-topbar__nav">';
 
 		foreach ($menu as $item) {

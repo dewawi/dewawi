@@ -88,7 +88,10 @@ foreach (['de_DE', 'en_US'] as $locale) {
     foreach ($view->catalog as $key => $text) {
         if (str_starts_with($key, 'MESSAGES_UPLOAD_')) check($text !== '' && $text !== $key, $locale . ': untranslated upload message ' . $key);
     }
-    check(count($translations) === 76 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
+    check(count($translations) === 79 && !in_array('', $translations, true), $locale . ': incomplete browser translations');
+    foreach (['MESSAGES_DELETE_CONFIRM', 'MESSAGES_VARIANT_CREATE_FAILED', 'MESSAGES_RECORD_UNAVAILABLE'] as $key) {
+        check(($translations[$key] ?? null) === $view->catalog[$key], $locale . ': missing cleanup browser message ' . $key);
+    }
     foreach ($translations as $key => $text) check($key !== $text, $locale . ': untranslated browser key ' . $key);
     $view->messages = [
         'MESSAGES_EMAIL_SENT_SUCCESS', 'MESSAGES_EMAIL_SENT_SUCCESS',

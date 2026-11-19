@@ -65,7 +65,7 @@ $uploadUrl = $this->baseUrl()
 												type="button"
 												class="dw-btn dw-btn--icon delete nolabel" aria-label="<?= $this->escape($this->translate('TOOLBAR_DELETE')); ?>"
 												onclick="deleteAttachment('<?= $this->escape($attachmentId); ?>', deleteConfirm, 'attachment', 'contacts', this);">
-												Delete
+												<?php echo $this->translate('TOOLBAR_DELETE'); ?>
 											</button><?php endif; ?>
 										</div>
 									<?php endforeach; ?>
@@ -101,7 +101,7 @@ $uploadUrl = $this->baseUrl()
 					<iframe
 						src="<?= $uploadUrl; ?>"
 						class="dw-email-upload-frame"
-						title="Attachment upload"
+						title="<?= $this->escape($this->translate('EMAIL_ATTACHMENT_UPLOAD')); ?>"
 						height="420"
 					></iframe>
 				</div>

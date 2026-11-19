@@ -1,48 +1,48 @@
-<h3>Server requirements</h3>
+<h3><?= installerText('INSTALL_REQUIREMENTS'); ?></h3>
 
 <?php if (!$goToNextStep) { ?>
-	<div class="error">Contact your webserver support (hosting service) to get the necessary PHP settings fixed and refresh this site!</div>
+	<div class="error"><?= installerText('INSTALL_PHP_SETTINGS'); ?></div>
 <?php } ?>
 
-<h4>PHP Version</h4>
+<h4><?= installerText('INSTALL_PHP_VERSION'); ?></h4>
 
 <table>
 	<thead>
 		<tr>
-			<th>Name</th>
-			<th>Version</th>
-			<th>Status</th>
+			<th><?= installerText('INSTALL_NAME'); ?></th>
+			<th><?= installerText('INSTALL_VERSION'); ?></th>
+			<th><?= installerText('INSTALL_STATUS'); ?></th>
 		</tr>
 	</thead>
 	<tbody>
 		<tr>
-			<td>Required</td>
+			<td><?= installerText('INSTALL_REQUIRED'); ?></td>
 			<td><?php echo $phpVersion; ?></td>
 			<td></td>
 		</tr>
 		<tr>
-			<td>You have</td>
+			<td><?= installerText('INSTALL_INSTALLED_VERSION'); ?></td>
 			<td><?php echo $currentPhpVersion; ?></td>
-			<td><?php if ($phpVersionOk) { ?> <img src="img/icons/accept.png"> OK <?php } else { ?> <img src="img/icons/cancel.png"> Below requirement! Please update your PHP installation.<?php } ?></td>
+			<td><?php if ($phpVersionOk) { ?> <img src="img/icons/accept.png"> OK <?php } else { ?> <img src="img/icons/cancel.png"> <?= installerText('INSTALL_PHP_OLD'); ?><?php } ?></td>
 		</tr>
 	</tbody>
 </table>
 <hr>
 
-<h4>PHP Extensions</h4>
+<h4><?= installerText('INSTALL_PHP_EXTENSIONS'); ?></h4>
 
 <table>
 	<thead>
 		<tr>
-			<th>Name</th>
-			<th>Status</th>
+			<th><?= installerText('INSTALL_NAME'); ?></th>
+			<th><?= installerText('INSTALL_STATUS'); ?></th>
 		</tr>
 	</thead>
 	<tbody>
 		<?php foreach ($showExtensions as $extension => $status): ?>
 		<tr>
 			<td><?php echo $extension; ?></td>
-			<td><?php if ($status) { ?> <img src="img/icons/accept.png"> OK <?php } else { ?> <img src="img/icons/cancel.png"> Not installed!<?php } ?> </td>
+			<td><?php if ($status) { ?> <img src="img/icons/accept.png"> OK <?php } else { ?> <img src="img/icons/cancel.png"> <?= installerText('INSTALL_NOT_INSTALLED'); ?><?php } ?> </td>
 		</tr>
 		<?php endforeach; ?>
 	</tbody>
@@ -51,7 +51,7 @@
 
 
 <a href="index.php" class="button negative">
-	<img src="css/blueprint/plugins/buttons/icons/cross.png" alt=""/> Cancel
+	<img src="css/blueprint/plugins/buttons/icons/cross.png" alt=""/> <?= installerText('INSTALL_CANCEL'); ?>
 </a>
 
 <?php if ($goToNextStep) { ?>
@@ -59,7 +59,7 @@
 	<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['installer_csrf'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 		<input type="hidden" name="nextStep" value="filePermissions">
 		<button type="submit" class="button positive">
-			<img src="css/blueprint/plugins/buttons/icons/tick.png" alt=""/> Next
+			<img src="css/blueprint/plugins/buttons/icons/tick.png" alt=""/> <?= installerText('INSTALL_NEXT'); ?>
 		</button>
 	</form>
 <?php } else { ?>
@@ -67,7 +67,7 @@
 	<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['installer_csrf'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
 		<input type="hidden" name="nextStep" value="requirements">
 		<button type="submit" class="button positive">
-			<img src="css/blueprint/plugins/buttons/icons/tick.png" alt=""/> Retry
+			<img src="css/blueprint/plugins/buttons/icons/tick.png" alt=""/> <?= installerText('INSTALL_RETRY'); ?>
 		</button>
 	</form>
 <?php } ?>

@@ -6,7 +6,7 @@ class Zend_View_Helper_Actions extends Zend_View_Helper_Abstract{
 
 	public function Actions() {
 		if($this->view->controller == "quote") : ?>
-			<h4>Belege generieren</h4>
+			<h4><?php echo $this->view->translate('ACTIONS_GENERATE_DOCUMENTS'); ?></h4>
 			<p><a class="dw-btn" data-document-generate href="<?php echo $this->view->url(array('module'=>$this->view->module, 'controller'=>$this->view->controller, 'action'=>'generate', 'target'=>'salesorder'));?>"><?php echo $this->view->translate('ACTIONS_GENERATE_SALES_ORDER') ?></a></p>
 			<p><a class="dw-btn" data-document-generate href="<?php echo $this->view->url(array('module'=>$this->view->module, 'controller'=>$this->view->controller, 'action'=>'generate', 'target'=>'invoice'));?>"><?php echo $this->view->translate('ACTIONS_GENERATE_INVOICE') ?></a></p>
 			<p><a class="dw-btn" data-document-generate href="<?php echo $this->view->url(array('module'=>$this->view->module, 'controller'=>$this->view->controller, 'action'=>'generate', 'target'=>'deliveryorder'));?>"><?php echo $this->view->translate('ACTIONS_GENERATE_DELIVERY_ORDER') ?></a></p>

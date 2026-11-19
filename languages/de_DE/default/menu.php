@@ -31,4 +31,8 @@
 	'MENU_STATISTICS_QUOTE' => 'Angebote',
 	'MENU_STATISTICS_REPORTING' => 'Reporting',
 	'MENU_TASKS' => 'Aufgaben',
+	'NAV_MOBILE' => 'Mobile Navigation',
+	'NAV_CLOSE_MENU' => 'Menü schließen',
+	'NAV_MAIN' => 'Hauptnavigation',
+	'NAV_MENU' => 'Menü',
 );

@@ -262,4 +262,5 @@
 	'ADMIN_DASHBOARD_USERS_DESCRIPTION' => 'Manage users and access permissions.',
 	'ADMIN_DASHBOARD_DESIGN_DESCRIPTION' => 'Manage templates and footers.',
 	'ADMIN_DASHBOARD_SYSTEM_DESCRIPTION' => 'Manage system information and installed modules.',
+	'ADMIN_REDIRECT_PATH_EXAMPLE' => 'old-page',
 );

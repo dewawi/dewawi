@@ -1,6 +1,6 @@
 <?php
 $this->headTitle($this->translate('CONTACT_TECH_TITLE'));
-$t = fn($key) => $this->escape($this->translate($key));
+$t = fn($key, $args = []) => $this->escape($this->translate($key, $args));
 $e = fn($value) => $this->escape((string)$value);
 $reasonText = function(string $reason) use($e): string {
 	$key = 'CONTACT_TECH_REASON_'.strtoupper($reason);
@@ -35,7 +35,7 @@ $hidden = function(array $values) use($e): void { foreach($values as $name => $v
 	<dl class="view">
 	<?php foreach($v['requirements'] as $field): ?>
 		<dt><?php echo $t($field['label']); ?><?php if(!empty($field['unit'])) echo ' ('.$e($field['unit']).')'; ?></dt>
-		<dd><?php echo $field['value'] === '' ? $t('CONTACT_TECH_MISSING') : nl2br($field['translate_value'] ? $t($field['value']) : $e($field['value'])); ?></dd>
+		<dd><?php echo $field['value'] === '' ? $t('CONTACT_TECH_MISSING') : nl2br($field['translate_value'] ? $t($field['value'], $field['value_args'] ?? []) : $e($field['value'])); ?></dd>
 	<?php endforeach; ?>
 	</dl>
 </details>

@@ -1,5 +1,5 @@
 <?php
-$t = fn($key) => $this->escape($this->translate($key));
+$t = fn($key, $args = []) => $this->escape($this->translate($key, $args));
 $e = fn($value) => $this->escape((string)$value);
 $json = fn($value) => $e(json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
 $state = fn($value) => $t('CONTACT_COMPARE_STATE_'.strtoupper($value));
@@ -103,7 +103,7 @@ $row($t('CONTACT_TECH_CALCULATION'), function($c) use($e, $t, $state) {
 		echo '</p>';
 	}
 });
-foreach($v['requirements'] as $req) $row($t($req['label']).($req['unit'] ? ' ('.$e($req['unit']).')' : '').'<p>'.($req['value'] === '' ? $missing() : ($req['translate_value'] ? $t($req['value']) : nl2br($e($req['value'])))).'</p><small>'.$state($req['state']).'</small>', function($c) use($req, $state, $e) {
+foreach($v['requirements'] as $req) $row($t($req['label']).($req['unit'] ? ' ('.$e($req['unit']).')' : '').'<p>'.($req['value'] === '' ? $missing() : ($req['translate_value'] ? $t($req['value'], $req['value_args'] ?? []) : nl2br($e($req['value'])))).'</p><small>'.$state($req['state']).'</small>', function($c) use($req, $state, $e) {
 	$a = $c['assessments'][$req['name']]; echo $state($a['state']); if($a['detail'] !== null) echo '<br>'.$e($a['detail']);
 }, 'requirement:'.$req['name']);
 foreach(Contacts_Service_InquiryTechnicalComparison::AREAS as $area) $row($t('CONTACT_COMPARE_AREA_'.strtoupper($area)), function($c) use($area, $t, $e, $state) {

@@ -211,7 +211,7 @@ $currentDate = $date->get(Zend_Date::WEEKDAY) . ', '
 		<footer class="dw-footer" id="footer">
 			<div class="dw-footer__inner">
 				<p>
-					<a href="https://www.dewawi.com/" target="_blank">DEWAWI Open Source Warenwirtschaftssystem</a>
+					<a href="https://www.dewawi.com/" target="_blank"><?php echo $this->translate('APP_DESCRIPTION'); ?></a>
 				</p>
 
 				<?php if ($this->module == 'admin') : ?>

@@ -167,21 +167,21 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 					<p style="margin-bottom: 0;">
 						<?php if($hasSpecial) : ?>
 							<strong style="color: #008000; font-size: 1.3rem;">
-								Sonderpreis: <?php echo $this->prices['formattedspecialprice']; ?>
+								<?php echo $this->translate('SHOPS_SPECIAL_PRICE'); ?> <?php echo $this->prices['formattedspecialprice']; ?>
 								<?php if ($discountPct !== null): ?>
 									<span class="badge bg-danger ms-2" style="color: #ffffff;">-<?= $discountPct; ?>%</span>
 								<?php endif; ?>
 							</strong> *<br>
 							<span style="text-decoration: line-through; font-size: 1.3rem;">
-								Listenpreis: <?php echo $this->prices['formatted']; ?>
+								<?php echo $this->translate('SHOPS_LIST_PRICE'); ?> <?php echo $this->prices['formatted']; ?>
 							</span><br>
 							<?php if($this->siteContext->hasFeature('inquiry')) : ?>
-								<strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong>
+								<strong><?php echo $this->translate('SHOPS_DISCOUNT_INQUIRY'); ?></strong>
 							<?php endif; ?>
 						<?php else : ?>
-							<span style="font-size: 1.3rem;">Listenpreis: <?php echo $this->prices['formatted']; ?></span> *<br>
+							<span style="font-size: 1.3rem;"><?php echo $this->translate('SHOPS_LIST_PRICE'); ?> <?php echo $this->prices['formatted']; ?></span> *<br>
 							<?php if($this->siteContext->hasFeature('inquiry')) : ?>
-								<strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong>
+								<strong><?php echo $this->translate('SHOPS_DISCOUNT_INQUIRY'); ?></strong>
 							<?php endif; ?>
 						<?php endif; ?>
 					</p>
@@ -194,7 +194,7 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 					<?php endif; ?>
 					<?php $shippingPage = $this->PageByType('shipping'); ?>
 					<?php if($shippingPage) : ?>
-						<span style="font-size: 0.8rem;">* Preise exkl. MwSt. zzgl. <a href="<?php echo $this->SlugUrl('page', (int)$shippingPage['id']); ?>" target="_blank">Versandkosten</a></span>
+						<span style="font-size: 0.8rem;"><?php echo $this->translate('SHOPS_NET_PRICE_NOTICE'); ?> <a href="<?php echo $this->SlugUrl('page', (int)$shippingPage['id']); ?>" target="_blank"><?php echo $this->translate('SHOPS_SHIPPING_COSTS'); ?></a></span>
 					<?php endif; ?>
 				</div>
 
@@ -257,7 +257,7 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 								<?php if ($option['description']) : ?>
 									<?php echo $option['description']; ?>
 								<?php else : ?>
-									<span>bereits enthalten</span>
+									<span><?php echo $this->translate('SHOPS_ALREADY_INCLUDED'); ?></span>
 								<?php endif; ?>
 							</li>
 						<?php endforeach; ?>

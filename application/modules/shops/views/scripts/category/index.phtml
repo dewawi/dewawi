@@ -107,11 +107,11 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 								<?php if(count($categorySlides) > 1) : ?>
 									<a class="carousel-control-prev" href="#carousel_<?php echo $this->category['id']; ?>" role="button" data-slide="prev">
 										<span class="carousel-control-prev-icon" aria-hidden="true"></span>
-										<span class="sr-only">Previous</span>
+										<span class="sr-only"><?php echo $this->translate('SHOPS_PREVIOUS'); ?></span>
 									</a>
 									<a class="carousel-control-next" href="#carousel_<?php echo $this->category['id']; ?>" role="button" data-slide="next">
 										<span class="carousel-control-next-icon" aria-hidden="true"></span>
-										<span class="sr-only">Next</span>
+										<span class="sr-only"><?php echo $this->translate('SHOPS_NEXT'); ?></span>
 									</a>
 								<?php endif; ?>
 							</div>
@@ -123,7 +123,7 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 						<?php $i = 1; ?>
 						<?php $tagCount = count($this->tagEntities); ?>
 						<?php if($tagCount) : ?>
-							<span>Anwendungs- und Einsatzgebiete:</span>
+							<span><?php echo $this->translate('SHOPS_APPLICATION_AREAS'); ?></span>
 							<?php foreach($this->tagEntities as $tagEntity) : ?>
 								<a href="<?php echo $this->SlugUrl('tag', (int)$tagEntity['tagid']); ?>">
 									<?php echo $this->escape($tagEntity['tag']); ?>
@@ -261,18 +261,18 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 								<div class="col-md-5">
 									<p style="margin-bottom: 0;">
 										<?php if($hasSpecial) : ?>
-											<strong style="color: #008000;">Sonderpreis: <?php echo $itemPrice['formattedspecialprice']; ?>
+											<strong style="color: #008000;"><?php echo $this->translate('SHOPS_SPECIAL_PRICE'); ?> <?php echo $itemPrice['formattedspecialprice']; ?>
 												<?php if ($discountPct !== null): ?>
 													<span class="badge bg-danger ms-2" style="color: #ffffff;">-<?= $discountPct; ?>%</span>
 												<?php endif; ?>
 											</strong> *<br>
-											<span style="text-decoration: line-through;">Listenpreis: <?php echo $itemPrice['formatted']; ?></span><br>
+											<span style="text-decoration: line-through;"><?php echo $this->translate('SHOPS_LIST_PRICE'); ?> <?php echo $itemPrice['formatted']; ?></span><br>
 										<?php elseif($itemPrice['raw'] == 0) : ?>
-											<span><strong>Auf Anfrage</strong></span>
+											<span><strong><?php echo $this->translate('SHOPS_PRICE_ON_REQUEST'); ?></strong></span>
 										<?php else : ?>
-											<strong>Listenpreis: <?php echo $itemPrice['formatted']; ?></strong> *<br>
+											<strong><?php echo $this->translate('SHOPS_LIST_PRICE'); ?> <?php echo $itemPrice['formatted']; ?></strong> *<br>
 											<?php if($inquiryEnabled) : ?>
-												<span style="font-size: 0.8rem;"><strong>Für Ihren individuellen Rabatt senden Sie uns einfach eine Anfrage!</strong></span>
+												<span style="font-size: 0.8rem;"><strong><?php echo $this->translate('SHOPS_DISCOUNT_INQUIRY'); ?></strong></span>
 											<?php endif; ?>
 										<?php endif; ?>
 									</p>
@@ -285,10 +285,10 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 									<?php endif; ?>
 									<?php if ($shippingPage) : ?>
 										<a href="<?php echo $this->SlugUrl('page', $shippingPage['id']); ?>" target="_blank">
-											Versandkosten
+											<?php echo $this->translate('SHOPS_SHIPPING_COSTS'); ?>
 										</a>
 									<?php endif; ?>
-									<span style="font-size: 0.8rem;">Lieferzeit: Auf Lager</span>
+									<span style="font-size: 0.8rem;"><?php echo $this->translate('SHOPS_DELIVERY_IN_STOCK'); ?></span>
 
 
 								</div>
@@ -417,7 +417,7 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 																<?php if($option['description']) : ?>
 																	<?php echo $option['description']; ?>
 																<?php else : ?>
-																	<span>bereits enthalten</span>
+																	<span><?php echo $this->translate('SHOPS_ALREADY_INCLUDED'); ?></span>
 																<?php endif; ?>
 															</li>
 														<?php endforeach; ?>

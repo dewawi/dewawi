@@ -1,0 +1,77 @@
+{
+  "commands": [
+    {
+      "command": [
+        "php",
+        "tests/documents/calculation.php",
+        "sales"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 736 calculation checks including sales PDF payloads and finalized document write protection\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "tests/documents/calculation.php",
+        "purchases"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 712 calculation checks including purchases PDF payloads and finalized document write protection\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "tests/documents/calculation.php",
+        "processes"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 706 calculation checks including processes PDF payloads and finalized document write protection\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "tests/documents/e-invoice.php"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 371 e-invoice preparation and UBL XML checks; discounts, tax groups, escaping, lifecycle, permissions and unchanged originals\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "tests/documents/document-labels.php"
+      ],
+      "exit_code": 255,
+      "status": "failed",
+      "stdout": "",
+      "stderr": "PHP Fatal error:  Uncaught RuntimeException: Exact label or body missing in /var/www/dewawi/tests/documents/document-labels.php:26\nStack trace:\n#0 {main}\n  thrown in /var/www/dewawi/tests/documents/document-labels.php on line 26\n"
+    },
+    {
+      "command": [
+        "php",
+        "tests/site/cms-structure.php"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 200 CMS block, CTA, theme and 404 structure cases\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "tests/site/public-errors.php"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 10 public HTML, JSON, canonical and HEAD error response cases\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -37,4 +37,5 @@
 	'ACTIONS_GENERATE_REMINDER' => 'Generate reminder',
 	'ACTIONS_CREATE_SALES_ORDER' => 'Create sales order',
 	'ACTIONS_GENERATE_SALES_ORDER' => 'Generate sales order',
+	'ACTIONS_GENERATE_DOCUMENTS' => 'Generate documents',
 );
