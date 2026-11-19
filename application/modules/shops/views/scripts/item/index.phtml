@@ -198,6 +198,10 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 					<?php endif; ?>
 				</div>
 
+				<?php if ($this->albisPrice !== null) : ?>
+					<div data-albis-price="<?php echo $this->escape((string)$this->albisPrice); ?>" data-albis-url="<?php echo $this->escape($this->url(['id' => $itemId], 'product_leasing', true)); ?>" hidden></div>
+				<?php endif; ?>
+
 				<div>
 					<?php if($this->siteContext->hasFeature('cart')) : ?>
 						<button class="btn btn-primary btn-lg add-to-cart" type="button" data-id="<?php echo $this->item['id']; ?>">

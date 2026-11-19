@@ -76,4 +76,6 @@
 	'ITEMS_TECHNICAL_DATA' => 'Technical data',
 	'ITEMS_VARIANT_OPTIONS_SAVE' => 'Save variant options',
 	'ITEMS_SUBTITLE' => 'Subtitle',
+	'ITEMS_ALBIS_ELIGIBLE' => 'Eligible for ALBIS leasing',
+	'ITEMS_ALBIS_ELIGIBLE_INFO' => 'Enable only after checking finance eligibility and assignment to the ALBIS product group configured for this shop. Disabled by default.',
 );

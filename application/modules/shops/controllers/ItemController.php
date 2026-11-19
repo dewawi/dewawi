@@ -73,8 +73,31 @@ class Shops_ItemController extends Shops_Controller_Action
 		$this->view->imagePath = $dir1 . '/' . $dir2 . '/' . $clientid;
 		$this->view->attributeSets = $this->_helper->Attributes->getAttributes((int)$item['id']);
 		$this->view->optionSets = $this->_helper->Options->getOptions((int)$item['id']);
+		$this->view->albisPrice = DEEC_Albis::eligiblePrice($this->_siteContext, $item);
 
 		$this->assignMessages();
+	}
+
+	public function leasingAction()
+	{
+		$this->_helper->viewRenderer->setNoRender(true);
+		$this->_helper->layout->disableLayout();
+		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true)->setHeader('X-Robots-Tag', 'noindex', true);
+		$result = ['html' => ''];
+		if ($this->getRequest()->isGet() && $this->_siteContext->hasFeature('catalog') && $this->_siteContext->hasFeature('inquiry')) {
+			$item = (new Shops_Model_DbTable_Item())->getItem((int)$this->_getParam('id', 0));
+			if ($item && DEEC_Albis::eligiblePrice($this->_siteContext, $item) !== null
+				&& (new Shops_Model_DbTable_Category())->getCategory((int)$item['shopcatid'])) {
+				try {
+					$albis = new DEEC_Albis($this->_siteContext, Zend_Registry::get('Zend_Cache'));
+					$quote = $albis->quote($item);
+					if ($quote) $result = ['price' => $quote['price'], 'html' => $this->view->partial('item/_leasing.phtml', ['quote' => $quote, 'item' => $item])];
+				} catch (Throwable $e) {
+					// Leasing availability must never affect buying or expose API details.
+				}
+			}
+		}
+		$this->_helper->json($result);
 	}
 
 	public function feedAction()

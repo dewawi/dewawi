@@ -67,6 +67,18 @@ check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'path'")->fetch_assoc()['T
 check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'status'")->fetch_assoc()['Default'] === 'redirect', 'Fresh installation has no redirect response status default');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'slugredirect' AND index_name = 'clientid_shopid_pathhash' AND non_unique = 0")->fetch_row()[0] === 3, 'Fresh installation redirect uniqueness is not tenant- and shop-scoped');
 checkCheckoutTokenSchema($db, 'Fresh installation');
+$albisShopColumns = ['albisenabled', 'albisenvironment', 'albisthreshold', 'albisproductgroup', 'albiscontracttype', 'albispaymentmode', 'albisfeenet'];
+$albisSchema = [];
+foreach ($albisShopColumns as $column) {
+    $albisSchema[$column] = $db->query("SHOW COLUMNS FROM shop LIKE '$column'")->fetch_assoc();
+    check($albisSchema[$column] !== null, 'Fresh installation is missing ALBIS field ' . $column);
+}
+check($albisSchema['albisenabled']['Default'] === '0' && $albisSchema['albisenvironment']['Default'] === 'test', 'ALBIS is not disabled by default');
+check($albisSchema['albisthreshold']['Default'] === '5000.00' && $albisSchema['albisproductgroup']['Default'] === '23' && $albisSchema['albiscontracttype']['Default'] === '1' && $albisSchema['albispaymentmode']['Default'] === '2', 'ALBIS defaults changed');
+check($albisSchema['albisfeenet']['Default'] === null, 'An unconfirmed processing fee is assumed to be zero');
+$albisItemSchema = $db->query("SHOW COLUMNS FROM item LIKE 'albiseligible'")->fetch_assoc();
+check($albisItemSchema['Default'] === '0', 'Existing products become finance eligible automatically');
+
 check(json_decode($db->query('SELECT calendar FROM permission WHERE userid = 1')->fetch_row()[0], true) === ['index' => ['add', 'edit', 'view', 'delete']], 'Fresh installation calendar permissions are missing');
 
 $structure = 'CREATE TABLE import_before (id INT);';
@@ -144,6 +156,7 @@ $db->query('CREATE DATABASE contact_role_upgrade');
 $db->select_db('contact_role_upgrade');
 $db->query('CREATE TABLE client LIKE install_success.client');
 $db->query('CREATE TABLE item LIKE install_success.item');
+$db->query('ALTER TABLE item DROP COLUMN albiseligible');
 $db->query('CREATE TABLE invoice LIKE install_success.invoice');
 preg_match('/CREATE TABLE IF NOT EXISTS `calendarevent` .*?;/s', file_get_contents($root . '/install/config/update-1.1.2-1.1.3.sql'), $legacyCalendar);
 $db->query($legacyCalendar[0]);
@@ -167,6 +180,12 @@ $db->query("INSERT INTO shoporder (id, shopid, orderid, clientid) VALUES (1, '41
 $roleQueries = [];
 PMA_splitSqlFile($roleQueries, file_get_contents($root . '/install/config/update-1.1.7-1.1.8.sql'));
 foreach ($roleQueries as $query) $db->query($query['query']);
+foreach ($albisShopColumns as $column) {
+    check($db->query("SHOW COLUMNS FROM shop LIKE '$column'")->fetch_assoc() === $albisSchema[$column], 'ALBIS upgrade differs from installation for ' . $column);
+}
+check($db->query("SHOW COLUMNS FROM item LIKE 'albiseligible'")->fetch_assoc() === $albisItemSchema, 'ALBIS product eligibility upgrade differs from installation');
+check((int)$db->query('SELECT albisenabled FROM shop WHERE id = 1')->fetch_row()[0] === 0, 'ALBIS upgrade enabled an existing shop');
+
 check($db->query('SHOW FULL COLUMNS FROM calendarevent')->fetch_all(MYSQLI_ASSOC) === $db->query('SHOW FULL COLUMNS FROM install_success.calendarevent')->fetch_all(MYSQLI_ASSOC), 'Calendar upgrade and fresh schema differ');
 $calendar = $db->query('SELECT * FROM calendarevent WHERE id = 1')->fetch_assoc();
 check($calendar['title'] === 'Legacy event' && $calendar['start'] === '2026-11-16 09:00:00' && $calendar['end'] === '2026-11-16 10:00:00' && $calendar['startutc'] === null && $calendar['endutc'] === null && $calendar['visibility'] === 'private' && (int)$calendar['ownerid'] === 42, 'Calendar upgrade changed historical values or exposed legacy events');

@@ -30,7 +30,7 @@ class DEEC_Filter
 				$n = self::parseDecimalLocale((string)$value, $locale);
 				if ($n === null) return null;
 				if ($precision !== null) $n = round($n, $precision);
-				if ((float)$n == 0.0) return null;
+				if ((float)$n == 0.0 && empty($fmt['preserveZero'])) return null;
 				return $n;
 
 			case 'email':

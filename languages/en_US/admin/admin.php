@@ -263,4 +263,13 @@
 	'ADMIN_DASHBOARD_DESIGN_DESCRIPTION' => 'Manage templates and footers.',
 	'ADMIN_DASHBOARD_SYSTEM_DESCRIPTION' => 'Manage system information and installed modules.',
 	'ADMIN_REDIRECT_PATH_EXAMPLE' => 'old-page',
+	'ADMIN_ALBIS' => 'ALBIS Leasing',
+	'ADMIN_ALBIS_ENABLED' => 'Enable ALBIS leasing display',
+	'ADMIN_ALBIS_INFO' => 'Requires catalog and inquiries plus explicitly eligible products. Store credentials and cache encryption keys only in the server environment. Product group, contract type and payment mode must be approved for the seller. Confirm and enter the processing fee with ALBIS before enabling (explicitly enter 0.00 when applicable). No display without a confirmed fee.',
+	'ADMIN_ALBIS_ENVIRONMENT' => 'ALBIS environment',
+	'ADMIN_ALBIS_PRODUCT_GROUP' => 'ALBIS product group (ID)',
+	'ADMIN_ALBIS_CONTRACT_TYPE' => 'ALBIS contract type (ID)',
+	'ADMIN_ALBIS_PAYMENT_MODE' => 'ALBIS payment mode (ID)',
+	'ADMIN_ALBIS_THRESHOLD' => 'Net price must strictly exceed this amount (EUR)',
+	'ADMIN_ALBIS_FEE_NET' => 'Confirmed one-time net processing fee (EUR)',
 );

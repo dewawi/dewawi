@@ -448,6 +448,11 @@ class Items_Form_Item extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'albiseligible', 'type' => 'checkbox', 'label' => 'ITEMS_ALBIS_ELIGIBLE',
+			'description' => 'ITEMS_ALBIS_ELIGIBLE_INFO', 'format' => ['type' => 'int'], 'default' => 0, 'tab' => 'shop', 'col' => 12,
+		]);
+
+		$this->addElement([
 			'name' => 'shopdescription',
 			'type' => 'textarea',
 			'label' => 'ITEMS_SHOP_DESCRIPTION',

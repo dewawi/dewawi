@@ -3,6 +3,13 @@ $(document).on('click', '.dw-alert__close', function () {
 });
 
 $(document).ready(function () {
+	$('[data-albis-url]').each(function () {
+		const $container = $(this);
+		$.getJSON($container.attr('data-albis-url')).done(function (response) {
+			if (response && response.price === Number($container.attr('data-albis-price')) && typeof response.html === 'string' && response.html) $container.html(response.html).prop('hidden', false);
+		});
+	});
+
 	const cartItemsContainer = $('#cart-items');
 	const cartTotal = $('#cart-total');
 	const cartCount = $('#cart-count');
@@ -608,6 +615,12 @@ $(document).on('click', '[data-show-section]', function () {
 	if (!/^[a-z0-9_-]+$/i.test(sectionName)) return;
 	const section = document.getElementById(sectionName);
 	if (!section) return;
+	const leasingMessage = $(this).attr('data-albis-message');
+	if (leasingMessage) {
+		const $message = $(section).find('textarea[name="message"]');
+		const current = String($message.val() || '');
+		if (!current.includes(leasingMessage)) $message.val(current ? current + '\n\n' + leasingMessage : leasingMessage).trigger('change');
+	}
 	const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 	section.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
 	section.style.transition = 'background-color 0.5s ease';
@@ -615,6 +628,13 @@ $(document).on('click', '[data-show-section]', function () {
 	setTimeout(function () {
 		section.style.backgroundColor = '';
 	}, 2000);
+});
+
+$(document).on('change', '[data-albis-term]', function () {
+	const term = String($(this).val());
+	const $leasing = $(this).closest('.dw-leasing');
+	$leasing.find('[data-albis-details]').each(function () { this.hidden = $(this).attr('data-albis-details') !== term; });
+	$leasing.find('[data-albis-interest]').each(function () { this.hidden = $(this).attr('data-albis-interest') !== term; });
 });
 
 function goBackStep(currentStep) {

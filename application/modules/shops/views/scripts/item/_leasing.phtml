@@ -1,0 +1,35 @@
+<?php
+$quote = $this->quote;
+$best = $quote['rates'][0];
+$currency = new Zend_Currency(['currency' => 'EUR'], Zend_Registry::get('Zend_Locale'));
+$money = static fn($amount): string => $currency->toCurrency($amount);
+$text = fn(string $key, ...$values): string => $this->escape(sprintf($this->translate($key), ...$values));
+?>
+<aside class="dw-leasing" aria-label="<?php echo $text('SHOPS_ALBIS_BRAND'); ?>">
+	<strong class="dw-leasing__brand"><?php echo $text('SHOPS_ALBIS_BRAND'); ?></strong>
+	<p class="dw-leasing__headline"><?php echo $text('SHOPS_ALBIS_FROM', $money($best['monthly'])); ?></p>
+	<p><?php echo $text('SHOPS_ALBIS_EXAMPLE', $best['term'], $money($best['rate']), $money($best['insurance']), $money($best['final'])); ?></p>
+	<p><?php echo $text('SHOPS_ALBIS_FEE', $money($quote['fee'])); ?></p>
+	<details class="dw-leasing__calculator">
+		<summary><?php echo $text('SHOPS_ALBIS_CALCULATOR'); ?></summary>
+		<label for="albis-term"><?php echo $text('SHOPS_ALBIS_TERM'); ?></label>
+		<select id="albis-term" class="form-control" data-albis-term>
+			<?php foreach ($quote['rates'] as $rate) : ?>
+				<option value="<?php echo (int)$rate['term']; ?>"><?php echo $text('SHOPS_ALBIS_TERM_OPTION', $rate['term'], $money($rate['monthly'])); ?></option>
+			<?php endforeach; ?>
+		</select>
+		<?php foreach ($quote['rates'] as $index => $rate) : ?>
+			<div data-albis-details="<?php echo (int)$rate['term']; ?>"<?php echo $index ? ' hidden' : ''; ?> aria-live="polite">
+				<p><?php echo $text('SHOPS_ALBIS_BREAKDOWN', $money($rate['rate']), $money($rate['insurance']), $money($rate['monthly']), $money($rate['final'])); ?></p>
+			</div>
+		<?php endforeach; ?>
+	</details>
+	<p><?php echo $text('SHOPS_ALBIS_PAYMENT', $quote['contract'], $quote['paymentMonths']); ?></p>
+	<p class="dw-leasing__notice"><?php echo $text('SHOPS_ALBIS_NOTICE'); ?></p>
+	<?php foreach ($quote['rates'] as $index => $rate) : ?>
+		<button type="button" class="btn btn-info" data-show-section="inquiry" data-albis-interest="<?php echo (int)$rate['term']; ?>"<?php echo $index ? ' hidden' : ''; ?>
+			data-albis-message="<?php echo $text('SHOPS_ALBIS_MESSAGE', (string)$this->item['sku'], $rate['term'], $money($rate['rate']), $money($rate['insurance']), $money($rate['final']), $money($quote['fee']), $money($quote['price'])); ?>">
+			<?php echo $text('SHOPS_ALBIS_INTEREST'); ?>
+		</button>
+	<?php endforeach; ?>
+</aside>

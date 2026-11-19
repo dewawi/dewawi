@@ -171,6 +171,28 @@ class Admin_Form_Shop extends DEEC_Form
 		]);
 
 		$this->addElement([
+			'name' => 'albisenabled', 'type' => 'checkbox', 'label' => 'ADMIN_ALBIS_ENABLED',
+			'description' => 'ADMIN_ALBIS_INFO', 'format' => ['type' => 'int'], 'default' => 0, 'tab' => 'leasing', 'col' => 12,
+		]);
+		$this->addElement([
+			'name' => 'albisenvironment', 'type' => 'select', 'label' => 'ADMIN_ALBIS_ENVIRONMENT',
+			'options' => ['test' => 'Test', 'live' => 'Live'], 'format' => ['type' => 'string'],
+			'default' => 'test', 'attribs' => ['pattern' => 'test|live'], 'tab' => 'leasing', 'col' => 6,
+		]);
+		foreach (['albisthreshold' => ['ADMIN_ALBIS_THRESHOLD', 5000], 'albisfeenet' => ['ADMIN_ALBIS_FEE_NET', null]] as $name => [$label, $default]) {
+			$this->addElement([
+				'name' => $name, 'type' => 'text', 'label' => $label, 'default' => $default,
+				'format' => ['type' => 'decimal', 'precision' => 2, 'preserveZero' => true], 'attribs' => ['class' => 'number'], 'tab' => 'leasing', 'col' => 6,
+			]);
+		}
+		foreach (['albisproductgroup' => ['ADMIN_ALBIS_PRODUCT_GROUP', 23], 'albiscontracttype' => ['ADMIN_ALBIS_CONTRACT_TYPE', 1], 'albispaymentmode' => ['ADMIN_ALBIS_PAYMENT_MODE', 2]] as $name => [$label, $default]) {
+			$this->addElement([
+				'name' => $name, 'type' => 'number', 'label' => $label, 'default' => $default,
+				'format' => ['type' => 'int'], 'attribs' => ['min' => 1, 'max' => 2147483647], 'tab' => 'leasing', 'col' => 6,
+			]);
+		}
+
+		$this->addElement([
 			'name' => 'timezone',
 			'type' => 'text',
 			'label' => 'ADMIN_TIMEZONE',
@@ -200,5 +222,15 @@ class Admin_Form_Shop extends DEEC_Form
 			'tab' => 'settings',
 			'col' => 12,
 		]);
+	}
+
+	protected function validateFormattedValue(array $element, $value): bool
+	{
+		if (!parent::validateFormattedValue($element, $value)) return false;
+		if (in_array($element['name'], ['albisthreshold', 'albisfeenet'], true)) {
+			$parsed = DEEC_Filter::applyAll(['amount' => $value], ['amount' => $element['format']], $this->getLocale());
+			return $parsed['amount'] !== null && $parsed['amount'] >= 0 && $parsed['amount'] <= 99999999;
+		}
+		return true;
 	}
 }

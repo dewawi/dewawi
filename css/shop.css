@@ -1447,3 +1447,26 @@ form .hidden {
 	margin: 2rem auto 0;
 	text-align: left;
 }
+
+/* ALBIS rates are loaded independently of the buying controls. */
+.dw-leasing {
+	margin: 1rem 0;
+	padding: 1.1rem;
+	border: 1px solid #b9d5e4;
+	border-left: 4px solid #15749b;
+	border-radius: .5rem;
+	background: #f2f8fb;
+	color: #193b4c;
+	overflow-wrap: anywhere;
+}
+
+.dw-leasing p { margin: .55rem 0; }
+.dw-leasing__brand { letter-spacing: .04em; }
+.dw-leasing__headline { font-size: 1.3rem; font-weight: 700; }
+.dw-leasing__calculator { margin: .8rem 0; }
+.dw-leasing__calculator summary { cursor: pointer; font-weight: 600; }
+.dw-leasing__calculator label { display: block; margin-top: .7rem; }
+.dw-leasing__calculator select { width: 100%; max-width: 100%; }
+.dw-leasing__notice { font-size: .85rem; }
+.dw-leasing .btn { white-space: normal; max-width: 100%; }
+.dw-leasing [hidden] { display: none !important; }

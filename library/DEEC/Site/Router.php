@@ -302,6 +302,10 @@ class DEEC_Site_Router
 		}
 
 		if ($siteContext->hasFeature('catalog')) {
+			$router->addRoute('product_leasing', new Zend_Controller_Router_Route(
+				'product/:id/leasing', ['module' => 'shops', 'controller' => 'item', 'action' => 'leasing'], ['id' => '\d+']
+			));
+
 			$router->addRoute('feed', new Zend_Controller_Router_Route(
 				'products-de.xml',
 				array(

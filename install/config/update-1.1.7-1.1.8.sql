@@ -445,3 +445,16 @@ CREATE TABLE IF NOT EXISTS `invoicecorrection` (
 ALTER TABLE `emailmessageattachment`
   ADD `invoicecorrectionid` int(11) DEFAULT NULL AFTER `emailattachmentid`,
   ADD KEY `invoicecorrectionid` (`invoicecorrectionid`);
+
+-- ALBIS credentials and token encryption keys are supplied only by the server environment.
+ALTER TABLE `shop`
+  ADD `albisenabled` tinyint(1) NOT NULL DEFAULT 0,
+  ADD `albisenvironment` varchar(4) NOT NULL DEFAULT 'test',
+  ADD `albisthreshold` decimal(12,2) NOT NULL DEFAULT 5000.00,
+  ADD `albisproductgroup` int(11) NOT NULL DEFAULT 23,
+  ADD `albiscontracttype` int(11) NOT NULL DEFAULT 1,
+  ADD `albispaymentmode` int(11) NOT NULL DEFAULT 2,
+  ADD `albisfeenet` decimal(12,2) DEFAULT NULL;
+
+ALTER TABLE `item`
+  ADD `albiseligible` tinyint(1) NOT NULL DEFAULT 0;

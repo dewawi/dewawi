@@ -264,4 +264,13 @@
 	'ADMIN_DASHBOARD_DESIGN_DESCRIPTION' => 'Vorlagen und Fußzeilen verwalten.',
 	'ADMIN_DASHBOARD_SYSTEM_DESCRIPTION' => 'Systeminformationen und installierte Module verwalten.',
 	'ADMIN_REDIRECT_PATH_EXAMPLE' => 'alte-seite',
+	'ADMIN_ALBIS' => 'ALBIS Leasing',
+	'ADMIN_ALBIS_ENABLED' => 'ALBIS-Leasinganzeige aktivieren',
+	'ADMIN_ALBIS_INFO' => 'Benötigt Katalog und Anfragen sowie ausdrücklich geeignete Artikel. Zugangsdaten und Cache-Schlüssel ausschließlich in der Serverumgebung hinterlegen. Produktgruppe, Vertragsart und Zahlungsweise müssen für den Händler freigegeben sein. Bearbeitungsgebühr vor Aktivierung mit ALBIS bestätigen und eintragen (auch 0,00 ausdrücklich). Ohne bestätigte Gebühr keine Anzeige.',
+	'ADMIN_ALBIS_ENVIRONMENT' => 'ALBIS-Umgebung',
+	'ADMIN_ALBIS_PRODUCT_GROUP' => 'ALBIS-Produktgruppe (ID)',
+	'ADMIN_ALBIS_CONTRACT_TYPE' => 'ALBIS-Vertragsart (ID)',
+	'ADMIN_ALBIS_PAYMENT_MODE' => 'ALBIS-Zahlungsweise (ID)',
+	'ADMIN_ALBIS_THRESHOLD' => 'Nettopreis muss strikt über diesem Betrag liegen (EUR)',
+	'ADMIN_ALBIS_FEE_NET' => 'Bestätigte einmalige Bearbeitungsgebühr netto (EUR)',
 );
