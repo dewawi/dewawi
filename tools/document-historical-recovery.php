@@ -166,6 +166,7 @@ function historicalRecoveryMain(array $options): array
 	reviewSafePath($base); if (realpath($base) !== $base) throw new RuntimeException('Canonical installation base required');
 	DEEC_DocumentReview::privateFile($options['config']);
 	$validationMode = $options['validation-mode'] ?? 'parser'; $validation = historicalRecoveryValidation($validationMode);
+	$publicationUid = $action === 'apply' || isset($options['web-user']) ? DEEC_DocumentArchive::requirePublicationUser($options['web-user'] ?? '') : null;
 	$lock = null;
 	$db = recoveryBoot(migrationConfig($options['config'], $options['environment'] ?? 'production'), $base, $client, $user);
 	try {
@@ -175,7 +176,7 @@ function historicalRecoveryMain(array $options): array
 		foreach (assessmentRows($options['inventory']) as $entry) if (($entry['kind'] ?? '') === 'document' && $entry['plan']['status'] !== 'complete') $scope[] = reviewIdentity($entry['plan'], $client);
 		if (!hash_equals($inventory['sha256'], hash_file('sha256', $options['inventory']))) throw new RuntimeException('Inventory changed during scope selection');
 		$extractor = $options['pdftotext'] ?? '/usr/bin/pdftotext';
-		$header = $validation + ['schema_version' => 1, 'kind' => 'historical_file_recovery_batch', 'rule' => HISTORICAL_FILE_RULE, 'clientid' => $client, 'operator_user' => $user, 'base' => $base, 'inventory' => $inventory['path'], 'inventory_sha256' => $inventory['sha256'], 'scope' => $scope, 'pdftotext' => $validationMode === 'parser' ? $extractor : null];
+		$header = $validation + ['schema_version' => 1, 'kind' => 'historical_file_recovery_batch', 'rule' => HISTORICAL_FILE_RULE, 'clientid' => $client, 'operator_user' => $user, 'publication_uid' => $publicationUid, 'base' => $base, 'inventory' => $inventory['path'], 'inventory_sha256' => $inventory['sha256'], 'scope' => $scope, 'pdftotext' => $validationMode === 'parser' ? $extractor : null];
 		$plan = null; $approval = null;
 		if ($action === 'apply') {
 			DEEC_DocumentReview::privateFile($options['plan'] ?? '');
@@ -183,7 +184,7 @@ function historicalRecoveryMain(array $options): array
 			if (($plan['action'] ?? '') !== 'plan' || !is_string($options['confirm-plan'] ?? null) || !hash_equals(hash('sha256', $planBytes), $options['confirm-plan']) || !array_key_exists('backup-verified', $options) || !is_string($options['backup-reference'] ?? null) || trim($options['backup-reference']) === '' || strlen($options['backup-reference']) > 4000) throw new RuntimeException('Apply requires exact reviewed --confirm-plan SHA, --backup-verified and a concrete --backup-reference for database and files');
 			foreach ($header as $key => $value) if (($plan[$key] ?? null) !== $value) throw new RuntimeException('Reviewed plan context differs: ' . $key);
 			if (array_column($plan['rows'], 'identity') !== $scope) throw new RuntimeException('Reviewed plan scope differs');
-			$approval = $validation + ['manual' => true, 'method' => 'administrator_reviewed_batch', 'rule' => HISTORICAL_FILE_RULE, 'approved_by' => $user, 'approved_at' => gmdate('c'), 'batch_plan_sha256' => $options['confirm-plan'], 'database_and_file_backup_confirmed' => true, 'backup_reference' => trim($options['backup-reference'])];
+			$approval = $validation + ['manual' => true, 'method' => 'administrator_reviewed_batch', 'rule' => HISTORICAL_FILE_RULE, 'approved_by' => $user, 'approved_at' => gmdate('c'), 'publication_uid' => $publicationUid, 'batch_plan_sha256' => $options['confirm-plan'], 'database_and_file_backup_confirmed' => true, 'backup_reference' => trim($options['backup-reference'])];
 			DEEC_DocumentReview::privateDirectory(dirname($options['plan']));
 			$lockPath = dirname($options['plan']) . '/.apply.lock'; reviewSafePath($lockPath);
 			if (file_exists($lockPath)) DEEC_DocumentReview::privateFile($lockPath);
@@ -230,6 +231,6 @@ function historicalRecoveryMain(array $options): array
 
 if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') !== __FILE__) return;
 try {
-	$result = historicalRecoveryMain(getopt('', ['config:', 'environment:', 'base:', 'client:', 'operator-user:', 'inventory:', 'output:', 'action:', 'validation-mode:', 'pdftotext:', 'plan:', 'confirm-plan:', 'backup-verified', 'backup-reference:']));
+	$result = historicalRecoveryMain(getopt('', ['config:', 'environment:', 'base:', 'client:', 'operator-user:', 'web-user:', 'inventory:', 'output:', 'action:', 'validation-mode:', 'pdftotext:', 'plan:', 'confirm-plan:', 'backup-verified', 'backup-reference:']));
 	echo reviewJson($result); exit($result['exit']);
 } catch (Throwable $error) { fwrite(STDERR, $error->getMessage() . "\n"); exit(1); }

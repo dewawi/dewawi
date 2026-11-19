@@ -602,4 +602,5 @@ require __DIR__ . '/document-original-review-fixtures.php';
 require __DIR__ . '/invoice-original-batch-fixtures.php';
 require __DIR__ . '/invoice-mixed-batch-fixtures.php';
 require __DIR__ . '/document-viewing-fixtures.php';
+require __DIR__ . '/document-pdf-availability-fixtures.php';
 echo 'PASS: ' . $checks . " isolated recovery checks; eight types, retrospective attestations, policy releases, private reports, diagnostic PDFs and unchanged business rows\n";

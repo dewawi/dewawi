@@ -83,7 +83,7 @@ class DEEC_DocumentReview
 		return ['data' => $snapshot, 'sha256' => hash('sha256', self::json($snapshot))];
 	}
 
-	public function openViewingCopy(int $id, string $module, string $controller): array
+	public function openViewingCopy(int $id, string $module, string $controller, bool $generate = true): array
 	{
 		$snapshot = self::viewingSnapshot($id, $module, $controller);
 		$archiveDb = new Application_Model_DbTable_Documentarchive();
@@ -94,7 +94,8 @@ class DEEC_DocumentReview
 			$filename = $original['filename'];
 			$status = 'archived_original';
 		} else {
-			$result = $this->storedViewingCopy($snapshot, $id, $module, $controller);
+			$result = $this->storedViewingCopy($snapshot, $id, $module, $controller, $generate);
+			if ($result === null) return ['status' => 'copy_can_be_generated', 'filename' => self::documentFilename($snapshot['data']['document'], $controller)];
 			$bytes = $result['bytes'];
 			$filename = self::documentFilename($snapshot['data']['document'], $controller);
 			$status = $result['status'];
@@ -108,7 +109,7 @@ class DEEC_DocumentReview
 	public static function documentFilename(array $document, string $controller): string
 	{
 		$stored = (string)($document['filename'] ?? '');
-		if (DEEC_Emailattachment::validFilename($stored)) return $stored;
+		if (DEEC_Emailattachment::validFilename($stored) && strtolower(pathinfo($stored, PATHINFO_EXTENSION)) === 'pdf') return $stored;
 		$number = (string)($document[$controller . 'id'] ?? '');
 		$filename = $controller . ($number === '' ? '' : '-' . $number) . '.pdf';
 		return DEEC_Emailattachment::validFilename($filename) ? $filename : $controller . '.pdf';
@@ -121,12 +122,13 @@ class DEEC_DocumentReview
 		return (bool)glob(BASE_PATH . '/files/documents/.viewing-copies/' . $clientId . '/*/*/*/*/*/' . $sha . '.pdf');
 	}
 
-	private function storedViewingCopy(array $snapshot, int $id, string $module, string $controller): array
+	private function storedViewingCopy(array $snapshot, int $id, string $module, string $controller, bool $generate): ?array
 	{
 		require_once __DIR__ . '/DocumentRecovery.php';
 		$identity = ['clientid' => (int)$snapshot['data']['document']['clientid'], 'module' => $module, 'controller' => $controller, 'id' => $id];
 		$locale = str_starts_with((string)Zend_Registry::get('Zend_Locale'), 'en') ? 'en_US' : 'de_DE';
 		$directory = BASE_PATH . '/files/documents/.viewing-copies/' . $identity['clientid'] . '/' . $module . '/' . $controller . '/' . $id . '/' . $snapshot['sha256'] . '/' . $locale;
+		if (!$generate) return $this->readStoredViewingCopy($snapshot, $identity, $locale, $directory);
 		$privateRoot = BASE_PATH . '/files/documents/.viewing-copies'; reviewSafePath($privateRoot);
 		if (!is_dir($privateRoot) && !@mkdir($privateRoot, 0700, true) && !is_dir($privateRoot)) throw new RuntimeException('Viewing copy directory unavailable');
 		reviewDirectory($privateRoot); reviewSafePath($directory);
@@ -154,14 +156,29 @@ class DEEC_DocumentReview
 				if ($file['status'] !== 'ok' || $file['sha256'] !== $sha || $file['size'] !== strlen($result['bytes'])) throw new RuntimeException('Stored viewing copy differs');
 				reviewWrite($recordPath, self::json(['schema_version' => 1, 'identity' => $identity, 'snapshot_sha256' => $snapshot['sha256'], 'locale' => $locale, 'status' => $result['status'], 'sha256' => $sha, 'size' => $file['size'], 'generated_at' => gmdate('c'), 'generated_by' => (int)Zend_Registry::get('User')['id'], 'original' => false, 'archive_registration_allowed' => false]));
 			}
-			$record = self::read($recordPath);
-			if (($record['schema_version'] ?? null) !== 1 || ($record['identity'] ?? null) !== $identity || ($record['snapshot_sha256'] ?? '') !== $snapshot['sha256'] || ($record['locale'] ?? '') !== $locale
-				|| !in_array($record['status'] ?? '', ['historical_reconstructed_viewing_copy', 'historical_diagnostic_viewing_copy'], true) || ($record['original'] ?? null) !== false || ($record['archive_registration_allowed'] ?? null) !== false || !preg_match('/^[a-f0-9]{64}$/D', $record['sha256'] ?? '')) throw new RuntimeException('Invalid stored viewing copy record');
-			$path = $directory . '/' . $record['sha256'] . '.pdf'; self::privateFile($path);
-			$bytes = file_get_contents($path);
-			if ($bytes === false || strlen($bytes) !== $record['size'] || !hash_equals($record['sha256'], hash('sha256', $bytes))) throw new RuntimeException('Stored viewing copy integrity differs');
-			return ['bytes' => $bytes, 'status' => $record['status']];
+			return $this->readStoredViewingCopy($snapshot, $identity, $locale, $directory);
 		} finally { flock($lock, LOCK_UN); fclose($lock); }
+	}
+
+	private function readStoredViewingCopy(array $snapshot, array $identity, string $locale, string $directory): ?array
+	{
+		reviewSafePath($directory);
+		$current = BASE_PATH . '/files/documents/.viewing-copies';
+		foreach (array_merge([''], explode('/', substr($directory, strlen($current) + 1))) as $part) {
+			if ($part !== '') $current .= '/' . $part;
+			clearstatcache(true, $current);
+			if (!file_exists($current)) return null;
+			if (!is_dir($current) || (fileperms($current) & 0777) !== 0700 || !is_readable($current) || !is_executable($current)) throw new RuntimeException('Viewing copy directory is not private or accessible');
+		}
+		$recordPath = $directory . '/copy.json';
+		if (!file_exists($recordPath)) return null;
+		$record = self::read($recordPath);
+		if (($record['schema_version'] ?? null) !== 1 || ($record['identity'] ?? null) !== $identity || ($record['snapshot_sha256'] ?? '') !== $snapshot['sha256'] || ($record['locale'] ?? '') !== $locale
+			|| !in_array($record['status'] ?? '', ['historical_reconstructed_viewing_copy', 'historical_diagnostic_viewing_copy'], true) || ($record['original'] ?? null) !== false || ($record['archive_registration_allowed'] ?? null) !== false || !preg_match('/^[a-f0-9]{64}$/D', $record['sha256'] ?? '')) throw new RuntimeException('Invalid stored viewing copy record');
+		$path = $directory . '/' . $record['sha256'] . '.pdf'; self::privateFile($path);
+		$bytes = file_get_contents($path);
+		if ($bytes === false || strlen($bytes) !== $record['size'] || !hash_equals($record['sha256'], hash('sha256', $bytes)) || (new DEEC_DocumentArchive(BASE_PATH))->inspect($path, 'pdf')['status'] !== 'ok') throw new RuntimeException('Stored viewing copy integrity differs');
+		return ['bytes' => $bytes, 'status' => $record['status']];
 	}
 
 	public static function validateRoot(string $root, int $clientId): array

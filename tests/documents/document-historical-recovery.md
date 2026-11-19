@@ -27,6 +27,7 @@ Create a file-association preview without an external parser; this never copies 
 ```sh
 php tools/document-historical-recovery.php \
   --action=plan \
+  --web-user=www-data \
   --validation-mode=file-association \
   --config=/private/dewawi/select-only.ini \
   --base=/canonical/dewawi \
@@ -43,6 +44,7 @@ After the administrator has reviewed that exact preview and a usable backup of *
 ```sh
 php tools/document-historical-recovery.php \
   --action=apply \
+  --web-user=www-data \
   --validation-mode=file-association \
   --config=/private/dewawi/archive-writer.ini \
   --base=/canonical/dewawi \
@@ -57,6 +59,8 @@ php tools/document-historical-recovery.php \
 ```
 
 `--confirm-plan` is the actual returned 64-character SHA-256, not the placeholder above. Backup verification is an explicit operator attestation and reference; the tool does not independently test a backup restore. There is no production recovery authorization implied by installing this code or creating a preview.
+
+Run both commands as the actual non-root PHP web-server account (for example prefix each with `sudo -u www-data`); replace `www-data` with the configured pool/vhost identity. Apply requires `--web-user` to match the effective UID and the preview publication UID. Root publication is refused. Generate a fresh preview after this ownership safeguard is installed. Private 0700 directories and 0600 PDFs/reports must be readable by that same PHP identity; existing inaccessible/root-owned paths require separate targeted ownership review, without relaxing modes or changing bytes. See [bulk availability](document-pdf-availability.md) for authenticated HTTP verification and copy backfill.
 
 For stricter parser validation, use `--validation-mode=parser` on both commands (and the same optional `--pdftotext` path), with fresh output directories and the resulting parser preview/hash. Apply must use the same mode as the reviewed preview. Omitting the mode defaults to `parser` and therefore cannot apply a file-association preview. Old previews without the explicit mode/limitations fields need a fresh preview and review.
 

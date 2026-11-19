@@ -8,7 +8,7 @@ function historicalTestCli(array $changes = [], bool $success = true, bool $defe
 {
 	global $root, $socket, $work, $base;
 	static $sequence = 0;
-	$options = array_replace(['config' => $work . '/reader.ini', 'base' => $base, 'client' => '7', 'operator-user' => '42', 'inventory' => $work . '/reports/historical-inventory.jsonl', 'output' => $work . '/reports/historical-' . (++$sequence), 'action' => 'plan'], $changes);
+	$options = array_replace(['config' => $work . '/reader.ini', 'base' => $base, 'client' => '7', 'operator-user' => '42', 'web-user' => posix_getpwuid(posix_geteuid())['name'], 'inventory' => $work . '/reports/historical-inventory.jsonl', 'output' => $work . '/reports/historical-' . (++$sequence), 'action' => 'plan'], $changes);
 	$command = [PHP_BINARY, '-d', 'error_reporting=8191', '-d', 'pdo_mysql.default_socket=' . $socket, $root . '/tools/document-historical-recovery.php'];
 	foreach ($options as $key => $value) if ($value !== null) $command[] = '--' . $key . ($value === false ? '' : '=' . $value);
 	$process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);

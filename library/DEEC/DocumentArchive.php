@@ -19,6 +19,14 @@ class DEEC_DocumentArchive
 	}
 
 	public static function documents(): array { return self::DOCUMENTS; }
+
+	public static function requirePublicationUser(string $name): int
+	{
+		if (!function_exists('posix_getpwnam') || !function_exists('posix_geteuid')) throw new RuntimeException('POSIX identity checks are required for private PDF publication');
+		$user = $name === '' ? false : posix_getpwnam($name);
+		if (!$user || (int)$user['uid'] === 0 || (int)$user['uid'] !== posix_geteuid()) throw new RuntimeException('Run as the non-root PHP web-server account and supply its exact --web-user');
+		return (int)$user['uid'];
+	}
 	public static function validDocumentType(string $module, string $controller): bool { return in_array($controller, self::DOCUMENTS[$module] ?? [], true); }
 
 	public function relativePath(int $clientId, string $module, string $controller, int $documentId, string $format = 'pdf'): string

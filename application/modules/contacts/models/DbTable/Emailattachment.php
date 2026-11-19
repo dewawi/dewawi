@@ -171,6 +171,8 @@ class Contacts_Model_DbTable_Emailattachment extends DEEC_Model_DbTable_Entity
 		$contact = $contactContext['parent'];
 		$contactNumber = (int)($contact['contactid'] ?? 0);
 		if ($contactNumber <= 0) return [];
+		$contacts = new Contacts_Model_DbTable_Contact();
+		if (count($contacts->fetchAll($contacts->select()->where('clientid = ?', $contactContext['clientid'])->where('contactid = ?', $contactNumber)->where('deleted = ?', 0))) !== 1) return [];
 
 		$user = Zend_Registry::get('User');
 		$client = Zend_Registry::get('Client');

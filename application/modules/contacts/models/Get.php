@@ -111,6 +111,10 @@ class Contacts_Model_Get
 		if (!Zend_Registry::isRegistered('User') || !Zend_Registry::isRegistered('Client')) return [];
 		$user = Zend_Registry::get('User');
 		$permission = new DEEC_Permission($user);
+		$contactOwner = (int)(Zend_Registry::get('Client')['modules']['contacts'] ?? $user['clientid']);
+		if ((int)$contactid <= 0 || !$permission->hasPermission('contacts', 'contact', 'view')) return [];
+		$contacts = new Contacts_Model_DbTable_Contact();
+		if (count($contacts->fetchAll($contacts->select()->where('clientid = ?', $contactOwner)->where('contactid = ?', (int)$contactid)->where('deleted = ?', 0))) !== 1) return [];
 		$history = [];
 		foreach (['sales' => ['quote', 'salesorder', 'invoice', 'deliveryorder', 'reminder', 'creditnote'], 'purchases' => ['quoterequest', 'purchaseorder'], 'processes' => ['process']] as $module => $controllers) {
 			foreach ($controllers as $controller) {

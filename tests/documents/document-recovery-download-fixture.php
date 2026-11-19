@@ -5,6 +5,7 @@ $socket = getenv('DEWAWI_REVIEW_TEST_SOCKET') ?: '';
 $work = realpath(dirname($socket));
 if (PHP_SAPI !== 'cli-server' || !$work || !preg_match('~^/tmp/dewawi-document-recovery-db-[a-zA-Z0-9_]+$~D', $work) || $socket !== $work . '/mysql.sock') { http_response_code(404); exit; }
 $root = dirname(__DIR__, 2);
+if (preg_match('~^/(sales|purchases)/([a-z]+)/(?<pdfaction>download|preview)/id/([0-9]+)$~D', parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), $route)) $_GET = array_replace($_GET, ['module' => $route[1], 'controller' => $route[2], 'action' => $route['pdfaction'], 'id' => $route[4]]);
 define('BASE_PATH', $work . '/source');
 if (!is_dir($work . '/sessions')) mkdir($work . '/sessions', 0700);
 session_save_path($work . '/sessions');
@@ -21,7 +22,7 @@ spl_autoload_register(static function(string $class) use ($root): void {
 $reviewAction = ($_GET['action'] ?? '') === 'originalreview';
 $db = Zend_Db::factory('Pdo_Mysql', ['unix_socket' => $socket, 'host' => 'localhost', 'dbname' => 'recovery_fixture', 'username' => $reviewAction ? 'recovery_archiver' : 'recovery_reader', 'password' => 'fixture-only', 'charset' => 'utf8mb4']);
 Zend_Db_Table::setDefaultAdapter($db);
-$user = $db->fetchRow('SELECT * FROM user WHERE id = ? AND activated = 1 AND deleted = 0', [(int)($_SERVER['HTTP_X_REVIEW_TEST_USER'] ?? 0)]);
+$user = $db->fetchRow('SELECT * FROM user WHERE id = ? AND activated = 1 AND deleted = 0', [(int)($_SERVER['HTTP_X_REVIEW_TEST_USER'] ?? $_COOKIE['recovery_test_user'] ?? 0)]);
 if (!$user) { http_response_code(401); exit; }
 $client = $db->fetchRow('SELECT * FROM client WHERE id = ?', [$user['clientid']]);
 $client['modules'] = ['contacts' => (int)($client['parentid'] ?: $client['id']), 'sales' => (int)$client['id'], 'purchases' => (int)$client['id']];
