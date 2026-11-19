@@ -32,7 +32,7 @@ function toolbarContext(string $module, string $controller, string $action, arra
 	$front->getRouter()->addDefaultRoutes();
 }
 
-function toolbarPage(string $locale, string $module, string $action = 'index', string $layoutName = 'layout', array $rights = ['view', 'add', 'edit', 'delete'], bool $readonly = false, string $contextAction = 'index', bool $legacyStatistics = false, bool $selectionActions = false): array
+function toolbarPage(string $locale, string $module, string $action = 'index', string $layoutName = 'layout', array $rights = ['view', 'add', 'edit', 'delete'], bool $readonly = false, string $contextAction = 'index', bool $legacyStatistics = false, bool $selectionActions = false, bool $listActions = false): array
 {
 	global $root;
 	if (str_contains($module, '/')) [$module, $controller] = explode('/', $module, 2);
@@ -68,12 +68,28 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 		'user' => Zend_Registry::get('User') + ['name' => 'Fixture User'],
 		'categories' => [1 => ['id' => 1, 'parentid' => 0, 'title' => 'Fixture category']], 'tags' => [1 => 'Fixture tag'],
 	]);
-	$list = new DEEC_List([
+	$listConfig = [
 		'view' => $view, 'module' => $module, 'controller' => $controller, 'toolbar' => $toolbar,
 		'items' => [['id' => 17, 'title' => 'Fixture A'], ['id' => 18, 'title' => 'Fixture B']],
 		'columns' => [['name' => 'title', 'label' => 'TOOLBAR_NAME']], 'selectable' => true,
 		'listFooter' => in_array($action, ['index', 'select', 'search'], true), 'context' => ['action' => $action === 'search' ? $contextAction : $action],
-	]);
+	];
+	$list = new DEEC_List($listConfig);
+	if ($listActions) {
+		Zend_Controller_Action_HelperBroker::addPath($root . '/application/controllers/helpers', 'Application_Controller_Action_Helper');
+		Zend_Registry::set('Zend_Currency', new Zend_Currency('EUR', $locale));
+		$models = ['contacts' => 'Contacts_Model_List_Contacts', 'items' => 'Items_Model_List_Items', 'tasks' => 'Tasks_Model_List_Tasks'];
+		$adminModels = ['country' => 'Countries', 'uom' => 'Uoms', 'deliverytime' => 'Deliverytimes', 'manufacturer' => 'Manufacturers', 'warehouse' => 'Warehouses', 'shippingmethod' => 'Shippingmethods'];
+		$model = $models[$module] ?? 'Admin_Model_List_' . $adminModels[$controller];
+		unset($listConfig['columns']);
+		foreach ($listConfig['items'] as &$row) $row += ['name1' => $row['title'], 'name' => $row['title'], 'sku' => 'SKU-' . $row['id'], 'code' => 'FX', 'price' => '12.50', 'currency' => 'EUR'];
+		unset($row);
+		$list = new $model($listConfig);
+		$inlineClass = ucfirst($module) . '_Form_ToolbarInline';
+		$inline = new $inlineClass();
+		if ($readonly) $inline->setMode('readonly');
+		$list->setToolbarInline($inline);
+	}
 	if ($selectionActions && in_array($module, ['contacts', 'items'], true)) {
 		$inlineClass = ucfirst($module) . '_Form_ToolbarInline';
 		$inline = new $inlineClass();
@@ -130,7 +146,7 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 }
 
 if (($argv[1] ?? '') === 'render') {
-	echo json_encode(toolbarPage($argv[2] ?? 'de_DE', $argv[3] ?? 'contacts', $argv[4] ?? 'index', $argv[5] ?? 'layout', ['view', 'add', 'edit', 'delete'], ($argv[6] ?? '') === 'readonly', $argv[7] ?? 'index', ($argv[6] ?? '') === 'legacy-statistics', ($argv[8] ?? '') === 'selection-actions'), JSON_THROW_ON_ERROR);
+	echo json_encode(toolbarPage($argv[2] ?? 'de_DE', $argv[3] ?? 'contacts', $argv[4] ?? 'index', $argv[5] ?? 'layout', ['view', 'add', 'edit', 'delete'], ($argv[6] ?? '') === 'readonly', $argv[7] ?? 'index', ($argv[6] ?? '') === 'legacy-statistics', ($argv[8] ?? '') === 'selection-actions', ($argv[8] ?? '') === 'list-actions'), JSON_THROW_ON_ERROR);
 	exit;
 }
 
@@ -191,6 +207,6 @@ foreach (['import', 'export', 'map'] as $action) foreach (['contacts' => 'contac
 	foreach ((new $class())->getElements() as $element) check(!isset($element['iconFormat']), 'Excluded action migrated');
 }
 toolbarContext('contacts', 'contact', 'index');
-foreach (['Application_Form_Toolbar', 'Contacts_Form_ToolbarInline', 'Items_Form_ToolbarInline'] as $class) foreach ((new $class())->getElements() as $element) check(!isset($element['iconFormat']), 'Dashboard or row toolbar was migrated');
+foreach (['Application_Form_Toolbar', 'Contacts_Form_ToolbarInline', 'Items_Form_ToolbarInline'] as $class) foreach ((new $class())->getElements() as $name => $element) check(isset($element['iconFormat']) === ($class === 'Contacts_Form_ToolbarInline' && in_array($name, ['view', 'edit', 'copy'], true)), 'Dashboard or row toolbar escaped its explicit scope');
 echo $toolbarBaseline;
 echo 'PASS: ' . $checks . " shared toolbar, layout, SVG, translation, permissions, readonly and exclusion checks\n";

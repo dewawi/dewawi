@@ -31,5 +31,15 @@ class Tasks_Form_ToolbarInline extends DEEC_Form
 			'attribs' => ['class' => 'delete nolabel'],
 			'wrap' => false,
 		]);
+
+		$request = $this->getCurrentRequest();
+		if ($request && get_class($this) === self::class && $request->getModuleName() === 'tasks' && $request->getControllerName() === 'task'
+			&& in_array($request->getActionName(), ['index', 'search'], true) && $request->getParam('context_action', 'index') === 'index') {
+			foreach (['view' => 'TOOLBAR_VIEW', 'edit' => 'TOOLBAR_EDIT', 'copy' => 'TOOLBAR_COPY'] as $name => $label) {
+				$attribs = $this->getElement($name)['attribs'];
+				$attribs['title'] = $this->translate($label);
+				$this->setElementData($name, ['label' => $label, 'icon' => $name, 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm', 'attribs' => $attribs]);
+			}
+		}
 	}
 }

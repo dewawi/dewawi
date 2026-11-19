@@ -1,5 +1,7 @@
 # B9 – Auswahl- und Apply-Buttons
 
+Fortsetzung: [B10 – gewöhnliche Tabellen- und Listenaktionen](list-buttons.md) migriert begrenzte View/Edit/Copy-Zeilenfelder und dokumentiert den verbleibenden Lösch-/Spezialbestand. Die folgenden Angaben beschreiben den historischen B9-Stand.
+
 Stand: 18.11.2026. Lokale Grundlage: `AGENTS.md`, [B1](buttons-icons-analysis.md), [B2](buttons-foundation.md), [B3](button-icons.md), [B7](remaining-toolbars.md), [B8-Audit](button-quality-audit.md) und die tatsächlichen B2–B8-Commits bis `30db90b2`. Ausgangs-HEAD ist der unabhängige Dokumentcommit `0be82821`; Arbeitsverzeichnis zu Beginn sauber. Keine fremde Änderung oder Historie verändert.
 
 ## Entscheidung und Umfang

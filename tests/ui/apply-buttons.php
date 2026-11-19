@@ -98,6 +98,10 @@ foreach (['de_DE', 'en_US'] as $locale) foreach (['contacts' => 'contact', 'item
 		$enabled = $action === 'select' || ($action === 'search' && $context === 'select');
 		foreach ($legacy->getElements() as $name => $old) {
 			$expected = $name === 'apply' && $enabled ? array_replace($old, ['label' => 'TOOLBAR_APPLY', 'icon' => 'apply', 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm']) : $old;
+			if ($action === 'search' && $context === 'index' && in_array($name, $module === 'contacts' ? ['view', 'edit', 'copy'] : ['edit', 'copy'], true)) {
+				$label = 'TOOLBAR_' . strtoupper($name);
+				$expected = array_replace($old, ['label' => $label, 'icon' => $name, 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm', 'attribs' => $old['attribs'] + ['title' => $inline->translate($label)]]);
+			}
 			check($inline->getElement($name) === $expected, 'Inline opt-in changed another action/context');
 		}
 		$rowAttributes = ['data-id' => '18', 'data-module' => $module, 'data-controller' => $controller, 'data-action' => 'apply', 'value' => '0'];

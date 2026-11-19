@@ -76,7 +76,7 @@ foreach (['get', 'add', 'copy', 'save', 'export'] as $action) {
 	foreach ((new Tasks_Form_Toolbar())->getElements() as $element) check(!isset($element['iconFormat']), 'Special Task action/follow-up context migrated');
 }
 toolbarContext('tasks', 'task', 'index');
-foreach (['TasksToolbarSubclassFixture', 'Tasks_Form_ToolbarInline', 'Tasks_Form_ToolbarPositions', 'Tasks_Form_Task'] as $class) foreach ((new $class())->getElements() as $element) check(!isset($element['iconFormat']), 'Task subclass, row, position or form action migrated');
+foreach (['TasksToolbarSubclassFixture', 'Tasks_Form_ToolbarInline', 'Tasks_Form_ToolbarPositions', 'Tasks_Form_Task'] as $class) foreach ((new $class())->getElements() as $name => $element) check(isset($element['iconFormat']) === ($class === 'Tasks_Form_ToolbarInline' && in_array($name, ['view', 'edit', 'copy'], true)), 'Task subclass, row, position or form escaped its explicit scope');
 
 echo $tasksBaseline;
 echo 'PASS: ' . $checks . " Tasks toolbar, filter/status defaults, legacy, layout, AJAX and permission compatibility checks\n";

@@ -57,7 +57,7 @@ foreach (remainingContexts() as [$module, $controller]) foreach (['index', 'sear
 			check($new === $expected, 'Opt-in changed behavioral configuration');
 		}
 	}
-	foreach ((new Admin_Form_ToolbarInline())->getElements() as $element) check(!isset($element['iconFormat']), 'Admin table actions migrated');
+	foreach ((new Admin_Form_ToolbarInline())->getElements() as $name => $element) check(isset($element['iconFormat']) === ($module === 'admin' && in_array($controller, $adminControllers, true) && in_array($action, ['index', 'search'], true) && $name === 'copy'), 'Admin table actions escaped their explicit scope');
 }
 check($changedContexts === 36, 'Unexpected number of enabled route-action contexts');
 

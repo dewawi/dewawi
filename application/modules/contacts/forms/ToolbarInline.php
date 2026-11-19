@@ -51,5 +51,14 @@ class Contacts_Form_ToolbarInline extends DEEC_Form
 			&& ($request->getActionName() === 'select' || ($request->getActionName() === 'search' && $request->getParam('context_action') === 'select'))) {
 			$this->setElementData('apply', ['label' => 'TOOLBAR_APPLY', 'icon' => 'apply', 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm']);
 		}
+
+		if ($request && get_class($this) === self::class && $request->getModuleName() === 'contacts' && $request->getControllerName() === 'contact'
+			&& in_array($request->getActionName(), ['index', 'search'], true) && $request->getParam('context_action', 'index') === 'index') {
+			foreach (['view' => 'TOOLBAR_VIEW', 'edit' => 'TOOLBAR_EDIT', 'copy' => 'TOOLBAR_COPY'] as $name => $label) {
+				$attribs = $this->getElement($name)['attribs'];
+				$attribs['title'] = $this->translate($label);
+				$this->setElementData($name, ['label' => $label, 'icon' => $name, 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm', 'attribs' => $attribs]);
+			}
+		}
 	}
 }
