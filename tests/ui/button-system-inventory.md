@@ -2,6 +2,8 @@
 
 Gesamtprüfung: [B13 – Integration und Freigabematrix](button-release-audit.md) bestätigt die folgenden Bestandszahlen unverändert und ergänzt Firefox-/320-px-Prüfungen sowie konkrete offene Freigabegates. Keine zusätzliche Migration.
 
+Korrektur B14: [SVG-Symbolversorgung vollständiger ERP-Seiten](svg-symbol-integration.md). Beide internen Vollseitenlayouts liefern den passiven Katalog jetzt immer einmal; die Button-Opt-ins und alle folgenden Controlzahlen bleiben unverändert. Neuer Originalcontroller-/HTTP-/Pixelnachweis und konkrete Legacy-HTML-Mengen im B14-Bericht.
+
 Stand: 19.11.2026. B11-Basis `f337ba70` einschließlich B2–B10 (`96549509`), B11-Commit `83a51db1`. B12 ergänzt den [gemeinsamen Filterchip-/Disclosureblock](filter-buttons.md); der unabhängige Dokumentcommit `b32241c1` ist keine Buttonmigration. Grundlage: `AGENTS.md` und [B1](buttons-icons-analysis.md), [B2](buttons-foundation.md), [B3](button-icons.md), [B4](inquiry-buttons.md), [B5](toolbar-buttons.md), [B6](tasks-toolbar.md), [B7](remaining-toolbars.md), [B8](button-quality-audit.md), [B9](apply-buttons.md), [B10](list-buttons.md), [B11](mobile-table-actions.md).
 
 ## Zählmethoden und überprüfbare Ergebnisse
@@ -75,7 +77,7 @@ Keine Prozentangabe aus 45/243, 84/147 oder sichtbaren Fixtures: Diese Zahlen ha
 | `admin/forms/ToolbarInline.php` | copy | Dieselben sechs Controller, Index/Search-Index. Save/View/Edit/Delete/Sort nicht migriert. |
 | `statistics/forms/Toolbar.php` | filter, reset | Nur customer/quote/turnover, Index/Search. Export und reporting unberührt. |
 
-Die fünf Standardaktionen sind Index/Search/Select/Edit/View. Die Layouts geben nur für die bestehenden begrenzten internen Kontexte einmal lokale Symbole aus; iframes besitzen ihren eigenen Block, AJAXfragmente keinen. Keine neue Aktivierung in B11.
+Die fünf Standardaktionen sind Index/Search/Select/Edit/View. Seit B14 geben die beiden internen Vollseitenlayouts einmal lokale Symbole unabhängig vom View-Routenkontext aus; iframes besitzen ihren eigenen Block, AJAXfragmente keinen. Diese Ressourcenverfügbarkeit aktiviert keine zusätzlichen Controls; die genannten Formular-/Requestgrenzen bleiben bestehen. B11 hatte keine neue Aktivierung vorgenommen.
 
 ### B12: ein gemeinsamer aktiver Filterchipweg
 

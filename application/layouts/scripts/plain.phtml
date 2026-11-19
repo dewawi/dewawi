@@ -52,17 +52,7 @@ $this->language = str_replace('_', '-', $this->language);
 	<?php echo $this->headScript(); ?>
 </head>
 <body class="dw-popup-page">
-	<?php
-	if (($this->module === 'contacts' && $this->controller === 'inquiry')
-		|| (in_array($this->action, ['index', 'search', 'select', 'edit', 'view'], true)
-			&& (($this->module === 'contacts' && $this->controller === 'contact')
-				|| ($this->module === 'items' && $this->controller === 'item')
-				|| ($this->module === 'tasks' && $this->controller === 'task')
-				|| ($this->module === 'admin' && in_array($this->controller, ['country', 'uom', 'deliverytime', 'manufacturer', 'warehouse', 'shippingmethod'], true))))
-		|| ($this->module === 'statistics' && in_array($this->controller, ['customer', 'quote', 'turnover'], true) && in_array($this->action, ['index', 'search'], true))) {
-		echo (new DEEC_Form())->renderButtonSymbols();
-	}
-	?>
+	<?php echo (new DEEC_Form())->renderButtonSymbols(); ?>
 	<div class="dw-popup-shell dw-popup-shell--<?php echo $this->escape($this->module); ?> dw-popup-shell--<?php echo $this->escape($this->controller); ?> dw-popup-shell--<?php echo $this->escape($this->action); ?>">
 		<header class="dw-popup-header">
 			<div class="dw-popup-header__title">

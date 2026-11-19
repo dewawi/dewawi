@@ -163,7 +163,7 @@ foreach (['de_DE', 'en_US'] as $locale) foreach (['layout', 'plain'] as $layoutN
 		check($dom->query('//button[@name="edit" or @name="save"]')->length === (in_array('edit', $rights, true) ? ($action === 'index' ? 2 : 1) : 0), 'Rendering bypassed edit permission');
 	}
 	$other = inquiryButtonDom(inquiryButtonPage($locale, 'view', $layoutName, ['view', 'edit'], false, 'contactperson')['html']);
-	check($other->query('//symbol | //svg[@class="dw-icon-symbols"]')->length === 0, 'Symbols leaked into another controller layout');
+	check($other->query('//symbol')->length === 14 && $other->query('//svg[@class="dw-icon-symbols"]')->length === 1 && $other->query('//button[contains(@class,"dw-btn--control")]')->length === 0, 'Shared definitions activated controls in another controller layout');
 }
 foreach (['de_DE', 'en_US'] as $locale) {
 	$ajax = inquiryButtonPage($locale, 'index', 'layout', ['view', 'edit'], false, 'inquiry', true);

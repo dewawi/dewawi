@@ -251,7 +251,7 @@ try:
                     driver.emulate_viewport(width, 1100)
                     driver.navigate(f'http://127.0.0.1:{server.server_port}/fixture/legacy/{locale}/{controller}')
                     driver.wait('return !!window.calls')
-                    check(driver.execute('var b=document.querySelector("button[name=copy]");return !document.querySelector(".dw-icon-symbols,.dw-btn--control")&&!!b&&getComputedStyle(b).backgroundImage.includes("/images/copy.png")&&fixtureErrors.length===0'), f'{locale}/{controller}/{width}: excluded toolbar migrated or broken')
+                    check(driver.execute('var b=document.querySelector("button[name=copy]");return document.querySelectorAll(".dw-icon-symbols").length===1&&!document.querySelector(".dw-btn--control")&&!!b&&getComputedStyle(b).backgroundImage.includes("/images/copy.png")&&fixtureErrors.length===0'), f'{locale}/{controller}/{width}: excluded toolbar migrated or broken')
     print(f'PASS: {checks} shared toolbar browser assertions')
 finally:
     if driver:

@@ -63,17 +63,7 @@ $currentDate = $date->get(Zend_Date::WEEKDAY) . ', '
 	<?php echo $this->headScript(); ?>
 </head>
 <body>
-	<?php
-	if (($this->module === 'contacts' && $this->controller === 'inquiry')
-		|| (in_array($this->action, ['index', 'search', 'select', 'edit', 'view'], true)
-			&& (($this->module === 'contacts' && $this->controller === 'contact')
-				|| ($this->module === 'items' && $this->controller === 'item')
-				|| ($this->module === 'tasks' && $this->controller === 'task')
-				|| ($this->module === 'admin' && in_array($this->controller, ['country', 'uom', 'deliverytime', 'manufacturer', 'warehouse', 'shippingmethod'], true))))
-		|| ($this->module === 'statistics' && in_array($this->controller, ['customer', 'quote', 'turnover'], true) && in_array($this->action, ['index', 'search'], true))) {
-		echo (new DEEC_Form())->renderButtonSymbols();
-	}
-	?>
+	<?php echo (new DEEC_Form())->renderButtonSymbols(); ?>
 
 <div class="dw-app-shell">
 	<div class="dw-app-shell__inner <?php echo $this->module; ?> <?php echo $this->action; ?>">
