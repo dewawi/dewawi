@@ -113,6 +113,89 @@ try {
 	recoveryTestCheck($largeCount === 50001 && memory_get_usage(true) - $memory < 5242880, 'Large availability JSONL was not streamed with bounded memory');
 	$db = recoveryBoot(migrationConfig($work . '/database.ini', 'production') + ['unix_socket' => $socket], $base, 7, 42);
 	recoveryTestCheck((new Contacts_Model_DbTable_Emailattachment())->getContactDocumentFiles(8100) === [] && (new Contacts_Model_Get())->history(999) === [], 'Ambiguous contacts exposed an unrelated issued-document association');
+	$localHttpLog = file_get_contents($work . '/availability-http.log');
+	$localOptions = ['verification' => 'local', 'http-base' => null, 'cookie-file' => null];
+	$localPreview = availabilityTestCli($localOptions);
+	$localApply = $localOptions + ['action' => 'apply', 'plan' => $localPreview['report'], 'confirm-plan' => $localPreview['report_sha256']];
+	$localLimited = availabilityTestCli($localApply + ['limit' => 3], 2);
+	recoveryTestCheck($localLimited['coverage']['local_verified'] === 3 && $localLimited['coverage']['pending'] === 7 && $localLimited['coverage']['http_verified'] === 0, 'Cookie-free local limit or verification counters differ');
+	$localComplete = availabilityTestCli($localApply + ['resume' => $localLimited['report']]);
+	recoveryTestCheck($localComplete['coverage']['every_scoped_document_local_verified'] && $localComplete['coverage']['local_verified'] === 10 && $localComplete['coverage']['local_verifications_reused'] === 3 && !$localComplete['coverage']['every_scoped_document_http_verified'], 'Existing K4 copies were not locally verified/resumed independently of HTTP');
+	$localRepeat = availabilityTestCli($localApply + ['resume' => $localComplete['report'], 'limit' => 1]);
+	recoveryTestCheck($localRepeat['coverage']['local_verifications_reused'] === 10 && $localRepeat['coverage']['local_verified_this_run'] === 0, 'Completed local verification could not resume');
+	$localRecords = []; foreach (availabilityReportRows($localComplete['report']) as $row) if ($row['kind'] === 'document') $localRecords[] = $row;
+	foreach ($localRecords as $row) recoveryTestCheck($row['local_verified'] && !$row['http_verified'] && isset($row['local_checked_at']) && !isset($row['http']) && !isset($row['http_checked_at']), 'Local result was reported as an HTTP test');
+	$localPartialLines = file($localLimited['report']); array_pop($localPartialLines); reviewWrite($availabilityPrivate . '/local-interrupted.jsonl', implode('', $localPartialLines) . '{"kind":"document"');
+	$localPartial = availabilityTestCli($localApply + ['resume' => $availabilityPrivate . '/local-interrupted.jsonl']);
+	recoveryTestCheck($localPartial['coverage']['local_verified'] === 10, 'Interrupted local report could not resume');
+	availabilityTestCli(array_replace($localApply, ['confirm-plan' => str_repeat('0', 64)]), 1);
+	availabilityTestCli(array_replace($localApply, ['web-user' => 'root']), 1);
+	availabilityTestCli(array_replace($localApply, ['verification' => 'invalid']), 1);
+	availabilityTestCli(array_replace($localApply, ['client' => 8]), 1);
+	$pdo->exec('UPDATE user SET admin = 0 WHERE id = 42'); availabilityTestCli($localApply, 1); $pdo->exec('UPDATE user SET admin = 1 WHERE id = 42');
+	$localNegativePreview = availabilityTestCli($localOptions + ['scope' => $availabilityPrivate . '/negative.json'], 2);
+	$localNegative = availabilityTestCli($localOptions + ['action' => 'apply', 'plan' => $localNegativePreview['report'], 'confirm-plan' => $localNegativePreview['report_sha256']], 2);
+	recoveryTestCheck($localNegative['coverage']['blocked'] === 2 && $localNegative['coverage']['local_verified'] === 10 && $localNegative['coverage']['http_verified'] === 0, 'Local apply admitted missing or foreign tenant documents');
+
+	// Another locale has no copies yet: exercise generation, missing write rights and mixed resume.
+	$localEnglish = availabilityTestCli($localOptions + ['locale' => 'en_US']);
+	$localEnglishApply = $localOptions + ['action' => 'apply', 'locale' => 'en_US', 'plan' => $localEnglish['report'], 'confirm-plan' => $localEnglish['report_sha256']];
+	$englishRows = []; foreach (availabilityReportRows($localEnglish['report']) as $row) if ($row['kind'] === 'document') $englishRows[reviewKey($row['identity'])] = $row;
+	$englishDirectory = $base . '/files/documents/.viewing-copies/7/sales/quote/8001/' . $englishRows['sales/quote/8001']['snapshot_sha256'] . '/en_US';
+	mkdir($englishDirectory, 0700); chmod($englishDirectory, 0500);
+	$writeDenied = availabilityTestCli($localEnglishApply + ['limit' => 1], 2);
+	recoveryTestCheck($writeDenied['coverage']['blocked'] === 1 && $writeDenied['coverage']['http_verified'] === 0, 'Local backfill ignored missing directory write permission'); chmod($englishDirectory, 0700);
+	$englishLimited = availabilityTestCli($localEnglishApply + ['limit' => 3], 2);
+	recoveryTestCheck($englishLimited['coverage']['local_verified'] === 3 && $englishLimited['coverage']['pending'] === 7, 'Local generation limit differs');
+	$englishComplete = availabilityTestCli($localEnglishApply + ['resume' => $englishLimited['report']]);
+	recoveryTestCheck($englishComplete['coverage']['every_scoped_document_local_verified'] && $englishComplete['coverage']['local_verified'] === 10 && $englishComplete['coverage']['http_verified'] === 0, 'New local copies were not completely verified');
+	foreach ($availabilityScope as $identity) if ($identity['id'] !== 1) {
+		$englishCopies = glob($base . '/files/documents/.viewing-copies/7/' . reviewKey($identity) . '/*/en_US/copy.json');
+		recoveryTestCheck(count($englishCopies) === 1, 'Local backfill did not create one receipt per new copy');
+		$englishReceipt = recoveryJsonFile($englishCopies[0]); $englishPath = dirname($englishCopies[0]) . '/' . $englishReceipt['sha256'] . '.pdf';
+		recoveryTestCheck(hash_file('sha256', $englishPath) === $englishReceipt['sha256'] && filesize($englishPath) === $englishReceipt['size'] && fileowner($englishPath) === posix_geteuid() && (fileperms($englishPath) & 0777) === 0600 && (fileperms(dirname($englishPath)) & 0777) === 0700, 'Local copy PDF/receipt/private permissions differ');
+	}
+	$englishReceiptPath = glob($englishDirectory . '/copy.json')[0]; $englishReceipt = recoveryJsonFile($englishReceiptPath); $englishPath = $englishDirectory . '/' . $englishReceipt['sha256'] . '.pdf';
+	$englishBytes = file_get_contents($englishPath); $englishReceiptBytes = file_get_contents($englishReceiptPath);
+	file_put_contents($englishPath, 'Damaged local PDF');
+	$localDamaged = availabilityTestCli($localEnglishApply + ['resume' => $englishComplete['report']], 2);
+	recoveryTestCheck($localDamaged['coverage']['blocked'] === 1 && $localDamaged['coverage']['local_verified'] === 9 && file_get_contents($englishPath) === 'Damaged local PDF', 'Local resume accepted or repaired a corrupt PDF'); file_put_contents($englishPath, $englishBytes);
+	chmod($englishPath, 0000); $readDenied = availabilityTestCli($localEnglishApply, 2);
+	recoveryTestCheck($readDenied['coverage']['blocked'] === 1 && $readDenied['coverage']['local_verified'] === 9, 'Local verification ignored unreadable PDF'); chmod($englishPath, 0600);
+	file_put_contents($englishReceiptPath, reviewJson(array_replace($englishReceipt, ['snapshot_sha256' => str_repeat('0', 64)])));
+	$wrongReceipt = availabilityTestCli($localEnglishApply, 2);
+	recoveryTestCheck($wrongReceipt['coverage']['blocked'] === 1 && $wrongReceipt['coverage']['local_verified'] === 9, 'Local verification ignored a stale receipt'); file_put_contents($englishReceiptPath, $englishReceiptBytes);
+	$pdo->exec("UPDATE quote SET notes = 'Changed local plan snapshot' WHERE id = 8001");
+	$localStale = availabilityTestCli($localApply, 2); recoveryTestCheck($localStale['coverage']['blocked'] === 1, 'Local apply ignored a changed approved snapshot');
+	$pdo->prepare('UPDATE quote SET notes = ? WHERE id = 8001')->execute([$beforeDb['quote'][array_search(8001, array_column($beforeDb['quote'], 'id'))]['notes']]);
+	// A local check must never touch the HTTP fixture, even when HTTP options are supplied.
+	$ignoredHttp = availabilityTestCli(array_replace($localApply, ['http-base' => 'http://' . $availabilityAddress, 'cookie-file' => $availabilityPrivate . '/absent-cookie']));
+	recoveryTestCheck($ignoredHttp['coverage']['local_verified'] === 10 && $ignoredHttp['coverage']['http_verified'] === 0 && file_get_contents($work . '/availability-http.log') === $localHttpLog, 'Local mode read a cookie or sent an HTTP request');
+	$localCopiesBefore = []; foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base . '/files/documents/.viewing-copies/7', FilesystemIterator::SKIP_DOTS)) as $file) if ($file->isFile()) $localCopiesBefore[$file->getPathname()] = [hash_file('sha256', $file->getPathname()), $file->getMTime()];
+	availabilityTestCli($localApply); availabilityTestCli($localEnglishApply);
+	foreach ($localCopiesBefore as $path => $state) recoveryTestCheck([hash_file('sha256', $path), filemtime($path)] === $state, 'Repeated local verification rewrote an existing copy or receipt');
+
+	// Existing HTTP plans remain usable locally; verification evidence cannot cross resume modes.
+	$localFromHttp = availabilityTestCli(array_replace($apply, $localOptions));
+	recoveryTestCheck($localFromHttp['coverage']['local_verified'] === 10 && $localFromHttp['coverage']['http_verified'] === 0, 'Reviewed HTTP plan could not authorize cookie-free local apply');
+	availabilityTestCli(array_replace($apply, $localOptions, ['resume' => $applied[0]['report']]), 1);
+	availabilityTestCli($apply + ['resume' => $localFromHttp['report']], 1);
+	availabilityTestCli(array_replace($apply, ['cookie-file' => null]), 1);
+	availabilityTestCli(array_replace($localApply, ['verification' => 'http', 'http-base' => 'http://' . $availabilityAddress, 'cookie-file' => $availabilityPrivate . '/cookie']), 1);
+	$legacyPlan = ''; foreach (availabilityReportRows($preview['report']) as $row) { if ($row['kind'] === 'header') unset($row['verification']); $legacyPlan .= json_encode($row, JSON_UNESCAPED_SLASHES) . "\n"; }
+	reviewWrite($availabilityPrivate . '/legacy-preview.jsonl', $legacyPlan);
+	$legacyApply = array_replace($apply, ['plan' => $availabilityPrivate . '/legacy-preview.jsonl', 'confirm-plan' => hash_file('sha256', $availabilityPrivate . '/legacy-preview.jsonl')]);
+	$legacyLocal = availabilityTestCli(array_replace($legacyApply, $localOptions));
+	recoveryTestCheck($legacyLocal['coverage']['local_verified'] === 10 && $legacyLocal['coverage']['http_verified'] === 0, 'Pre-option HTTP preview was rejected by local apply');
+	$legacyHttp = availabilityTestCli($legacyApply);
+	$legacyResume = ''; foreach (availabilityReportRows($legacyHttp['report']) as $row) { if ($row['kind'] === 'header') unset($row['verification']); $legacyResume .= json_encode($row, JSON_UNESCAPED_SLASHES) . "\n"; }
+	reviewWrite($availabilityPrivate . '/legacy-apply.jsonl', $legacyResume);
+	$legacyResumed = availabilityTestCli($legacyApply + ['resume' => $availabilityPrivate . '/legacy-apply.jsonl', 'limit' => 1]);
+	recoveryTestCheck($legacyResumed['coverage']['http_verifications_reused'] === 10 && $legacyResumed['coverage']['local_verified'] === 0, 'Pre-option HTTP resume compatibility changed');
+	reviewWrite($availabilityPrivate . '/empty-scope.json', reviewJson(['documents' => []]));
+	$emptyPreview = availabilityTestCli($localOptions + ['scope' => $availabilityPrivate . '/empty-scope.json']);
+	$emptyApply = availabilityTestCli($localOptions + ['action' => 'apply', 'plan' => $emptyPreview['report'], 'confirm-plan' => $emptyPreview['report_sha256']]);
+	recoveryTestCheck(!$emptyApply['coverage']['every_scoped_document_http_verified'] && $emptyApply['coverage']['http_verified'] === 0, 'Empty local scope was reported as successful HTTP verification');
 	foreach ($beforeDb as $table => $expectedRows) recoveryTestCheck($pdo->query('SELECT * FROM `' . $table . '` ORDER BY id')->fetchAll(PDO::FETCH_ASSOC) === $expectedRows, 'Availability backfill mutated business/archive/email rows: ' . $table);
 	foreach ($beforeFiles as $path => $state) recoveryTestCheck([hash_file('sha256', $path), filemtime($path)] === $state, 'Availability changed an original/historical source file');
 } finally { proc_terminate($availabilityServer); proc_close($availabilityServer); fclose($availabilityLog); }
