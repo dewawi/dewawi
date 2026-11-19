@@ -1,0 +1,405 @@
+{
+  "scope": "isolated existing fixtures only; no production configuration",
+  "commands": [
+    {
+      "command": [
+        "python3",
+        "-B",
+        "tests/translations/validate.py",
+        "--stage",
+        "T2B",
+        "--browser"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stderr": "",
+      "validation": {
+        "stage": "T2B",
+        "source_sha256": "e703c2380fb7993bbd809fdf9dcb810a23ba17b3db3961db9d8c176eac120819",
+        "baseline_summary": {
+          "locales": 2,
+          "application_modules": 13,
+          "catalogue_modules_including_default": 17,
+          "catalogue_files": 114,
+          "entries": 6206,
+          "unique_keys_union": 3607,
+          "by_locale": {
+            "de_DE": {
+              "files": 66,
+              "entries": 3526,
+              "unique_keys": 3513,
+              "catalogue_modules": 16
+            },
+            "en_US": {
+              "files": 48,
+              "entries": 2680,
+              "unique_keys": 2664,
+              "catalogue_modules": 14
+            }
+          },
+          "shared_unique_keys": 2570,
+          "missing_unique_keys_en_US": 943,
+          "missing_unique_keys_de_DE": 94,
+          "missing_files_en_US": 22,
+          "missing_files_de_DE": 4,
+          "literal_calls": 1443,
+          "literal_key_calls": 1429,
+          "unique_literal_keys": 830,
+          "dynamic_calls": 194,
+          "usage_classifications": {
+            "unresolved": 914,
+            "literal_call_found": 809,
+            "indirect_literal_candidate": 1781,
+            "possibly_dynamic": 103
+          },
+          "safely_unused": 0,
+          "hardcoded_candidates": 256,
+          "issue_counts": {
+            "catalogue_errors": 0,
+            "confirmed_spelling_errors": 17,
+            "duplicate_keys_in_file": 16,
+            "empty_keys": 0,
+            "empty_values": 0,
+            "german_in_english_candidates": 28,
+            "identical_locale_values": 318,
+            "identity_values": 0,
+            "invalid_utf8": 0,
+            "mojibake_candidates": 0,
+            "placeholder_mismatches": 0,
+            "placeholder_review": 0,
+            "source_scan_errors": 0,
+            "template_placeholder_mismatches": 0,
+            "utf8_bom": 0
+          }
+        },
+        "current_summary": {
+          "locales": 2,
+          "application_modules": 13,
+          "catalogue_modules_including_default": 17,
+          "catalogue_files": 140,
+          "entries": 7732,
+          "unique_keys_union": 3740,
+          "by_locale": {
+            "de_DE": {
+              "files": 70,
+              "entries": 3866,
+              "unique_keys": 3740,
+              "catalogue_modules": 17
+            },
+            "en_US": {
+              "files": 70,
+              "entries": 3866,
+              "unique_keys": 3740,
+              "catalogue_modules": 17
+            }
+          },
+          "shared_unique_keys": 3740,
+          "missing_unique_keys_en_US": 0,
+          "missing_unique_keys_de_DE": 0,
+          "missing_files_en_US": 0,
+          "missing_files_de_DE": 0,
+          "literal_calls": 1525,
+          "literal_key_calls": 1523,
+          "unique_literal_keys": 907,
+          "dynamic_calls": 197,
+          "usage_classifications": {
+            "unresolved": 912,
+            "literal_call_found": 906,
+            "indirect_literal_candidate": 1819,
+            "possibly_dynamic": 103
+          },
+          "safely_unused": 0,
+          "hardcoded_candidates": 204,
+          "issue_counts": {
+            "catalogue_errors": 0,
+            "confirmed_spelling_errors": 0,
+            "duplicate_keys_in_file": 0,
+            "empty_keys": 0,
+            "empty_values": 0,
+            "german_in_english_candidates": 0,
+            "identical_locale_values": 301,
+            "identity_values": 0,
+            "invalid_utf8": 0,
+            "mojibake_candidates": 0,
+            "placeholder_mismatches": 0,
+            "placeholder_review": 0,
+            "source_scan_errors": 0,
+            "template_placeholder_mismatches": 0,
+            "utf8_bom": 0
+          }
+        },
+        "commands": [
+          {
+            "command": "php -l (catalogues, affected PHP and audit fixtures)",
+            "files": 166,
+            "status": "passed",
+            "errors": []
+          },
+          {
+            "command": "python3 -B tests/translations/audit-test.py",
+            "exit_code": 0,
+            "status": "passed",
+            "stdout": "",
+            "stderr": "...................\n\nOK"
+          },
+          {
+            "command": "php tests/translations/runtime.php",
+            "exit_code": 0,
+            "status": "passed",
+            "checks": 157
+          },
+          {
+            "command": "php tests/security/quote-email.php",
+            "exit_code": 0,
+            "status": "passed",
+            "stdout": "PASS: 364 quote email permission, recipient, resend and tenant-sharing checks\n",
+            "stderr": "Email transport did not confirm SMTP acceptance: Fixture SMTP rejection\nEmail transport did not confirm SMTP acceptance: Fixture AJAX SMTP rejection"
+          },
+          {
+            "command": "php tests/security/shop-email-content.php",
+            "exit_code": 0,
+            "status": "passed",
+            "stdout": "OK (75 checks)\n",
+            "stderr": ""
+          },
+          {
+            "command": "php tests/security/contact-data.php",
+            "exit_code": 0,
+            "status": "passed",
+            "stdout": "PASS: 39 tenant-safe contact data cases\n",
+            "stderr": ""
+          },
+          {
+            "command": "php tests/security/form-input-validation.php",
+            "exit_code": 0,
+            "status": "passed",
+            "stdout": "PASS: 20 full-form, AJAX, decimal, integer and date validation cases\n",
+            "stderr": ""
+          },
+          {
+            "command": "php tests/security/user-profile.php",
+            "exit_code": 0,
+            "status": "passed",
+            "stdout": "PASS: 126 user profile and password cases\n",
+            "stderr": ""
+          },
+          {
+            "command": "php tests/ui/buttons.php",
+            "exit_code": 0,
+            "status": "passed",
+            "stdout": "PASS: 165 button presentation, pilot, legacy, translation and permission checks\n",
+            "stderr": ""
+          },
+          {
+            "command": "php tests/ui/toolbar-buttons.php",
+            "exit_code": 0,
+            "status": "passed",
+            "stdout": "PASS: 165 button presentation, pilot, legacy, translation and permission checks\nPASS: 2259 shared toolbar, layout, SVG, translation, permissions, readonly and exclusion checks\n",
+            "stderr": ""
+          },
+          {
+            "command": "php tests/sales/quote-monitoring.php",
+            "exit_code": 0,
+            "status": "passed",
+            "stdout": "PASS: 293 quote monitoring, defaults, customer actions, due dates and tenant cases\n",
+            "stderr": ""
+          },
+          {
+            "command": "php tests/documents/pdf.php",
+            "exit_code": 0,
+            "status": "passed",
+            "stdout": "PASS: 208 PDF checks; canonical archive and historical originals preserved, tenant isolation retained\n",
+            "stderr": ""
+          },
+          {
+            "command": "php tests/documents/pdf-totals.php",
+            "exit_code": 0,
+            "status": "passed",
+            "stdout": "PASS: 244 PDF checks including mixed-rate total boxes, exemption and balance\n",
+            "stderr": ""
+          },
+          {
+            "command": "php tests/security/notifications.php",
+            "exit_code": 255,
+            "status": "baseline_failure",
+            "stdout": "PASS: 370 notification rendering, flash, translation and email history checks\n",
+            "stderr": "PHP Fatal error:  Uncaught Error: Class \"Sales_Service_DocumentRevisionService\" not found in /var/www/dewawi/application/modules/sales/views/helpers/Finish.php:12\nStack trace:\n#0 /var/www/dewawi/tests/security/notifications.php(67): Zend_View_Helper_Finish->finish()\n#1 {main}\n  thrown in /var/www/dewawi/application/modules/sales/views/helpers/Finish.php on line 12\nPHP Fatal error:  Uncaught RuntimeException: Document helper fixture failed: sales in /var/www/dewawi/tests/security/notifications.php:211\nStack trace:\n#0 {main}\n  thrown in /var/www/dewawi/tests/security/notifications.php on line 211"
+          },
+          {
+            "command": "php tests/contacts/history-states.php",
+            "exit_code": 255,
+            "status": "baseline_failure",
+            "stdout": "",
+            "stderr": "PHP Warning:  Undefined array key \"states\" in /var/www/dewawi/tests/contacts/history-states.php on line 57\nPHP Fatal error:  Uncaught RuntimeException: Missing history status: 100 in /var/www/dewawi/tests/contacts/history-states.php:23\nStack trace:\n#0 /var/www/dewawi/tests/contacts/history-states.php(69): check()\n#1 {main}\n  thrown in /var/www/dewawi/tests/contacts/history-states.php on line 23"
+          },
+          {
+            "command": "python3 -B tests/translations/browser.py",
+            "exit_code": 0,
+            "status": "passed",
+            "stdout": "{\n  \"status\": \"passed\",\n  \"checks\": 13,\n  \"locales\": [\n    \"de_DE\",\n    \"en_US\"\n  ]\n}\n",
+            "stderr": ""
+          },
+          {
+            "command": "python3 tests/translations/audit.py --fail-on-defects",
+            "exit_code": 0,
+            "status": "passed",
+            "static_model_matches": 28
+          },
+          {
+            "command": "repeat complete audit and compare JSON bytes",
+            "status": "passed"
+          }
+        ],
+        "database_changes": false,
+        "not_run": [
+          "production access",
+          "customer data",
+          "authenticated browser",
+          "live SMTP",
+          "database integration/migrations"
+        ],
+        "notes": [
+          "Baseline failures are retained separately, never counted as passing checks.",
+          "Runtime PDF payload and mail template contexts use isolated fixtures."
+        ],
+        "technical_block_commit": "00a99d88",
+        "t2a_summary": {
+          "locales": 2,
+          "application_modules": 13,
+          "catalogue_modules_including_default": 17,
+          "catalogue_files": 115,
+          "entries": 6206,
+          "unique_keys_union": 3607,
+          "by_locale": {
+            "de_DE": {
+              "files": 66,
+              "entries": 3526,
+              "unique_keys": 3513,
+              "catalogue_modules": 16
+            },
+            "en_US": {
+              "files": 49,
+              "entries": 2680,
+              "unique_keys": 2664,
+              "catalogue_modules": 14
+            }
+          },
+          "shared_unique_keys": 2570,
+          "missing_unique_keys_en_US": 943,
+          "missing_unique_keys_de_DE": 94,
+          "missing_files_en_US": 21,
+          "missing_files_de_DE": 4,
+          "literal_calls": 1444,
+          "literal_key_calls": 1430,
+          "unique_literal_keys": 829,
+          "dynamic_calls": 195,
+          "usage_classifications": {
+            "unresolved": 914,
+            "literal_call_found": 808,
+            "indirect_literal_candidate": 1782,
+            "possibly_dynamic": 103
+          },
+          "safely_unused": 0,
+          "hardcoded_candidates": 256,
+          "issue_counts": {
+            "catalogue_errors": 0,
+            "confirmed_spelling_errors": 17,
+            "duplicate_keys_in_file": 16,
+            "empty_keys": 0,
+            "empty_values": 0,
+            "german_in_english_candidates": 28,
+            "identical_locale_values": 318,
+            "identity_values": 0,
+            "invalid_utf8": 0,
+            "mojibake_candidates": 0,
+            "placeholder_mismatches": 0,
+            "placeholder_review": 0,
+            "source_scan_errors": 0,
+            "template_placeholder_mismatches": 0,
+            "utf8_bom": 0
+          }
+        }
+      }
+    },
+    {
+      "command": [
+        "python3",
+        "-B",
+        "tests/security/session-http.py"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 25 HTTP session cases (guest bootstrap, legacy/invalid/stale cookies, login/logout, regeneration, remember-me)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "-B",
+        "tests/security/tenant-access-http.py"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 48 Apache object/ACL/AJAX/trash cases in root and subdirectory installations\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "-B",
+        "tests/security/error-handling-http.py"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 140 error handling cases (production/development, HTML/JSON, initialization/bootstrap, logging fallback, cron, variants, installer and managers)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "-B",
+        "tests/security/shop-inquiry-quote.py"
+      ],
+      "exit_code": 255,
+      "status": "failed",
+      "stdout": "Stored document PDF: shops/quote id=1 clientid=100 source=render\nStored document PDF: shops/quote id=2 clientid=100 source=render\nStored document PDF: shops/quote id=3 clientid=100 source=render\nStored document PDF: shops/quote id=4 clientid=100 source=render\nStored document PDF: shops/quote id=4 clientid=100 source=render\nStored document PDF: shops/quote id=5 clientid=100 source=render\nStored document PDF: shops/quote id=7 clientid=100 source=render\nStored document PDF: shops/quote id=8 clientid=100 source=render\nStored document PDF: shops/quote id=9 clientid=100 source=render\nStored document PDF: shops/quote id=10 clientid=100 source=render\nStored document PDF: shops/quote id=11 clientid=100 source=render\nPASS: shop archive rollback, retry and uncertain commit cases\nStored document PDF: shops/quote id=13 clientid=100 source=render\nPHP Fatal error:  Uncaught RuntimeException: Generic catalog view depends on legacy calculation fields in /var/www/dewawi/tests/security/inquiry-catalog.php:13\nStack trace:\n#0 /var/www/dewawi/tests/security/inquiry-catalog.php(158): checkCatalog()\n#1 /var/www/dewawi/tests/security/shop-inquiry-quote.php(592): require('...')\n#2 {main}\n  thrown in /var/www/dewawi/tests/security/inquiry-catalog.php on line 13\n\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "-B",
+        "tests/security/shop-checkout-db.py"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 17 checkout transaction, replay, concurrency and isolation checks\n\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "-B",
+        "tests/calendar/run.py"
+      ],
+      "exit_code": 1,
+      "status": "failed",
+      "stdout": "\nFatal error: Uncaught PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'original business rows and archive versions are retained.\nCREATE TABLE IF NOT...' at line 1 in /var/www/dewawi/tests/calendar/integration.php:23\nStack trace:\n#0 /var/www/dewawi/tests/calendar/integration.php(23): PDO->exec()\n#1 {main}\n  thrown in /var/www/dewawi/tests/calendar/integration.php on line 23\n",
+      "stderr": "PHP Fatal error:  Uncaught PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'original business rows and archive versions are retained.\nCREATE TABLE IF NOT...' at line 1 in /var/www/dewawi/tests/calendar/integration.php:23\nStack trace:\n#0 /var/www/dewawi/tests/calendar/integration.php(23): PDO->exec()\n#1 {main}\n  thrown in /var/www/dewawi/tests/calendar/integration.php on line 23\nTraceback (most recent call last):\n  File \"/var/www/dewawi/tests/calendar/run.py\", line 69, in <module>\n    subprocess.run(['php', str(root/'tests/calendar/integration.php')], check=True, env=env)\n  File \"/usr/lib/python3.12/subprocess.py\", line 571, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['php', '/var/www/dewawi/tests/calendar/integration.php']' returned non-zero exit status 255.\n"
+    },
+    {
+      "command": [
+        "python3",
+        "-B",
+        "tests/ui/button-page-integration.py",
+        "--dashboard",
+        "--output",
+        "/tmp/dewawi-t3-dashboard"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: de_DE /?fixture_dashboard=all 320px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=all 390px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=all 768px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=all 1280px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /erp/?fixture_dashboard=all 320px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /erp/?fixture_dashboard=all 390px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /erp/?fixture_dashboard=all 768px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /erp/?fixture_dashboard=all 1280px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=no-contacts 320px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=no-contacts 390px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=no-contacts 768px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=no-contacts 1280px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=no-items 320px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=no-items 390px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=no-items 768px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=no-items 1280px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=view-only 320px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=view-only 390px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=view-only 768px original MVC/HTTP, symbols, paint and legacy\nPASS: de_DE /?fixture_dashboard=view-only 1280px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=all 320px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=all 390px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=all 768px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=all 1280px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /erp/?fixture_dashboard=all 320px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /erp/?fixture_dashboard=all 390px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /erp/?fixture_dashboard=all 768px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /erp/?fixture_dashboard=all 1280px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=no-contacts 320px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=no-contacts 390px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=no-contacts 768px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=no-contacts 1280px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=no-items 320px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=no-items 390px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=no-items 768px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=no-items 1280px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=view-only 320px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=view-only 390px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=view-only 768px original MVC/HTTP, symbols, paint and legacy\nPASS: en_US /?fixture_dashboard=view-only 1280px original MVC/HTTP, symbols, paint and legacy\nPASS: 812 complete ERP page assertions\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,3170 @@
+{
+  "scope": "synthetic account/client 42/7; in-memory SQL; temp sessions; external browser hosts blocked",
+  "guest_locale_note": "EN guest presentation injected by fixture; no production anonymous language selector exists",
+  "results": [
+    {
+      "scenario": "guest login form de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": false,
+        "clientid": null,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "users"
+        ],
+        "issues": [],
+        "keys": 1236,
+        "hash": "9ce95b7a3ef2407623eb2b192d9bbb60c9009ebbd98f619c7fde8fcf55c8e0d2",
+        "reads": 0,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "login HTML language de_DE",
+      "status": "failed",
+      "observed": [
+        "<html lang=\"en\">"
+      ]
+    },
+    {
+      "scenario": "failed login message de_DE",
+      "status": "passed",
+      "german_message_present": true,
+      "http_status": 200
+    },
+    {
+      "scenario": "guest login form en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": false,
+        "clientid": null,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "users"
+        ],
+        "issues": [],
+        "keys": 1236,
+        "hash": "82aff9a6f3c59f9c7d2100831a0c2ad780b2acc752708cf03743701f24e986dc",
+        "reads": 0,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "login HTML language en_US",
+      "status": "passed",
+      "observed": [
+        "<html lang=\"en\">"
+      ]
+    },
+    {
+      "scenario": "failed login message en_US",
+      "status": "failed",
+      "german_message_present": true,
+      "http_status": 200
+    },
+    {
+      "scenario": "real login with synthetic account",
+      "status": "passed",
+      "http_status": 302,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": null,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "users"
+        ],
+        "issues": [],
+        "keys": 1236,
+        "hash": "82aff9a6f3c59f9c7d2100831a0c2ad780b2acc752708cf03743701f24e986dc",
+        "reads": 1,
+        "writes": [
+          {
+            "table": "user",
+            "fields": [
+              "logintime"
+            ]
+          },
+          {
+            "table": "usertracking",
+            "fields": [
+              "userid",
+              "username",
+              "name",
+              "email",
+              "admin",
+              "target",
+              "useragent",
+              "remoteip",
+              "clientid",
+              "accesstime"
+            ]
+          }
+        ]
+      },
+      "location": "/index",
+      "error": null
+    },
+    {
+      "scenario": "session locale switch de_DE",
+      "status": "passed",
+      "http_status": 200
+    },
+    {
+      "scenario": "HTTP module admin de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "admin"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "Artikel, Kontakte, Zahlungsarten, Lieferarten und weitere Stammdaten verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "Shops, Seiten, Menüs, Kategorien, Tags und Slides verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "Benutzer und Zugriffsrechte verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "Vorlagen und Fußzeilen verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "Systeminformationen und installierte Module verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1494,
+        "hash": "8e1f7cfc9d03cfbb691967ab89495e77c3448f431265e5a8b6e31c96e91ce501",
+        "reads": 8,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts admin de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "admin"
+      ],
+      "observed_hash": "8e1f7cfc9d03cfbb691967ab89495e77c3448f431265e5a8b6e31c96e91ce501"
+    },
+    {
+      "scenario": "HTTP module calendar de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "calendar"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1227,
+        "hash": "6ba892279102f88c7b557910179804d26d9a70bef738c4287e69e20497a851ba",
+        "reads": 11,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts calendar de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "calendar"
+      ],
+      "observed_hash": "6ba892279102f88c7b557910179804d26d9a70bef738c4287e69e20497a851ba"
+    },
+    {
+      "scenario": "HTTP module campaigns de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "campaigns"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1375,
+        "hash": "2a471093b16abfb5ef011fd40a041a356561236da765bc4a0d5c6fb712e30b76",
+        "reads": 14,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts campaigns de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "campaigns"
+      ],
+      "observed_hash": "2a471093b16abfb5ef011fd40a041a356561236da765bc4a0d5c6fb712e30b76"
+    },
+    {
+      "scenario": "HTTP module contacts de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "contacts"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "Import"
+          }
+        ],
+        "keys": 1655,
+        "hash": "16099558576422ccf9cbdf05124aadfab21816a4b2383d949eac9087b300d79e",
+        "reads": 18,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts contacts de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "contacts"
+      ],
+      "observed_hash": "16099558576422ccf9cbdf05124aadfab21816a4b2383d949eac9087b300d79e"
+    },
+    {
+      "scenario": "HTTP module ebay de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "ebay"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "LISTING"
+          }
+        ],
+        "keys": 1364,
+        "hash": "4b6c1ffb4f214d3c97fa2763583b083905edd07333b09a8757a003ac01148dd6",
+        "reads": 9,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts ebay de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "ebay"
+      ],
+      "observed_hash": "4b6c1ffb4f214d3c97fa2763583b083905edd07333b09a8757a003ac01148dd6"
+    },
+    {
+      "scenario": "HTTP module items de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "items"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "Import"
+          }
+        ],
+        "keys": 1537,
+        "hash": "09eb958c4cf72dfab5249e7a6961b64781879bf5ed06153597ff06ffc9fc44a2",
+        "reads": 18,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts items de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "items"
+      ],
+      "observed_hash": "09eb958c4cf72dfab5249e7a6961b64781879bf5ed06153597ff06ffc9fc44a2"
+    },
+    {
+      "scenario": "HTTP module processes de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "processes"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1335,
+        "hash": "8f2d35b314b0b474127c405a4e872409c5c6fc7a4793862e5613a0f5f4634a53",
+        "reads": 17,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts processes de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "processes"
+      ],
+      "observed_hash": "8f2d35b314b0b474127c405a4e872409c5c6fc7a4793862e5613a0f5f4634a53"
+    },
+    {
+      "scenario": "HTTP module purchases de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "purchases"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1361,
+        "hash": "faa9c6fdb1fb88ab8d15d6c61c166ec8acf04c3e8574dc5fbec914b7f2d55a72",
+        "reads": 16,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts purchases de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "purchases"
+      ],
+      "observed_hash": "faa9c6fdb1fb88ab8d15d6c61c166ec8acf04c3e8574dc5fbec914b7f2d55a72"
+    },
+    {
+      "scenario": "HTTP module sales de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "sales"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1725,
+        "hash": "f0374bce03d2006b6bbd7274984a79b8fce5133cfcb32745bda51d5eb79eebf5",
+        "reads": 17,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts sales de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "sales"
+      ],
+      "observed_hash": "f0374bce03d2006b6bbd7274984a79b8fce5133cfcb32745bda51d5eb79eebf5"
+    },
+    {
+      "scenario": "HTTP module shops de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "shops"
+        ],
+        "issues": [],
+        "keys": 1433,
+        "hash": "1332d0528b7d12362e799550a7090172ea9f680f4a8edbf963dd370a4cc262a3",
+        "reads": 14,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts shops de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "shops"
+      ],
+      "observed_hash": "1332d0528b7d12362e799550a7090172ea9f680f4a8edbf963dd370a4cc262a3"
+    },
+    {
+      "scenario": "HTTP module statistics de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "statistics"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "Top 1 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "Top 5 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "Top 10 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "Top 20 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "Top 30 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "REPORTING"
+          }
+        ],
+        "keys": 1276,
+        "hash": "56616092f4ae3eb6129a6e98d29b1c2da221ace8f6be53ed1ff1f8b14de49ab7",
+        "reads": 14,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts statistics de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "statistics"
+      ],
+      "observed_hash": "56616092f4ae3eb6129a6e98d29b1c2da221ace8f6be53ed1ff1f8b14de49ab7"
+    },
+    {
+      "scenario": "HTTP module tasks de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "tasks"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1341,
+        "hash": "5f807cc47af82057bc07b2833ba7d45839cca2c6063c5377d8ee17da68c295a8",
+        "reads": 14,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts tasks de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "tasks"
+      ],
+      "observed_hash": "5f807cc47af82057bc07b2833ba7d45839cca2c6063c5377d8ee17da68c295a8"
+    },
+    {
+      "scenario": "HTTP module users de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "users"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "USERS"
+          },
+          {
+            "type": "missing_key",
+            "value": "USER"
+          }
+        ],
+        "keys": 1236,
+        "hash": "9ce95b7a3ef2407623eb2b192d9bbb60c9009ebbd98f619c7fde8fcf55c8e0d2",
+        "reads": 9,
+        "writes": [
+          {
+            "table": "user",
+            "fields": [
+              "locked",
+              "lockedtime"
+            ]
+          }
+        ]
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts users de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "users"
+      ],
+      "observed_hash": "9ce95b7a3ef2407623eb2b192d9bbb60c9009ebbd98f619c7fde8fcf55c8e0d2"
+    },
+    {
+      "scenario": "valid profile auto-save de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "response": "{\"saved\":true}",
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "users"
+        ],
+        "issues": [],
+        "keys": 1236,
+        "hash": "9ce95b7a3ef2407623eb2b192d9bbb60c9009ebbd98f619c7fde8fcf55c8e0d2",
+        "reads": 8,
+        "writes": [
+          {
+            "table": "user",
+            "fields": [
+              "locked",
+              "lockedtime"
+            ]
+          },
+          {
+            "table": "user",
+            "fields": [
+              "name",
+              "modified",
+              "modifiedby"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "invalid profile validation de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "response": "{\"saved\":false,\"message\":\"Form is invalid\",\"errors\":{\"email\":[\"email\"]}}",
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "users"
+        ],
+        "issues": [],
+        "keys": 1236,
+        "hash": "9ce95b7a3ef2407623eb2b192d9bbb60c9009ebbd98f619c7fde8fcf55c8e0d2",
+        "reads": 8,
+        "writes": []
+      }
+    },
+    {
+      "scenario": "profile validation API contract de_DE",
+      "status": "passed",
+      "response": {
+        "saved": false,
+        "message": "Form is invalid",
+        "errors": {
+          "email": [
+            "email"
+          ]
+        }
+      }
+    },
+    {
+      "scenario": "forbidden profile field de_DE",
+      "status": "passed",
+      "http_status": 403,
+      "response": "{\"saved\":false,\"message\":\"Access denied\"}",
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "users"
+        ],
+        "issues": [],
+        "keys": 1236,
+        "hash": "9ce95b7a3ef2407623eb2b192d9bbb60c9009ebbd98f619c7fde8fcf55c8e0d2",
+        "reads": 8,
+        "writes": []
+      }
+    },
+    {
+      "scenario": "session locale switch en_US",
+      "status": "passed",
+      "http_status": 200
+    },
+    {
+      "scenario": "HTTP module admin en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "admin"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "Artikel, Kontakte, Zahlungsarten, Lieferarten und weitere Stammdaten verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "Shops, Seiten, Menüs, Kategorien, Tags und Slides verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "Benutzer und Zugriffsrechte verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "Vorlagen und Fußzeilen verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "Systeminformationen und installierte Module verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1494,
+        "hash": "76f82f5521ca5687c576ce26e7c9dac4226dc67fb4575f9293898caf68d703f0",
+        "reads": 8,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts admin en_US",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "admin"
+      ],
+      "observed_hash": "76f82f5521ca5687c576ce26e7c9dac4226dc67fb4575f9293898caf68d703f0"
+    },
+    {
+      "scenario": "HTTP module calendar en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "calendar"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1227,
+        "hash": "a517ba878a9c5d0a4f601d430bc74488a1d5d44fc768d08a750ccbc75d5dc2d8",
+        "reads": 11,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts calendar en_US",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "calendar"
+      ],
+      "observed_hash": "a517ba878a9c5d0a4f601d430bc74488a1d5d44fc768d08a750ccbc75d5dc2d8"
+    },
+    {
+      "scenario": "HTTP module campaigns en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "campaigns"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1375,
+        "hash": "eb52ae0c84fec42d33c273a1ccd57e1254353134c0cf79a5aae2e4ce5e98ca63",
+        "reads": 14,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts campaigns en_US",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "campaigns"
+      ],
+      "observed_hash": "eb52ae0c84fec42d33c273a1ccd57e1254353134c0cf79a5aae2e4ce5e98ca63"
+    },
+    {
+      "scenario": "HTTP module contacts en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "contacts"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "Import"
+          }
+        ],
+        "keys": 1655,
+        "hash": "f8905f321eb32b74faa46c9c42ce5e9e2503acc445b323056f987bba05eb3c6e",
+        "reads": 18,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts contacts en_US",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "contacts"
+      ],
+      "observed_hash": "f8905f321eb32b74faa46c9c42ce5e9e2503acc445b323056f987bba05eb3c6e"
+    },
+    {
+      "scenario": "HTTP module ebay en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "ebay"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "LISTING"
+          }
+        ],
+        "keys": 1364,
+        "hash": "c2b5d1858d7c9dbbcfb9c457638d6088e0af5bb98a16a22cf7aef0f2a94b1392",
+        "reads": 9,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts ebay en_US",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "ebay"
+      ],
+      "observed_hash": "c2b5d1858d7c9dbbcfb9c457638d6088e0af5bb98a16a22cf7aef0f2a94b1392"
+    },
+    {
+      "scenario": "HTTP module items en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "items"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "Import"
+          }
+        ],
+        "keys": 1537,
+        "hash": "843184efd3568e328c08e0feb0becc0cac1c5c5a4af1e732633da062ad146cfc",
+        "reads": 18,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts items en_US",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "items"
+      ],
+      "observed_hash": "843184efd3568e328c08e0feb0becc0cac1c5c5a4af1e732633da062ad146cfc"
+    },
+    {
+      "scenario": "HTTP module processes en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "processes"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1335,
+        "hash": "f101b65ddb034661c52938a7e4e232e1f4673a974fce43d02c76c128f0714967",
+        "reads": 17,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts processes en_US",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "processes"
+      ],
+      "observed_hash": "f101b65ddb034661c52938a7e4e232e1f4673a974fce43d02c76c128f0714967"
+    },
+    {
+      "scenario": "HTTP module purchases en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "purchases"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1361,
+        "hash": "ca77a8a03947a634dd55893a9079c9b06266d066b129f6b2d84e4289fdd92fd1",
+        "reads": 16,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts purchases en_US",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "purchases"
+      ],
+      "observed_hash": "ca77a8a03947a634dd55893a9079c9b06266d066b129f6b2d84e4289fdd92fd1"
+    },
+    {
+      "scenario": "HTTP module sales en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "sales"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1725,
+        "hash": "d8ac0f8e5e494956dc906c904109a166dd05bbb9447d1cd2cca9993697f2ef27",
+        "reads": 17,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts sales en_US",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "sales"
+      ],
+      "observed_hash": "d8ac0f8e5e494956dc906c904109a166dd05bbb9447d1cd2cca9993697f2ef27"
+    },
+    {
+      "scenario": "HTTP module shops en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "shops"
+        ],
+        "issues": [],
+        "keys": 1433,
+        "hash": "2d9db81478c8dcd3a3a7c145b6fc871597bde80e333a5c13a84bc7bbc11f4c09",
+        "reads": 14,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts shops en_US",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "shops"
+      ],
+      "observed_hash": "2d9db81478c8dcd3a3a7c145b6fc871597bde80e333a5c13a84bc7bbc11f4c09"
+    },
+    {
+      "scenario": "HTTP module statistics en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "statistics"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "Top 1 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "Top 5 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "Top 10 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "Top 20 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "Top 30 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "REPORTING"
+          }
+        ],
+        "keys": 1276,
+        "hash": "23020d6f38bba6a064883de79c30e43240311be4b1dda571c69c15660792059f",
+        "reads": 14,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts statistics en_US",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "statistics"
+      ],
+      "observed_hash": "23020d6f38bba6a064883de79c30e43240311be4b1dda571c69c15660792059f"
+    },
+    {
+      "scenario": "HTTP module tasks en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "tasks"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1341,
+        "hash": "886366b4a15efe69885a8600433fc4af83330b30c9ef66a4b4d564b412e02e1f",
+        "reads": 14,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts tasks en_US",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "tasks"
+      ],
+      "observed_hash": "886366b4a15efe69885a8600433fc4af83330b30c9ef66a4b4d564b412e02e1f"
+    },
+    {
+      "scenario": "HTTP module users en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "users"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "USERS"
+          },
+          {
+            "type": "missing_key",
+            "value": "USER"
+          }
+        ],
+        "keys": 1236,
+        "hash": "82aff9a6f3c59f9c7d2100831a0c2ad780b2acc752708cf03743701f24e986dc",
+        "reads": 9,
+        "writes": [
+          {
+            "table": "user",
+            "fields": [
+              "locked",
+              "lockedtime"
+            ]
+          }
+        ]
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts users en_US",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "users"
+      ],
+      "observed_hash": "82aff9a6f3c59f9c7d2100831a0c2ad780b2acc752708cf03743701f24e986dc"
+    },
+    {
+      "scenario": "valid profile auto-save en_US",
+      "status": "passed",
+      "http_status": 200,
+      "response": "{\"saved\":true}",
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "users"
+        ],
+        "issues": [],
+        "keys": 1236,
+        "hash": "82aff9a6f3c59f9c7d2100831a0c2ad780b2acc752708cf03743701f24e986dc",
+        "reads": 8,
+        "writes": [
+          {
+            "table": "user",
+            "fields": [
+              "locked",
+              "lockedtime"
+            ]
+          },
+          {
+            "table": "user",
+            "fields": [
+              "name",
+              "modified",
+              "modifiedby"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "invalid profile validation en_US",
+      "status": "passed",
+      "http_status": 200,
+      "response": "{\"saved\":false,\"message\":\"Form is invalid\",\"errors\":{\"email\":[\"email\"]}}",
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "users"
+        ],
+        "issues": [],
+        "keys": 1236,
+        "hash": "82aff9a6f3c59f9c7d2100831a0c2ad780b2acc752708cf03743701f24e986dc",
+        "reads": 8,
+        "writes": []
+      }
+    },
+    {
+      "scenario": "profile validation API contract en_US",
+      "status": "passed",
+      "response": {
+        "saved": false,
+        "message": "Form is invalid",
+        "errors": {
+          "email": [
+            "email"
+          ]
+        }
+      }
+    },
+    {
+      "scenario": "forbidden profile field en_US",
+      "status": "passed",
+      "http_status": 403,
+      "response": "{\"saved\":false,\"message\":\"Access denied\"}",
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "users"
+        ],
+        "issues": [],
+        "keys": 1236,
+        "hash": "82aff9a6f3c59f9c7d2100831a0c2ad780b2acc752708cf03743701f24e986dc",
+        "reads": 8,
+        "writes": []
+      }
+    },
+    {
+      "scenario": "session locale switch de_DE",
+      "status": "passed",
+      "http_status": 200
+    },
+    {
+      "scenario": "HTTP module admin de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "admin"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "Artikel, Kontakte, Zahlungsarten, Lieferarten und weitere Stammdaten verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "Shops, Seiten, Menüs, Kategorien, Tags und Slides verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "Benutzer und Zugriffsrechte verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "Vorlagen und Fußzeilen verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "Systeminformationen und installierte Module verwalten."
+          },
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1494,
+        "hash": "8e1f7cfc9d03cfbb691967ab89495e77c3448f431265e5a8b6e31c96e91ce501",
+        "reads": 8,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts admin de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "admin"
+      ],
+      "observed_hash": "8e1f7cfc9d03cfbb691967ab89495e77c3448f431265e5a8b6e31c96e91ce501"
+    },
+    {
+      "scenario": "HTTP module calendar de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "calendar"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1227,
+        "hash": "6ba892279102f88c7b557910179804d26d9a70bef738c4287e69e20497a851ba",
+        "reads": 11,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts calendar de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "calendar"
+      ],
+      "observed_hash": "6ba892279102f88c7b557910179804d26d9a70bef738c4287e69e20497a851ba"
+    },
+    {
+      "scenario": "HTTP module campaigns de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "campaigns"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1375,
+        "hash": "2a471093b16abfb5ef011fd40a041a356561236da765bc4a0d5c6fb712e30b76",
+        "reads": 14,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts campaigns de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "campaigns"
+      ],
+      "observed_hash": "2a471093b16abfb5ef011fd40a041a356561236da765bc4a0d5c6fb712e30b76"
+    },
+    {
+      "scenario": "HTTP module contacts de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "contacts"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "Import"
+          }
+        ],
+        "keys": 1655,
+        "hash": "16099558576422ccf9cbdf05124aadfab21816a4b2383d949eac9087b300d79e",
+        "reads": 18,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts contacts de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "contacts"
+      ],
+      "observed_hash": "16099558576422ccf9cbdf05124aadfab21816a4b2383d949eac9087b300d79e"
+    },
+    {
+      "scenario": "HTTP module ebay de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "ebay"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "LISTING"
+          }
+        ],
+        "keys": 1364,
+        "hash": "4b6c1ffb4f214d3c97fa2763583b083905edd07333b09a8757a003ac01148dd6",
+        "reads": 9,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts ebay de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "ebay"
+      ],
+      "observed_hash": "4b6c1ffb4f214d3c97fa2763583b083905edd07333b09a8757a003ac01148dd6"
+    },
+    {
+      "scenario": "HTTP module items de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "items"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "Import"
+          }
+        ],
+        "keys": 1537,
+        "hash": "09eb958c4cf72dfab5249e7a6961b64781879bf5ed06153597ff06ffc9fc44a2",
+        "reads": 18,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts items de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "items"
+      ],
+      "observed_hash": "09eb958c4cf72dfab5249e7a6961b64781879bf5ed06153597ff06ffc9fc44a2"
+    },
+    {
+      "scenario": "HTTP module processes de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "processes"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1335,
+        "hash": "8f2d35b314b0b474127c405a4e872409c5c6fc7a4793862e5613a0f5f4634a53",
+        "reads": 17,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts processes de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "processes"
+      ],
+      "observed_hash": "8f2d35b314b0b474127c405a4e872409c5c6fc7a4793862e5613a0f5f4634a53"
+    },
+    {
+      "scenario": "HTTP module purchases de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "purchases"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1361,
+        "hash": "faa9c6fdb1fb88ab8d15d6c61c166ec8acf04c3e8574dc5fbec914b7f2d55a72",
+        "reads": 16,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts purchases de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "purchases"
+      ],
+      "observed_hash": "faa9c6fdb1fb88ab8d15d6c61c166ec8acf04c3e8574dc5fbec914b7f2d55a72"
+    },
+    {
+      "scenario": "HTTP module sales de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "sales"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1725,
+        "hash": "f0374bce03d2006b6bbd7274984a79b8fce5133cfcb32745bda51d5eb79eebf5",
+        "reads": 17,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts sales de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "sales"
+      ],
+      "observed_hash": "f0374bce03d2006b6bbd7274984a79b8fce5133cfcb32745bda51d5eb79eebf5"
+    },
+    {
+      "scenario": "HTTP module shops de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "shops"
+        ],
+        "issues": [],
+        "keys": 1433,
+        "hash": "1332d0528b7d12362e799550a7090172ea9f680f4a8edbf963dd370a4cc262a3",
+        "reads": 14,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts shops de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "shops"
+      ],
+      "observed_hash": "1332d0528b7d12362e799550a7090172ea9f680f4a8edbf963dd370a4cc262a3"
+    },
+    {
+      "scenario": "HTTP module statistics de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "statistics"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "Top 1 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "Top 5 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "Top 10 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "Top 20 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "Top 30 (%)"
+          },
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "REPORTING"
+          }
+        ],
+        "keys": 1276,
+        "hash": "56616092f4ae3eb6129a6e98d29b1c2da221ace8f6be53ed1ff1f8b14de49ab7",
+        "reads": 14,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts statistics de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "statistics"
+      ],
+      "observed_hash": "56616092f4ae3eb6129a6e98d29b1c2da221ace8f6be53ed1ff1f8b14de49ab7"
+    },
+    {
+      "scenario": "HTTP module tasks de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "tasks"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          }
+        ],
+        "keys": 1341,
+        "hash": "5f807cc47af82057bc07b2833ba7d45839cca2c6063c5377d8ee17da68c295a8",
+        "reads": 14,
+        "writes": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts tasks de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "tasks"
+      ],
+      "observed_hash": "5f807cc47af82057bc07b2833ba7d45839cca2c6063c5377d8ee17da68c295a8"
+    },
+    {
+      "scenario": "HTTP module users de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "users"
+        ],
+        "issues": [
+          {
+            "type": "missing_key",
+            "value": "DEWAWI"
+          },
+          {
+            "type": "missing_key",
+            "value": "USERS"
+          },
+          {
+            "type": "missing_key",
+            "value": "USER"
+          }
+        ],
+        "keys": 1236,
+        "hash": "9ce95b7a3ef2407623eb2b192d9bbb60c9009ebbd98f619c7fde8fcf55c8e0d2",
+        "reads": 9,
+        "writes": [
+          {
+            "table": "user",
+            "fields": [
+              "locked",
+              "lockedtime"
+            ]
+          }
+        ]
+      },
+      "error": null
+    },
+    {
+      "scenario": "loaded domains and effective texts users de_DE",
+      "status": "passed",
+      "expected_domains": [
+        "default",
+        "calendar_common",
+        "contacts_common",
+        "items_common",
+        "processes_common",
+        "purchases_common",
+        "sales_common",
+        "statistics_common",
+        "users_common",
+        "users"
+      ],
+      "observed_hash": "9ce95b7a3ef2407623eb2b192d9bbb60c9009ebbd98f619c7fde8fcf55c8e0d2"
+    },
+    {
+      "scenario": "invalid locale rejected",
+      "status": "passed",
+      "http_status": 400
+    },
+    {
+      "scenario": "browser module admin de_DE",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Dashboard - DEWAWI",
+      "html_lang": "de-DE",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Updated\n|\nDonnerstag, 19 November 2026\n|\nEinstellungen\n|\nAusloggen\nDeutsch\nEnglish\nÜbersicht\nKontakte\nArtikel\nTeamkalender\nAufgaben\nVorgänge\nVerkauf\nEinkauf\nAbrechnung\nPreisregeln\nKampagnen\nStatistiken\nDEWAWI » Administration\nDashboard\nDashboard\nSystemeinstellungen\nKonfiguration\nMandanten\nLänder\nMedien\nExport\nArtikel\nKategorien\nSteuersätz"
+    },
+    {
+      "scenario": "browser module calendar de_DE",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "DEWAWI",
+      "html_lang": "de-DE",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Updated\n|\nDonnerstag, 19 November 2026\n|\nEinstellungen\n|\nAusloggen\nDeutsch\nEnglish\nÜbersicht\nKontakte\nArtikel\nTeamkalender\nAufgaben\nVorgänge\nVerkauf\nEinkauf\nAbrechnung\nPreisregeln\nKampagnen\nStatistiken\nDEWAWI » Teamkalender\nTeamkalender\n←\nHeute\n→\n2026-11\nMonat\nWoche\nTag\nAgenda (30 Tage)\nNeuer Termin\nDatum\nKalenderauswahl\nTeamkalender\nMein"
+    },
+    {
+      "scenario": "browser module campaigns de_DE",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Kampagnen - DEWAWI",
+      "html_lang": "de-DE",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Updated\n|\nDonnerstag, 19 November 2026\n|\nEinstellungen\n|\nAusloggen\nDeutsch\nEnglish\nÜbersicht\nKontakte\nArtikel\nTeamkalender\nAufgaben\nVorgänge\nVerkauf\nEinkauf\nAbrechnung\nPreisregeln\nKampagnen\nStatistiken\nDEWAWI » Kampagnen » Kampagne\nKampagnen\nNeu\nBearbeiten\nKopieren\nLöschen\nFilter\nZurücksetzen\nExportieren\nAngezeigt: 0\n0–0\nGesamt: 0\nAnzeige"
+    },
+    {
+      "scenario": "browser module contacts de_DE",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Kontakte - DEWAWI",
+      "html_lang": "de-DE",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Updated\n|\nDonnerstag, 19 November 2026\n|\nEinstellungen\n|\nAusloggen\nDeutsch\nEnglish\nÜbersicht\nKontakte\nArtikel\nTeamkalender\nAufgaben\nVorgänge\nVerkauf\nEinkauf\nAbrechnung\nPreisregeln\nKampagnen\nStatistiken\nDEWAWI » Kontakte » Kontakt\nKontakte\nNeu\nBearbeiten\nKopieren\nLöschen\nTags bearbeiten\nÜbernehmen\nFilter\nZurücksetzen\nExportieren\nAlle Kateg"
+    },
+    {
+      "scenario": "browser module ebay de_DE",
+      "status": "failed",
+      "unresolved_keys": [
+        "EBAY_CATEGORY1",
+        "EBAY_CATEGORY2",
+        "EBAY_PAYMENT_POLICY",
+        "EBAY_RETURN_POLICY",
+        "EBAY_SHIPPING_POLICY",
+        "EBAY_STORE_CATEGORY1",
+        "EBAY_STORE_CATEGORY2",
+        "EBAY_USER_ID"
+      ],
+      "untranslated_route_labels": [
+        "LISTING"
+      ],
+      "title": "Angebote - DEWAWI",
+      "html_lang": "de-DE",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Updated\n|\nDonnerstag, 19 November 2026\n|\nEinstellungen\n|\nAusloggen\nDeutsch\nEnglish\nÜbersicht\nKontakte\nArtikel\nTeamkalender\nAufgaben\nVorgänge\nVerkauf\nEinkauf\nAbrechnung\nPreisregeln\nKampagnen\nStatistiken\nDEWAWI » eBay » LISTING\nAngebote\nAngezeigt: 0\n0–0\nGesamt: 0\nAnzeigen\n10\n25\n50\n100\nSeite\n1\nvon 1\n\tBenutzername\tArtikelnummer\teBay-Kategorie"
+    },
+    {
+      "scenario": "browser module items de_DE",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Artikel - DEWAWI",
+      "html_lang": "de-DE",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Updated\n|\nDonnerstag, 19 November 2026\n|\nEinstellungen\n|\nAusloggen\nDeutsch\nEnglish\nÜbersicht\nKontakte\nArtikel\nTeamkalender\nAufgaben\nVorgänge\nVerkauf\nEinkauf\nAbrechnung\nPreisregeln\nKampagnen\nStatistiken\nDEWAWI » Artikel » Artikel\nArtikel\nNeu\nBearbeiten\nKopieren\nLöschen\nÜbernehmen\nFilter\nZurücksetzen\nExportieren\nAlle Kategorien\n\nImport\n\nAng"
+    },
+    {
+      "scenario": "browser module processes de_DE",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Vorgänge - DEWAWI",
+      "html_lang": "de-DE",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Updated\n|\nDonnerstag, 19 November 2026\n|\nEinstellungen\n|\nAusloggen\nDeutsch\nEnglish\nÜbersicht\nKontakte\nArtikel\nTeamkalender\nAufgaben\nVorgänge\nVerkauf\nEinkauf\nAbrechnung\nPreisregeln\nKampagnen\nStatistiken\nDEWAWI » Vorgänge » Vorgang\nVorgänge\nNeu\nBearbeiten\nKopieren\nLöschen\nFilter\nZurücksetzen\nExportieren\nAngezeigt: 0\n0–0\nGesamt: 0\nAnzeigen\n1"
+    },
+    {
+      "scenario": "browser module purchases de_DE",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Bestellungen - DEWAWI",
+      "html_lang": "de-DE",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Updated\n|\nDonnerstag, 19 November 2026\n|\nEinstellungen\n|\nAusloggen\nDeutsch\nEnglish\nÜbersicht\nKontakte\nArtikel\nTeamkalender\nAufgaben\nVorgänge\nVerkauf\nEinkauf\nAbrechnung\nPreisregeln\nKampagnen\nStatistiken\nDEWAWI » Einkauf » Bestellung\nBestellungen\nNeu\nBearbeiten\nKopieren\nStornieren\nLöschen\nFilter\nZurücksetzen\nExportieren\nAngezeigt: 0\n0–0\nGes"
+    },
+    {
+      "scenario": "browser module sales de_DE",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Angebote - DEWAWI",
+      "html_lang": "de-DE",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Updated\n|\nDonnerstag, 19 November 2026\n|\nEinstellungen\n|\nAusloggen\nDeutsch\nEnglish\nÜbersicht\nKontakte\nArtikel\nTeamkalender\nAufgaben\nVorgänge\nVerkauf\nEinkauf\nAbrechnung\nPreisregeln\nKampagnen\nStatistiken\nDEWAWI » Verkauf » Angebot\nAngebote\nNeu\nBearbeiten\nKopieren\nStornieren\nLöschen\nFilter\nZurücksetzen\nExportieren\nAngezeigt: 0\n0–0\nGesamt: 0\n"
+    },
+    {
+      "scenario": "browser module shops de_DE",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Synthetic bilingual site",
+      "html_lang": "de-DE",
+      "jquery_loaded": false,
+      "text_excerpt": "Zum Hauptinhalt springen\nWebsite durchsuchen\n🔍 Suchen\nSynthetic bilingual site\n\nPreisliche sowie technische Veränderungen und Irrtümer vorbehalten.\n\nTechnisch notwendige Cookies sichern die grundlegenden Funktionen dieser Website. Optionale Statistikdienste werden nur nach Ihrer Einwilligung geladen."
+    },
+    {
+      "scenario": "browser module statistics de_DE",
+      "status": "failed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [
+        "REPORTING"
+      ],
+      "title": "Unternehmensreporting - DEWAWI",
+      "html_lang": "de-DE",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Updated\n|\nDonnerstag, 19 November 2026\n|\nEinstellungen\n|\nAusloggen\nDeutsch\nEnglish\nÜbersicht\nKontakte\nArtikel\nTeamkalender\nAufgaben\nVorgänge\nVerkauf\nEinkauf\nAbrechnung\nPreisregeln\nKampagnen\nStatistiken\nDEWAWI » Statistiken » REPORTING\nUnternehmensreporting\nVon\nBis\nAnalysieren\nExcel exportieren\n\nAlle Auswertungen berücksichtigen den gewähl"
+    },
+    {
+      "scenario": "browser module tasks de_DE",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Aufgaben - DEWAWI",
+      "html_lang": "de-DE",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Updated\n|\nDonnerstag, 19 November 2026\n|\nEinstellungen\n|\nAusloggen\nDeutsch\nEnglish\nÜbersicht\nKontakte\nArtikel\nTeamkalender\nAufgaben\nVorgänge\nVerkauf\nEinkauf\nAbrechnung\nPreisregeln\nKampagnen\nStatistiken\nDEWAWI » Aufgaben » Aufgabe\nAufgaben\nNeu\nBearbeiten\nKopieren\nLöschen\nFilter\nZurücksetzen\nExportieren\nAngezeigt: 0\n0–0\nGesamt: 0\nAnzeigen\n1"
+    },
+    {
+      "scenario": "browser module users de_DE",
+      "status": "failed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [
+        "USER",
+        "USERS"
+      ],
+      "title": "DEWAWI",
+      "html_lang": "de-DE",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Updated\n|\nDonnerstag, 19 November 2026\n|\nEinstellungen\n|\nAusloggen\nÜbersicht\nKontakte\nArtikel\nTeamkalender\nAufgaben\nVorgänge\nVerkauf\nEinkauf\nAbrechnung\nPreisregeln\nKampagnen\nStatistiken\nDEWAWI » USERS » USER » Bearbeiten\nÜbersicht\nSMTP Einstellungen\nBenutzername\nName\nE-Mail\nPasswort\nNeues Passwort\n\nDEWAWI Open Source Warenwirtschaftssyste"
+    },
+    {
+      "scenario": "browser localized AJAX validation de_DE",
+      "status": "passed",
+      "notification": {
+        "expected": "Bitte überprüfen Sie Ihre Eingaben.",
+        "text": "Bitte überprüfen Sie Ihre Eingaben.\n×"
+      }
+    },
+    {
+      "scenario": "browser field auto-save and reload de_DE",
+      "status": "passed"
+    },
+    {
+      "scenario": "browser module admin en_US",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Dashboard - DEWAWI",
+      "html_lang": "en-US",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Browser de_DE\n|\nThursday, 19 November 2026\n|\nSettings\n|\nLogout\nDeutsch\nEnglish\nControl panel\nContacts\nItems\nTeam calendar\nTasks\nProcesses\nSales\nPurchases\nBilling\nPrice rules\nCampaigns\nStatistics\nDEWAWI » Admin\nDashboard\nDashboard\nSystem settings\nConfiguration\nClients\nCountries\nMedia\nExport\nItem\nCategories\nTax rates\nUOMS\nManufacturers\nWare"
+    },
+    {
+      "scenario": "English admin descriptions",
+      "status": "failed",
+      "german_description_present": true
+    },
+    {
+      "scenario": "browser module calendar en_US",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "DEWAWI",
+      "html_lang": "en-US",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Browser de_DE\n|\nThursday, 19 November 2026\n|\nSettings\n|\nLogout\nDeutsch\nEnglish\nControl panel\nContacts\nItems\nTeam calendar\nTasks\nProcesses\nSales\nPurchases\nBilling\nPrice rules\nCampaigns\nStatistics\nDEWAWI » Team calendar\nTeam calendar\n←\nToday\n→\n2026-11\nMonth\nWeek\nDay\nAgenda (30 days)\nNew event\nDate\nCalendar selection\nTeam calendar\nMy calenda"
+    },
+    {
+      "scenario": "browser module campaigns en_US",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Campaigns - DEWAWI",
+      "html_lang": "en-US",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Browser de_DE\n|\nThursday, 19 November 2026\n|\nSettings\n|\nLogout\nDeutsch\nEnglish\nControl panel\nContacts\nItems\nTeam calendar\nTasks\nProcesses\nSales\nPurchases\nBilling\nPrice rules\nCampaigns\nStatistics\nDEWAWI » Campaigns » Campaign\nCampaigns\nNew\nEdit\nCopy\nDelete\nFilter\nReset\nExport\nDisplayed: 0\n0–0\nTotal: 0\nShow\n10\n25\n50\n100\nPage\n1\nof 1\n\tCampaig"
+    },
+    {
+      "scenario": "browser module contacts en_US",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Contacts - DEWAWI",
+      "html_lang": "en-US",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Browser de_DE\n|\nThursday, 19 November 2026\n|\nSettings\n|\nLogout\nDeutsch\nEnglish\nControl panel\nContacts\nItems\nTeam calendar\nTasks\nProcesses\nSales\nPurchases\nBilling\nPrice rules\nCampaigns\nStatistics\nDEWAWI » Contacts » Contact\nContacts\nNew\nEdit\nCopy\nDelete\nEdit tags\nApply\nFilter\nReset\nExport\nAll categories\nNot categorized\n\nImport\n\nDisplayed: "
+    },
+    {
+      "scenario": "browser module ebay en_US",
+      "status": "failed",
+      "unresolved_keys": [
+        "EBAY_CATEGORY1",
+        "EBAY_CATEGORY2",
+        "EBAY_PAYMENT_POLICY",
+        "EBAY_RETURN_POLICY",
+        "EBAY_SHIPPING_POLICY",
+        "EBAY_STORE_CATEGORY1",
+        "EBAY_STORE_CATEGORY2",
+        "EBAY_USER_ID"
+      ],
+      "untranslated_route_labels": [
+        "LISTING"
+      ],
+      "title": "Listings - DEWAWI",
+      "html_lang": "en-US",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Browser de_DE\n|\nThursday, 19 November 2026\n|\nSettings\n|\nLogout\nDeutsch\nEnglish\nControl panel\nContacts\nItems\nTeam calendar\nTasks\nProcesses\nSales\nPurchases\nBilling\nPrice rules\nCampaigns\nStatistics\nDEWAWI » eBay » LISTING\nListings\nDisplayed: 0\n0–0\nTotal: 0\nShow\n10\n25\n50\n100\nPage\n1\nof 1\n\tUser ID\tSKU\teBay category 1\teBay category 2\teBay store "
+    },
+    {
+      "scenario": "browser module items en_US",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Items - DEWAWI",
+      "html_lang": "en-US",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Browser de_DE\n|\nThursday, 19 November 2026\n|\nSettings\n|\nLogout\nDeutsch\nEnglish\nControl panel\nContacts\nItems\nTeam calendar\nTasks\nProcesses\nSales\nPurchases\nBilling\nPrice rules\nCampaigns\nStatistics\nDEWAWI » Items » Item\nItems\nNew\nEdit\nCopy\nDelete\nApply\nFilter\nReset\nExport\nAll categories\n\nImport\n\nDisplayed: 0\n0–0\nTotal: 0\nShow\n10\n25\n50\n100\nPa"
+    },
+    {
+      "scenario": "browser module processes en_US",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Processes - DEWAWI",
+      "html_lang": "en-US",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Browser de_DE\n|\nThursday, 19 November 2026\n|\nSettings\n|\nLogout\nDeutsch\nEnglish\nControl panel\nContacts\nItems\nTeam calendar\nTasks\nProcesses\nSales\nPurchases\nBilling\nPrice rules\nCampaigns\nStatistics\nDEWAWI » Processes » Process\nProcesses\nNew\nEdit\nCopy\nDelete\nFilter\nReset\nExport\nDisplayed: 0\n0–0\nTotal: 0\nShow\n10\n25\n50\n100\nPage\n1\nof 1\n\tID\tTitle"
+    },
+    {
+      "scenario": "browser module purchases en_US",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Purchase orders - DEWAWI",
+      "html_lang": "en-US",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Browser de_DE\n|\nThursday, 19 November 2026\n|\nSettings\n|\nLogout\nDeutsch\nEnglish\nControl panel\nContacts\nItems\nTeam calendar\nTasks\nProcesses\nSales\nPurchases\nBilling\nPrice rules\nCampaigns\nStatistics\nDEWAWI » Purchases » Purchase order\nPurchase orders\nNew\nEdit\nCopy\nCancel\nDelete\nFilter\nReset\nExport\nDisplayed: 0\n0–0\nTotal: 0\nShow\n10\n25\n50\n100\nP"
+    },
+    {
+      "scenario": "browser module sales en_US",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Quotes - DEWAWI",
+      "html_lang": "en-US",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Browser de_DE\n|\nThursday, 19 November 2026\n|\nSettings\n|\nLogout\nDeutsch\nEnglish\nControl panel\nContacts\nItems\nTeam calendar\nTasks\nProcesses\nSales\nPurchases\nBilling\nPrice rules\nCampaigns\nStatistics\nDEWAWI » Sales » Quote\nQuotes\nNew\nEdit\nCopy\nCancel\nDelete\nFilter\nReset\nExport\nDisplayed: 0\n0–0\nTotal: 0\nShow\n10\n25\n50\n100\nPage\n1\nof 1\n\tQuote ID\tT"
+    },
+    {
+      "scenario": "browser module shops en_US",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Synthetic bilingual site",
+      "html_lang": "en-US",
+      "jquery_loaded": false,
+      "text_excerpt": "Skip to main content\nSearch website\n🔍 Search\nSynthetic bilingual site\n\nPrices and technical details are subject to change and error.\n\nTechnically necessary cookies provide the basic functions of this website. Optional analytics services are loaded only after your consent."
+    },
+    {
+      "scenario": "browser module statistics en_US",
+      "status": "failed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [
+        "REPORTING"
+      ],
+      "title": "Business reporting - DEWAWI",
+      "html_lang": "en-US",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Browser de_DE\n|\nThursday, 19 November 2026\n|\nSettings\n|\nLogout\nDeutsch\nEnglish\nControl panel\nContacts\nItems\nTeam calendar\nTasks\nProcesses\nSales\nPurchases\nBilling\nPrice rules\nCampaigns\nStatistics\nDEWAWI » Statistics » REPORTING\nBusiness reporting\nFrom\nTo\nAnalyze\nExport to Excel\n\nAll reports use the selected period and include finalized inv"
+    },
+    {
+      "scenario": "browser module tasks en_US",
+      "status": "passed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [],
+      "title": "Tasks - DEWAWI",
+      "html_lang": "en-US",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Browser de_DE\n|\nThursday, 19 November 2026\n|\nSettings\n|\nLogout\nDeutsch\nEnglish\nControl panel\nContacts\nItems\nTeam calendar\nTasks\nProcesses\nSales\nPurchases\nBilling\nPrice rules\nCampaigns\nStatistics\nDEWAWI » Tasks » Task\nTasks\nNew\nEdit\nCopy\nDelete\nFilter\nReset\nExport\nDisplayed: 0\n0–0\nTotal: 0\nShow\n10\n25\n50\n100\nPage\n1\nof 1\n\tID\tTitle\tTask date\t"
+    },
+    {
+      "scenario": "browser module users en_US",
+      "status": "failed",
+      "unresolved_keys": [],
+      "untranslated_route_labels": [
+        "USER",
+        "USERS"
+      ],
+      "title": "DEWAWI",
+      "html_lang": "en-US",
+      "jquery_loaded": true,
+      "text_excerpt": "Synthetic Browser de_DE\n|\nThursday, 19 November 2026\n|\nSettings\n|\nLogout\nControl panel\nContacts\nItems\nTeam calendar\nTasks\nProcesses\nSales\nPurchases\nBilling\nPrice rules\nCampaigns\nStatistics\nDEWAWI » USERS » USER » Edit\nOverview\nSMTP settings\nUsername\nName\nEmail\nPassword\nNeues Passwort\n\nDEWAWI Open Source Warenwirtschaftssystem"
+    },
+    {
+      "scenario": "English navigation accessible labels",
+      "status": "passed",
+      "german_label_present": false
+    },
+    {
+      "scenario": "English password dialog trigger",
+      "status": "failed",
+      "german_label_present": true
+    },
+    {
+      "scenario": "browser localized AJAX validation en_US",
+      "status": "passed",
+      "notification": {
+        "expected": "Please check your entries.",
+        "text": "Please check your entries.\n×"
+      }
+    },
+    {
+      "scenario": "browser field auto-save and reload en_US",
+      "status": "passed"
+    },
+    {
+      "scenario": "public contact success de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "shops"
+        ],
+        "issues": [],
+        "keys": 1433,
+        "hash": "1332d0528b7d12362e799550a7090172ea9f680f4a8edbf963dd370a4cc262a3",
+        "reads": 12,
+        "writes": []
+      }
+    },
+    {
+      "scenario": "public contact wording success de_DE",
+      "status": "passed",
+      "text_excerpt": "Zum Hauptinhalt springen\nWebsite durchsuchen\n🔍 Suchen\nStartseite\nKontaktformular\nVielen Dank für Ihre Kontaktaufnahme!\n\nKeine Kontaktdaten verfügbar.\n\nZurück zur Startseite\n\nPreisliche sowie technische Veränderungen und Irrtümer vorbehalten.\n\nTechnisch notwendige Cookies sichern die grundlegenden Funktionen dieser Website. Optionale Statistikdienste werden nur nach Ihrer Einwilligung geladen."
+    },
+    {
+      "scenario": "public contact error de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "shops"
+        ],
+        "issues": [],
+        "keys": 1433,
+        "hash": "1332d0528b7d12362e799550a7090172ea9f680f4a8edbf963dd370a4cc262a3",
+        "reads": 12,
+        "writes": []
+      }
+    },
+    {
+      "scenario": "public contact wording error de_DE",
+      "status": "passed",
+      "text_excerpt": "Zum Hauptinhalt springen\nWebsite durchsuchen\n🔍 Suchen\nStartseite\nKontaktformular\nEs ist ein Fehler aufgetreten!\n\nEs gab ein Problem beim Senden Ihrer Nachricht. Bitte überprüfen Sie die Fehler und versuchen Sie es erneut.\n\nKeine Kontaktdaten verfügbar.\n\nZurück zur Startseite\n\nPreisliche sowie technische Veränderungen und Irrtümer vorbehalten.\n\nTechnisch notwendige Cookies sichern die grundlegenden Funktionen dieser Website. Optionale Statistikdienste werden nur nach Ihrer Einwilligung geladen."
+    },
+    {
+      "scenario": "public missing CMS page de_DE",
+      "status": "passed",
+      "http_status": 404,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "shops"
+        ],
+        "issues": [],
+        "keys": 1433,
+        "hash": "1332d0528b7d12362e799550a7090172ea9f680f4a8edbf963dd370a4cc262a3",
+        "reads": 13,
+        "writes": []
+      },
+      "text_excerpt": "\t\t\t\t\t\t Suchen \n\t\t\t\t\t\t\t\t \n\t\t\t\t\t\t\t \n\t\t\t\t\t\t \n\t\t\t\t\t \n\n\t\t\t\t\t\t\t\t\t \n\t\t\t \n\t\t \n\t\t\t \n\n\t \n\t\t \n\t \n\t\t 404 \n\t\t Seite nicht gefunden \n\t\t Die gewünschte Seite ist nicht vorhanden. Nutzen Sie die Navigation oder durchsuchen Sie diese Website. \n\t\t \n\t\t\t Zur Startseite \n\t\t \n\t\t \n\t\t\t Website durchsuchen \n\t\t\t \n\t\t\t\t \n\t\t\t\t \n\t\t\t\t\t Suchen \n\t\t\t\t \n\t\t\t \n\t\t \n\t \n \n\n\t\t\t \n\n\t \n\t\t \n\t\t\t \n\t\t\t\t \n\t\t\t\t\t\t\t\t\t \n\t\t\t \n\t\t\t  \n\t\t\t  \n\t\t\t Preisliche sowie technische Veränderungen und Irrtümer vorbehalten. \n\t\t\t Technisch notwendige Cookies sichern die grundlegenden Funktionen dieser Website. Optionale Statistikdienste werden nur nach Ihrer Einwilligung geladen. \n\t\t\t\t\t \n\t \n\n\t\n\t  \n\t  \n\t  \n\t\t \n \n"
+    },
+    {
+      "scenario": "public contact success en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "shops"
+        ],
+        "issues": [],
+        "keys": 1433,
+        "hash": "2d9db81478c8dcd3a3a7c145b6fc871597bde80e333a5c13a84bc7bbc11f4c09",
+        "reads": 12,
+        "writes": []
+      }
+    },
+    {
+      "scenario": "public contact wording success en_US",
+      "status": "passed",
+      "text_excerpt": "Skip to main content\nSearch website\n🔍 Search\nHome\nContact form\nThank you for contacting us!\n\nNo contact details available.\n\nBack to home\n\nPrices and technical details are subject to change and error.\n\nTechnically necessary cookies provide the basic functions of this website. Optional analytics services are loaded only after your consent."
+    },
+    {
+      "scenario": "public contact error en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "shops"
+        ],
+        "issues": [],
+        "keys": 1433,
+        "hash": "2d9db81478c8dcd3a3a7c145b6fc871597bde80e333a5c13a84bc7bbc11f4c09",
+        "reads": 12,
+        "writes": []
+      }
+    },
+    {
+      "scenario": "public contact wording error en_US",
+      "status": "failed",
+      "text_excerpt": "Skip to main content\nSearch website\n🔍 Search\nHome\nContact form\nEs ist ein Fehler aufgetreten!\n\nEs gab ein Problem beim Senden Ihrer Nachricht. Bitte überprüfen Sie die Fehler und versuchen Sie es erneut.\n\nKeine Kontaktdaten verfügbar.\n\nZurück zur Startseite\n\nPrices and technical details are subject to change and error.\n\nTechnically necessary cookies provide the basic functions of this website. Optional analytics services are loaded only after your consent."
+    },
+    {
+      "scenario": "public missing CMS page en_US",
+      "status": "passed",
+      "http_status": 404,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": true,
+        "clientid": 7,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "shops"
+        ],
+        "issues": [],
+        "keys": 1433,
+        "hash": "2d9db81478c8dcd3a3a7c145b6fc871597bde80e333a5c13a84bc7bbc11f4c09",
+        "reads": 13,
+        "writes": []
+      },
+      "text_excerpt": "\t\t\t \n\t\t\t\t\t\t\t \n\t\t\t\t\t\t\t \n\t\t\t\t\t\t\t\t \n\t\t\t\t\t\t\t\t\t &#128269; \n\t\t\t\t\t\t\t\t\t Search \n\t\t\t\t\t\t\t\t \n\t\t\t\t\t\t\t \n\t\t\t\t\t\t \n\t\t\t\t\t \n\n\t\t\t\t\t\t\t\t\t \n\t\t\t \n\t\t \n\t\t\t \n\n\t \n\t\t \n\t \n\t\t 404 \n\t\t Page not found \n\t\t The requested page does not exist. Use the navigation or search this website. \n\t\t \n\t\t\t Go to homepage \n\t\t \n\t\t \n\t\t\t Search website \n\t\t\t \n\t\t\t\t \n\t\t\t\t \n\t\t\t\t\t Search \n\t\t\t\t \n\t\t\t \n\t\t \n\t \n \n\n\t\t\t \n\n\t \n\t\t \n\t\t\t \n\t\t\t\t \n\t\t\t\t\t\t\t\t\t \n\t\t\t \n\t\t\t  \n\t\t\t  \n\t\t\t Prices and technical details are subject to change and error. \n\t\t\t Technically necessary cookies provide the basic functions of this website. Optional analytics services are loaded only after your consent. \n\t\t\t\t\t \n\t \n\n\t\n\t  \n\t  \n\t  \n\t\t \n \n"
+    },
+    {
+      "scenario": "site language independent of English UI session",
+      "status": "passed",
+      "site_locale": "de_DE",
+      "next_erp_locale": "en_US"
+    },
+    {
+      "scenario": "browser AJAX locale endpoint",
+      "status": "passed",
+      "http_status": 200
+    },
+    {
+      "scenario": "browser locale persists after reload",
+      "status": "passed"
+    },
+    {
+      "scenario": "mobile navigation rendered",
+      "status": "passed"
+    },
+    {
+      "scenario": "guest AJAX forward",
+      "status": "passed",
+      "http_status": 401,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": false,
+        "clientid": null,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "users"
+        ],
+        "issues": [],
+        "keys": 1236,
+        "hash": "82aff9a6f3c59f9c7d2100831a0c2ad780b2acc752708cf03743701f24e986dc",
+        "reads": 0,
+        "writes": []
+      },
+      "response": "{\"ok\":false,\"message\":\"session_expired\"}"
+    },
+    {
+      "scenario": "anonymous public site de_DE",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "de_DE",
+        "authenticated": false,
+        "clientid": null,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "shops"
+        ],
+        "issues": [],
+        "keys": 1433,
+        "hash": "1332d0528b7d12362e799550a7090172ea9f680f4a8edbf963dd370a4cc262a3",
+        "reads": 7,
+        "writes": []
+      }
+    },
+    {
+      "scenario": "anonymous public site en_US",
+      "status": "passed",
+      "http_status": 200,
+      "meta": {
+        "locale": "en_US",
+        "authenticated": false,
+        "clientid": null,
+        "domains": [
+          "default",
+          "calendar_common",
+          "contacts_common",
+          "items_common",
+          "processes_common",
+          "purchases_common",
+          "sales_common",
+          "statistics_common",
+          "users_common",
+          "shops"
+        ],
+        "issues": [],
+        "keys": 1433,
+        "hash": "2d9db81478c8dcd3a3a7c145b6fc871597bde80e333a5c13a84bc7bbc11f4c09",
+        "reads": 7,
+        "writes": []
+      }
+    },
+    {
+      "scenario": "browser login through actual form submit",
+      "status": "passed"
+    },
+    {
+      "scenario": "browser actual language selector reload",
+      "status": "failed",
+      "dom": {
+        "lang": "de-DE",
+        "legacyContainer": false,
+        "selected": "en_US"
+      }
+    }
+  ],
+  "counts": {
+    "passed": 137,
+    "failed": 12
+  },
+  "server_errors": []
+}

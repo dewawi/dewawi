@@ -1,0 +1,240 @@
+{
+  "base_commit": "88eef4c0",
+  "decision": "not_accepted",
+  "findings": [
+    {
+      "id": "T3-01",
+      "priority": "P1",
+      "certainty": "confirmed_browser",
+      "title": "Sprachumschalter ohne gebundenen Handler",
+      "locations": [
+        {
+          "file": "js/global.js",
+          "line": 113
+        },
+        {
+          "file": "application/layouts/scripts/layout.phtml",
+          "line": 83
+        },
+        {
+          "file": "application/layouts/scripts/layout.phtml",
+          "line": 109
+        }
+      ],
+      "evidence": "Die native Auswahl erreicht en_US, HTML bleibt de-DE. #userinfo existiert im aktuellen Layout nicht.",
+      "recommendation": "Handler an die aktuelle Struktur binden; DE→EN→DE mit echtem Auswahlereignis, Reload und Folge-AJAX testen."
+    },
+    {
+      "id": "T3-02",
+      "priority": "P1",
+      "certainty": "confirmed_pdf",
+      "title": "PDF-Zahlenformat folgt UI statt Belegsprache",
+      "locations": [
+        {
+          "file": "library/DEEC/Pdf.php",
+          "line": 1982
+        },
+        {
+          "file": "application/modules/sales/services/DocumentPayloadService.php",
+          "line": 7
+        },
+        {
+          "file": "application/controllers/helpers/Currency.php",
+          "line": 14
+        }
+      ],
+      "evidence": "Sechs von zwölf DE/EN/UI-Beleg-Kombinationen rendern den Steuersatz in der UI-Locale. Englischer Beleg bei deutscher UI: Taxes (19,50%).",
+      "recommendation": "Separaten Beleg-Formatierungskontext für Renderer und Payload verwenden; UI-Registry und gespeicherte Originale erhalten. Positions-, Datums- und Währungsformatierung gezielt mitprüfen."
+    },
+    {
+      "id": "T3-03",
+      "priority": "P2",
+      "certainty": "confirmed_browser",
+      "title": "Legacy-Zend-Form zeigt acht eBay-Schlüssel",
+      "locations": [
+        {
+          "file": "application/modules/ebay/forms/Listing.php",
+          "line": 3
+        },
+        {
+          "file": "application/modules/ebay/controllers/ListingController.php",
+          "line": 41
+        },
+        {
+          "file": "application/modules/ebay/views/scripts/listing/index.phtml",
+          "line": 1
+        }
+      ],
+      "evidence": "DE und EN zeigen EBAY_USER_ID, EBAY_CATEGORY1/2, EBAY_STORE_CATEGORY1/2 und EBAY_PAYMENT_POLICY/RETURN_POLICY/SHIPPING_POLICY. Domain- und Texthashes stimmen dennoch mit dem Audit überein.",
+      "recommendation": "Translator-Anbindung des alten Zend_Form prüfen; Kataloge sind vorhanden. Weitere Zend_Form-Unterklassen gezielt abnehmen."
+    },
+    {
+      "id": "T3-03b",
+      "priority": "P2",
+      "certainty": "confirmed_browser",
+      "title": "Dynamische Breadcrumb-Schlüssel bleiben sichtbar",
+      "locations": [
+        {
+          "file": "application/views/helpers/Breadcrumbs.php",
+          "line": 14
+        },
+        {
+          "file": "application/views/helpers/Breadcrumbs.php",
+          "line": 20
+        }
+      ],
+      "evidence": "USERS/USER, LISTING und REPORTING werden aus Route-Namen zusammengesetzt, fehlen im Katalog und sind im sichtbaren Breadcrumb beider Sprachen vorhanden. Die statische Prüfung meldet dennoch vollständige Dateiparität.",
+      "recommendation": "Dynamische Route-Bezeichnungen gezielt auf bestehende Labels abbilden oder fehlende Schlüssel ergänzen; Browser- und Laufzeitdiagnosen in die Abnahme einbeziehen. DEWAWI-Markenrückgabe ausnehmen."
+    },
+    {
+      "id": "T3-04",
+      "priority": "P2",
+      "certainty": "confirmed_http",
+      "title": "Anmeldefehler deutsch; Login-HTML immer en",
+      "locations": [
+        {
+          "file": "application/modules/users/controllers/UserController.php",
+          "line": 230
+        },
+        {
+          "file": "application/modules/users/views/scripts/user/login.phtml",
+          "line": 9
+        }
+      ],
+      "evidence": "Englische Login-Präsentation liefert deutschen Fehltext. Deutsches Login deklariert lang=en. Weitere deaktivierte/gelöschte Konto-Meldungen sind ebenfalls im Quelltext deutsch.",
+      "recommendation": "Fehlertexte über bestehenden Translator auflösen und HTML-Sprache aus geprüfter Locale setzen. Anonyme Sprachwahl ist fachlich separat zu entscheiden."
+    },
+    {
+      "id": "T3-05",
+      "priority": "P2",
+      "certainty": "confirmed_browser",
+      "title": "Admin-Beschreibungen bleiben deutsch",
+      "locations": [
+        {
+          "file": "application/modules/admin/views/scripts/index/index.phtml",
+          "line": 20
+        }
+      ],
+      "evidence": "Fünf deutsche Beschreibungen werden als indirekte Translation-Schlüssel aufgerufen und bei EN unverändert ausgegeben; getIssues meldet missing_key.",
+      "recommendation": "Stabile Schlüssel für fünf Beschreibungen einsetzen; indirekte Literalaufrufe im Audit ergänzen."
+    },
+    {
+      "id": "T3-06",
+      "priority": "P2",
+      "certainty": "confirmed_browser_and_source",
+      "title": "Öffentliche Fehlerseite und Passworttexte bleiben deutsch",
+      "locations": [
+        {
+          "file": "application/modules/shops/views/scripts/contact/error.phtml",
+          "line": 24
+        },
+        {
+          "file": "application/modules/shops/views/scripts/checkout/error.phtml",
+          "line": 17
+        },
+        {
+          "file": "application/modules/users/views/scripts/user/edit.phtml",
+          "line": 24
+        },
+        {
+          "file": "application/modules/users/views/scripts/user/password.phtml",
+          "line": 9
+        }
+      ],
+      "evidence": "Englische Kontaktfehlerseite und Neues Passwort im englischen Profil im Browser bestätigt. Weitere Checkout-/Passworttexte im Quelltext bestätigt; nicht alle Dialogzweige ausgeführt.",
+      "recommendation": "Sichtbare Texte aus t3-hardcodes.json einzeln anbinden; zusätzlich Neues Passwort außerhalb der ursprünglichen 204 Kandidaten erfassen."
+    },
+    {
+      "id": "T3-07",
+      "priority": "P2",
+      "certainty": "source_confirmed_runtime_open",
+      "title": "Weitere sichtbare Hardcodes und JS-Fehlerzweige",
+      "locations": [
+        {
+          "file": "js/global.js",
+          "line": 157
+        },
+        {
+          "file": "application/views/helpers/MainMenu.php",
+          "line": 307
+        },
+        {
+          "file": "application/views/helpers/Media.php",
+          "line": 53
+        },
+        {
+          "file": "application/views/scripts/error/error.phtml",
+          "line": 9
+        }
+      ],
+      "evidence": "144 ursprüngliche Kandidaten sind übersetzbare Texte (74 außerhalb Installer, 70 Installer). Diese Anzahl zählt Fundstellen, nicht eindeutige Texte oder beobachtete Fehler. Nicht alle Laufzeitbedingungen ausgelöst.",
+      "recommendation": "T4 nach Flows bündeln; JS-Fallbacks und geteilte Komponenten mit Fehler-Injektion prüfen. Technische/dynamische Strings nicht pauschal ersetzen."
+    },
+    {
+      "id": "T3-08",
+      "priority": "P2",
+      "certainty": "confirmed_fixture_failure",
+      "title": "Shop-Anfrage-Suite stoppt vor HTTP/Browser",
+      "locations": [
+        {
+          "file": "tests/security/inquiry-catalog.php",
+          "line": 155
+        },
+        {
+          "file": "tests/security/inquiry-catalog.php",
+          "line": 158
+        },
+        {
+          "file": "tests/security/shop-inquiry-quote.py",
+          "line": 200
+        }
+      ],
+      "evidence": "Standalone Zend_View erhält nur Shop-Helferpfad und keinen passenden Translator/Detailkatalog; die feste Erwartung Katalogvorschläge schlägt fehl. T2-Runtimepartiale bestehen mit korrektem Translator.",
+      "recommendation": "Fixture mit realer Translate-Helper-Anbindung und Kontext ergänzen; anschließend gesamte HTTP-Katalog-/Varianten-/Angebot-/Mailkette erneut prüfen. Kein Nachweis eines fehlenden Produktkatalogs."
+    },
+    {
+      "id": "T3-09",
+      "priority": "P2",
+      "certainty": "confirmed_fixture_failure",
+      "title": "Kalender-Suite scheitert am SQL-Testparser",
+      "locations": [
+        {
+          "file": "tests/calendar/integration.php",
+          "line": 23
+        },
+        {
+          "file": "install/config/update-1.1.7-1.1.8.sql",
+          "line": 391
+        }
+      ],
+      "evidence": "explode auf Semikolon zerschneidet einen gültigen SQL-Kommentar. MariaDB sieht original business rows ... als SQL. Kalender-Browser- und SMTP-Workflows werden dadurch nicht erreicht.",
+      "recommendation": "Testparser isoliert korrigieren; offizielle Migration nicht wegen des Testparsers umschreiben. Danach Kalendertermine, Einladungen, Erinnerungen und Absagen zweisprachig abnehmen."
+    },
+    {
+      "id": "T3-10",
+      "priority": "P3",
+      "certainty": "manual_business_review",
+      "title": "Initialnamen, Installer, GoBD und Datumsformat",
+      "locations": [
+        {
+          "file": "application/modules/admin/models/Service/ClientInitializer.php",
+          "line": 127
+        },
+        {
+          "file": "install/templates/footer.php",
+          "line": 4
+        },
+        {
+          "file": "library/DEEC/Export/Gobd.php",
+          "line": 570
+        },
+        {
+          "file": "library/DEEC/Pdf.php",
+          "line": 2114
+        }
+      ],
+      "evidence": "Vorlage/Hauptlager sind gespeicherte Geschäftsnamen. Installer besitzt keinen normalen App-Bootstrap. GoBD-Beschreibungen sind Exportmetadaten. PDF-Datum bleibt d.m.Y; gewünschte englische Datumsnotation fachlich klären.",
+      "recommendation": "Zwei Initialnamen fachlich entscheiden, bestehende Datensätze nicht umbenennen. Installer/Export separat planen; historische PDFs und Beträge bewahren."
+    }
+  ]
+}

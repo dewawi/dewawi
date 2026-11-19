@@ -1,0 +1,73 @@
+{
+  "commands": [
+    {
+      "command": [
+        "php",
+        "tests/site/cms-structure.php"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 200 CMS block, CTA, theme and 404 structure cases\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "tests/site/public-errors.php"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "PASS: 10 public HTML, JSON, canonical and HEAD error response cases\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-l",
+        "tests/translations/acceptance-router.php"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "No syntax errors detected in tests/translations/acceptance-router.php\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-l",
+        "tests/translations/acceptance-pdf.php"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "No syntax errors detected in tests/translations/acceptance-pdf.php\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-l",
+        "tests/translations/acceptance-mail.php"
+      ],
+      "exit_code": 0,
+      "status": "passed",
+      "stdout": "No syntax errors detected in tests/translations/acceptance-mail.php\n",
+      "stderr": ""
+    },
+    {
+      "command": "compile four new Python sources without bytecode writes",
+      "status": "passed"
+    }
+  ],
+  "artifact_consistency": {
+    "status": "passed",
+    "http_checks": 149,
+    "pdf_checks": 72,
+    "mail_checks": 14,
+    "total": 235,
+    "passed": 217,
+    "failed": 18,
+    "classification_records": 204,
+    "classification_repeat_identical": true,
+    "syntax_rechecked_after_final_fixture_changes": true
+  }
+}

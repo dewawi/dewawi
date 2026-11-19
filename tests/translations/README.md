@@ -431,3 +431,18 @@ beiden Sprachen. Das sind keine vollständigen authentifizierten HTTP-Tests.
 Quellfingerabdruck: `e703c2380fb7993bbd809fdf9dcb810a23ba17b3db3961db9d8c176eac120819`.
 Der Fingerabdruck enthält den maßgeblichen lokalen Produktstand, einschließlich separat
 bearbeiteter UI-Dateien; deren Änderungen wurden nicht in diesen Commit übernommen.
+
+## T3 – Integrationsabnahme
+
+Die Abnahme auf Produktstand `88eef4c0` ist in [T3-acceptance.md](T3-acceptance.md)
+dokumentiert. **Nicht abgenommen:** 217/235 gezielte Prüfungen bestanden, 18 fehlgeschlagen.
+Alle 13 Module wurden in DE/EN über isolierte HTTP-/Chromium-Flows geöffnet; 39/39
+Lade-/Texthashvergleiche stimmen. Kritisch bleiben der JavaScript-Sprachumschalter und
+das PDF-Zahlenformat bei abweichender Beleg-/UI-Sprache. Weitere sichtbare Schlüssel,
+Sprachmischungen und blockierte Bestandssuiten sind mit konkreten T4-Dateien dokumentiert.
+
+Die vollständige Einzelklassifikation der 204 Hardcode-Kandidaten steht in
+[t3-hardcodes.json](t3-hardcodes.json): 144 übersetzbare, 49 technische/interne,
+neun dynamische/bereits passende und zwei fachlich offene Fundstellen.
+T1-/T2-Artefakte bleiben unverändert. Die neuen Abnahmeprogramme dürfen bei bestätigten
+Restfehlern bewusst Exit 1 liefern; genaue Aufrufe und tatsächliche Ergebnisse siehe T3-Bericht.

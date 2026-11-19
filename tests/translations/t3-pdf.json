@@ -1,0 +1,214 @@
+{
+    "scope": "Real compact-header/totals TCPDF renderer; synthetic payload, no DB/template loading and no mail dispatch",
+    "archive_fixture": "PASS: 208 PDF checks; canonical archive and historical originals preserved, tenant isolation retained",
+    "results": [
+        {
+            "ui_locale": "de_DE",
+            "document_locale": "de_DE",
+            "type": "quote",
+            "checks": {
+                "valid_pdf_and_text": true,
+                "document_labels": true,
+                "document_number_format": true,
+                "ui_context_preserved": true,
+                "no_unresolved_keys": true,
+                "stored_amounts_preserved": true
+            },
+            "expected_tax_rate": "19,50%",
+            "text": "ANGEBOT\n\nSynthetic recipient\n\nAngebotsnummer:\n\n123\n\nAngebotsdatum:\n\n19.11.2026\n\nKundennummer:\n\n12\n\nSachbearbeiter(in):\n\n-----\n\nAngebotsnummer 123 vom 2026-11-19\n\nPowered by TCPDF (www.tcpdf.org)\n\nNettobetrag\n\n100.00 EUR\n\nUmsatzsteuer (19,50%)\n\n19.50 EUR\n\nGesamtbetrag\n\n119.50 EUR\n\n\f",
+            "issues": [],
+            "stderr": ""
+        },
+        {
+            "ui_locale": "de_DE",
+            "document_locale": "de_DE",
+            "type": "salesorder",
+            "checks": {
+                "valid_pdf_and_text": true,
+                "document_labels": true,
+                "document_number_format": true,
+                "ui_context_preserved": true,
+                "no_unresolved_keys": true,
+                "stored_amounts_preserved": true
+            },
+            "expected_tax_rate": "19,50%",
+            "text": "AUFTRAGSBESTÄTIGUNG\n\nSynthetic recipient\n\nBelegnummer:\n\n123\n\nBelegdatum:\n\n19.11.2026\n\nKundennummer:\n\n12\n\nSachbearbeiter(in):\n\n-----\n\nAuftragsbestätigungs-Nr 123 vom 2026-11-19\n\nPowered by TCPDF (www.tcpdf.org)\n\nNettobetrag\n\n100.00 EUR\n\nUmsatzsteuer (19,50%)\n\n19.50 EUR\n\nGesamtbetrag\n\n119.50 EUR\n\n\f",
+            "issues": [],
+            "stderr": ""
+        },
+        {
+            "ui_locale": "de_DE",
+            "document_locale": "de_DE",
+            "type": "invoice",
+            "checks": {
+                "valid_pdf_and_text": true,
+                "document_labels": true,
+                "document_number_format": true,
+                "ui_context_preserved": true,
+                "no_unresolved_keys": true,
+                "stored_amounts_preserved": true
+            },
+            "expected_tax_rate": "19,50%",
+            "text": "RECHNUNG\nRechnungsnummer: 123\n\nSynthetic recipient\n\nPowered by TCPDF (www.tcpdf.org)\n\nRechnungsdatum:\n\n19.11.2026\n\nKundennummer:\n\n12\n\nSachbearbeiter(in):\n\n-----\n\nNettobetrag\n\n100.00 EUR\n\nUmsatzsteuer (19,50%)\n\n19.50 EUR\n\nGesamtbetrag\n\n119.50 EUR\n\n\f",
+            "issues": [],
+            "stderr": ""
+        },
+        {
+            "ui_locale": "de_DE",
+            "document_locale": "en_US",
+            "type": "quote",
+            "checks": {
+                "valid_pdf_and_text": true,
+                "document_labels": true,
+                "document_number_format": false,
+                "ui_context_preserved": true,
+                "no_unresolved_keys": true,
+                "stored_amounts_preserved": true
+            },
+            "expected_tax_rate": "19.50%",
+            "text": "QUOTE\n\nSynthetic recipient\n\nQuote ID:\n\n123\n\nQuote date:\n\n19.11.2026\n\nCustomer ID:\n\n12\n\nSales person:\n\n-----\n\nQuote number 123 dated 2026-11-19\n\nPowered by TCPDF (www.tcpdf.org)\n\nSubtotal\n\n100.00 EUR\n\nTaxes (19,50%)\n\n19.50 EUR\n\nTotal\n\n119.50 EUR\n\n\f",
+            "issues": [],
+            "stderr": ""
+        },
+        {
+            "ui_locale": "de_DE",
+            "document_locale": "en_US",
+            "type": "salesorder",
+            "checks": {
+                "valid_pdf_and_text": true,
+                "document_labels": true,
+                "document_number_format": false,
+                "ui_context_preserved": true,
+                "no_unresolved_keys": true,
+                "stored_amounts_preserved": true
+            },
+            "expected_tax_rate": "19.50%",
+            "text": "SALES ORDER\n\nSynthetic recipient\n\nDocument number:\n\n123\n\nDocument date:\n\n19.11.2026\n\nCustomer ID:\n\n12\n\nSales person:\n\n-----\n\nOrder confirmation number 123 dated 2026-11-19\n\nPowered by TCPDF (www.tcpdf.org)\n\nSubtotal\n\n100.00 EUR\n\nTaxes (19,50%)\n\n19.50 EUR\n\nTotal\n\n119.50 EUR\n\n\f",
+            "issues": [],
+            "stderr": ""
+        },
+        {
+            "ui_locale": "de_DE",
+            "document_locale": "en_US",
+            "type": "invoice",
+            "checks": {
+                "valid_pdf_and_text": true,
+                "document_labels": true,
+                "document_number_format": false,
+                "ui_context_preserved": true,
+                "no_unresolved_keys": true,
+                "stored_amounts_preserved": true
+            },
+            "expected_tax_rate": "19.50%",
+            "text": "INVOICE\n\nSynthetic recipient\n\nPowered by TCPDF (www.tcpdf.org)\n\nInvoice ID:\n\n123\n\nInvoice date:\n\n19.11.2026\n\nCustomer ID:\n\n12\n\nSales person:\n\n-----\n\nSubtotal\n\n100.00 EUR\n\nTaxes (19,50%)\n\n19.50 EUR\n\nTotal\n\n119.50 EUR\n\n\f",
+            "issues": [],
+            "stderr": ""
+        },
+        {
+            "ui_locale": "en_US",
+            "document_locale": "de_DE",
+            "type": "quote",
+            "checks": {
+                "valid_pdf_and_text": true,
+                "document_labels": true,
+                "document_number_format": false,
+                "ui_context_preserved": true,
+                "no_unresolved_keys": true,
+                "stored_amounts_preserved": true
+            },
+            "expected_tax_rate": "19,50%",
+            "text": "ANGEBOT\n\nSynthetic recipient\n\nAngebotsnummer:\n\n123\n\nAngebotsdatum:\n\n19.11.2026\n\nKundennummer:\n\n12\n\nSachbearbeiter(in):\n\n-----\n\nAngebotsnummer 123 vom 2026-11-19\n\nPowered by TCPDF (www.tcpdf.org)\n\nNettobetrag\n\n100.00 EUR\n\nUmsatzsteuer (19.50%)\n\n19.50 EUR\n\nGesamtbetrag\n\n119.50 EUR\n\n\f",
+            "issues": [],
+            "stderr": ""
+        },
+        {
+            "ui_locale": "en_US",
+            "document_locale": "de_DE",
+            "type": "salesorder",
+            "checks": {
+                "valid_pdf_and_text": true,
+                "document_labels": true,
+                "document_number_format": false,
+                "ui_context_preserved": true,
+                "no_unresolved_keys": true,
+                "stored_amounts_preserved": true
+            },
+            "expected_tax_rate": "19,50%",
+            "text": "AUFTRAGSBESTÄTIGUNG\n\nSynthetic recipient\n\nBelegnummer:\n\n123\n\nBelegdatum:\n\n19.11.2026\n\nKundennummer:\n\n12\n\nSachbearbeiter(in):\n\n-----\n\nAuftragsbestätigungs-Nr 123 vom 2026-11-19\n\nPowered by TCPDF (www.tcpdf.org)\n\nNettobetrag\n\n100.00 EUR\n\nUmsatzsteuer (19.50%)\n\n19.50 EUR\n\nGesamtbetrag\n\n119.50 EUR\n\n\f",
+            "issues": [],
+            "stderr": ""
+        },
+        {
+            "ui_locale": "en_US",
+            "document_locale": "de_DE",
+            "type": "invoice",
+            "checks": {
+                "valid_pdf_and_text": true,
+                "document_labels": true,
+                "document_number_format": false,
+                "ui_context_preserved": true,
+                "no_unresolved_keys": true,
+                "stored_amounts_preserved": true
+            },
+            "expected_tax_rate": "19,50%",
+            "text": "RECHNUNG\nRechnungsnummer: 123\n\nSynthetic recipient\n\nPowered by TCPDF (www.tcpdf.org)\n\nRechnungsdatum:\n\n19.11.2026\n\nKundennummer:\n\n12\n\nSachbearbeiter(in):\n\n-----\n\nNettobetrag\n\n100.00 EUR\n\nUmsatzsteuer (19.50%)\n\n19.50 EUR\n\nGesamtbetrag\n\n119.50 EUR\n\n\f",
+            "issues": [],
+            "stderr": ""
+        },
+        {
+            "ui_locale": "en_US",
+            "document_locale": "en_US",
+            "type": "quote",
+            "checks": {
+                "valid_pdf_and_text": true,
+                "document_labels": true,
+                "document_number_format": true,
+                "ui_context_preserved": true,
+                "no_unresolved_keys": true,
+                "stored_amounts_preserved": true
+            },
+            "expected_tax_rate": "19.50%",
+            "text": "QUOTE\n\nSynthetic recipient\n\nQuote ID:\n\n123\n\nQuote date:\n\n19.11.2026\n\nCustomer ID:\n\n12\n\nSales person:\n\n-----\n\nQuote number 123 dated 2026-11-19\n\nPowered by TCPDF (www.tcpdf.org)\n\nSubtotal\n\n100.00 EUR\n\nTaxes (19.50%)\n\n19.50 EUR\n\nTotal\n\n119.50 EUR\n\n\f",
+            "issues": [],
+            "stderr": ""
+        },
+        {
+            "ui_locale": "en_US",
+            "document_locale": "en_US",
+            "type": "salesorder",
+            "checks": {
+                "valid_pdf_and_text": true,
+                "document_labels": true,
+                "document_number_format": true,
+                "ui_context_preserved": true,
+                "no_unresolved_keys": true,
+                "stored_amounts_preserved": true
+            },
+            "expected_tax_rate": "19.50%",
+            "text": "SALES ORDER\n\nSynthetic recipient\n\nDocument number:\n\n123\n\nDocument date:\n\n19.11.2026\n\nCustomer ID:\n\n12\n\nSales person:\n\n-----\n\nOrder confirmation number 123 dated 2026-11-19\n\nPowered by TCPDF (www.tcpdf.org)\n\nSubtotal\n\n100.00 EUR\n\nTaxes (19.50%)\n\n19.50 EUR\n\nTotal\n\n119.50 EUR\n\n\f",
+            "issues": [],
+            "stderr": ""
+        },
+        {
+            "ui_locale": "en_US",
+            "document_locale": "en_US",
+            "type": "invoice",
+            "checks": {
+                "valid_pdf_and_text": true,
+                "document_labels": true,
+                "document_number_format": true,
+                "ui_context_preserved": true,
+                "no_unresolved_keys": true,
+                "stored_amounts_preserved": true
+            },
+            "expected_tax_rate": "19.50%",
+            "text": "INVOICE\n\nSynthetic recipient\n\nPowered by TCPDF (www.tcpdf.org)\n\nInvoice ID:\n\n123\n\nInvoice date:\n\n19.11.2026\n\nCustomer ID:\n\n12\n\nSales person:\n\n-----\n\nSubtotal\n\n100.00 EUR\n\nTaxes (19.50%)\n\n19.50 EUR\n\nTotal\n\n119.50 EUR\n\n\f",
+            "issues": [],
+            "stderr": ""
+        }
+    ],
+    "counts": {
+        "passed": 66,
+        "failed": 6
+    }
+}
