@@ -164,7 +164,9 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 		$html = '';
 
 		foreach ($toolbar->getToolbarElements($area) as $name => $element) {
-			$html .= $toolbar->renderElement($name);
+			$html .= $name === 'filter' && $this->usesSvgFilters($toolbar)
+				? $toolbar->renderElementWithAttribs($name, ['aria-controls' => $this->getFilterPanelId(), 'aria-expanded' => 'false'])
+				: $toolbar->renderElement($name);
 		}
 
 		return $html;
@@ -178,7 +180,8 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 			return '';
 		}
 
-		$html = '<div class="dw-filter-panel" data-role="filter-panel">';
+		$id = $this->usesSvgFilters($toolbar) ? ' id="' . $this->escapeAttr($this->getFilterPanelId()) . '"' : '';
+		$html = '<div class="dw-filter-panel" data-role="filter-panel"' . $id . '>';
 		$html .= '<form class="dw-filter-form">';
 		$html .= '<div class="dw-filter-grid">';
 
@@ -253,8 +256,17 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 		$html .= '<span class="dw-active-filters__label">'
 			. $this->escape($this->view->translate('TOOLBAR_SELECTED_FILTER'))
 			. ':</span>';
+		$svgFilters = $this->usesSvgFilters($toolbar);
 
 		foreach ($filters as $filter) {
+			if ($svgFilters) {
+				$text = $filter['label'] . ': ' . $filter['value'];
+				$html .= $this->view->getHelper('button')->renderButton(
+					['text' => $text, 'icon' => 'clear', 'iconFormat' => 'svg', 'size' => 'sm'],
+					['type' => 'button', 'class' => 'dw-filter-chip', 'data-action' => 'clear-filter', 'data-filter' => $filter['name'], 'aria-label' => $this->view->translate('TOOLBAR_CLEAR_FILTER', [$text])]
+				);
+				continue;
+			}
 			$html .= '<button type="button" class="dw-filter-chip"'
 				. ' data-action="clear-filter"'
 				. ' data-filter="' . $this->escapeAttr($filter['name']) . '">'
@@ -267,6 +279,30 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 		$html .= '</div>';
 
 		return $html;
+	}
+
+	protected function usesSvgFilters($toolbar): bool
+	{
+		$classes = [
+			'contacts/inquiry' => 'Contacts_Form_InquiryToolbar',
+			'contacts/contact' => 'Contacts_Form_Toolbar',
+			'items/item' => 'Items_Form_Toolbar',
+			'tasks/task' => 'Tasks_Form_Toolbar',
+			'admin/country' => 'Admin_Form_Toolbar', 'admin/uom' => 'Admin_Form_Toolbar',
+			'admin/deliverytime' => 'Admin_Form_Toolbar', 'admin/manufacturer' => 'Admin_Form_Toolbar',
+			'admin/warehouse' => 'Admin_Form_Toolbar', 'admin/shippingmethod' => 'Admin_Form_Toolbar',
+			'statistics/customer' => 'Statistics_Form_Toolbar', 'statistics/quote' => 'Statistics_Form_Toolbar', 'statistics/turnover' => 'Statistics_Form_Toolbar',
+		];
+		$context = (string)$this->view->module . '/' . (string)$this->view->controller;
+		$action = (string)$this->view->action;
+		return isset($classes[$context]) && get_class($toolbar) === $classes[$context]
+			&& ($toolbar->getElement('filter')['iconFormat'] ?? '') === 'svg'
+			&& ($action === 'index' || ($action === 'select' && !in_array($classes[$context], ['Contacts_Form_InquiryToolbar', 'Statistics_Form_Toolbar'], true)));
+	}
+
+	protected function getFilterPanelId(): string
+	{
+		return 'dw-toolbar-filters-' . $this->view->module . '-' . $this->view->controller;
 	}
 
 	protected function getActiveFilters($toolbar): array

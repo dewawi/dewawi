@@ -37,6 +37,7 @@
 	'TOOLBAR_RESET' => 'Reset',
 	'CLEAR' => 'Clear',
 	'TOOLBAR_SELECTED_FILTER' => 'Selected filter',
+	'TOOLBAR_CLEAR_FILTER' => 'Remove filter: %s',
 	'TOOLBAR_FROM' => 'From',
 	'TOOLBAR_TO' => 'To',
 	'TOOLBAR_DATE_RANGE' => 'Date range',

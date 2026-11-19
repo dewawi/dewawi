@@ -37,6 +37,14 @@ foreach (['contacts', 'items', 'tasks', 'admin/country', 'admin/uom', 'admin/del
 	$page = toolbarPage('de_DE', $route, 'index', 'layout', ['view', 'add', 'edit', 'delete'], false, 'index', false, false, true);
 	$visible[$route] = substr_count($page['html'], 'dw-btn--control');
 }
+$filterContexts = [];
+foreach ($groups as $route => $classes) foreach (['index', 'select'] as $action) {
+	$fixture = str_starts_with($route, 'statistics/')
+		? ['values' => ['country' => 'DE'], 'options' => ['country' => ['0' => 'TOOLBAR_ALL_COUNTRIES', 'DE' => 'Fixture country']]]
+		: ['values' => ['sort' => 'ASC'], 'options' => ['sort' => ['ASC' => 'TOOLBAR_ASC', 'DESC' => 'TOOLBAR_DESC']]];
+	$page = toolbarPage('de_DE', $route, $action, 'layout', ['view', 'add', 'edit', 'delete'], false, 'index', false, false, false, null, $fixture);
+	foreach (buttonDom($page['toolbar'])->getElementsByTagName('button') as $button) if ($button->getAttribute('data-action') === 'clear-filter' && $button->getElementsByTagName('svg')->length) $filterContexts[] = $route . '/' . $action;
+}
 echo json_encode([
 	'method' => 'Unique class::field metadata with explicit SVG in the documented real controller contexts. Contexts mean constructor activation, not guaranteed visibility. Fixture DOM counts use two synthetic rows and include repeated footer controls; never a production total.',
 	'svg_fields' => count($fields),
@@ -46,4 +54,5 @@ echo json_encode([
 	'controller_fields' => array_map('array_keys', $byController),
 	'fields' => $fields,
 	'index_fixture_visible_controls' => $visible,
+	'shared_svg_renderers' => ['Zend_View_Helper_Toolbar::renderActiveFilters' => ['file' => 'application/views/helpers/Toolbar.php', 'icon' => 'clear', 'contexts' => $filterContexts]],
 ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";

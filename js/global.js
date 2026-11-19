@@ -3119,6 +3119,7 @@ function markFieldSaved($field) {
 
 		refresh: function (html) {
 			var $toolbar = $('.dw-page-header__toolbar .dw-toolbar').first();
+			if (!$toolbar.length) $toolbar = $('.dw-popup-header__toolbar .dw-filter-panel[id^="dw-toolbar-filters-"]').closest('.dw-toolbar').first();
 
 			if(!$toolbar.length) return;
 
@@ -3442,6 +3443,10 @@ function markFieldSaved($field) {
 
 			filter: function () {
 				$('.dw-filter-panel').toggleClass('is-open');
+				$('[data-action="filter"][aria-controls]').each(function () {
+					var panel = document.getElementById(this.getAttribute('aria-controls'));
+					if (panel) this.setAttribute('aria-expanded', String($(panel).hasClass('is-open')));
+				});
 			},
 
 			reset: function () {

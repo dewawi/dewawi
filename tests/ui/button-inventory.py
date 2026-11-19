@@ -78,6 +78,8 @@ def inventory():
         'form_types': dict(Counter(r['type'] for r in records if r['kind'] == 'form-config')),
         'toolbar_forms': toolbar_forms, 'toolbar_helpers': toolbar_helpers,
         'svg_sources': svg_sources, 'action_list_models': action_lists, 'other_list_models': [p for p in lists if p not in action_lists],
+        'svg_form_sources': [p for p in svg_sources if '/forms/' in p],
+        'svg_helper_sources': [p for p in svg_sources if '/views/helpers/' in p],
         'identical_root_assets': [v for v in by_hash.values() if len(v) > 1],
         'sites': records,
     }
@@ -88,7 +90,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     result = inventory()
     if not args.json:
-        for key in ['toolbar_forms', 'toolbar_helpers', 'svg_sources', 'action_list_models', 'other_list_models']:
+        for key in ['toolbar_forms', 'toolbar_helpers', 'svg_sources', 'svg_form_sources', 'svg_helper_sources', 'action_list_models', 'other_list_models']:
             result[key] = len(result[key])
         result.pop('sites')
     print(json.dumps(result, ensure_ascii=False, indent=2))

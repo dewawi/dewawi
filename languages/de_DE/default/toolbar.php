@@ -45,6 +45,7 @@
 	'TOOLBAR_RESET' => 'Zurücksetzen',
 	'CLEAR' => 'Leeren',
 	'TOOLBAR_SELECTED_FILTER' => 'Ausgewählte Filter',
+	'TOOLBAR_CLEAR_FILTER' => 'Filter entfernen: %s',
 	'TOOLBAR_FROM' => 'Von',
 	'TOOLBAR_TO' => 'Bis',
 	'TOOLBAR_DATE_RANGE' => 'Zeitraum',

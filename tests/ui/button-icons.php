@@ -75,7 +75,9 @@ foreach (['de_DE', 'en_US'] as $locale) {
 			check($oldButtons->length === $newButtons->length, 'SVG changed permission visibility');
 			foreach ($oldButtons as $i => $oldButton) {
 				$newButton = $newButtons->item($i);
-				check($oldButton->textContent === $newButton->textContent && $oldButton->attributes->length === $newButton->attributes->length, 'SVG changed translated label or button attributes');
+				$disclosure = $part === 'toolbar' && $oldButton->getAttribute('name') === 'filter';
+				if ($disclosure) check($newButton->getAttribute('aria-controls') === 'dw-toolbar-filters-contacts-inquiry' && $newButton->getAttribute('aria-expanded') === 'false' && !$oldButton->hasAttribute('aria-controls') && !$oldButton->hasAttribute('aria-expanded'), 'Scoped SVG filter disclosure missing or leaked into PNG baseline');
+				check($oldButton->textContent === $newButton->textContent && $oldButton->attributes->length + ($disclosure ? 2 : 0) === $newButton->attributes->length, 'SVG changed translated label or unrelated button attributes');
 				foreach ($oldButton->attributes as $attribute) check($newButton->getAttribute($attribute->name) === $attribute->value, 'SVG changed attribute: ' . $attribute->name);
 				check($newButton->getElementsByTagName('svg')->length === 1, 'Pilot icon missing');
 			}

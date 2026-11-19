@@ -32,7 +32,7 @@ function toolbarContext(string $module, string $controller, string $action, arra
 	$front->getRouter()->addDefaultRoutes();
 }
 
-function toolbarPage(string $locale, string $module, string $action = 'index', string $layoutName = 'layout', array $rights = ['view', 'add', 'edit', 'delete'], bool $readonly = false, string $contextAction = 'index', bool $legacyStatistics = false, bool $selectionActions = false, bool $listActions = false, ?array $listItems = null): array
+function toolbarPage(string $locale, string $module, string $action = 'index', string $layoutName = 'layout', array $rights = ['view', 'add', 'edit', 'delete'], bool $readonly = false, string $contextAction = 'index', bool $legacyStatistics = false, bool $selectionActions = false, bool $listActions = false, ?array $listItems = null, array $filterFixture = []): array
 {
 	global $root;
 	if (str_contains($module, '/')) [$module, $controller] = explode('/', $module, 2);
@@ -49,9 +49,11 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 	Zend_Registry::set('DEEC_Translate', $translator);
 	Zend_Registry::set('Zend_Locale', new Zend_Locale($locale));
 	Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_NonPersistent());
-	$class = ucfirst($module) . '_Form_Toolbar';
+	$class = $module === 'contacts' && $controller === 'inquiry' ? 'Contacts_Form_InquiryToolbar' : ucfirst($module) . '_Form_Toolbar';
 	if ($legacyStatistics && $module === 'statistics') $class = 'ToolbarStatisticsLegacyFixture';
 	$toolbar = new $class();
+	$toolbar->setValues($filterFixture['values'] ?? []);
+	foreach ($filterFixture['options'] ?? [] as $name => $options) $toolbar->setElementData($name, ['options' => $options]);
 	if ($module === 'tasks') $toolbar->setElementData('state', ['options' => $toolbar->getElement('states')['options']]);
 	if ($readonly) $toolbar->setMode('readonly');
 	$view = new Zend_View();
@@ -64,7 +66,7 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 	$view->assign([
 		'language' => $locale, 'module' => $module, 'controller' => $controller, 'action' => $action,
 		'id' => 17, 'title' => $translator->t(['contacts' => 'CONTACTS', 'items' => 'ITEMS', 'tasks' => 'TASKS', 'admin' => 'ADMIN', 'statistics' => 'STATISTICS'][$module]),
-		'toolbar' => $toolbar, 'options' => [], 'messages' => [],
+		'toolbar' => $toolbar, 'options' => $filterFixture['options'] ?? [], 'messages' => [],
 		'user' => Zend_Registry::get('User') + ['name' => 'Fixture User'],
 		'categories' => [1 => ['id' => 1, 'parentid' => 0, 'title' => 'Fixture category']], 'tags' => [1 => 'Fixture tag'],
 	]);

@@ -1,6 +1,6 @@
-# B11 – Aktuelle Gesamtinventur des Button-Systems
+# DEWAWI – Button-System-Inventur, aktualisiert mit B12
 
-Stand: 19.11.2026, lokale Basis `f337ba70` einschließlich B2–B10 (`96549509`). Grundlage: `AGENTS.md` und [B1](buttons-icons-analysis.md), [B2](buttons-foundation.md), [B3](button-icons.md), [B4](inquiry-buttons.md), [B5](toolbar-buttons.md), [B6](tasks-toolbar.md), [B7](remaining-toolbars.md), [B8](button-quality-audit.md), [B9](apply-buttons.md), [B10](list-buttons.md). B11 ergänzt keine Button-/Iconmigration. Seine einzige Laufzeitänderung ist die [mobile Tabellenkorrektur](mobile-table-actions.md).
+Stand: 19.11.2026. B11-Basis `f337ba70` einschließlich B2–B10 (`96549509`), B11-Commit `83a51db1`. B12 ergänzt den [gemeinsamen Filterchip-/Disclosureblock](filter-buttons.md); der unabhängige Dokumentcommit `b32241c1` ist keine Buttonmigration. Grundlage: `AGENTS.md` und [B1](buttons-icons-analysis.md), [B2](buttons-foundation.md), [B3](button-icons.md), [B4](inquiry-buttons.md), [B5](toolbar-buttons.md), [B6](tasks-toolbar.md), [B7](remaining-toolbars.md), [B8](button-quality-audit.md), [B9](apply-buttons.md), [B10](list-buttons.md), [B11](mobile-table-actions.md).
 
 ## Zählmethoden und überprüfbare Ergebnisse
 
@@ -18,6 +18,8 @@ Literale `->addElement([…])` werden mit tokenisierten Strings/Kommentaren und 
 
 Der PHP-Lauf verwendet vorhandene Memoryfixtures, reale Klassen und dokumentierte Controller-/Aktionskontexte. Er zählt eindeutige `Klasse::Feld`-Konfigurationen mit explizitem `iconFormat=svg`, zusätzlich ihre Controllerzuordnung. Aktivierte Metadaten sind nicht automatisch sichtbar: Helper, `show`-Callbacks, ACL, Formularansicht und Daten entscheiden weiter über die Ausgabe. Die ausgegebenen `contexts` sind Konstruktorkontexte, keine vollständig inventarisierten HTTP-Routen.
 
+Seit B12 weist Python SVG-Formular- und Helperquellen getrennt aus. PHP prüft zusätzlich tatsächlich gerenderte aktive Filterchips in Index/Select und liefert deren Helperkontexte unter `shared_svg_renderers`. Diese bedarfsabhängige Ausgabe ist **keine zusätzliche Formularfeldkonfiguration**.
+
 | Grundgesamtheit | Aktueller Befund | Aussagegrenze |
 | --- | --- | --- |
 | Eigene Quelldateien im definierten Scan | **1.074** | Dateien, keine UI-Instanzen. B1 hatte einen anderen historischen Scan; Roh-HTML-Differenzen sind nicht ohne Methodenabgleich eine Migration. |
@@ -31,6 +33,7 @@ Der PHP-Lauf verwendet vorhandene Memoryfixtures, reale Klassen und dokumentiert
 | Toolbarformulardateien / Helperdateien | **34 / 8** | 13 Haupttoolbarfamilien; zusätzlich Inline-/Positions-/Spezialklassen. Drei reine Ableitungen enthalten keine eigene Buttonkonfiguration: ToolbarItemlist, ToolbarStockplanning, QuoteToolbar. Sie sind deshalb nicht ungenutzt. |
 | Listenmodelle | **50**, davon **44** mit Actionszelle | Zehn teilweise durch B4/B9/B10 abgedeckt, 34 Actions-Modelle außerhalb dieser SVG-Zeilenmigration. Modell ≠ erreichbarer Endpunkt. Vollständige Namensliste im [B10-Inventar](list-buttons.md). |
 | Aktive SVG-Feldkonfigurationen | **45 in 12 Formularquellen** | Davon elf Toolbarformulardateien; die Inquiry-Form ist die zwölfte Quelle. 23 der 34 Toolbarformulardateien vollständig Legacy; die elf anderen nur teilweise migriert. |
+| B12: gemeinsamer SVG-Helperweg | **1 Erzeugungsstelle in 1 zusätzlichem Helper**, 22 logische Index-/Selectkontexte in den bestehenden 13 Controllergruppen | Ein Chip je aktivem Filter, kein fixer DOM-Zähler. Insgesamt jetzt 13 SVG-produzierende PHP-Dateien: zwölf Formulare und ein Helper. Search bildet dieselben logischen Kontexte ab. |
 | Controllerbezogene SVG-Konfigurationen | **84 in 13 primären Controllergruppen** | Mehrfachnutzung derselben Admin-/Statistikklasse erzeugt zusätzliche Zuordnungen, keine zusätzlichen Quellfelder. |
 | Sichtbarer Referenz-DOM | **109 moderne Controls** in neun Index-Fixtureseiten | Je DE, ein Renderdurchlauf, zwei synthetische Rows, Kopf/Fuß wiederholt: Kontakte 15, Artikel 13, Tasks 15, sechs Adminlisten je 11. Kein Gesamtproduktionswert und nicht mit 45/84 addierbar. |
 
@@ -41,7 +44,7 @@ Keine Prozentangabe aus 45/243, 84/147 oder sichtbaren Fixtures: Diese Zahlen ha
 | Weg und aktuelle Fundstellen | Verwendung / verbleibender Vertrag |
 | --- | --- |
 | `library/DEEC/Form.php::{addElement,renderElementHtml,renderButtonHtml,renderButtonIcon}` | Hauptweg; Rechte/Readonly/Werte/Attribute vor Präsentation. Opt-in über icon/iconFormat/variant/size/iconOnly, Legacyausgabe weiter vorhanden. Die einzige moderne Buttonroutine bleibt maßgeblich; keine neue B11-Schicht. |
-| `application/views/helpers/Button.php::{Button,renderButton}` | Alter Positionsparametervertrag delegiert seit B2 mit Legacyoptionen an dieselbe Routine. Die moderne direkte Schnittstelle ist verfügbar; keine zusätzliche externe Produktionsmigration gefunden. Kein Grund, die Kompatibilitätsschnittstelle als toten Code zu löschen. |
+| `application/views/helpers/Button.php::{Button,renderButton}` | Alter Positionsparametervertrag bleibt Legacy. B12 verwendet die moderne direkte Schnittstelle für die ausdrücklich freigegebenen Filterchips in `Toolbar::renderActiveFilters`; beide Wege delegieren an dieselbe DEEC-Routine. Kein Grund, die Kompatibilitätsschnittstelle als toten Code zu löschen. |
 | Haupt-/Fußtoolbars: gemeinsame `Toolbar.php`, `ToolbarBottom.php`, Modulformulare | Wiederholung derselben Felder, unterschiedliche Index/Select/Edit/View-/Filter-/Bulkverträge. Gemeinsame Darstellung erteilt keine ACL-/Tenant-/SaaS-Rechte. |
 | `DEEC_Controller_Action::{buildListView,getToolbarClass,getToolbarInlineClass}`, `DEEC_List::{renderActionsCell,renderLinkCell,renderPinCell}` | Actionszelle rendert über Inlineform, ergänzt danach Rowtargets; native Links und Pin eigener Weg. `DEEC_Display` formatiert Werte und ist kein Buttonrenderer. |
 | Positions-/Setwege | Sechs `ToolbarPositions`-Formulare; gemeinsamer Helper, vier modulare `ToolbarPositionSets`-Helper, Positions-/Optionspartials. Parent/Set/Status/Sortier-/Auswahlverträge, keine B11-Migration. Nicht aus alten Inventartexten automatisch schließen, alle alten Namen seien noch aktuell: z. B. Tasks verwendet heute `add-position`, `copy-selected-position`, `add-position-set` passend zum Helper. |
@@ -71,6 +74,16 @@ Keine Prozentangabe aus 45/243, 84/147 oder sichtbaren Fixtures: Diese Zahlen ha
 | `statistics/forms/Toolbar.php` | filter, reset | Nur customer/quote/turnover, Index/Search. Export und reporting unberührt. |
 
 Die fünf Standardaktionen sind Index/Search/Select/Edit/View. Die Layouts geben nur für die bestehenden begrenzten internen Kontexte einmal lokale Symbole aus; iframes besitzen ihren eigenen Block, AJAXfragmente keinen. Keine neue Aktivierung in B11.
+
+### B12: ein gemeinsamer aktiver Filterchipweg
+
+`application/views/helpers/Toolbar.php::renderActiveFilters` verwendet jetzt für dieselben 13 Controllergruppen den Button-Helper, `icon=clear`/B3-Alias Close, Text+Icon und sm. Index in allen 13 Gruppen, Select zusätzlich in Contact/Item/Task und den sechs einfachen Adminlisten: **22 logische Renderkontexte**. Exakte Klassen, bestehendes Filter-SVG-Opt-in und Viewkontext sind Voraussetzung. Inquiry-/Statistik-Select, Unterklassen, PNG-Piloten, andere Controller und sämtliche Edit/View-/Dokument-/Shop-/CMSwege bleiben beim bisherigen HTML. Alle bestehenden Filterwerte/-typen dieses Wegs sind enthalten; keine Heuristik aus Beschriftungen.
+
+Filterbutton und Panel erhalten in diesen Kontexten einen korrekten Disclosure-Vertrag. Der bestehende Handler synchronisiert `aria-expanded`; die Toggle-/Filter-/Cookie-/Searchlogik bleibt erhalten. Der AJAX-Refresh erkennt neu markierte Plain-Filterpanels zusätzlich zum bisherigen Hauptheader. Er korrigiert dadurch veraltete Filterchips im migrierten Popup; unmarkierte Legacy-Popups bleiben unverändert. Filter-Sammelauswahllinks, normale Formularsubmits, Clear-Keyword, Alert-/Modalclose, MultiForm, Pin und fachliche Aktionen sind kein zusätzlicher B12-Block.
+
+Die 45 Formularfelder, 84 Controller-/Feldpaare, 13 primären Gruppen und 109 Controls der **inaktiven** Neun-Seiten-Referenz bleiben byte-/wertgleich zur B11-Inventur. Aktive Filter erzeugen zusätzliche Instanzen des einen Helperwegs; nicht zu 45 addieren oder als Migrationsprozent interpretieren. Vollständige Regressionen, Quellen und Abnahmegrenzen im [B12-Bericht](filter-buttons.md).
+
+Assetstatus nach B12: Die alten Filterchips verwendeten ein Unicode-× und kein PNG; durch diese Migration wird deshalb kein PNG neu verwaist. Die fünf ungenutzten SVG-Reservegeometrien, das bestätigte PNG-Duplikat und die statischen Sprite-/Helperkandidaten der folgenden Tabelle bleiben unverändert. Kein neuer globaler Löschbeweis und keine Assetentfernung.
 
 ### Verbleibende Toolbarfamilien und Sondergruppen
 
@@ -102,18 +115,18 @@ Zehn Inlineformularquellen: Admin/Contacts/Items/Tasks/Inquiry teilweise SVG; Ca
 
 Keine Datei wurde als Inventur-Nebenwirkung gelöscht. Statische Nichtreferenz ist schwächer als bestätigte Unerreichbarkeit; byteidentische Assets sind kein Nachweis ihrer Entbehrlichkeit. Die internen SVG-Controls haben geprüfte übersetzte Namen, daraus folgt keine vollständige DE/EN- oder Screenreaderfreigabe aller verbleibenden Legacywege.
 
-## Prioritäten für B12 und spätere Freigabe
+## Verbleibende Prioritäten nach B12 und spätere Freigabe
 
 | Priorität | Konkreter nächster Block / Nutzen | Risiko und Abnahmekriterium |
 | --- | --- | --- |
-| B12 empfohlen, klar begrenzte Qualitätskorrektur | Den bei 320 px reproduzierten **globalen Headerüberlauf** und technische DE/EN-Spalten-/Menü-/Reportkeys separat lokalisieren und korrigieren. Mobile Tabellen-/Benutzerkopf- und Übersetzungsabnahme vor zusätzlicher Migration. | Mittel, gemeinsame Layout-/Katalogwirkung. Vorher/Nachher DE/EN × 320/390/768/1280, mehrere Module, lange Benutzer-/Mandantennamen und Plainlayouts; keine stillschweigende Toolbar-/Workflowmigration. Filter-Disclosure (`aria-expanded`/`aria-controls`, B8-Q4) als eigenständig prüfbarer Accessibility-Unterblock. |
+| B13 empfohlen: verbleibende Qualitätskorrektur | Den bei 320 px reproduzierten **globalen Headerüberlauf** und technische DE/EN-Spalten-/Menü-/Reportkeys separat lokalisieren und korrigieren. B12 hat den risikoarmen Filter-Disclosure-Unterblock und den dazugehörigen gemeinsamen Clear-Filterweg umgesetzt. Header-/Katalogänderungen teilen diesen Renderer nicht und wurden nicht mitgebündelt. | Mittel, gemeinsame Layout-/Katalogwirkung. Vorher/Nachher DE/EN × 320/390/768/1280, mehrere Module, lange Benutzer-/Mandantennamen und Plainlayouts; keine stillschweigende Toolbar-/Workflowmigration. Disclosure ist nur für die B12-Scopes geschlossen, nicht global für jeden Legacyfilter. |
 | Danach Standard-Delete | Gemeinsame zentrale/Inline-Deletewege der bereits migrierten Kontakt-/Artikel-/Taskkontexte: großer Wiederverwendungsnutzen, vorhandenes SVG vorhanden. | Erhöht: Confirm/Cancel, exakte IDs, Rechte/Tenants, Kaskaden/eBay, Teilergebnis, Loading/Retry/Fokus nachweisen. Admin-`media-delete`/zusätzlich injiziertes `data-action=delete` zuerst klären; keine Medien-/Dokumentlöschung mitnehmen. |
 | Danach wiederkehrende Positions-/Set-/Pinaktionen | Dieselben bestehenden Renderer nutzen, tatsächliche Aufrufnamen/Unterklassen vorher neu prüfen. | Hoch: Parent/Set/Options-/Bestands-/Reihenfolgeverträge. Kein globales Opt-in in gemeinsamen Klassen, keine Ableitung allein aus Add/Copy/Delete-Text. |
 | Gesondert Formulare/dynamische Controls | Wiederkehrende normale Submit-/Modal-/MultiForm-/Clear-/Closecontrols mit eindeutigem Vertrag; Test- und Namensverbesserung. | Native Submitterwerte, Auto-Save-Opt-out, Fokus-/Dialoggrenzen erhalten. Keine neue parallele JS-Renderingarchitektur; ZF1-/DEEC-Unterschiede beachten. |
 | Später eigene fachliche Blöcke | Dokumente/PDF/Export, Mail/Senden, Zahlung, SaaS-/Rechte-/Mandantenverwaltung, Kampagnen, Shop/CMS und Widgetöffner. | Fachliche Abnahme, historische Werte, Rechte/Entitlements, gespeichertes HTML/Themes und Fremdwidgets. Nicht durch Entfernen vorhandener Guards freigeben. |
 | Aufräumen separat | Inaktiver Drawerpfad und verwaiste Helper-/Assetkandidaten mit vollständigem Erreichbarkeits-/Theme-/Datenbestandnachweis. | Niedriger Nutzen gegenüber UI-Qualität; keine automatische Löschung aufgrund von `rg`-Nulltreffern. |
 
-Freigabeplan: technische B11-/B2–B10-Prüfungen gemäß [mobilem Bericht](mobile-table-actions.md), danach manuelle reale DE/EN-Testinstallation mit repräsentativen langen Daten, Rollen/Mandanten/Sharing und gebuchten SaaS-Features; mobile Scroll-/Touch-/Fokus-/Tooltipprüfung; Firefox/Safari und NVDA/VoiceOver. Bestehende B8-Altbefunde und der unabhängige Notification-Fixturefehler bleiben offen. Keine produktive Session erzeugen, um eine fehlende Testumgebung zu ersetzen.
+Freigabeplan: technische B12-/B2–B11-Prüfungen gemäß [Filterbericht](filter-buttons.md) und [mobilem Bericht](mobile-table-actions.md), danach manuelle reale DE/EN-Testinstallation mit repräsentativen langen Daten, Rollen/Mandanten/Sharing und gebuchten SaaS-Features; mobile Scroll-/Touch-/Fokus-/Tooltipprüfung; Firefox/Safari und NVDA/VoiceOver. Bestehende B8-Altbefunde außerhalb des Filter-Scopes und der unabhängige Notification-Fixturefehler bleiben offen. Keine produktive Session erzeugen, um eine fehlende Testumgebung zu ersetzen.
 
 ## Quellenanhang: 243 literale Konfigurationen
 
