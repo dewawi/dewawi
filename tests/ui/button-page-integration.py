@@ -23,6 +23,8 @@ parser.add_argument('--layouts', type=Path, help='Optional old layout snapshots 
 parser.add_argument('--compare-layouts', type=Path, help='Compare every button byte-for-byte with these prior layouts')
 parser.add_argument('--output', type=Path, default=Path('/tmp/dewawi-b14'))
 parser.add_argument('--inspect-html', type=Path, help='Inspect an explicitly supplied HTML file without HTTP or database access')
+parser.add_argument('--dashboard', action='store_true', help='Exercise all dashboard groups, role boundaries and actual edit handlers')
+parser.add_argument('--compare-dashboard', type=Path, help='Compare dashboard action attributes and legacy markup against prior view snapshots')
 args = parser.parse_args()
 png_keys = set(re.findall(r'\.dw-btn\.([a-z-]+),\s*\.dw-btn__icon--', (root / 'css/ui.css').read_text()))
 
@@ -44,7 +46,7 @@ class Inventory(HTMLParser):
                 action = 'contact-export-' + attributes['data-contact-export-profile']
             elif attributes.get('onclick', '').startswith('pin('):
                 action = 'pin'
-            self.button = {'classes': attributes.get('class', '').split(), 'action': action, 'svg': False}
+            self.button = {'classes': attributes.get('class', '').split(), 'action': action, 'svg': False, 'attributes': attributes}
             self.buttons.append(self.button)
         if tag == 'svg':
             self.svg_count += 1
@@ -122,6 +124,8 @@ with tempfile.TemporaryDirectory(prefix='dewawi-button-pages-') as directory:
         driver = browser.WebDriver()
         driver.command('POST', '/goog/cdp/execute', {'cmd': 'Network.enable', 'params': {}})
         paths = ['/contacts/contact?fixture_contextless=1', '/items/item/select?fixture_contextless=1', '/contacts/contact', '/items/item', '/', '/contacts/contact/select', '/items/item/select', '/erp/contacts/contact', '/erp/items/item/select', '/tasks/task', '/sales/quote']
+        if args.dashboard:
+            paths = ['/?fixture_dashboard=all', '/erp/?fixture_dashboard=all', '/?fixture_dashboard=no-contacts', '/?fixture_dashboard=no-items', '/?fixture_dashboard=view-only']
         for locale in ['de_DE', 'en_US']:
             driver.command('POST', '/goog/cdp/execute', {'cmd': 'Network.setExtraHTTPHeaders', 'params': {'headers': {'X-Icon-Fixture-Locale': locale}}})
             for index, path in enumerate(paths):
@@ -131,6 +135,19 @@ with tempfile.TemporaryDirectory(prefix='dewawi-button-pages-') as directory:
                     check(response.headers.get('Content-Security-Policy') == "frame-ancestors 'self'", 'Original internal CSP changed')
                     check(int(response.headers.get('X-Button-Fixture-Queries', '0')) > 0, 'Controller did not execute synthetic queries')
                 inventory = Inventory(html).result()
+                if args.compare_dashboard:
+                    previous = subprocess.check_output(['php', str(root / 'tests/ui/button-page-integration.php'), path + ('&' if '?' in path else '?') + urlencode({'fixture_locale': locale})], env=dict(env, DEWAWI_ICON_TEST_DASHBOARD_VIEWS=str(args.compare_dashboard.resolve())), text=True)
+                    check(Inventory(previous).result()['modern_buttons'] == 0, f'{locale}/{path}: snapshot did not render the prior PNG dashboard view')
+                    old_buttons, new_buttons = Inventory(previous).buttons, Inventory(html).buttons
+                    check(len(old_buttons) == len(new_buttons), f'{locale}/{path}: action count changed')
+                    for old, new in zip(old_buttons, new_buttons):
+                        old_attrs, new_attrs = dict(old['attributes']), dict(new['attributes'])
+                        old_classes, new_classes = set(old_attrs.pop('class', '').split()), set(new_attrs.pop('class', '').split())
+                        check(old_attrs == new_attrs, f'{locale}/{path}: existing action attributes changed')
+                        added = {'dw-btn--control', 'dw-btn--default', 'dw-btn--sm'} if old_attrs.get('data-action') == 'edit' else set()
+                        check(new_classes == old_classes | added, f'{locale}/{path}: existing class hooks changed')
+                    legacy = lambda text: [b for b in re.findall(r'<button\b.*?</button>', text, re.S) if not re.search(r'\bdata-action="edit"', b)]
+                    check(legacy(previous) == legacy(html), f'{locale}/{path}: legacy dashboard markup changed')
                 if args.compare_layouts:
                     previous = subprocess.check_output(['php', str(root / 'tests/ui/button-page-integration.php'), path + ('&' if '?' in path else '?') + urlencode({'fixture_locale': locale})], env=dict(env, DEWAWI_ICON_TEST_LAYOUTS=str(args.compare_layouts.resolve())), text=True)
                     check(re.findall(r'<button\b.*?</button>', previous, re.S) == re.findall(r'<button\b.*?</button>', html, re.S), f'{locale}/{path}: button markup/attributes/labels changed')
@@ -153,7 +170,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-button-pages-') as directory:
                     if metrics['icons']:
                         check(painted >= 3, f'{name}: no actual currentColor icon pixels: {painted}')
                     if path == '/':
-                        check(inventory['modern_buttons'] == 0 and inventory['svg_buttons'] == 1, f'{name}: dashboard migrated')
+                        check(inventory['modern_buttons'] == 26 and inventory['svg_buttons'] == 27, f'{name}: dashboard edit scope changed')
                         check(any(v['action'] == 'pdf' and '/images/pdf.png' in v['background'] for v in metrics['legacy']), f'{name}: dashboard PDF PNG missing')
                     if path == '/sales/quote':
                         check(inventory['modern_buttons'] == 0 and inventory['references'] == 0, f'{name}: document actions migrated')
@@ -218,6 +235,37 @@ with tempfile.TemporaryDirectory(prefix='dewawi-button-pages-') as directory:
                             check(driver.execute('return modalWindow.current[0].id===' + json.dumps(dialog_id) + '&&modalWindow.current.attr("role")==="dialog"&&document.querySelectorAll(".dw-icon-symbols").length===1'), f'{name}: original {action_name} dialog handler')
                             driver.keys('escape')
                             check(driver.execute('return document.getElementById(' + json.dumps(dialog_id) + ').getAttribute("aria-hidden")==="true"&&document.activeElement===dialogOpener'), f'{name}: dialog close/opener focus')
+                    if args.dashboard:
+                        expected = 2 if 'no-contacts' in path else 25 if 'no-items' in path else 27
+                        label = 'Bearbeiten' if locale == 'de_DE' else 'Edit'
+                        check(inventory['modern_buttons'] == expected and inventory['references'] == expected, f'{name}: dashboard role/group visibility')
+                        check(driver.execute('return [...document.querySelectorAll(".dw-dashboard .dw-btn--control")].every(b=>{var r=b.getBoundingClientRect(),c=b.closest("td").getBoundingClientRect();return b.getAttribute("aria-label")===' + json.dumps(label) + '&&r.width>=' + str(44 if width < 768 else 32) + '&&r.height>=' + str(44 if width < 768 else 32) + '&&r.left>=c.left&&r.right<=c.right&&b.querySelector("svg").getAttribute("aria-hidden")==="true"})'), f'{name}: names/touch geometry/cell clipping')
+                        ax = driver.command('POST', '/goog/cdp/execute', {'cmd': 'Accessibility.getFullAXTree', 'params': {}})
+                        labelled = driver.execute('return [...document.querySelectorAll("button")].filter(b=>b.getAttribute("aria-label")===' + json.dumps(label) + ').length')
+                        check(labelled >= expected and sum(n.get('role', {}).get('value') == 'button' and n.get('name', {}).get('value') == label and not n.get('ignored') for n in ax['nodes']) == labelled, f'{name}: actual AX names, including unchanged legacy Edit controls')
+                        driver.command('POST', '/goog/cdp/execute', {'cmd': 'Input.dispatchMouseEvent', 'params': {'type': 'mouseMoved', 'x': 0, 'y': 0}})
+                        hover = driver.execute('var b=document.querySelector(".dw-dashboard .dw-btn--control");b.scrollIntoView({block:"center"});var r=b.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,color:getComputedStyle(b).backgroundColor}')
+                        driver.command('POST', '/goog/cdp/execute', {'cmd': 'Input.dispatchMouseEvent', 'params': {'type': 'mouseMoved', 'x': hover['x'], 'y': hover['y']}})
+                        driver.wait('return getComputedStyle(document.querySelector(".dw-dashboard .dw-btn--control")).backgroundColor!==' + json.dumps(hover['color']))
+                        check(driver.execute('var b=document.querySelector(".dw-dashboard .dw-btn--control");return b.matches(":hover")&&getComputedStyle(b).backgroundColor!==' + json.dumps(hover['color'])), f'{name}: hover presentation')
+                        driver.execute('window.dashboardNavigations=[];window.dashboardRequests=[];window.setLocation=function(u){dashboardNavigations.push(u)};$(document).ajaxSend(function(e,x,o){dashboardRequests.push(o.url)});window.dashboardForeign=$("<input type=checkbox data-select-id=999 checked>").appendTo("body")[0];return true')
+                        selectors = ['.dw-table--dashboard-contacts button[data-action=edit]', '.dw-table--dashboard-items button[data-action=edit]', '.dw-table--dashboard-ledger button[data-action=edit]']
+                        for selector in selectors:
+                            if not driver.execute('return !!document.querySelector(' + json.dumps(selector) + ')'):
+                                continue
+                            driver.execute('window.dashboardButton=document.querySelector(' + json.dumps(selector) + ');window.dashboardIcon=dashboardButton.querySelector("svg");window.dashboardBefore=dashboardButton.outerHTML;window.expectedEdit=baseUrl+"/"+dashboardButton.dataset.module+"/"+dashboardButton.dataset.controller+"/edit/id/"+dashboardButton.dataset.id;dashboardNavigations=[];dashboardButton.focus();return true')
+                            driver.keys('enter')
+                            driver.keys('space')
+                            driver.click(selector + ' svg')
+                            check(driver.execute('return dashboardNavigations.length===3&&dashboardNavigations.every(u=>u===expectedEdit)&&dashboardRequests.length===0'), f'{name}/{selector}: native edit routing, SVG child click or foreign selection')
+                            driver.execute('dashboardButton.disabled=true;dashboardIcon.querySelector("use").dispatchEvent(new MouseEvent("click",{bubbles:true,cancelable:true}));dashboardButton.click();dashboardButton.disabled=false;setButtonLoading($(dashboardButton),true,"Working");dashboardIcon.querySelector("use").dispatchEvent(new MouseEvent("click",{bubbles:true,cancelable:true}));return true')
+                            check(driver.execute('return dashboardNavigations.length===3&&dashboardButton.disabled&&dashboardButton.getAttribute("aria-busy")==="true"&&(!dashboardIcon.isConnected||getComputedStyle(dashboardIcon).display==="none")'), f'{name}/{selector}: disabled/loading action protection')
+                            driver.execute('setButtonLoading($(dashboardButton),false);dashboardButton.focus();return true')
+                            driver.keys('enter')
+                            check(driver.execute('return dashboardNavigations.length===4&&dashboardNavigations[3]===expectedEdit&&dashboardButton.outerHTML===dashboardBefore&&dashboardButton.querySelector("svg")===dashboardIcon&&dashboardForeign.checked'), f'{name}/{selector}: loading restoration/selection/continued action')
+                            check(paint(driver, selector + ' svg', name + '-' + ('contact' if 'contacts' in selector else 'ledger' if 'ledger' in selector else 'item')) >= 3, f'{name}/{selector}: specific dashboard icon did not paint')
+                        if 'fixture_dashboard=all' in path and width in [320, 1280]:
+                            (args.output / (name + '-page.png')).write_bytes(base64.b64decode(driver.command('GET', '/screenshot')))
                     print(f'PASS: {locale} {path} {width}px original MVC/HTTP, symbols, paint and legacy', flush=True)
             for width in [390, 1280]:
                 driver.emulate_viewport(width, 1100)

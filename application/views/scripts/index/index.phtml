@@ -43,15 +43,10 @@ echo $this->Messages();
 												</td>
 												<td class="dw-col-actions">
 													<div class="dw-row-actions">
-														<button
-															type="button"
-															class="dw-btn dw-btn--icon edit"
-															data-action="edit"
-															data-id="<?php echo (int)$contact->id; ?>"
-															data-module="contacts"
-															data-controller="contact"
-															aria-label="<?php echo $this->escape($this->translate('TOOLBAR_EDIT')); ?>"
-														></button>
+														<?php echo $this->getHelper('Button')->renderButton(
+															['text' => $this->translate('TOOLBAR_EDIT'), 'icon' => 'edit', 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm'],
+															['type' => 'button', 'class' => 'dw-btn dw-btn--icon edit', 'data-action' => 'edit', 'data-id' => (int)$contact->id, 'data-module' => 'contacts', 'data-controller' => 'contact', 'aria-label' => $this->translate('TOOLBAR_EDIT')]
+														); ?>
 													</div>
 												</td>
 											</tr>
@@ -97,15 +92,10 @@ echo $this->Messages();
 												</td>
 												<td class="dw-col-actions">
 													<div class="dw-row-actions">
-														<button
-															type="button"
-															class="dw-btn dw-btn--icon edit"
-															data-action="edit"
-															data-id="<?php echo (int)$item->id; ?>"
-															data-module="items"
-															data-controller="item"
-															aria-label="<?php echo $this->escape($this->translate('TOOLBAR_EDIT')); ?>"
-														></button>
+														<?php echo $this->getHelper('Button')->renderButton(
+															['text' => $this->translate('TOOLBAR_EDIT'), 'icon' => 'edit', 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm'],
+															['type' => 'button', 'class' => 'dw-btn dw-btn--icon edit', 'data-action' => 'edit', 'data-id' => (int)$item->id, 'data-module' => 'items', 'data-controller' => 'item', 'aria-label' => $this->translate('TOOLBAR_EDIT')]
+														); ?>
 													</div>
 												</td>
 											</tr>
@@ -151,15 +141,10 @@ echo $this->Messages();
 												</td>
 												<td class="dw-col-actions">
 													<div class="dw-row-actions">
-														<button
-															type="button"
-															class="dw-btn dw-btn--icon edit"
-															data-action="edit"
-															data-id="<?php echo (int)$ledger['id']; ?>"
-															data-module="items"
-															data-controller="ledger"
-															aria-label="<?php echo $this->escape($this->translate('TOOLBAR_EDIT')); ?>"
-														></button>
+														<?php echo $this->getHelper('Button')->renderButton(
+															['text' => $this->translate('TOOLBAR_EDIT'), 'icon' => 'edit', 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm'],
+															['type' => 'button', 'class' => 'dw-btn dw-btn--icon edit', 'data-action' => 'edit', 'data-id' => (int)$ledger['id'], 'data-module' => 'items', 'data-controller' => 'ledger', 'aria-label' => $this->translate('TOOLBAR_EDIT')]
+														); ?>
 													</div>
 												</td>
 											</tr>

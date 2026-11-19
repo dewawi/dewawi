@@ -54,6 +54,13 @@ class ButtonPageReadAdapter extends Zend_Db_Adapter_Pdo_Mysql
 
 class ButtonPageContextProbe extends Zend_Controller_Plugin_Abstract
 {
+	public function preDispatch(Zend_Controller_Request_Abstract $request) {
+		if ($request->getModuleName() === 'default' && $request->getControllerName() === 'index' && getenv('DEWAWI_ICON_TEST_DASHBOARD_VIEWS')) {
+			$renderer = Zend_Controller_Action_HelperBroker::getStaticHelper('viewRenderer');
+			$renderer->view->addScriptPath(APPLICATION_PATH . '/views/scripts');
+			$renderer->setViewBasePathSpec(getenv('DEWAWI_ICON_TEST_DASHBOARD_VIEWS'));
+		}
+	}
 	public function postDispatch(Zend_Controller_Request_Abstract $request) {
 		if ($request->getParam('fixture_contextless') !== '1' || $request->isXmlHttpRequest()) return;
 		// Fault injection: presentation state must not decide availability of shared symbols.
@@ -119,6 +126,20 @@ foreach (range(1, 25) as $id) $adapter->rows['contact'][] = ['id' => $id, 'clien
 $adapter->rows['item'] = [['id' => 31, 'clientid' => 70, 'deleted' => 0, 'parentid' => 0, 'title' => 'Synthetic Item', 'description' => '', 'sku' => 'TEST-31', 'price' => '12.50', 'currency' => 'EUR']];
 $adapter->rows['quote'] = [['id' => 51, 'clientid' => 70, 'deleted' => 0, 'contactid' => 1, 'title' => 'Synthetic Quote', 'state' => 100, 'billingname1' => 'Synthetic Contact', 'billingname2' => '', 'modified' => '2026-11-19 10:00:00']];
 $adapter->rows['state'] = [['id' => 100, 'module' => 'sales', 'controller' => 'quote', 'state' => 100, 'title' => 'STATES_CREATED', 'clientid' => 70, 'deleted' => 0, 'ordering' => 0]];
+if ($route === '/' && in_array($_GET['fixture_dashboard'] ?? '', ['all', 'no-contacts', 'no-items', 'view-only'], true)) {
+	// Cover every dashboard group without enabling production modules or write routes.
+	$role = $_GET['fixture_dashboard'];
+	$adapter->rows['permission'][0]['default'] = json_encode(['index' => ['view', 'edit', 'add']]);
+	$adapter->rows['permission'][0]['tasks'] = json_encode(['task' => ['view']]);
+	$adapter->rows['permission'][0]['sales'] = json_encode(array_fill_keys(['quote', 'salesorder', 'invoice'], ['view']));
+	$adapter->rows['permission'][0]['purchases'] = json_encode(array_fill_keys(['quoterequest', 'purchaseorder'], ['view']));
+	if ($role === 'no-contacts') $adapter->rows['permission'][0]['contacts'] = json_encode(['contact' => []]);
+	if ($role === 'no-items') $adapter->rows['permission'][0]['items'] = json_encode(['item' => []]);
+	if ($role === 'view-only') foreach (['contacts' => 'contact', 'items' => 'item'] as $module => $controller) $adapter->rows['permission'][0][$module] = json_encode([$controller => ['view']]);
+	$adapter->rows['ledger'] = [['id' => 41, 'clientid' => 70, 'deleted' => 0, 'itemid' => 31, 'ledgerdate' => '2026-11-19', 'comment' => 'Synthetic Movement']];
+	$adapter->rows['task'] = [['id' => 61, 'clientid' => 70, 'deleted' => 0, 'title' => 'Synthetic Task', 'startdate' => null, 'duedate' => null, 'priority' => 0, 'responsible' => 0]];
+	foreach (['salesorder', 'invoice', 'quoterequest', 'purchaseorder'] as $index => $table) $adapter->rows[$table] = [array_replace($adapter->rows['quote'][0], ['id' => 71 + $index, 'title' => 'Synthetic Document'])];
+}
 $front = Zend_Controller_Front::getInstance();
 $front->setParam('bootstrap', $bootstrap)->setParam('noErrorHandler', true)->throwExceptions(true)->returnResponse(true);
 $front->setBaseUrl($prefix);

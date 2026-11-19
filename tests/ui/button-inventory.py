@@ -63,7 +63,7 @@ def inventory():
             add('html-input-control-lexical', match.start())
     toolbar_forms = sorted(p for p in files if '/forms/' in p and 'Toolbar' in Path(p).name)
     toolbar_helpers = sorted(p for p in files if '/views/helpers/' in p and 'Toolbar' in Path(p).name)
-    svg_sources = sorted(p for p in files if p.endswith('.php') and re.search(r"['\"]iconFormat['\"]\s*=>\s*['\"]svg['\"]", (root / p).read_text()))
+    svg_sources = sorted(p for p in files if p.endswith(('.php', '.phtml')) and re.search(r"['\"]iconFormat['\"]\s*=>\s*['\"]svg['\"]", (root / p).read_text()))
     lists = sorted(p for p in files if '/models/List/' in p)
     action_lists = [p for p in lists if re.search(r"['\"]type['\"]\s*=>\s*['\"]actions['\"]", (root / p).read_text())]
     assets = sorted((root / 'images').glob('*'))
@@ -80,6 +80,7 @@ def inventory():
         'svg_sources': svg_sources, 'action_list_models': action_lists, 'other_list_models': [p for p in lists if p not in action_lists],
         'svg_form_sources': [p for p in svg_sources if '/forms/' in p],
         'svg_helper_sources': [p for p in svg_sources if '/views/helpers/' in p],
+        'svg_view_sources': [p for p in svg_sources if '/views/scripts/' in p],
         'identical_root_assets': [v for v in by_hash.values() if len(v) > 1],
         'sites': records,
     }
@@ -90,7 +91,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     result = inventory()
     if not args.json:
-        for key in ['toolbar_forms', 'toolbar_helpers', 'svg_sources', 'svg_form_sources', 'svg_helper_sources', 'action_list_models', 'other_list_models']:
+        for key in ['toolbar_forms', 'toolbar_helpers', 'svg_sources', 'svg_form_sources', 'svg_helper_sources', 'svg_view_sources', 'action_list_models', 'other_list_models']:
             result[key] = len(result[key])
         result.pop('sites')
     print(json.dumps(result, ensure_ascii=False, indent=2))

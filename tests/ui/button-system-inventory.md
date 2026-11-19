@@ -1,8 +1,10 @@
-# DEWAWI – Button-System-Inventur, aktualisiert mit B12
+# DEWAWI – Button-System-Inventur, aktualisiert mit B15
 
 Gesamtprüfung: [B13 – Integration und Freigabematrix](button-release-audit.md) bestätigt die folgenden Bestandszahlen unverändert und ergänzt Firefox-/320-px-Prüfungen sowie konkrete offene Freigabegates. Keine zusätzliche Migration.
 
 Korrektur B14: [SVG-Symbolversorgung vollständiger ERP-Seiten](svg-symbol-integration.md). Beide internen Vollseitenlayouts liefern den passiven Katalog jetzt immer einmal; die Button-Opt-ins und alle folgenden Controlzahlen bleiben unverändert. Neuer Originalcontroller-/HTTP-/Pixelnachweis und konkrete Legacy-HTML-Mengen im B14-Bericht.
+
+B15: [Dashboard-Standardicons](dashboard-buttons.md) migriert drei direkte Edit-Aufrufstellen in einer View für Kontakte, Artikel und Lagerbewegungen über den bestehenden Button-Helper. Formular-Metadaten und bisherige Toolbar-/Listen-/Filter-Opt-ins bleiben unverändert. Aufgaben-/Dokumentbuttons einschließlich PDF bleiben wegen ihres abweichenden, unvollständigen Dashboard-Vertrags Legacy.
 
 Stand: 19.11.2026. B11-Basis `f337ba70` einschließlich B2–B10 (`96549509`), B11-Commit `83a51db1`. B12 ergänzt den [gemeinsamen Filterchip-/Disclosureblock](filter-buttons.md); der unabhängige Dokumentcommit `b32241c1` ist keine Buttonmigration. Grundlage: `AGENTS.md` und [B1](buttons-icons-analysis.md), [B2](buttons-foundation.md), [B3](button-icons.md), [B4](inquiry-buttons.md), [B5](toolbar-buttons.md), [B6](tasks-toolbar.md), [B7](remaining-toolbars.md), [B8](button-quality-audit.md), [B9](apply-buttons.md), [B10](list-buttons.md), [B11](mobile-table-actions.md).
 
@@ -22,14 +24,14 @@ Literale `->addElement([…])` werden mit tokenisierten Strings/Kommentaren und 
 
 Der PHP-Lauf verwendet vorhandene Memoryfixtures, reale Klassen und dokumentierte Controller-/Aktionskontexte. Er zählt eindeutige `Klasse::Feld`-Konfigurationen mit explizitem `iconFormat=svg`, zusätzlich ihre Controllerzuordnung. Aktivierte Metadaten sind nicht automatisch sichtbar: Helper, `show`-Callbacks, ACL, Formularansicht und Daten entscheiden weiter über die Ausgabe. Die ausgegebenen `contexts` sind Konstruktorkontexte, keine vollständig inventarisierten HTTP-Routen.
 
-Seit B12 weist Python SVG-Formular- und Helperquellen getrennt aus. PHP prüft zusätzlich tatsächlich gerenderte aktive Filterchips in Index/Select und liefert deren Helperkontexte unter `shared_svg_renderers`. Diese bedarfsabhängige Ausgabe ist **keine zusätzliche Formularfeldkonfiguration**.
+Seit B12 weist Python SVG-Formular- und Helperquellen getrennt aus; seit B15 erfasst es auch PHTML unter `svg_view_sources`. PHP prüft zusätzlich tatsächlich gerenderte aktive Filterchips in Index/Select und liefert deren Helperkontexte unter `shared_svg_renderers`. Diese bedarfsabhängige Ausgabe und die neuen direkten Dashboard-Helperaufrufe sind **keine zusätzlichen Formularfeldkonfigurationen**. Die Dashboardverträge werden separat durch vollständiges MVC-Rendering in `dashboard-buttons.php` und dem HTTP-Runner geprüft.
 
 | Grundgesamtheit | Aktueller Befund | Aussagegrenze |
 | --- | --- | --- |
 | Eigene Quelldateien im definierten Scan | **1.074** | Dateien, keine UI-Instanzen. B1 hatte einen anderen historischen Scan; Roh-HTML-Differenzen sind nicht ohne Methodenabgleich eine Migration. |
 | Literale DEEC-Button-/Submit-Konfigurationsstellen | **243 in 49 Dateien:** 234 Button, 9 Submit | Eine Stelle hat dynamischen Namen: `items/forms/ToolbarMovements.php::addMovementAction`, aus der fünf Bewegungsaktionen erzeugt werden. Quelle ≠ logisches Control. |
 | Andere `addElement`-Argumentformen | **7** Aufrufstellen | Enthalten u. a. konfigurationsgesteuerte Pageblock-/DynamicForm-Felder und ZF1-Aufrufe. Keine sieben zusätzlichen nachgewiesenen Buttons. |
-| Raw-HTML-Buttonanfänge | **147 in 79 Dateien** | Lexikalisch, einschließlich JS/PHP-Factorystrings und Regex; generisches `<'.$tag` ist keine solche Literalstelle. |
+| Raw-HTML-Buttonanfänge | **144 in 78 Dateien** | B15 ersetzt drei Literalstellen in der Dashboard-View durch Helperaufrufe. Lexikalisch, einschließlich JS/PHP-Factorystrings und Regex; generisches `<'.$tag` ist keine solche Literalstelle. |
 | Links mit literal erkennbarer Buttonklasse | **79 in 33 Dateien** | Heuristik für `dw-btn`, `dw-button`, `btn`, `button`; dynamische CTA-/Linkklassen und andere anklickbare Links nicht als vollständig gezählt ausgeben. Nicht mit den 88 anders erhobenen B1-Linktreffern verrechnen. |
 | Direkte literale Inputtypen button/submit/reset/image | **0** im Scan | ZF1 rendert weiterhin Inputbuttons; generisches Inputrendering/konfigurierte Typen sind hiervon nicht ausgeschlossen. |
 | ZF1-Konstruktoren | **13 Submitstellen in 13 Dateien** | Elf intern/Legacy, zwei öffentlich: `shops/forms/{Contact,Checkout}.php`. Kein moderner DEEC-Renderer automatisch beteiligt. |
@@ -37,11 +39,14 @@ Seit B12 weist Python SVG-Formular- und Helperquellen getrennt aus. PHP prüft z
 | Toolbarformulardateien / Helperdateien | **34 / 8** | 13 Haupttoolbarfamilien; zusätzlich Inline-/Positions-/Spezialklassen. Drei reine Ableitungen enthalten keine eigene Buttonkonfiguration: ToolbarItemlist, ToolbarStockplanning, QuoteToolbar. Sie sind deshalb nicht ungenutzt. |
 | Listenmodelle | **50**, davon **44** mit Actionszelle | Zehn teilweise durch B4/B9/B10 abgedeckt, 34 Actions-Modelle außerhalb dieser SVG-Zeilenmigration. Modell ≠ erreichbarer Endpunkt. Vollständige Namensliste im [B10-Inventar](list-buttons.md). |
 | Aktive SVG-Feldkonfigurationen | **45 in 12 Formularquellen** | Davon elf Toolbarformulardateien; die Inquiry-Form ist die zwölfte Quelle. 23 der 34 Toolbarformulardateien vollständig Legacy; die elf anderen nur teilweise migriert. |
-| B12: gemeinsamer SVG-Helperweg | **1 Erzeugungsstelle in 1 zusätzlichem Helper**, 22 logische Index-/Selectkontexte in den bestehenden 13 Controllergruppen | Ein Chip je aktivem Filter, kein fixer DOM-Zähler. Insgesamt jetzt 13 SVG-produzierende PHP-Dateien: zwölf Formulare und ein Helper. Search bildet dieselben logischen Kontexte ab. |
+| B12: gemeinsamer SVG-Helperweg | **1 Erzeugungsstelle in 1 zusätzlichem Helper**, 22 logische Index-/Selectkontexte in den bestehenden 13 Controllergruppen | Ein Chip je aktivem Filter, kein fixer DOM-Zähler. Search bildet dieselben logischen Kontexte ab. |
+| B15: direkter SVG-Viewweg | **3 Aufrufstellen in 1 PHTML-View**, 1 Dashboardkontext (`default/index/index`) mit 3 Zielgruppen | Insgesamt 14 SVG-produzierende PHP/PHTML-Dateien: zwölf Formulare, ein Helper, eine View. Die bestehenden 45 Feldkonfigurationen/84 Zuordnungen bleiben unverändert. |
 | Controllerbezogene SVG-Konfigurationen | **84 in 13 primären Controllergruppen** | Mehrfachnutzung derselben Admin-/Statistikklasse erzeugt zusätzliche Zuordnungen, keine zusätzlichen Quellfelder. |
 | Sichtbarer Referenz-DOM | **109 moderne Controls** in neun Index-Fixtureseiten | Je DE, ein Renderdurchlauf, zwei synthetische Rows, Kopf/Fuß wiederholt: Kontakte 15, Artikel 13, Tasks 15, sechs Adminlisten je 11. Kein Gesamtproduktionswert und nicht mit 45/84 addierbar. |
 
 Keine Prozentangabe aus 45/243, 84/147 oder sichtbaren Fixtures: Diese Zahlen haben unterschiedliche Einheiten, Überlappungen und Kontextgrenzen. Selbst innerhalb einer bereits migrierten Datei bleiben Legacyfelder/Unterklassen und ausgeschlossene Controller bestehen. Statische fehlende Labels werden nicht als aktuelle Anzahl unbenannter Buttons ausgegeben: B9/B10 ergänzen übersetzte Labels bewusst erst durch kontextbezogene Metadaten.
+
+B15-Referenz-DOM separat: Das reguläre Original-Dashboard mit 25 synthetischen Kontakten und einem Artikel hat weiterhin 28 Buttons, nun 26 moderne Edit-Controls statt null. Ein zusätzliches Testprofil mit allen acht Dashboardtabellen hat 44 Buttons: 27 moderne Edit-Controls, 16 unveränderte Aufgaben-/Dokumentbuttons und eine eigenständige SVG-Glocke. Diese laufzeit-/datensatzabhängigen Mengen nicht zu den Quellstellen, neun Indexfixtures oder Formularfeldern addieren.
 
 ## Tatsächlich vorhandene Erzeugungswege
 
@@ -91,7 +96,7 @@ Assetstatus nach B12: Die alten Filterchips verwendeten ein Unicode-× und kein 
 
 ### Verbleibende Toolbarfamilien und Sondergruppen
 
-Sechs von 13 Hauptfamilien sind teilweise migriert: Admin, Inquiry, Contacts, Items, Statistics, Tasks. Die anderen sieben – Application/Dashboard, Campaigns, eBay, Processes, Purchases, Sales, Shops – bleiben vollständig Legacy. Auch die sechs teilweise migrierten Familien haben Ausnahmen:
+Sechs von 13 Haupttoolbar-Formularfamilien sind teilweise migriert: Admin, Inquiry, Contacts, Items, Statistics, Tasks. Die anderen sieben – Application, Campaigns, eBay, Processes, Purchases, Sales, Shops – bleiben als Formularfamilien vollständig Legacy. Seit B15 verwendet das Dashboard jedoch für drei direkte Edit-Zielgruppen den gemeinsamen View-Helper; dies aktiviert keine Felder in `Application_Form_Toolbar`. Auch die sechs teilweise migrierten Formularfamilien haben Ausnahmen:
 
 - Kontakte: Email/Download/Downloadset/Karte/Import/Export, History, MultiEntity-Zuordnungen und fachliche Inquiry-Aktionen außerhalb des Piloten.
 - Artikel: Inventory/Stock/Ledger/Stockplanning/Movements/Pricerules, Attribute/Option/Itemlist, vier Spezialunterklassen; teilweise abweichender Copy-Roh-ID-Vertrag statt JSON. Keine Aktivierung allein wegen desselben Iconnamens.
@@ -120,6 +125,8 @@ Zehn Inlineformularquellen: Admin/Contacts/Items/Tasks/Inquiry teilweise SVG; Ca
 Keine Datei wurde als Inventur-Nebenwirkung gelöscht. Statische Nichtreferenz ist schwächer als bestätigte Unerreichbarkeit; byteidentische Assets sind kein Nachweis ihrer Entbehrlichkeit. Die internen SVG-Controls haben geprüfte übersetzte Namen, daraus folgt keine vollständige DE/EN- oder Screenreaderfreigabe aller verbleibenden Legacywege.
 
 ## Verbleibende Prioritäten nach B12 und spätere Freigabe
+
+Aktueller B15-Folgestand: Die drei direkten Dashboard-Editgruppen sind umgesetzt. Als nächster eigener Block ist der unvollständige Aktions-/Rowtargetvertrag der 16 Dashboard-Aufgaben-/Dokumentaufrufe zu klären; PDF nicht allein anhand der Klasse aktivieren. Danach Standard-Index-Apply, abgesicherte Standard-Deletewege und eigene Tags/Export/Pin-/Modalgruppen prüfen. Details, Mengen und Abnahmekriterien im [B15-Bericht](dashboard-buttons.md). Die folgende B12-Priorisierung beschreibt die weiterhin offenen größeren Qualitäts-/Legacygruppen; sie ist keine Freigabe zur gemeinsamen Umsetzung dieser fachlich verschiedenen Blöcke.
 
 | Priorität | Konkreter nächster Block / Nutzen | Risiko und Abnahmekriterium |
 | --- | --- | --- |

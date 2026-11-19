@@ -1,5 +1,7 @@
 # B14 – Verlässliche SVG-Symbolversorgung vollständiger ERP-Seiten
 
+Fortsetzung: [B15 – Dashboard-Standardicons](dashboard-buttons.md) migriert die drei direkten Dashboard-Editgruppen. Die folgenden Zahlen und Aussagen „Dashboard ohne moderne Controls“ beschreiben den historischen B14-Stand; Symbolversorgung und übrige B14-Kontexte bleiben erhalten.
+
 Stand: 19.11.2026. Ausgangs-HEAD `c59fa45d` (B13), Arbeitsverzeichnis zunächst sauber. Grundlage: `AGENTS.md`, B1–B13, insbesondere [B13-Freigabematrix](button-release-audit.md) und [Gesamtinventur](button-system-inventory.md). Kein Push, Merge oder Deployment.
 
 ## Befund, Ursache und Nachweisgrenze
