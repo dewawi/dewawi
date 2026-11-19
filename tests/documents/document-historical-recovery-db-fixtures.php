@@ -99,7 +99,7 @@ $occupiedPath = $testRow['files']['canonical']['path']; assessmentDbWrite($occup
 historicalTestCli($applyOptions, false);
 integrityCheck(hash_file('sha256', $occupiedPath) !== $testRow['files']['attachment']['sha256'], 'Batch overwrote an occupied original'); unlink($occupiedPath);
 $pdo->exec("CREATE TRIGGER fail_historical BEFORE INSERT ON documentarchive FOR EACH ROW BEGIN IF NEW.documentid = " . $testRow['identity']['id'] . " AND NEW.controller = 'quote' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Synthetic historical registration failure'; END IF; END");
-$testApproval = ['manual' => true, 'rule' => HISTORICAL_FILE_RULE, 'approved_by' => 42, 'approved_at' => gmdate('c'), 'batch_plan_sha256' => $preview['report_sha256'], 'database_and_file_backup_confirmed' => true, 'backup_reference' => 'Synthetic verified backup'];
+$testApproval = historicalRecoveryValidation('parser') + ['manual' => true, 'rule' => HISTORICAL_FILE_RULE, 'approved_by' => 42, 'approved_at' => gmdate('c'), 'batch_plan_sha256' => $preview['report_sha256'], 'database_and_file_backup_confirmed' => true, 'backup_reference' => 'Synthetic verified backup'];
 $testUser = Zend_Registry::get('User'); Zend_Registry::set('User', array_replace($testUser, ['admin' => 0]));
 correctionReject(fn() => historicalRecoveryApply($db, $testRow, '/usr/bin/pdftotext', $testApproval), 'Administrator batch approval and verified backup evidence required'); Zend_Registry::set('User', $testUser);
 correctionReject(fn() => historicalRecoveryApply($db, $testRow, '/usr/bin/pdftotext', array_replace($testApproval, ['database_and_file_backup_confirmed' => false])), 'Administrator batch approval and verified backup evidence required');
@@ -150,4 +150,5 @@ $childOptions = array_replace($applyOptions, ['client' => '29', 'inventory' => $
 $childWorkers = [historicalTestCli($childOptions, true, true), historicalTestCli($childOptions, true, true)];
 $childResults = array_map('historicalTestFinish', $childWorkers);
 integrityCheck(array_sum(array_map(static fn(array $result): int => $result['summary']['recovered'] ?? 0, $childResults)) === 1 && array_sum(array_map(static fn(array $result): int => $result['summary']['already_recovered'] ?? 0, $childResults)) === 1 && hash_file('sha256', $childPaths['canonical']) === hash_file('sha256', $childPaths['attachment']), 'Concurrent child batch recovery failed, duplicated or used foreign bytes');
+require __DIR__ . '/document-historical-validation-fixtures.php';
 echo 'PASS: ' . ($checks - $historicalStart) . " historical file recovery checks; all eight types, matching attachment/legacy, differing current versions, private batch approval, provenance, exclusions, immutable sources and retries\n";
