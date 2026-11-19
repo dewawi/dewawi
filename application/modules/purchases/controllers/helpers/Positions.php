@@ -5,10 +5,10 @@ class Application_Controller_Action_Helper_Positions extends Zend_Controller_Act
 	public function getPositions($id, $document, $locale, $controller)
 	{
 		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
-		$currency = $currencyHelper->getCurrency($document['currency'], 'USE_SYMBOL');
+		$currency = $currencyHelper->getCurrency($document['currency'], 'USE_SYMBOL', $locale);
 		$positionsDb = $this->getDocumentDb($controller);
 		$positions = $positionsDb->getPositions($id);
-		$calculation = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->calculate($document, $positions, 'purchases', $controller);
+		$calculation = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->calculate($document, $positions, 'purchases', $controller, null, $locale);
 
 		if (empty($document[$controller . 'id'])) {
 			$document['subtotal'] = $calculation['row']['subtotal'];

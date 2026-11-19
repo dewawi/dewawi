@@ -258,4 +258,9 @@
 	'ADMIN_PHONE' => 'Telefon',
 	'ADMIN_MOBILE' => 'Mobil',
 	'ADMIN_IMAGE' => 'Bild',
+	'ADMIN_DASHBOARD_MASTER_DATA_DESCRIPTION' => 'Artikel, Kontakte, Zahlungsarten, Lieferarten und weitere Stammdaten verwalten.',
+	'ADMIN_DASHBOARD_SHOP_DESCRIPTION' => 'Shops, Seiten, Menüs, Kategorien, Tags und Slides verwalten.',
+	'ADMIN_DASHBOARD_USERS_DESCRIPTION' => 'Benutzer und Zugriffsrechte verwalten.',
+	'ADMIN_DASHBOARD_DESIGN_DESCRIPTION' => 'Vorlagen und Fußzeilen verwalten.',
+	'ADMIN_DASHBOARD_SYSTEM_DESCRIPTION' => 'Systeminformationen und installierte Module verwalten.',
 );

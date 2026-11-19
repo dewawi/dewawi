@@ -257,4 +257,9 @@
 	'ADMIN_PHONE' => 'Phone',
 	'ADMIN_MOBILE' => 'Mobile',
 	'ADMIN_IMAGE' => 'Image',
+	'ADMIN_DASHBOARD_MASTER_DATA_DESCRIPTION' => 'Manage items, contacts, payment methods, delivery methods and other master data.',
+	'ADMIN_DASHBOARD_SHOP_DESCRIPTION' => 'Manage shops, pages, menus, categories, tags and slides.',
+	'ADMIN_DASHBOARD_USERS_DESCRIPTION' => 'Manage users and access permissions.',
+	'ADMIN_DASHBOARD_DESIGN_DESCRIPTION' => 'Manage templates and footers.',
+	'ADMIN_DASHBOARD_SYSTEM_DESCRIPTION' => 'Manage system information and installed modules.',
 );

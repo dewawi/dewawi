@@ -243,4 +243,7 @@
 	'SHOPS_VARIANT_UPDATE' => 'Konfiguration aktualisieren',
 	'SHOPS_CATALOG_NO_MATCH' => 'Für die angegebenen Filter wurden keine eindeutigen Übereinstimmungen gefunden. Ihre Anfrage kann zur manuellen Prüfung gesendet werden.',
 	'SHOPS_CATALOG_PARTIAL_NO_MATCH' => 'Im geprüften Katalogausschnitt wurden keine eindeutigen Übereinstimmungen gefunden. Ihre Anfrage kann zur manuellen Prüfung gesendet werden.',
+	'SHOPS_CONTACT_ERROR_TITLE' => 'Es ist ein Fehler aufgetreten!',
+	'SHOPS_CONTACT_ERROR_MESSAGE' => 'Es gab ein Problem beim Senden Ihrer Nachricht. Bitte überprüfen Sie die Fehler und versuchen Sie es erneut.',
+	'SHOPS_CONTACT_ERROR_ADVICE' => 'Bitte prüfen Sie die Pflichtfelder, die E-Mail-Adresse, die Datenschutzzustimmung und laden Sie das Formular gegebenenfalls neu.',
 );

@@ -21,7 +21,7 @@ echo $this->form->renderForm([
 						'email',
 						[
 							'html' => '<dt id="password-label"><label>'.$this->translate('USERS_PASSWORD').'</label></dt>
-								<dd><button name="password" id="password" type="button" class="password poplight" rel="newPassword">Neues Passwort</button></dd>',
+								<dd><button name="password" id="password" type="button" class="password poplight" rel="newPassword">' . $this->translate('USERS_PASSWORD_NEW') . '</button></dd>',
 						],
 					],
 				],

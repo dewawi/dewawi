@@ -6,6 +6,7 @@ class DEEC_Pdf
 	public $template = [];
 	public $shop = [];
 	protected $translator = null;
+	protected $locale = null;
 
 	/*public function Header()
 	{
@@ -72,6 +73,7 @@ class DEEC_Pdf
 	protected function useDocumentLanguage(array $document, string $module): void
 	{
 		$locale = DEEC_Translate::normalizeLocale((string)($document['language'] ?? ''), '');
+		$this->locale = $locale !== '' ? new Zend_Locale($locale) : null;
 		if ($locale === '') return;
 		$this->translator = new DEEC_Translate($locale);
 		$this->translator->loadModule($module === 'shops' ? 'sales' : $module);
@@ -337,7 +339,7 @@ class DEEC_Pdf
 			$masterId = (int)$position['masterid'];
 			if ($masterId && (!isset($lines[$masterId]) || $masterId === $id || !empty($lines[$masterId]['masterid']) || $rules[$id])) throw new RuntimeException('Stored position master or inherited price rules are inconsistent');
 		}
-		$calculation = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->calculate($document, $positions, $module, $controller, $clientId);
+		$calculation = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->calculate($document, $positions, $module, $controller, $clientId, DEEC_Translate::normalizeLocale((string)($document['language'] ?? ''), (string)Zend_Registry::get('Zend_Locale')));
 		$validation = ['schema_version' => 1, 'currency' => $document['currency'], 'rounding_limit' => 0.10, 'header' => [], 'positions' => [], 'warnings' => [], 'original_comparison_required' => false];
 		$current = ['subtotal' => $calculation['row']['subtotal'], 'taxes' => $calculation['row']['taxes']['total'], 'total' => $calculation['row']['total']];
 		$rawNet = $rawTax = $lineTax = 0.0;
@@ -398,7 +400,7 @@ class DEEC_Pdf
 
 	protected function assertReconstructionPayload(array $payload, array $document, $positions, array $calculation): array
 	{
-		$currency = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency')->getCurrency($document['currency'], 'USE_SYMBOL');
+		$currency = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency')->getCurrency($document['currency'], 'USE_SYMBOL', $this->locale ?? Zend_Registry::get('Zend_Locale'));
 		$displayed = ['header' => [], 'positions' => [], 'taxgroups' => $payload['document']['taxgroups'] ?? []];
 		foreach (['subtotal', 'taxes', 'total'] as $field) {
 			$expected = $currency->toCurrency($document[$field]);
@@ -408,7 +410,7 @@ class DEEC_Pdf
 		$expected = [];
 		foreach ($positions as $position) {
 			$precision = floor($position['quantity']) == $position['quantity'] ? 0 : (round($position['quantity'], 2) == $position['quantity'] ? 2 : 4);
-			$expected[(int)$position['id']] = $calculation['locale'][$position['id']] + ['quantity' => Zend_Locale_Format::toNumber($position['quantity'], ['precision' => $precision, 'locale' => Zend_Registry::get('Zend_Locale')]), 'masterid' => (int)$position['masterid']];
+			$expected[(int)$position['id']] = $calculation['locale'][$position['id']] + ['quantity' => Zend_Locale_Format::toNumber($position['quantity'], ['precision' => $precision, 'locale' => $this->locale ?? Zend_Registry::get('Zend_Locale')]), 'masterid' => (int)$position['masterid']];
 		}
 		foreach ($payload['positions'] as $position) {
 			$id = (int)$position['id'];
@@ -2002,7 +2004,7 @@ class DEEC_Pdf
 		$taxgroups = $document['taxgroups'] ?? [];
 		$formattedRate = !$taxgroups;
 		if (!$taxgroups) $taxgroups = [($taxrate ?? '') => $taxes];
-		$locale = Zend_Registry::get('Zend_Locale');
+		$locale = $this->locale ?? Zend_Registry::get('Zend_Locale');
 		foreach ($taxgroups as $rate => $value) {
 			$label = $this->translate('DOCUMENTS_TAXES');
 			if ($rate !== '') {

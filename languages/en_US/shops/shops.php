@@ -244,4 +244,7 @@ return array(
 	'SHOPS_VARIANT_UPDATE' => 'Update configuration',
 	'SHOPS_CATALOG_NO_MATCH' => 'No unambiguous matches were found for the specified filters. You can submit your inquiry for manual review.',
 	'SHOPS_CATALOG_PARTIAL_NO_MATCH' => 'No unambiguous matches were found in the reviewed catalog subset. You can submit your inquiry for manual review.',
+	'SHOPS_CONTACT_ERROR_TITLE' => 'An error occurred!',
+	'SHOPS_CONTACT_ERROR_MESSAGE' => 'There was a problem sending your message. Please check the errors and try again.',
+	'SHOPS_CONTACT_ERROR_ADVICE' => 'Please check the required fields, email address and privacy consent, and reload the form if necessary.',
 );

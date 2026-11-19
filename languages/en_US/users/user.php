@@ -9,4 +9,10 @@
 	'USERS_SMTP_SECURE' => 'Security',
 	'USERS_SMTP_USER' => 'Username',
 	'USERS_SMTP_PASSWORD' => 'Password',
+	'USERS_TITLE' => 'Users',
+	'USERS_ACCOUNT' => 'User account',
+	'USERS_LOGIN_FAILED' => 'Invalid username or password.',
+	'USERS_PASSWORD_ADVICE' => 'Choose a strong password to prevent unauthorized access to your account.',
+	'USERS_PASSWORD_MINIMUM' => 'Use at least 8 characters',
+	'USERS_PASSWORD_CHANGE' => 'Change password',
 );

@@ -1,0 +1,41 @@
+{
+  "scope": "synthetic template acquisition, actual helper expansion, TCPDF attachment and loopback-only PHPMailer SMTP",
+  "messages_captured": 2,
+  "results": [
+    {
+      "locale": "de_DE",
+      "checks": {
+        "smtp_accepted": true,
+        "recipient_is_synthetic": true,
+        "localized_subject": true,
+        "localized_body_and_utf8": true,
+        "pdf_attachment_unchanged": true,
+        "attachment_name": true,
+        "ui_context_preserved": true
+      },
+      "subject": "Vielen Dank für Ihre Kontaktaufnahme",
+      "body": "Hallo Jörg, | Kontaktformular",
+      "attachment_name": "fixture-de_DE.pdf"
+    },
+    {
+      "locale": "en_US",
+      "checks": {
+        "smtp_accepted": true,
+        "recipient_is_synthetic": true,
+        "localized_subject": true,
+        "localized_body_and_utf8": true,
+        "pdf_attachment_unchanged": true,
+        "attachment_name": true,
+        "ui_context_preserved": true
+      },
+      "subject": "Thank you for contacting us",
+      "body": "Hello Jörg, | Contact form",
+      "attachment_name": "fixture-en_US.pdf"
+    }
+  ],
+  "counts": {
+    "passed": 14,
+    "failed": 0
+  },
+  "stderr": ""
+}

@@ -110,12 +110,13 @@ $(document).ready(function(){
 	});
 
 	//Language switcher
-	$('#userinfo #language').on('change', '', function() {
+	$(document).off('change.dwLanguage', '.dw-userbar__switchers #language').on('change.dwLanguage', '.dw-userbar__switchers #language', function() {
 		//console.log($('#language').val());
 			$.ajax({
 				type: 'POST',
 				async: true,
-				url: baseUrl+'/users/user/language/language/'+$('#language').val(),
+				url: baseUrl+'/users/user/language',
+				data: {language: this.value},
 				cache: false,
 				success: function(json){
 					//response = json;
@@ -2202,7 +2203,7 @@ function pushMessages(messages, type, target) {
 	if ($.inArray(type, ['success', 'danger', 'warning', 'info']) === -1) type = 'danger';
 	var $container = $(target || '#messages').first();
 	if (!$container.length) $container = $('#messages').first();
-	if (!$container.length) $container = $('<div>', {id: 'messages'}).prependTo('div#content');
+	if (!$container.length) $container = $('<div>', {id: 'messages'}).prependTo('#content');
 	$container.children('.dw-alert--' + type + ', .dw-alert--info').remove();
 	if (type === 'success') $container.children('.dw-alert--danger').remove();
 	if (type === 'info' || type === 'danger') $container.children('.dw-alert--success').remove();

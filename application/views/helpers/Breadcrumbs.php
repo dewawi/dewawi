@@ -11,13 +11,13 @@ class Zend_View_Helper_Breadcrumbs extends Zend_View_Helper_Abstract
 		if ($this->view->module !== 'default') {
 			$breadcrumbs .= '<span> &raquo; </span><span><a href="'
 				. $this->buildUrl($this->view->module, 'index')
-				. '">' . $this->view->translate(strtoupper($this->view->module)) . '</a></span>';
+				. '">' . $this->view->translate($this->view->module === 'users' ? 'USERS_TITLE' : strtoupper($this->view->module)) . '</a></span>';
 		}
 
 		if ($this->view->controller !== 'index') {
 			$breadcrumbs .= '<span> &raquo; </span><span><a href="'
 				. $this->buildUrl($this->view->module, $this->view->controller)
-				. '">' . $this->view->translate(strtoupper($this->view->controller)) . '</a></span>';
+				. '">' . $this->view->translate(['users/user' => 'USERS_ACCOUNT', 'ebay/listing' => 'EBAY_LISTINGS', 'statistics/reporting' => 'STATISTICS_REPORTING'][$this->view->module . '/' . $this->view->controller] ?? strtoupper($this->view->controller)) . '</a></span>';
 		}
 
 		if ($this->view->action !== 'index') {

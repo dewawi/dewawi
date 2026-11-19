@@ -1,0 +1,143 @@
+{
+  "php": [
+    {
+      "file": "application/controllers/helpers/Calculate.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in application/controllers/helpers/Calculate.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "application/controllers/helpers/Currency.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in application/controllers/helpers/Currency.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "application/modules/admin/views/scripts/index/index.phtml",
+      "status": "passed",
+      "stdout": "No syntax errors detected in application/modules/admin/views/scripts/index/index.phtml\n",
+      "stderr": ""
+    },
+    {
+      "file": "application/modules/ebay/forms/Listing.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in application/modules/ebay/forms/Listing.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "application/modules/purchases/controllers/helpers/Positions.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in application/modules/purchases/controllers/helpers/Positions.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "application/modules/purchases/services/DocumentPayloadService.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in application/modules/purchases/services/DocumentPayloadService.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "application/modules/sales/controllers/helpers/Positions.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in application/modules/sales/controllers/helpers/Positions.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "application/modules/sales/services/DocumentPayloadService.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in application/modules/sales/services/DocumentPayloadService.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "application/modules/shops/views/scripts/contact/error.phtml",
+      "status": "passed",
+      "stdout": "No syntax errors detected in application/modules/shops/views/scripts/contact/error.phtml\n",
+      "stderr": ""
+    },
+    {
+      "file": "application/modules/users/controllers/UserController.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in application/modules/users/controllers/UserController.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "application/modules/users/views/scripts/user/edit.phtml",
+      "status": "passed",
+      "stdout": "No syntax errors detected in application/modules/users/views/scripts/user/edit.phtml\n",
+      "stderr": ""
+    },
+    {
+      "file": "application/modules/users/views/scripts/user/login.phtml",
+      "status": "passed",
+      "stdout": "No syntax errors detected in application/modules/users/views/scripts/user/login.phtml\n",
+      "stderr": ""
+    },
+    {
+      "file": "application/modules/users/views/scripts/user/password.phtml",
+      "status": "passed",
+      "stdout": "No syntax errors detected in application/modules/users/views/scripts/user/password.phtml\n",
+      "stderr": ""
+    },
+    {
+      "file": "application/views/helpers/Breadcrumbs.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in application/views/helpers/Breadcrumbs.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "languages/de_DE/admin/admin.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in languages/de_DE/admin/admin.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "languages/de_DE/shops/shops.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in languages/de_DE/shops/shops.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "languages/de_DE/users/user.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in languages/de_DE/users/user.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "languages/en_US/admin/admin.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in languages/en_US/admin/admin.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "languages/en_US/shops/shops.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in languages/en_US/shops/shops.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "languages/en_US/users/user.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in languages/en_US/users/user.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "library/DEEC/Pdf.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in library/DEEC/Pdf.php\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests/translations/document-format.php",
+      "status": "passed",
+      "stdout": "No syntax errors detected in tests/translations/document-format.php\n",
+      "stderr": ""
+    }
+  ],
+  "python": {
+    "files": [
+      "acceptance.py",
+      "summarize-t4.py"
+    ],
+    "status": "passed"
+  }
+}

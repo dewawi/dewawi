@@ -4,7 +4,7 @@ class Sales_Service_DocumentPayloadService
 {
 	public function build(array $document, string $controller, array $options = []): array
 	{
-		$locale = Zend_Registry::get('Zend_Locale');
+		$locale = new Zend_Locale(DEEC_Translate::normalizeLocale((string)($document['language'] ?? ''), (string)Zend_Registry::get('Zend_Locale')));
 
 		$contactDb = new Contacts_Model_DbTable_Contact();
 		$recipient = null;
@@ -372,7 +372,8 @@ class Sales_Service_DocumentPayloadService
 	protected function buildPaymentData(array $document, bool $signed = false): array
 	{
 		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
-		$currency = $currencyHelper->getCurrency($document['currency'], 'USE_SYMBOL');
+		$locale = DEEC_Translate::normalizeLocale((string)($document['language'] ?? ''), (string)Zend_Registry::get('Zend_Locale'));
+		$currency = $currencyHelper->getCurrency($document['currency'], 'USE_SYMBOL', $locale);
 
 		$prepayment = (float)($document['prepayment'] ?? 0);
 		$total = (float)($document['total_raw'] ?? $document['total'] ?? 0);

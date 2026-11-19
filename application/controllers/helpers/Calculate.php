@@ -46,11 +46,11 @@ class Application_Controller_Action_Helper_Calculate extends Zend_Controller_Act
 		return $calculations;
 	}
 
-	public function calculate(array $object, $positions, string $module, string $controller, ?int $clientId = null): array
+	public function calculate(array $object, $positions, string $module, string $controller, ?int $clientId = null, $locale = null): array
 	{
 		$calculations = ['row' => ['subtotal' => 0, 'taxes' => []], 'locale' => []];
 		$currencyHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Currency');
-		$currency = $currencyHelper->getCurrency($object['currency'], 'USE_SYMBOL');
+		$currency = $currencyHelper->getCurrency($object['currency'], 'USE_SYMBOL', $locale);
 		$priceRuleHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('PriceRule');
 		$prices = $priceRuleHelper->usePriceRulesOnPositions($positions, $module, $controller . 'pos', $clientId);
 

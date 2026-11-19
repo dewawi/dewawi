@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """T3: real HTTP dispatch and Chromium with temporary sessions and synthetic rows only."""
+import argparse
 import base64
 from collections import Counter
 import http.client
@@ -23,11 +24,16 @@ ROUTES = {'admin': '/admin/index', 'calendar': '/calendar/index', 'campaigns': '
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--report', type=Path, default=ROOT / 'tests/translations/report.json', help='Audit snapshot for expected module domains and effective texts')
+    parser.add_argument('--extended', action='store_true', help='Also check reverse native switching, request count, client CSRF and password presentation')
+    args = parser.parse_args()
     spec = importlib.util.spec_from_file_location('t3_browser', ROOT / 'tests/site/accessibility-http.py')
     browser = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(browser)
     results = []
-    report = json.loads((ROOT / 'tests/translations/report.json').read_text())
+    extended = []
+    report = json.loads(args.report.read_text())
     keys = set()
     # Extract identifier candidates independently of their occurrence in source markup/scripts.
     for file in (ROOT / 'languages/en_US').rglob('*.php'):
@@ -204,8 +210,43 @@ def main():
                 pass
             record('browser actual language selector reload', driver.execute('return document.documentElement.lang === "en-US"'),
                    dom=driver.execute('return {lang:document.documentElement.lang,selected:document.querySelector("#language").value,legacyContainer:!!document.querySelector("#userinfo") }'))
+            if args.extended:
+                def extra(name, ok, **evidence):
+                    extended.append({'scenario': name, 'status': 'passed' if ok else 'failed', **evidence})
+
+                def browser_request(path, data=None):
+                    return driver.command('POST', '/execute/async', {'script': "var path=arguments[0], data=arguments[1], done=arguments[2];fetch(path,{method:data===null?'GET':'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'},body:data}).then(async r=>done({status:r.status,text:await r.text(),meta:r.headers.get('X-T3-Meta')?JSON.parse(atob(r.headers.get('X-T3-Meta'))):null}));", 'args': [path, None if data is None else urlencode(data)]})
+
+                for target, text in [('de_DE', 'Deutsch'), ('en_US', 'English')]:
+                    driver.execute("sessionStorage.setItem('t4-switch-count','0');jQuery(document).on('ajaxSend.t4probe',function(e,x,s){if(s.url.indexOf('/users/user/language')!==-1)sessionStorage.setItem('t4-switch-count',Number(sessionStorage.getItem('t4-switch-count'))+1);});")
+                    element = driver.element('.dw-userbar__switchers #language')
+                    driver.click('.dw-userbar__switchers #language')
+                    driver.command('POST', '/element/' + element + '/value', {'text': text})
+                    driver.keys('enter')
+                    driver.wait('return document.documentElement.lang === ' + json.dumps(target.replace('_', '-')), timeout=5)
+                    count = driver.execute("return Number(sessionStorage.getItem('t4-switch-count'))")
+                    extra('native switch and exactly one request ' + target, count == 1, requests=count)
+                    page = browser_request('/contacts/contact')
+                    extra('native switch preserves auth and client ' + target, page['meta']['locale'] == target and page['meta']['authenticated'] and page['meta']['clientid'] == 7, meta=page['meta'])
+                    invalid = browser_request('/users/user/language', {'language': 'fr_FR'})
+                    extra('unsupported locale cannot change session ' + target, invalid['status'] == 400 and browser_request('/contacts/contact')['meta']['locale'] == target)
+                    csrf = browser_request('/users/user/client', {'clientid': '99', 'client_csrf': 'invalid'})
+                    extra('client CSRF remains enforced ' + target, csrf['status'] == 403 and browser_request('/contacts/contact')['meta']['clientid'] == 7, http_status=csrf['status'])
+                driver.navigate(origin + '/users/user/password')
+                password_text = driver.execute('return document.body.innerText')
+                extra('English password advice and button', 'Use at least 8 characters' in password_text and 'Change password' in password_text and 'Kennwort' not in password_text, text=password_text[:800])
+                fields = driver.execute('return Array.from(document.querySelectorAll("form#password input[type=password]")).map(e=>e.name)')
+                extra('password fields rendered as inputs', set(fields) == {'passwordactual', 'passwordnew', 'passwordconfirm'} and 'Array' not in password_text, fields=fields)
+                for field, value in [('passwordactual', 'wrong'), ('passwordnew', 'fixture-only-new'), ('passwordconfirm', 'fixture-only-new')]:
+                    element = driver.element('input[name=' + field + ']')
+                    driver.command('POST', '/element/' + element + '/value', {'text': value})
+                driver.click('button.password')
+                driver.wait('return !!document.querySelector("#messages") && document.querySelector("#messages").innerText.indexOf("Please check your entries.") !== -1')
+                extra('password dialog rejects incorrect password in English', 'Please check your entries.' in driver.execute('return document.querySelector("#messages").innerText'))
+                invalid_password = browser_request('/users/user/password', {'passwordactual': 'wrong', 'passwordnew': 'fixture-only-new', 'passwordconfirm': 'fixture-only-new'})
+                extra('English invalid password response', invalid_password['status'] == 200 and 'Please check your entries.' in invalid_password['text'], response=invalid_password['text'])
         except Exception as error:
-            record('fixture execution', False, error=str(error), browser_text=driver.execute('return document.body.innerText').strip()[:600] if driver else None)
+            record('fixture execution', False, error=str(error), driver_error=error.read().decode(errors='replace')[:1800] if hasattr(error, 'read') else None, browser_text=driver.execute('return document.body.innerText').strip()[:600] if driver else None)
         finally:
             if driver:
                 driver.close()
@@ -217,8 +258,11 @@ def main():
     output = {'scope': 'synthetic account/client 42/7; in-memory SQL; temp sessions; external browser hosts blocked',
               'guest_locale_note': 'EN guest presentation injected by fixture; no production anonymous language selector exists',
               'results': results, 'counts': dict(Counter(r['status'] for r in results)), 'server_errors': errors}
+    if args.extended:
+        output['extended_results'] = extended
+        output['extended_counts'] = dict(Counter(r['status'] for r in extended))
     print(json.dumps(output, ensure_ascii=False, indent=2))
-    return int(any(r['status'] == 'failed' for r in results))
+    return int(any(r['status'] == 'failed' for r in results + extended))
 
 
 if __name__ == '__main__':

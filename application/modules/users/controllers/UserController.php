@@ -218,7 +218,7 @@ class Users_UserController extends Zend_Controller_Action
 				if($user) {
 					if($user->deleted) {
 						$auth->clearIdentity();
-						$this->_flashMessenger->addMessage('Benutzerkonto existiert nicht mehr.');
+						$this->_flashMessenger->addMessage('USERS_LOGIN_FAILED');
 					} else {
 						if($user->activated) {
 							if(password_verify($password, $user->password)) {
@@ -231,7 +231,7 @@ class Users_UserController extends Zend_Controller_Action
 								$rehash = false;
 								$login = false;
 								$auth->clearIdentity();
-								$this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
+								$this->_flashMessenger->addMessage('USERS_LOGIN_FAILED');
 							}
 
 							if($rehash) {
@@ -267,17 +267,17 @@ class Users_UserController extends Zend_Controller_Action
 							}
 						} else {
 							$auth->clearIdentity();
-							$this->_flashMessenger->addMessage('Benutzerkonto ist nicht aktiviert.');
+							$this->_flashMessenger->addMessage('USERS_LOGIN_FAILED');
 						}
 					}
 				} else {
 					$auth->clearIdentity();
-					$this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
+					$this->_flashMessenger->addMessage('USERS_LOGIN_FAILED');
 					$form->setValues($formData);
 				}
 			} else {
 				$auth->clearIdentity();
-				$this->_flashMessenger->addMessage('Benutzername und Passwort stimmen nicht überein.');
+				$this->_flashMessenger->addMessage('USERS_LOGIN_FAILED');
 				$form->setValues($formData);
 			}
 

@@ -6,7 +6,7 @@ $this->headTitle($this->title);
 echo $this->doctype();
 ?>
 
-<html lang="en">
+<html lang="<?php echo $this->escape(substr((string)$this->language, 0, 2)); ?>">
 	<head>
 		<meta charset="UTF-8">
 		<meta name="robots" content="noindex, nofollow">

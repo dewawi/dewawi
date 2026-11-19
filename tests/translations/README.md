@@ -446,3 +446,18 @@ Die vollständige Einzelklassifikation der 204 Hardcode-Kandidaten steht in
 neun dynamische/bereits passende und zwei fachlich offene Fundstellen.
 T1-/T2-Artefakte bleiben unverändert. Die neuen Abnahmeprogramme dürfen bei bestätigten
 Restfehlern bewusst Exit 1 liefern; genaue Aufrufe und tatsächliche Ergebnisse siehe T3-Bericht.
+
+## T4 – Acceptance Fixes
+
+Aktueller Abnahmestand: **235/235 gezielte T3-Prüfungen bestanden**, vorher 217/235.
+Zusätzlich zwölf Browser- und 300 Zahlenformatprüfungen bestanden. Ursachen, Änderungen,
+alle 18 Korrekturnachweise, unabhängige Bestandssuite-Abbrüche und genaue Aufrufe stehen in
+[T4-acceptance.md](T4-acceptance.md). Maschinenlesbare Zusammenfassung:
+[t4-acceptance.json](t4-acceptance.json), aktueller Audit:
+[t4-report.json](t4-report.json), letzter Validator:
+[t4-validation.json](t4-validation.json).
+
+Die aktuelle HTTP-Abnahme verwendet ausdrücklich `--report tests/translations/t4-report.json`.
+T2-/T3-Berichte bleiben als Vorher-Nachweise unverändert. 14 gezielte neue Schlüssel je Sprache;
+alle bisherigen Schlüssel/Werte und Domainreihenfolgen erhalten. Keine pauschale Bearbeitung
+der übrigen Hardcodes, keine Migration und keine produktiven Daten-/Mailänderungen.

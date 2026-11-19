@@ -10,8 +10,8 @@ class Application_Controller_Action_Helper_Currency extends Zend_Controller_Acti
 		return $price / 1.1428;
 	}
 
-	public function getCurrency($currency = null, $symbol = null) {
-		$instance = Zend_Registry::get('Zend_Currency');
+	public function getCurrency($currency = null, $symbol = null, $locale = null) {
+		$instance = $locale === null ? Zend_Registry::get('Zend_Currency') : new Zend_Currency(['locale' => $locale, 'precision' => 2]);
 		if($currency !== null) $this->setCurrency($instance, $currency, $symbol);
 		return $instance;
 	}
