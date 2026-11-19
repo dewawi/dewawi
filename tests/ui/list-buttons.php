@@ -15,9 +15,9 @@ class ListTasksLegacyFixture extends Tasks_Form_ToolbarInline {}
 class ListAdminLegacyFixture extends Admin_Form_ToolbarInline {}
 
 $groups = [
-	'contacts/contact' => ['Contacts', ['view', 'edit', 'copy']],
-	'items/item' => ['Items', ['edit', 'copy']],
-	'tasks/task' => ['Tasks', ['view', 'edit', 'copy']],
+	'contacts/contact' => ['Contacts', ['view', 'edit', 'copy', 'delete']],
+	'items/item' => ['Items', ['edit', 'copy', 'delete']],
+	'tasks/task' => ['Tasks', ['view', 'edit', 'copy', 'delete']],
 ];
 foreach (['country', 'uom', 'deliverytime', 'manufacturer', 'warehouse', 'shippingmethod'] as $controller) $groups['admin/' . $controller] = ['Admin', ['copy']];
 
@@ -47,7 +47,7 @@ foreach (['de_DE', 'en_US'] as $locale) foreach ($groups as $route => [$prefix, 
 			$expected = $old;
 			if ($enabled && in_array($name, $actions, true)) {
 				$label = 'TOOLBAR_' . strtoupper($name);
-				$expected = array_replace($old, ['label' => $label, 'icon' => $name, 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm', 'attribs' => $old['attribs'] + ['title' => $modern->translate($label)]]);
+				$expected = array_replace($old, ['label' => $label, 'icon' => $name, 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm', 'attribs' => $old['attribs'] + ($name === 'delete' ? [] : ['title' => $modern->translate($label)])]);
 			} elseif ($name === 'apply' && in_array($module, ['contacts', 'items'], true) && ($action === 'select' || ($action === 'search' && $context === 'select'))) {
 				$expected = array_replace($old, ['label' => 'TOOLBAR_APPLY', 'icon' => 'apply', 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm']);
 			}
@@ -61,7 +61,7 @@ foreach (['de_DE', 'en_US'] as $locale) foreach ($groups as $route => [$prefix, 
 				$b = buttonDom($b)->firstChild;
 				check(listNativeAttributes($a) === listNativeAttributes($b), 'List action changed native/target/event attributes');
 				check($a->getAttribute('type') === 'button' && $a->getAttribute('name') === $name && $a->getAttribute('data-action') === $name, 'List action became submit/link/reset');
-				check($a->getAttribute('aria-label') === $modern->translate($label) && $a->getAttribute('title') === $a->getAttribute('aria-label') && !str_contains($a->getAttribute('aria-label'), 'TOOLBAR_'), 'List accessible name/tooltip untranslated');
+				check($a->getAttribute('aria-label') === $modern->translate($label) && $a->getAttribute('title') === ($name === 'delete' ? $b->getAttribute('title') : $a->getAttribute('aria-label')) && !str_contains($a->getAttribute('aria-label'), 'TOOLBAR_'), 'List accessible name/tooltip untranslated');
 				check(trim($a->textContent) === '' && $a->getElementsByTagName('use')->item(0)->getAttribute('href') === '#dw-icon-' . $name && $a->getElementsByTagName('svg')->item(0)->getAttribute('aria-hidden') === 'true', 'Wrong icon or duplicate accessible text');
 				foreach (explode(' ', $b->getAttribute('class')) as $css) check(in_array($css, explode(' ', $a->getAttribute('class')), true), 'List action removed legacy class');
 			}

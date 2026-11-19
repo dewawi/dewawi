@@ -33,7 +33,7 @@ if (($argv[1] ?? '') === 'snapshot') {
 $adminControllers = ['country', 'uom', 'deliverytime', 'manufacturer', 'warehouse', 'shippingmethod'];
 $reportControllers = ['customer', 'quote', 'turnover'];
 $standardActions = ['index', 'search', 'select', 'edit', 'view'];
-$standardIcons = ['add' => 'add', 'edit' => 'edit', 'copy' => 'copy', 'filter' => 'filter', 'reset' => 'reset', 'clear' => 'close'];
+$standardIcons = ['add' => 'add', 'edit' => 'edit', 'copy' => 'copy', 'delete' => 'delete', 'filter' => 'filter', 'reset' => 'reset', 'clear' => 'close'];
 $changedContexts = 0;
 foreach (remainingContexts() as [$module, $controller]) foreach (['index', 'search', 'select', 'edit', 'view', 'add', 'copy', 'get', 'export', 'toolbar'] as $action) {
 	toolbarContext($module, $controller, $action);
@@ -65,7 +65,7 @@ foreach (['de_DE', 'en_US'] as $locale) foreach (['admin' => $adminControllers, 
 	$profiles = $module === 'admin' ? ['index', 'select', 'edit', 'view'] : ['index'];
 	foreach ($profiles as $action) foreach (['layout', 'plain'] as $layoutName) {
 		$page = toolbarPage($locale, $module . '/' . $controller, $action, $layoutName);
-		$expectedCount = $module === 'statistics' ? 2 : ($action === 'index' ? 9 : 1);
+		$expectedCount = $module === 'statistics' ? 2 : ($action === 'index' ? 11 : ($action === 'edit' ? 2 : 1));
 		check(substr_count($page['html'], 'class="dw-icon-symbols"') === 1 && substr_count($page['html'], 'dw-btn--control') === $expectedCount, 'Layout symbol count or presentation scope changed');
 		$icons = $module === 'admin' ? $standardIcons : ['filter' => 'filter', 'reset' => 'reset'];
 		$class = ucfirst($module) . '_Form_Toolbar';
@@ -89,8 +89,8 @@ foreach (['de_DE', 'en_US'] as $locale) foreach (['admin' => $adminControllers, 
 	foreach ($module === 'admin' ? ['index', 'select'] : ['index'] as $context) {
 		$ajax = toolbarPage($locale, $module . '/' . $controller, 'search', 'layout', [], false, $context);
 		check(array_keys($ajax) === ['content', 'toolbar'] && !str_contains($ajax['content'] . $ajax['toolbar'], '<symbol'), 'AJAX contract changed or symbols duplicated');
-		check(substr_count($ajax['toolbar'], 'dw-btn--control') === ($module === 'statistics' ? 2 : ($context === 'index' ? 6 : 1)), 'AJAX toolbar scope incorrect');
-		check(substr_count($ajax['content'], 'dw-btn--control') === ($module === 'admin' && $context === 'index' ? 3 : 0), 'AJAX footer context incorrect');
+		check(substr_count($ajax['toolbar'], 'dw-btn--control') === ($module === 'statistics' ? 2 : ($context === 'index' ? 7 : 1)), 'AJAX toolbar scope incorrect');
+		check(substr_count($ajax['content'], 'dw-btn--control') === ($module === 'admin' && $context === 'index' ? 4 : 0), 'AJAX footer context incorrect');
 	}
 }
 

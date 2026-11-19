@@ -176,7 +176,8 @@ with tempfile.TemporaryDirectory(prefix='dewawi-button-pages-') as directory:
                         check(inventory['modern_buttons'] == 0 and inventory['references'] == 0, f'{name}: document actions migrated')
                         check(any(v['action'] == 'pdf' and '/images/pdf.png' in v['background'] for v in metrics['legacy']), f'{name}: document PDF PNG missing')
                     if path in ['/contacts/contact', '/items/item']:
-                        for action in ['delete', 'apply', 'export']:
+                        check(driver.execute('var b=document.querySelector(".dw-toolbar button[name=delete]");return !!b&&b.querySelector("use").getAttribute("href")==="#dw-icon-delete"&&b.textContent.trim()===arguments[0]', ['Löschen' if locale == 'de_DE' else 'Delete']), f'{name}: standard Delete missing from original controller document')
+                        for action in ['apply', 'export']:
                             check(driver.execute('var b=document.querySelector("button[name=' + action + ']");return !!b&&!b.querySelector("svg")&&!b.classList.contains("dw-btn--control")'), f'{name}: excluded {action} migrated')
                     urls = sorted({re.search(r'url\(["\']?(.*?)["\']?\)', v['background']).group(1) for v in metrics['legacy'] if v['background'].startswith('url(')})
                     driver.execute('window.fixtureImages=' + json.dumps(urls) + '.map(u=>{var i=new Image();i.src=u;return i});return true')

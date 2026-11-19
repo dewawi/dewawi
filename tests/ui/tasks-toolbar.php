@@ -29,7 +29,7 @@ foreach (['de_DE', 'en_US'] as $locale) {
 		$legacy = new TasksToolbarSubclassFixture();
 		foreach ($legacy->getElements() as $name => $old) {
 			$new = $modern->getElement($name);
-			if (in_array($name, ['add', 'edit', 'copy', 'filter', 'reset', 'clear'], true)) {
+			if (in_array($name, ['add', 'edit', 'copy', 'delete', 'filter', 'reset', 'clear'], true)) {
 				check(($new['iconFormat'] ?? '') === 'svg' && $new['icon'] === $name, 'Task standard action missing explicit SVG');
 				$a = buttonDom($modern->renderElement($name))->firstChild;
 				$b = buttonDom($legacy->renderElement($name))->firstChild;
@@ -45,14 +45,14 @@ foreach (['de_DE', 'en_US'] as $locale) {
 	}
 	foreach (['index', 'select', 'edit', 'view'] as $action) foreach (['layout', 'plain'] as $layoutName) {
 		$page = toolbarPage($locale, 'tasks', $action, $layoutName);
-		check(substr_count($page['html'], 'class="dw-icon-symbols"') === 1 && substr_count($page['html'], 'dw-btn--control') === ($action === 'index' ? 9 : 1), 'Task layout or migrated control scope changed');
+		check(substr_count($page['html'], 'class="dw-icon-symbols"') === 1 && substr_count($page['html'], 'dw-btn--control') === ($action === 'index' ? 11 : ($action === 'edit' ? 2 : 1)), 'Task layout or migrated control scope changed');
 		$readonly = toolbarPage($locale, 'tasks', $action, $layoutName, [], true);
 		foreach (buttonDom($readonly['toolbar'] . $readonly['bottom'])->getElementsByTagName('button') as $button) check($button->hasAttribute('disabled'), 'Readonly Task toolbar enabled');
 	}
 	foreach (['index', 'select'] as $context) {
 		$ajax = toolbarPage($locale, 'tasks', 'search', 'layout', [], false, $context);
 		check(array_keys($ajax) === ['content', 'toolbar'] && !str_contains($ajax['content'] . $ajax['toolbar'], '<symbol'), 'Tasks AJAX changed contract or duplicated symbols');
-		check(substr_count($ajax['toolbar'], 'dw-btn--control') === ($context === 'index' ? 6 : 1) && substr_count($ajax['content'], 'dw-btn--control') === ($context === 'index' ? 3 : 0), 'Tasks AJAX footer lost selection context');
+		check(substr_count($ajax['toolbar'], 'dw-btn--control') === ($context === 'index' ? 7 : 1) && substr_count($ajax['content'], 'dw-btn--control') === ($context === 'index' ? 4 : 0), 'Tasks AJAX footer lost selection context');
 	}
 }
 
@@ -76,7 +76,7 @@ foreach (['get', 'add', 'copy', 'save', 'export'] as $action) {
 	foreach ((new Tasks_Form_Toolbar())->getElements() as $element) check(!isset($element['iconFormat']), 'Special Task action/follow-up context migrated');
 }
 toolbarContext('tasks', 'task', 'index');
-foreach (['TasksToolbarSubclassFixture', 'Tasks_Form_ToolbarInline', 'Tasks_Form_ToolbarPositions', 'Tasks_Form_Task'] as $class) foreach ((new $class())->getElements() as $name => $element) check(isset($element['iconFormat']) === ($class === 'Tasks_Form_ToolbarInline' && in_array($name, ['view', 'edit', 'copy'], true)), 'Task subclass, row, position or form escaped its explicit scope');
+foreach (['TasksToolbarSubclassFixture', 'Tasks_Form_ToolbarInline', 'Tasks_Form_ToolbarPositions', 'Tasks_Form_Task'] as $class) foreach ((new $class())->getElements() as $name => $element) check(isset($element['iconFormat']) === ($class === 'Tasks_Form_ToolbarInline' && in_array($name, ['view', 'edit', 'copy', 'delete'], true)), 'Task subclass, row, position or form escaped its explicit scope');
 
 echo $tasksBaseline;
 echo 'PASS: ' . $checks . " Tasks toolbar, filter/status defaults, legacy, layout, AJAX and permission compatibility checks\n";

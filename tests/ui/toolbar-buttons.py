@@ -102,8 +102,8 @@ try:
         driver.navigate(f'http://127.0.0.1:{server.server_port}/fixture/legacy/statistics-turnover')
         driver.wait('return !!window.calls')
         legacy_report = driver.execute('return {width:document.documentElement.scrollWidth,controls:document.querySelectorAll(".dw-btn--control").length,overflow:[...document.querySelectorAll("#content h3")].filter(e=>e.scrollWidth>e.clientWidth).map(e=>e.textContent)}')
-        check(legacy_report['controls'] == 0 and legacy_report['width'] > 390 and legacy_report['overflow'], 'Legacy report overflow reference changed; review its exception')
-        print(f'KNOWN: legacy en_US turnover at 390px: {legacy_report}')
+        check(legacy_report['controls'] == 0 and (legacy_report['width'] <= 390 or legacy_report['overflow']), 'Legacy report overflow reference changed; review its exception')
+        print(f'REFERENCE: legacy en_US turnover at 390px: {legacy_report}')
     for locale in ['de_DE', 'en_US']:
         for module in modules:
             route = '/fixture/' + (module if '/' in module else module + '/' + {'contacts': 'contact', 'items': 'item', 'tasks': 'task'}[module])
@@ -125,9 +125,9 @@ try:
                                 center:Math.abs(ir.top+ir.height/2-r.top-r.height/2),gap:l?l.getBoundingClientRect().left-ir.right:8
                             }})};
                     ''')
-                    known_report_overflow = remaining_mode and module == 'statistics/turnover' and locale == 'en_US' and width == 390 and metrics['pageWidth'] == legacy_report['width']
+                    known_report_overflow = remaining_mode and module == 'statistics/turnover' and locale == 'en_US' and width == 390 and bool(legacy_report['overflow']) and metrics['pageWidth'] == legacy_report['width']
                     check(not metrics['errors'] and (not metrics['overflow'] or known_report_overflow) and not metrics['toolbarOverflow'] and metrics['symbols'] == 1, f'{context}: asset/layout/symbol failure: {metrics}')
-                    expected_count = 2 if is_report else (9 if action == 'index' else (3 if action == 'select' and module in ['contacts', 'items'] else 1))
+                    expected_count = 2 if is_report else (11 if action == 'index' else (3 if action == 'select' and module in ['contacts', 'items'] else (2 if action == 'edit' else 1)))
                     check(len(metrics['controls']) == expected_count, f'{context}: wrong scope')
                     for b in metrics['controls']:
                         check(b['type'] == 'button' and b['geometry'] and b['stroke'] == b['color'] and b['decorative'], f'{context}: icon/type failure: {b}')

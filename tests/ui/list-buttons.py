@@ -24,7 +24,7 @@ def check(value, message):
     if not value:
         raise AssertionError(message)
 
-groups = {'contacts': ['view', 'edit', 'copy'], 'items': ['edit', 'copy'], 'tasks': ['view', 'edit', 'copy']}
+groups = {'contacts': ['view', 'edit', 'copy', 'delete'], 'items': ['edit', 'copy', 'delete'], 'tasks': ['view', 'edit', 'copy', 'delete']}
 groups.update({'admin/' + c: ['copy'] for c in ['country', 'uom', 'deliverytime', 'manufacturer', 'warehouse', 'shippingmethod']})
 if mobile_mode:
     groups = {key: groups[key] for key in ['contacts', 'tasks']}
@@ -128,13 +128,13 @@ try:
                         check(driver.execute('var b=[...document.querySelector(".dw-row-actions").querySelectorAll("button")].map(e=>e.getBoundingClientRect());return Math.abs(b[0].y-b[1].y)<1&&b[1].x-b[0].right>=5&&b[2].y>b[0].bottom&&[...document.querySelectorAll("thead th")].every(e=>e.getBoundingClientRect().width>=24)'), f'{context}: action wrapping or collapsed columns')
                         check(driver.execute('return document.querySelector("thead").getBoundingClientRect().height<=80&&[...document.querySelectorAll("thead th")].every(e=>e.scrollWidth<=e.clientWidth+1)'), f'{context}: vertically fragmented or clipped table headings')
                 for b in metrics['buttons']:
-                    check(b['type'] == 'button' and b['label'] == b['title'] and b['label'] and not b['label'].startswith('TOOLBAR_'), f'{context}: native semantics/name/tooltip: {b}')
+                    check(b['type'] == 'button' and b['title'] == ('' if b['name'] == 'delete' else b['label']) and b['label'] and not b['label'].startswith('TOOLBAR_'), f'{context}: native semantics/name/tooltip: {b}')
                     check(b['icon'] == '#dw-icon-' + b['name'] and b['geometry'] > 0 and b['decorative'] and b['stroke'] == b['color'] and b['bg'] == 'none', f'{context}: icon/PNG overlap: {b}')
                     check(b['w'] >= (44 if width < 768 else 32) and b['h'] >= (44 if width < 768 else 32) and b['center'] < 1, f'{context}: target size/alignment: {b}')
                 ax = driver.command('POST', '/goog/cdp/execute', {'cmd': 'Accessibility.getFullAXTree', 'params': {}})
                 names = {n.get('name', {}).get('value') for n in ax['nodes'] if n.get('role', {}).get('value') == 'button'}
                 check({b['label'] for b in metrics['buttons']} <= names, f'{context}: AX names')
-                check(driver.execute('return [...document.querySelectorAll(".dw-row-actions button[name=delete]")].every(b=>!b.querySelector("svg")&&!b.classList.contains("dw-btn--control"))&&!document.querySelector(".dw-row-actions button[name=pdf]")'), f'{context}: delete/PDF migrated')
+                check(driver.execute('return [...document.querySelectorAll(".dw-row-actions button[name=delete]")].every(b=>b.dataset.module==="admin"?!b.querySelector("svg"):b.querySelector("use")?.getAttribute("href")==="#dw-icon-delete")&&!document.querySelector(".dw-row-actions button[name=pdf]")'), f'{context}: Delete scope or excluded PDF changed')
                 check(driver.execute('return [...document.querySelectorAll("tbody a")].some(a=>a.getAttribute("href").endsWith(arguments[0]+"/edit/id/18"))', [route]), f'{context}: native link target')
                 selector = '.dw-row-actions button[name=copy][data-id="18"]'
                 driver.execute('document.querySelector(arguments[0]).focus()', [selector])
@@ -147,7 +147,7 @@ try:
                 driver.wait('return hoverButton.matches(":hover")&&getComputedStyle(hoverButton).backgroundColor===hoverColor')
                 check(driver.execute('return hoverButton.matches(":hover")'), f'{context}: hover')
                 driver.execute('$("input[data-select-id]").first().prop("checked",true);navigations=[];calls=[]')
-                for name in [a for a in actions if a != 'copy']:
+                for name in [a for a in actions if a not in ['copy', 'delete']]:
                     driver.execute('document.querySelector(".dw-row-actions button[name="+arguments[0]+"][data-id=\\"18\\"]").focus()', [name])
                     driver.keys('enter' if name == 'view' else 'space')
                     check(driver.execute('return navigations.pop()===arguments[0]+"/"+arguments[1]+"/id/18"&&!calls.length&&document.querySelector("input[data-select-id]:checked").dataset.selectId==="17"', [route, name]), f'{context}: row navigation used checkbox selection')

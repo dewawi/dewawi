@@ -143,6 +143,11 @@ DocumentRoot "{site}"
                 if expected_change == "1":
                     assert result["ok"] and result["deletedIds"] == [11]
                 checks += 1
+
+            for target_module, target_controller, expected_status in [("", "contactperson", 200), ("contacts", "", 200), ("../contacts", "contactperson", 403), ("contacts", "../contactperson", 403), ("admin", "country", 403), ("contacts", "unknown", 404)]:
+                status, result, changed = fetch(prefix, "/default/trash/add", fields={"id": [11], "module": target_module, "controller": target_controller})
+                assert status == expected_status and result["ok"] is False and changed == "0", f"Invalid trash target: {target_module}/{target_controller}: status={status}, result={result}, changed={changed}"
+                checks += 1
             status, result, changed = fetch(prefix, "/contacts/contactperson/get/id/11", selected=8)
             assert status == 200 and result["ok"] and result["item"]["clientid"] == 1, "Authorized child lost shared parent access"
             checks += 1

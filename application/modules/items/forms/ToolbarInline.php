@@ -52,6 +52,7 @@ class Items_Form_ToolbarInline extends DEEC_Form
 				$attribs['title'] = $this->translate($label);
 				$this->setElementData($name, ['label' => $label, 'icon' => $name, 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm', 'attribs' => $attribs]);
 			}
+			$this->setElementData('delete', ['label' => 'TOOLBAR_DELETE', 'icon' => 'delete', 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm']);
 		}
 	}
 }

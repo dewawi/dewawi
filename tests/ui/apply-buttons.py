@@ -129,7 +129,7 @@ try:
 
     for locale in ['de_DE', 'en_US']:
         for module in ['contacts', 'items']:
-            for width in [390, 768, 1280]:
+            for width in [320, 390, 768, 1280]:
                 context = f'{locale}/{module}/{width}'
                 parent_context = 'processes|process' + ('|501' if module == 'items' else '')
                 driver.emulate_viewport(width, 1100)

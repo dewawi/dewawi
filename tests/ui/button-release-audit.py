@@ -23,6 +23,7 @@ root = Path(__file__).resolve().parents[2]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--engine', choices=['chromium', 'firefox'], default='chromium')
 parser.add_argument('--output', type=Path, default=Path('/tmp/dewawi-button-release-audit'))
+parser.add_argument('--standard-actions', action='store_true', help='Probe standard Delete actions using memory-only complete documents')
 parser.add_argument('--document-icons', action='store_true', help='Check original complete MVC documents and actual SVG pixels')
 args = parser.parse_args()
 args.output.mkdir(parents=True, exist_ok=True)
@@ -71,6 +72,8 @@ class Firefox:
         result = self.call('script.evaluate', {'expression': 'JSON.stringify((function(){' + script + '})())', 'target': {'context': self.context}, 'awaitPromise': True})
         if result['type'] != 'success':
             raise RuntimeError(result)
+        if result['result']['type'] == 'undefined':
+            return None
         return json.loads(result['result']['value'])
 
     def emulate_viewport(self, width, height):
@@ -103,6 +106,13 @@ class Firefox:
         self.log.close()
         self.profile.cleanup()
 
+
+if args.standard_actions:
+    spec = importlib.util.spec_from_file_location('delete_apply_browser', root / 'tests/ui/delete-apply-browser.py')
+    action_probe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(action_probe)
+    action_probe.run(root, browser, Firefox if args.engine == 'firefox' else browser.WebDriver, args.engine, args.output)
+    raise SystemExit(0)
 
 if args.document_icons:
     spec = importlib.util.spec_from_file_location('svg_document_context', root / 'tests/ui/svg-document-context.py')

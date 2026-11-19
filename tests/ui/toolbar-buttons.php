@@ -163,12 +163,12 @@ if (($argv[1] ?? '') === 'snapshot') {
 	exit;
 }
 
-$icons = ['add' => 'add', 'edit' => 'edit', 'copy' => 'copy', 'filter' => 'filter', 'reset' => 'reset', 'clear' => 'close'];
+$icons = ['add' => 'add', 'edit' => 'edit', 'copy' => 'copy', 'delete' => 'delete', 'filter' => 'filter', 'reset' => 'reset', 'clear' => 'close'];
 foreach (['de_DE', 'en_US'] as $locale) foreach (['contacts', 'items'] as $module) {
 	foreach (['index', 'select', 'edit', 'view'] as $action) foreach (['layout', 'plain'] as $layoutName) {
 		$page = toolbarPage($locale, $module, $action, $layoutName);
 		check(substr_count($page['html'], 'class="dw-icon-symbols"') === 1, 'Missing/duplicate full-document symbols');
-		check(substr_count($page['html'], 'dw-btn--control') === ($action === 'index' ? 9 : ($action === 'select' ? 3 : 1)), 'Toolbar migration escaped its bounded scope');
+		check(substr_count($page['html'], 'dw-btn--control') === ($action === 'index' ? 11 : ($action === 'select' ? 3 : ($action === 'edit' ? 2 : 1))), 'Toolbar migration escaped its bounded scope');
 		foreach ($icons as $name => $symbol) {
 			$config = $page['elements'][$name];
 			check(($config['iconFormat'] ?? '') === 'svg', 'Standard control not explicitly migrated');
@@ -179,18 +179,18 @@ foreach (['de_DE', 'en_US'] as $locale) foreach (['contacts', 'items'] as $modul
 			check($button->getElementsByTagName('use')->item(0)->getAttribute('href') === '#dw-icon-' . $symbol, 'Unexpected SVG mapping');
 			if ($name === 'clear') check($button->getAttribute('aria-label') === Zend_Registry::get('DEEC_Translate')->t('CLEAR') && $button->getAttribute('rel') === 'keyword' && trim($button->textContent) === '', 'Clear lost translated accessible name or field target');
 		}
-		foreach (['delete', 'apply', 'tags'] as $name) if (isset($page['elements'][$name])) check(isset($page['elements'][$name]['iconFormat']) === ($name === 'apply' && $action === 'select'), 'A special action escaped its explicit context');
+		foreach (['apply', 'tags'] as $name) if (isset($page['elements'][$name])) check(isset($page['elements'][$name]['iconFormat']) === ($name === 'apply' && $action === 'select'), 'A special action escaped its explicit context');
 		$readonly = toolbarPage($locale, $module, $action, $layoutName, ['view', 'add', 'edit', 'delete'], true);
 		foreach (buttonDom($readonly['toolbar'] . $readonly['bottom'])->getElementsByTagName('button') as $button) check($button->hasAttribute('disabled'), 'Readonly toolbar action enabled');
 	}
 	foreach ([['view'], []] as $rights) {
 		$page = toolbarPage($locale, $module, 'index', 'layout', $rights);
 		$top = buttonDom($page['toolbar']);
-		foreach ($top->getElementsByTagName('button') as $button) check(!in_array($button->getAttribute('name'), ['add', 'edit', 'copy'], true), 'Toolbar bypassed action permissions');
+		foreach ($top->getElementsByTagName('button') as $button) check(!in_array($button->getAttribute('name'), ['add', 'edit', 'copy', 'delete'], true), 'Toolbar bypassed action permissions');
 	}
 	$ajax = toolbarPage($locale, $module, 'search');
 	check(array_keys($ajax) === ['content', 'toolbar'] && !str_contains($ajax['content'] . $ajax['toolbar'], '<symbol'), 'Search response changed or duplicated symbols');
-	check(substr_count($ajax['toolbar'], 'dw-btn--control') === 6 && substr_count($ajax['content'], 'dw-btn--control') === 3, 'Dynamic top/bottom toolbar missing SVGs');
+	check(substr_count($ajax['toolbar'], 'dw-btn--control') === 7 && substr_count($ajax['content'], 'dw-btn--control') === 4, 'Dynamic top/bottom toolbar missing SVGs');
 	$selectAjax = toolbarPage($locale, $module, 'search', 'plain', ['view', 'add', 'edit', 'delete'], false, 'select');
 	check(substr_count($selectAjax['toolbar'], 'dw-btn--control') === 2 && substr_count($selectAjax['content'], 'dw-btn--control') === 1, 'Select AJAX changed its apply/footer context');
 }
@@ -209,6 +209,6 @@ foreach (['import', 'export', 'map'] as $action) foreach (['contacts' => 'contac
 	foreach ((new $class())->getElements() as $element) check(!isset($element['iconFormat']), 'Excluded action migrated');
 }
 toolbarContext('contacts', 'contact', 'index');
-foreach (['Application_Form_Toolbar', 'Contacts_Form_ToolbarInline', 'Items_Form_ToolbarInline'] as $class) foreach ((new $class())->getElements() as $name => $element) check(isset($element['iconFormat']) === ($class === 'Contacts_Form_ToolbarInline' && in_array($name, ['view', 'edit', 'copy'], true)), 'Dashboard or row toolbar escaped its explicit scope');
+foreach (['Application_Form_Toolbar', 'Contacts_Form_ToolbarInline', 'Items_Form_ToolbarInline'] as $class) foreach ((new $class())->getElements() as $name => $element) check(isset($element['iconFormat']) === ($class === 'Contacts_Form_ToolbarInline' && in_array($name, ['view', 'edit', 'copy', 'delete'], true)), 'Dashboard or row toolbar escaped its explicit scope');
 echo $toolbarBaseline;
 echo 'PASS: ' . $checks . " shared toolbar, layout, SVG, translation, permissions, readonly and exclusion checks\n";
