@@ -32,7 +32,7 @@ function toolbarContext(string $module, string $controller, string $action, arra
 	$front->getRouter()->addDefaultRoutes();
 }
 
-function toolbarPage(string $locale, string $module, string $action = 'index', string $layoutName = 'layout', array $rights = ['view', 'add', 'edit', 'delete'], bool $readonly = false, string $contextAction = 'index', bool $legacyStatistics = false, bool $selectionActions = false, bool $listActions = false): array
+function toolbarPage(string $locale, string $module, string $action = 'index', string $layoutName = 'layout', array $rights = ['view', 'add', 'edit', 'delete'], bool $readonly = false, string $contextAction = 'index', bool $legacyStatistics = false, bool $selectionActions = false, bool $listActions = false, ?array $listItems = null): array
 {
 	global $root;
 	if (str_contains($module, '/')) [$module, $controller] = explode('/', $module, 2);
@@ -70,7 +70,7 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 	]);
 	$listConfig = [
 		'view' => $view, 'module' => $module, 'controller' => $controller, 'toolbar' => $toolbar,
-		'items' => [['id' => 17, 'title' => 'Fixture A'], ['id' => 18, 'title' => 'Fixture B']],
+		'items' => $listItems ?? [['id' => 17, 'title' => 'Fixture A'], ['id' => 18, 'title' => 'Fixture B']],
 		'columns' => [['name' => 'title', 'label' => 'TOOLBAR_NAME']], 'selectable' => true,
 		'listFooter' => in_array($action, ['index', 'select', 'search'], true), 'context' => ['action' => $action === 'search' ? $contextAction : $action],
 	];

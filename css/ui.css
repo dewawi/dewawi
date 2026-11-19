@@ -2319,6 +2319,30 @@ a.dw-nav-link {
 		overflow-x: auto;
 	}
 
+	.dw-app-shell__inner.contacts.index .dw-table--contacts-contact,
+	.dw-app-shell__inner.tasks.index .dw-table--tasks-task,
+	.dw-popup-shell--contacts.dw-popup-shell--contact.dw-popup-shell--index .dw-table--contacts-contact,
+	.dw-popup-shell--tasks.dw-popup-shell--task.dw-popup-shell--index .dw-table--tasks-task {
+		table-layout: auto;
+	}
+
+	/* Two 44px touch targets and the existing 6px action gap. */
+	.dw-app-shell__inner.contacts.index .dw-table--contacts-contact .dw-col-actions,
+	.dw-app-shell__inner.tasks.index .dw-table--tasks-task .dw-col-actions,
+	.dw-popup-shell--contacts.dw-popup-shell--contact.dw-popup-shell--index .dw-table--contacts-contact .dw-col-actions,
+	.dw-popup-shell--tasks.dw-popup-shell--task.dw-popup-shell--index .dw-table--tasks-task .dw-col-actions {
+		width: 94px;
+		min-width: 94px;
+	}
+
+	.dw-app-shell__inner.contacts.index .dw-table--contacts-contact thead th,
+	.dw-app-shell__inner.tasks.index .dw-table--tasks-task thead th,
+	.dw-popup-shell--contacts.dw-popup-shell--contact.dw-popup-shell--index .dw-table--contacts-contact thead th,
+	.dw-popup-shell--tasks.dw-popup-shell--task.dw-popup-shell--index .dw-table--tasks-task thead th {
+		overflow-wrap: normal;
+		word-break: normal;
+	}
+
 	.dw-toolbar {
 		align-items: stretch;
 	}

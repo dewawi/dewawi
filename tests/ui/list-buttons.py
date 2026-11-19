@@ -16,6 +16,7 @@ spec = importlib.util.spec_from_file_location('list_driver', root / 'tests/site/
 browser = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(browser)
 checks = 0
+mobile_mode = '--mobile' in sys.argv
 
 def check(value, message):
     global checks
@@ -25,6 +26,8 @@ def check(value, message):
 
 groups = {'contacts': ['view', 'edit', 'copy'], 'items': ['edit', 'copy'], 'tasks': ['view', 'edit', 'copy']}
 groups.update({'admin/' + c: ['copy'] for c in ['country', 'uom', 'deliverytime', 'manufacturer', 'warehouse', 'shippingmethod']})
+if mobile_mode:
+    groups = {key: groups[key] for key in ['contacts', 'tasks']}
 pages, searches = {}, {}
 for locale in ['de_DE', 'en_US']:
     searches[locale.replace('_', '-')] = {}
@@ -34,6 +37,14 @@ for locale in ['de_DE', 'en_US']:
             pages[f'/fixture/{locale}/{module}/{state}'] = json.loads(result.stdout)['html'].encode()
         result = subprocess.run(['php', str(root / 'tests/ui/toolbar-buttons.php'), 'render', locale, module, 'search', 'layout', '', 'index', 'list-actions'], capture_output=True, text=True, check=True)
         searches[locale.replace('_', '-')][module] = json.loads(result.stdout)
+
+if mobile_mode:
+    for locale in ['de_DE', 'en_US']:
+        for module in ['contacts', 'tasks', 'items', 'admin/uom']:
+            profiles = [('plain', 'index', ''), ('plain', 'select', ''), ('layout', 'edit', ''), ('layout', 'index', 'long'), ('plain', 'index', 'long'), ('layout', 'index', 'view-only')] if module in ['contacts', 'tasks'] else [('layout', 'index', '')]
+            for layout, action, variant in profiles:
+                result = subprocess.run(['php', str(root / 'tests/ui/mobile-list-actions.php'), 'render', locale, module, action, layout, 'index', variant], capture_output=True, text=True, check=True)
+                pages[f'/mobile/{locale}/{module}/{layout}/{action}/{variant}'] = json.loads(result.stdout)['html'].encode()
 
 setup = ('var fixtureSearches=' + json.dumps(searches).replace('<', '\\u003c') + ';' + r'''
 window.calls=[];window.navigations=[];window.pendingCopy=null;window.confirmations=0;
@@ -90,7 +101,7 @@ try:
     for locale in ['de_DE', 'en_US']:
         for module, actions in groups.items():
             route = '/fixture/' + (module if '/' in module else module + '/' + {'contacts': 'contact', 'items': 'item', 'tasks': 'task'}[module])
-            for width in [390, 768, 1280]:
+            for width in ([320, 390, 768, 1280] if mobile_mode else [390, 768, 1280]):
                 context = f'{locale}/{module}/{width}'
                 driver.emulate_viewport(width, 1100)
                 driver.navigate(f'http://127.0.0.1:{server.server_port}/fixture/{locale}/{module}/')
@@ -107,8 +118,15 @@ try:
                 ''')
                 check(not metrics['errors'] and metrics['symbols'] == 1, f'{context}: scripts/symbols: {metrics}')
                 check([b['name'] for b in metrics['buttons']] == actions * 2 and [b['id'] for b in metrics['buttons']] == ['17'] * len(actions) + ['18'] * len(actions), f'{context}: action/row scope')
-                check(metrics['width'] <= width and all(t['scroll'] <= t['width'] + 1 or t['overflow'] in ['auto', 'scroll'] for t in metrics['tables']), f'{context}: uncontained table overflow: {metrics}')
+                header_only = mobile_mode and width == 320 and driver.execute('return [...document.querySelectorAll("body *")].filter(e=>{var r=e.getBoundingClientRect();return r.width&&r.right>innerWidth&&!e.closest(".dw-table-wrap")}).every(e=>e.closest(".dw-app-header"))')
+                check((metrics['width'] <= width or header_only) and all(t['scroll'] <= t['width'] + 1 or t['overflow'] in ['auto', 'scroll'] for t in metrics['tables']), f'{context}: uncontained table overflow: {metrics}')
                 check(all(32 <= h <= 250 for h in metrics['rows']), f'{context}: unexpected row heights: {metrics["rows"]}')
+                if mobile_mode:
+                    check(driver.execute('return getComputedStyle(document.querySelector("table")).tableLayout===arguments[0]', ['auto' if width < 768 else 'fixed']), f'{context}: mobile scope escaped breakpoint')
+                    if width < 768:
+                        check(all(h <= 116 for h in metrics['rows']), f'{context}: stacked actions returned')
+                        check(driver.execute('var b=[...document.querySelector(".dw-row-actions").querySelectorAll("button")].map(e=>e.getBoundingClientRect());return Math.abs(b[0].y-b[1].y)<1&&b[1].x-b[0].right>=5&&b[2].y>b[0].bottom&&[...document.querySelectorAll("thead th")].every(e=>e.getBoundingClientRect().width>=24)'), f'{context}: action wrapping or collapsed columns')
+                        check(driver.execute('return document.querySelector("thead").getBoundingClientRect().height<=80&&[...document.querySelectorAll("thead th")].every(e=>e.scrollWidth<=e.clientWidth+1)'), f'{context}: vertically fragmented or clipped table headings')
                 for b in metrics['buttons']:
                     check(b['type'] == 'button' and b['label'] == b['title'] and b['label'] and not b['label'].startswith('TOOLBAR_'), f'{context}: native semantics/name/tooltip: {b}')
                     check(b['icon'] == '#dw-icon-' + b['name'] and b['geometry'] > 0 and b['decorative'] and b['stroke'] == b['color'] and b['bg'] == 'none', f'{context}: icon/PNG overlap: {b}')
@@ -159,12 +177,33 @@ try:
                 if locale == 'de_DE' and module in ['contacts', 'items', 'tasks', 'admin/uom']:
                     driver.execute('document.querySelector(arguments[0]).focus()', [selector])
                     shot = driver.command('GET', '/screenshot')
-                    Path(f'/tmp/dewawi-b10-{module.replace("/", "-")}-{width}.png').write_bytes(base64.b64decode(shot))
+                    Path(f'/tmp/dewawi-b{11 if mobile_mode else 10}-{module.replace("/", "-")}-{width}.png').write_bytes(base64.b64decode(shot))
                 print(f'PASS: {context}; row heights={metrics["rows"]}; table overflow contained', flush=True)
             driver.navigate(f'http://127.0.0.1:{server.server_port}/fixture/{locale}/{module}/readonly')
             driver.wait('return !!window.calls')
             check(driver.execute('var bs=[...document.querySelectorAll(".dw-row-actions .dw-btn--control")];bs.forEach(b=>b.querySelector("use").dispatchEvent(new MouseEvent("click",{bubbles:true,cancelable:true})));return bs.length===arguments[0]&&bs.every(b=>b.disabled)&&!calls.length&&!navigations.length', [2 * len(actions)]), f'{locale}/{module}: readonly list')
-    print(f'PASS: {checks} list action browser assertions')
+    if mobile_mode:
+        for locale in ['de_DE', 'en_US']:
+            for module in ['contacts', 'tasks', 'items', 'admin/uom']:
+                profiles = [('plain', 'index', ''), ('plain', 'select', ''), ('layout', 'edit', ''), ('layout', 'index', 'long'), ('plain', 'index', 'long'), ('layout', 'index', 'view-only')] if module in ['contacts', 'tasks'] else [('layout', 'index', '')]
+                for layout, action, variant in profiles:
+                    for width in ([320, 390, 768, 1280] if variant == 'long' else [390]):
+                        driver.emulate_viewport(width, 1100)
+                        driver.navigate(f'http://127.0.0.1:{server.server_port}/mobile/{locale}/{module}/{layout}/{action}/{variant}')
+                        driver.wait('return !!window.calls')
+                        enabled = module in ['contacts', 'tasks'] and action == 'index' and width < 768
+                        context = f'{locale}/{module}/{layout}/{action}/{variant}/{width}'
+                        check(driver.execute('return getComputedStyle(document.querySelector("table")).tableLayout===arguments[0]', ['auto' if enabled else 'fixed']), f'{context}: special/full/plain context changed')
+                        check(driver.execute('var c=document.querySelector(".dw-table-wrap"),rs=[...document.querySelectorAll(".dw-row-actions button")].map(e=>e.getBoundingClientRect());return c.getBoundingClientRect().right<=innerWidth&&rs.every((a,i)=>rs.every((b,j)=>i===j||a.right<=b.x||b.right<=a.x||a.bottom<=b.y||b.bottom<=a.y))'), f'{context}: table overflow/control overlap')
+                        if enabled:
+                            check(driver.execute('return [...document.querySelectorAll(".dw-row-actions .dw-btn--control")].every(e=>{var r=e.getBoundingClientRect();return r.width>=44&&r.height>=44})'), f'{context}: touch targets shrank')
+                            driver.execute('var c=document.querySelector(".dw-table-wrap");c.scrollLeft=c.scrollWidth')
+                            check(driver.execute('var c=document.querySelector(".dw-table-wrap"),r=c.getBoundingClientRect();return c.scrollLeft>0&&[...document.querySelectorAll(".dw-row-actions button")].every(e=>{var b=e.getBoundingClientRect();return b.x>=r.x&&b.right<=r.right+1})'), f'{context}: actions clipped or scrolling lost')
+                        if variant == 'view-only' and module == 'contacts':
+                            check(driver.execute('return document.querySelectorAll(".dw-row-actions button").length===2&&[...document.querySelectorAll(".dw-row-actions button")].every(b=>b.name==="view")'), f'{context}: mobile layout changed ACL visibility')
+                        if variant == 'long':
+                            check(driver.execute('return [...document.querySelectorAll("tbody td")].every(e=>e.scrollWidth<=e.clientWidth+1)'), f'{context}: long content clipped or escaped its cell')
+    print(f'PASS: {checks} list action browser assertions' + (' including mobile scope/long content audit' if mobile_mode else ''))
 finally:
     if driver:
         driver.close()

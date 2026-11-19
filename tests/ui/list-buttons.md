@@ -1,5 +1,7 @@
 # B10 – Gewöhnliche Tabellen- und Listenaktionen
 
+Fortsetzung: [B11 – mobile Tabellenaktionen](mobile-table-actions.md) korrigiert die hier dokumentierte mobile Zeilenhöhe. Die [aktuelle Gesamtinventur](button-system-inventory.md) trennt Quellstellen, Aktivierungskontexte und sichtbare Fixturecontrols. Die folgenden Messungen beschreiben den historischen B10-Stand.
+
 Stand: 19.11.2026. Grundlage: `AGENTS.md`, die Berichte [B1](buttons-icons-analysis.md), [B2](buttons-foundation.md), [B3](button-icons.md), [B4](inquiry-buttons.md), [B5](toolbar-buttons.md), [B6](tasks-toolbar.md), [B7](remaining-toolbars.md), [B8](button-quality-audit.md), [B9](apply-buttons.md) und der lokale Code. Ausgangs-HEAD: `c8f9fdec`; Arbeitsverzeichnis zu Beginn sauber. Die unabhängigen Dokument-/Geocodingcommits bleiben erhalten. B2–B9 sind lokal vorhanden: `b27f55e6`, `2af50303`, `20ebf9d9`, `aaca1571`, `f23f05fb`, `b523e3b4`, `30db90b2`, `9ed0619f`.
 
 ## Umfang und Entscheidung
