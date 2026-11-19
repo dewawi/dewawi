@@ -1,3 +1,46 @@
+# T2A – Technische Reparatur (19. November 2026)
+
+T1-Ausgangspunkt: `c6325897`. Die nachfolgenden T1-Abschnitte bleiben als historische
+Bestandsaufnahme erhalten; `report.json` und `validation.json` bilden den aktuellen T2A-Stand ab.
+
+Behoben: PHP-8-Formatfehler, instabile Locale-Auswahl und Pfadwerte, alte Katalogdaten nach
+Locale-Wechsel, dauerhaft gesperrte Domains nach fehlgeschlagenen Loads sowie gemeinsam
+benötigte Kontakttexte. Die bisherigen Prioritäten bleiben erhalten. `loadModule()` bündelt
+die vorhandenen globalen Common-Abhängigkeiten installierter Module und das angeforderte
+Detailmodul. Dateiinhalte werden innerhalb einer Instanz nur einmal ausgewertet; spätere
+Forwards laden ihren tatsächlichen Modulkontext im `preDispatch` nach.
+
+PDF-Rendering und neue Standardbelegtitel verwenden einen eigenen Translator für die
+Dokumentensprache. Gespeicherte Belege und Beträge werden nicht verändert. Der öffentliche
+Shop schaltet erst nach dem Routing auf die Site-Sprache, sodass ERP-Routen ihre Benutzer-
+Locale behalten. Shop-Mailmarker und Betreffmarker können auch ohne HTTP-Plugin der
+konfigurierten Shop-Sprache folgen. Feedback akzeptiert dieselben geprüften Locale-Aliase.
+
+Unterstützt: `de_DE` und `en_US`, mit den Aliasen `de`/`de-DE` und `en`/`en-US`.
+Ungültige Benutzerauswahl wird mit HTTP 400 abgelehnt; ungültige gespeicherte Werte fallen
+auf die gültige Mandantenkonfiguration bzw. explizit `de_DE` zurück. `setLocale()` verwirft
+alte Domains; anschließend muss der neue Kontext geladen werden. Fehler sind über
+`getIssues()` beobachtbar. Bewusst kein automatischer Sprachwechsel bei fehlenden Schlüsseln:
+Eine deutsche Ersatzausgabe in einem englischen Beleg würde dessen Sprachkontext verschleiern.
+Unbekannte Schlüssel bleiben sichtbar und werden im Audit weiterhin ohne Fallback gezählt.
+
+Nach T2A: 115 Dateien (eine englische gemeinsame Kontaktdatei ergänzt), unverändert 6.206
+Definitionen / 3.607 Schlüssel und 943 fehlende englische Schlüssel. Fehlende englische
+Dateigegenstücke: 22 → 21. Die redaktionelle Vervollständigung folgt in T2B.
+143 isolierte Laufzeitprüfungen und alle 28 Modellkontexte bestanden. Die relevanten
+Bestandstests bestanden, außer den beiden getrennt protokollierten T1-Baselinefehlern.
+
+Reproduzierbare Validierung:
+
+```bash
+python3 tests/translations/validate.py --stage T2A > /tmp/translations-validation.json
+```
+
+Keine Datenbankänderung oder Migration. Keine Schlüssel gelöscht. Der fremde unversionierte
+Dashboard-Test bleibt außerhalb des Commitumfangs.
+
+---
+
 # T1 – Audit des Übersetzungssystems
 
 Stand: 19. November 2026, lokaler Workspace `/var/www/dewawi`, Ausgangscommit `c59fa45d`.

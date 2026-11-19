@@ -101,7 +101,7 @@ def request_domains(catalogues, locale, module):
     default = sorted(p for p in catalogues if p.startswith(base + 'default/'))
     if default:
         domains.append(('default', default))
-    commons = sorted(p for p in catalogues if p.startswith(base) and p.endswith('/common.php') and not p.startswith(base + 'default/'))
+    commons = sorted(p for p in catalogues if p.startswith(base) and p.endswith('/common.php') and not p.startswith(base + 'default/') and (ROOT / 'application/modules' / Path(p).parent.name).is_dir())
     domains.extend((Path(p).parent.name + '_common', [p]) for p in commons)
     active = sorted(p for p in catalogues if p.startswith(base + module + '/'))
     # For the default module loadDir is already marked loaded by bootstrap.
@@ -269,7 +269,7 @@ def run_audit(runtime=True):
             reachable_missing.extend({**c, 'locale': locale, 'module': module, 'exists_elsewhere': c['key'] in unique_locale[locale], 'certainty': 'static_request_model'} for c in absent)
             files = [p for _, fs in domains for p in fs]
             route_reports.append({'locale': locale, 'module': module, 'domains': [d for d, _ in domains], 'files_in_load_order': files,
-                                  'require_calls': len(files), 'unique_files': len(set(files)), 'bytes_in_require_calls': sum(catalogues[p]['bytes'] for p in files),
+                                  'require_calls': len(set(files)), 'merge_inputs': len(files), 'unique_files': len(set(files)), 'bytes_in_require_calls': sum(catalogues[p]['bytes'] for p in set(files)),
                                   'effective_keys': len(effective), 'effective_sha256': hashlib.sha256(json.dumps({key: ref['value'] for key, ref in sorted(effective.items())}, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest(),
                                   'literal_module_calls': len(module_calls), 'unresolved_module_calls': len(absent),
                                   'within_domain_overwrites': within, 'cross_domain_collisions': collisions})

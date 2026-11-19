@@ -49,6 +49,12 @@ class TranslationAuditTranslator extends DEEC_Translate
 	public function domains(): array { return array_keys($this->data); }
 	public function data(): array { return $this->data; }
 	public function loaded(): array { return $this->loaded; }
+	public function fileCount(): int { return count($this->files); }
+}
+class TranslationAuditPdf extends DEEC_Pdf
+{
+	public function documentPayload(array $document, string $module): array { return $this->buildDocumentPayload(['document' => $document, 'meta' => ['module' => $module, 'controller' => 'quote', 'templateid' => null]]); }
+	protected function resolveDocumentPayloadData(string $module, string $controller, array $document, array $options = []): array { return ['document' => $document, 'settings' => []]; }
 }
 
 $checks = []; $observations = []; $fixtures = [];
@@ -88,7 +94,7 @@ try {
 	translationCheck((string)Zend_Registry::get('Zend_Locale') === 'de_DE', 'session locale takes precedence over tenant config');
 	Zend_Session_Namespace::$selectedLanguage = '../application';
 	$error = translationException(static function () use ($bootstrap) { $bootstrap->locale(); });
-	translationCheck((string)Zend_Registry::get('Zend_Locale') === 'root' && $error === 'Zend_Currency_Exception', 'existing non-locale path selects root and fails currency initialization: ' . ($error ?? 'no exception'));
+	translationCheck((string)Zend_Registry::get('Zend_Locale') === 'en_US' && $error === null, 'invalid locale path falls back to valid tenant locale without currency error');
 	$observations['invalid_existing_locale_path'] = ['exception' => $error, 'locale' => (string)Zend_Registry::get('Zend_Locale')];
 	Zend_Auth::$identity = false; Zend_Session_Namespace::$selectedLanguage = 'de_DE';
 	$bootstrap->locale();
@@ -112,6 +118,10 @@ try {
 			foreach ($commons as $file) if (basename(dirname($file)) !== 'default') $expected[] = basename(dirname($file)) . '_common';
 			if ($module !== 'default' && is_dir(BASE_PATH . '/languages/' . $locale . '/' . $module)) $expected[] = $module;
 			translationCheck($tr->domains() === $expected, $locale . '/' . $module . ': real plugin domain order and module boundary');
+			$files = glob(BASE_PATH . '/languages/' . $locale . '/default/*.php');
+			foreach ($commons as $file) $files[] = $file;
+			foreach (glob(BASE_PATH . '/languages/' . $locale . '/' . $module . '/*.php') as $file) $files[] = $file;
+			translationCheck($tr->fileCount() === count(array_unique($files)), $locale . '/' . $module . ': shared files evaluated once per instance');
 			translationCheck(Zend_Registry::get('Client') === $client && Zend_Registry::get('Config') === $before && !Zend_Registry::isRegistered('User'), $locale . '/' . $module . ': translation preserves context registries');
 			$effective = [];
 			foreach ($tr->data() as $entries) $effective += $entries;
@@ -125,11 +135,13 @@ try {
 		$tr = new DEEC_Translate($locale); $tr->loadDir('default', BASE_PATH . '/languages/' . $locale . '/default');
 		Zend_Registry::set('DEEC_Translate', $tr);
 		$plugin->routeShutdown(new Zend_Controller_Request_Simple('index', 'index', 'sales'));
-		translationCheck($tr->t('CONTACTS_PHONE') === 'CONTACTS_PHONE', $locale . ': sales shared ContactData helper lacks contacts catalogue');
+		translationCheck($tr->t('CONTACTS_PHONE') !== 'CONTACTS_PHONE', $locale . ': sales shared ContactData helper reaches shared labels');
 		$tr = new DEEC_Translate($locale); $tr->loadDir('default', BASE_PATH . '/languages/' . $locale . '/default');
 		Zend_Registry::set('DEEC_Translate', $tr);
 		$plugin->routeShutdown(new Zend_Controller_Request_Simple('index', 'index', 'default'));
-		translationCheck($locale === 'de_DE' ? $tr->t('MENU_SALES') === 'Verkauf' : $tr->t('MENU_SALES') === 'MENU_SALES', $locale . ': global navigation common-file asymmetry');
+		$salesCommon = BASE_PATH . '/languages/' . $locale . '/sales/common.php';
+		$menu = is_file($salesCommon) ? (require $salesCommon)['MENU_SALES'] : 'MENU_SALES';
+		translationCheck($tr->t('MENU_SALES') === $menu, $locale . ': global navigation follows shared module labels');
 	}
 	$plugin->routeShutdown(new Zend_Controller_Request_Simple('index', 'index', 'sales'));
 	$helper = new Zend_View_Helper_Translate();
@@ -153,26 +165,27 @@ try {
 	translationCheck($tr->t('AUDIT_FORMAT') === '%s %d', 'format returned raw without arguments');
 	translationCheck($tr->t('AUDIT_UNKNOWN_%s', ['word']) === 'AUDIT_UNKNOWN_word', 'unknown keys are formatted when arguments exist');
 	$error = translationException(static function () use ($tr) { $tr->t('AUDIT_FORMAT', ['word']); });
-	translationCheck($error === 'ValueError', 'too few printf arguments escape Exception handler on PHP 8');
+	translationCheck($error === null && $tr->t('AUDIT_FORMAT', ['word']) === '%s %d', 'too few printf arguments return raw text on PHP 8');
 	$observations['printf_argument_mismatch'] = $error;
 	$error = translationException(static function () use ($tr) { $tr->t('unknown %Q', ['word']); });
-	translationCheck($error === 'ValueError', 'invalid format in fallback key escapes Exception handler');
+	translationCheck($error === null && $tr->t('unknown %Q', ['word']) === 'unknown %Q', 'invalid fallback format returns raw text without exception');
 	$observations['printf_invalid_format'] = $error;
 	$tr->setLocale('en_US'); $tr->load('one', $b);
-	translationCheck($tr->getLocale() === 'en_US' && $tr->t('AUDIT_COLLISION') === 'first', 'setLocale retains data and loaded flags');
-	$tr->setLocale(''); translationCheck($tr->getLocale() === 'de', 'empty setLocale yields de without installed de directory');
-	$tr = new TranslationAuditTranslator(''); translationCheck($tr->getLocale() === '', 'constructor does not normalize empty locale');
+	translationCheck($tr->getLocale() === 'en_US' && $tr->t('AUDIT_COLLISION') === 'second', 'setLocale clears data and loaded flags before new catalogue load');
+	$tr->setLocale(''); translationCheck($tr->getLocale() === 'de_DE' && $tr->domains() === [], 'empty setLocale selects installed default and clears old domains');
+	$tr = new TranslationAuditTranslator(''); translationCheck($tr->getLocale() === 'de_DE', 'constructor normalizes empty locale');
 	$tr = new TranslationAuditTranslator('en_US');
 	$tr->load('missing', $work . '/missing.php'); $tr->load('missing', $a);
-	translationCheck($tr->loaded()['missing'] && $tr->t('AUDIT_COLLISION') === 'AUDIT_COLLISION', 'missing file locks domain against retry');
+	translationCheck($tr->loaded()['missing'] && $tr->t('AUDIT_COLLISION') === 'first', 'missing file remains retryable with a valid file');
 	$tr->loadDir('retry', $work . '/missing'); $tr->load('retry', $a);
 	translationCheck($tr->t('AUDIT_COLLISION') === 'first', 'missing directory remains retryable');
 	$tr->load('', $a); translationCheck(!array_key_exists('', $tr->loaded()), 'empty domain ignored');
 	$invalid = translationFixture('invalid.php', '<?php return false;');
 	$tr->load('invalid', $invalid); $tr->load('invalid', $b);
-	translationCheck($tr->loaded()['invalid'] && !isset($tr->data()['invalid']['AUDIT_COLLISION']), 'non-array file silently locks domain');
+	translationCheck($tr->loaded()['invalid'] && $tr->data()['invalid']['AUDIT_COLLISION'] === 'second', 'non-array file remains retryable with a valid file');
 	$broken = translationFixture('broken.php', '<?php return [;');
-	translationCheck(translationException(static function () use ($tr, $broken) { $tr->load('broken', $broken); }) === 'ParseError', 'catalogue parse error propagates');
+	translationCheck(translationException(static function () use ($tr, $broken) { $tr->load('broken', $broken); }) === null && !isset($tr->loaded()['broken']), 'catalogue parse error is diagnosed without poisoning domain');
+	translationCheck(in_array('invalid_file', array_column($tr->getIssues(), 'type'), true) && in_array('invalid_catalogue', array_column($tr->getIssues(), 'type'), true), 'catalogue failures remain observable');
 	// Keep the sorted-directory fixture separate from invalid PHP fixtures.
 	mkdir($work . '/sorted', 0700);
 	$fixtures[] = $work . '/sorted/a.php'; $fixtures[] = $work . '/sorted/z.php';
@@ -187,9 +200,7 @@ try {
 
 	$de = new DEEC_Translate('de_DE'); $de->loadDir('default', BASE_PATH . '/languages/de_DE/default');
 	$en = new DEEC_Translate('en_US'); $en->loadDir('default', BASE_PATH . '/languages/en_US/default');
-	$deOnly = array_diff_key(require BASE_PATH . '/languages/de_DE/default/controlpanel.php', require BASE_PATH . '/languages/en_US/default/common.php');
-	$key = array_key_first($deOnly);
-	translationCheck($key !== null && $de->t($key) !== $key && $en->t($key) === $key, 'no automatic German fallback for an English catalogue gap');
+	translationCheck($en->t('AUDIT_MISSING_KEY') === 'AUDIT_MISSING_KEY' && in_array('missing_key', array_column($en->getIssues(), 'type'), true), 'missing keys remain visible and diagnosed without changing language');
 	Zend_Registry::set('DEEC_Translate', $de);
 	foreach (['DEEC_Form', 'DEEC_Pdf', 'DEEC_List'] as $class) {
 		$component = new $class();
@@ -202,6 +213,13 @@ try {
 	}
 	$pdf = new DEEC_Pdf(); $pdf->document = ['language' => 'en_US'];
 	translationCheck($pdf->translate('VALIDATION_REQUIRED') === $de->t('VALIDATION_REQUIRED'), 'PDF translate adapter does not select document language');
+	foreach (['de_DE', 'en_US'] as $locale) {
+		$pdf = new TranslationAuditPdf();
+		$document = ['id' => 1, 'language' => $locale, 'subtotal' => '123.45', 'total' => '146.91'];
+		$payload = $pdf->documentPayload($document, 'sales');
+		translationCheck($pdf->getTranslator()->getLocale() === $locale && $payload['document'] === $document, $locale . ': actual PDF payload selects document language and preserves stored values');
+		translationCheck(Zend_Registry::get('DEEC_Translate') === $de, $locale . ': PDF locale does not mutate UI registry');
+	}
 	$form = new DEEC_Form(); $form->setLocale('en_US');
 	translationCheck($form->translate('VALIDATION_REQUIRED') === $de->t('VALIDATION_REQUIRED'), 'form setLocale does not change translator locale');
 	$form->getTranslator(); Zend_Registry::set('DEEC_Translate', $en);
@@ -212,14 +230,16 @@ try {
 	$site = new DEEC_Site_Context(['language' => 'en_US']);
 	Zend_Session_Namespace::$selectedLanguage = null;
 	Zend_Registry::set('SiteContext', $site); $bootstrap->locale();
-	translationCheck($site->getLanguage() === 'en_US' && Zend_Registry::get('DEEC_Translate')->getLocale() === 'de_DE', 'anonymous site en_US and bootstrap de_DE can disagree');
+	$plugin->routeShutdown(new Zend_Controller_Request_Simple('index', 'index', 'shops'));
+	translationCheck($site->getLanguage() === 'en_US' && Zend_Registry::get('DEEC_Translate')->getLocale() === 'en_US', 'public shop uses site language independently of UI session');
 	$observations['anonymous_site_locale'] = ['site' => $site->getLanguage(), 'translator' => Zend_Registry::get('DEEC_Translate')->getLocale()];
 	$view = new Zend_View(); $view->addHelperPath(APPLICATION_PATH . '/views/helpers', 'Zend_View_Helper');
 	$messages = new Zend_View_Helper_Messages(); $messages->setView($view);
 	$observations['javascript_export_keys'] = array_keys($messages->getTranslations());
 	translationCheck(count($messages->getTranslations()) > 0 && !in_array('TOOLBAR_SAVE', $observations['javascript_export_keys'], true), 'JS message export is a fixed subset of registry translations');
 	$result = ['status' => 'passed', 'php_version' => PHP_VERSION, 'checks' => count($checks), 'passed_checks' => $checks,
-		'known_defects_are_characterized_not_fixed' => true, 'observations' => $observations];
+		'known_defects_are_characterized_not_fixed' => false, 'observations' => $observations];
+	Zend_Registry::getInstance()->offsetUnset('SiteContext');
 	if (in_array('--benchmark', $argv, true)) {
 		foreach (['de_DE', 'en_US'] as $locale) {
 			$start = hrtime(true); $requests = 0;

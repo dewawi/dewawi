@@ -2,6 +2,14 @@
 
 class Application_Plugin_Translate extends Zend_Controller_Plugin_Abstract
 {
+	public function preDispatch(Zend_Controller_Request_Abstract $request)
+	{
+		if (Zend_Registry::isRegistered('DEEC_Translate')) {
+			$tr = Zend_Registry::get('DEEC_Translate');
+			if ($tr instanceof DEEC_Translate) $tr->loadModule(trim((string)$request->getModuleName()));
+		}
+	}
+
 	public function routeShutdown(Zend_Controller_Request_Abstract $request)
 	{
 		if (!Zend_Registry::isRegistered('DEEC_Translate')) {
@@ -13,42 +21,13 @@ class Application_Plugin_Translate extends Zend_Controller_Plugin_Abstract
 			return;
 		}
 
-		$localeCode = trim((string)$tr->getLocale());
-		if ($localeCode === '') {
-			return;
-		}
-
-		$base = BASE_PATH . '/languages/' . $localeCode;
-
-		// Load common.php from every module directory
-		if (is_dir($base)) {
-			$dirs = scandir($base);
-
-			foreach ($dirs as $dirName) {
-				if ($dirName === '.' || $dirName === '..' || $dirName === 'default') {
-					continue;
-				}
-
-				$moduleDir = $base . '/' . $dirName;
-				if (!is_dir($moduleDir)) {
-					continue;
-				}
-
-				$commonFile = $moduleDir . '/common.php';
-				if (is_file($commonFile)) {
-					$tr->load($dirName . '_common', $commonFile);
-				}
-			}
-		}
-
-		// Load active module files
 		$module = trim((string)$request->getModuleName());
-		if ($module !== '') {
-			$dir = $base . '/' . $module;
-			if (is_dir($dir)) {
-				$tr->loadDir($module, $dir);
-			}
+		if ($module === 'shops' && Zend_Registry::isRegistered('SiteContext')) {
+			$tr->setLocale((string)Zend_Registry::get('SiteContext')->getLanguage());
+			Zend_Registry::set('Zend_Locale', new Zend_Locale($tr->getLocale()));
+			Zend_Registry::set('Zend_Currency', new Zend_Currency(['locale' => $tr->getLocale(), 'precision' => 2]));
 		}
+		$tr->loadModule($module);
 
 		$view = Zend_Controller_Front::getInstance()
 			->getParam('bootstrap')
@@ -61,7 +40,7 @@ class Application_Plugin_Translate extends Zend_Controller_Plugin_Abstract
 		}
 
 		$languageDb = new Application_Model_DbTable_Language();
-		$languages = $languageDb->getLanguages();
+		$languages = array_intersect_key($languageDb->getLanguages(), array_flip(DEEC_Translate::LOCALES));
 
 		if (count($languages) > 1) {
 			$form = new Application_Form_Language();

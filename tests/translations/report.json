@@ -1,12 +1,13 @@
 {
   "schema_version": 1,
   "scope": "local repository; no database, customer data or network",
-  "source_sha256": "e209079d31951b5b79c57d24347b724da90a35d1cf5f396ee1b4c8236aaab02e",
+  "source_sha256": "f03758ef6b1b9927638bbd523ca0cb225f0ee70acfc1f59a1387d8c6f984b00e",
   "audit_code_sha256": {
     "audit-test.py": "532484f96c10d7653f34ffa01ec8932a3aa8cf55d27e9cb92f2a765b1f7a0833",
-    "audit.py": "e72c447af951bad4d1523c0e11d3a46819883bba00656936673872cf15706615",
+    "audit.py": "73a34f400f4f8813c5022a80f9be15264e2c13c322a7b5654d6f0b27b4b17ae8",
     "inspect.php": "5549b6970166b4741c3d107a16ae4a130770e35f6cae7afd5498524d50b32abb",
-    "runtime.php": "b9b55b306efb3725db620d313c6c12b2f4589e7f6260314b05e245213ccfbd1d"
+    "runtime.php": "310404af262e21322ce5f54a66c0e79392a054933995ddc5730f5e6048b10c8c",
+    "validate.py": "7370937218075b894c856ac752d982ed282b12c5ea72402c38a8637d56531ba5"
   },
   "scan": {
     "locales": [
@@ -83,7 +84,7 @@
       "tools/one-time-geocoding/provider.sample.ini"
     ],
     "source_hashes": {
-      "application/Bootstrap.php": "7a606c7c5eeda67f87688751306fea010f9b737f87ad6d96f69d6b791d4bcd9a",
+      "application/Bootstrap.php": "5dd42cd544d3ef9587689282dc9c66901dc95b26e696ae06e2a87d2b36fb35ea",
       "application/cli/contact-geocode.php": "1e5887259e882c389dbbdea641159a1566997faa2929e33daa8a2bb4e228133e",
       "application/cli/contact-geocoding-batch.php": "986223f1af16c9d1d23506130be59e3efb881c929ecd0b146c377322bd542b56",
       "application/cli/contact-geocoding-dry-run.php": "b66585c6ac02b9cbe553bd2e21bc4a43972da4ee7a389d635e91140920cc1f8b",
@@ -99,7 +100,7 @@
       "application/controllers/helpers/Category.php": "d80c401d5c8909ef3b5a1f045ff91aa9bca8f550d1da10ae111af6eab066437c",
       "application/controllers/helpers/Currency.php": "770ecce7f1882ffffd5043e3214fdbf37e188767b7e565c0b1186a67e5864dfc",
       "application/controllers/helpers/Directory.php": "23e681e2716e7854ded0fd93a2ef02700e6abd1fa5576b6e9148139de849477f",
-      "application/controllers/helpers/Email.php": "000ea3e2db2a88286ffe440f74102bfe7e00b402a90ab3f6c0943cfb8aeca76f",
+      "application/controllers/helpers/Email.php": "8b63b8f3690fff5702ff57c9368256f0ce60675fd2f68c62b6e4a5c297eb1d5e",
       "application/controllers/helpers/MainMenu.php": "b72e9a20ee757d63b5c9da8001928c732ff2029cd3a0109ea2c4ebb20410d96a",
       "application/controllers/helpers/MenuStructure.php": "801f7926ba5819202a236e0de7d96d31c89393c2c0df6adac3f783bbbae42349",
       "application/controllers/helpers/MultiEntityLoader.php": "1ae0080d83ba4d090ef01bfcbe04fbb9346322817b152fb4d251461e0b027e04",
@@ -716,7 +717,7 @@
       "application/modules/purchases/models/List/Quoterequests.php": "eb4c33b009ca2d0fc7af95c92d0b9aece348462c8deb512b46c15955222e1a91",
       "application/modules/purchases/plugins/Helper.php": "575dc51f05843df8a09d4152043bc27bd1c545e9e6898289878fd71c93b4cb2a",
       "application/modules/purchases/services/AttachmentService.php": "4a1b11af148e7435f797e14b37ca7e4085a290d4f319ce9d8d33ae213392ac78",
-      "application/modules/purchases/services/CreateDataFactory.php": "55cac0246d0cfeaf74badfea10649c4fc5fe0ba8580aed85b40fc346cdaa129c",
+      "application/modules/purchases/services/CreateDataFactory.php": "623a260bffee219deb4ee5667175491ab1fa99a6d830711cfb5ee72f0836a251",
       "application/modules/purchases/services/DocumentFinalizeService.php": "9eb6cf615de039d2c40f7ab3a3d065a712d8e89689d65f6fb4dc87e7c3ae6a8b",
       "application/modules/purchases/services/DocumentPayloadService.php": "2e26f68d7f6408c24ab99ca17a79a963495bfd8750a397b10c4ff4d95268b804",
       "application/modules/purchases/services/EditAjaxSaveService.php": "80cc831e0ac8255a40404d044fe29335c32b45c302caaa4e90a4168753e4b9c2",
@@ -801,9 +802,9 @@
       "application/modules/sales/models/List/Salesorders.php": "aa1e447a31eef12c922695b7d7d08712fb538b3c5259a130df3e788e33a31d9f",
       "application/modules/sales/plugins/Helper.php": "dc4bb9aebc80ac2af93abeb1e925d1e30e1f7ac5617a06e5138d2e006076475e",
       "application/modules/sales/services/AttachmentService.php": "4e265dfa3bc309538eeb5881053342fdb39f52f811e84b801d15a5c7aa936e09",
-      "application/modules/sales/services/CreateDataFactory.php": "4c4b814840a616a191ec2fad59b8f0c91b0e0ddede51a36923985ccaf2938a01",
+      "application/modules/sales/services/CreateDataFactory.php": "91cf1d85b0c36bc1cdc17b826cb6992473cfd18848c20a14798d30caecc601ce",
       "application/modules/sales/services/DocumentFinalizeService.php": "116aff487abe4d4644e757dc65e13141997711a50c95e99c31be8071636a0edc",
-      "application/modules/sales/services/DocumentPayloadService.php": "a9d2c221f8c536db567b875722bea49c87c0c15939b5bc2c3e6f3c8810b0a6a4",
+      "application/modules/sales/services/DocumentPayloadService.php": "4769ee8052eba161299a8521365ec1332322b788bbafbf8537c1a2d3cfe77a2f",
       "application/modules/sales/services/DocumentRevisionService.php": "9a58ed6d62f67747fd9175f1ef47339769ce4f92f3cb1878fa489b4b1a3a0735",
       "application/modules/sales/services/EditFormFactory.php": "4897475c3192bc3ef8b3de74a14a71533d592822b9cee80322b63323d44ed3d2",
       "application/modules/sales/services/EditViewModel.php": "8adb43e7bc17cb90ed00a496c32992d517807474a20c57f66a501495d5fc668f",
@@ -1000,7 +1001,7 @@
       "application/modules/tasks/views/scripts/task/index.phtml": "32f813075bdd3cba9e7295afc6e0f6570b7e78030e8e50ba8c1bac3a2e4af0d9",
       "application/modules/tasks/views/scripts/task/view.phtml": "1145256f500828482cb68abcbf646383e1cbc2a5bfc7db690a57c543edbd3713",
       "application/modules/users/Bootstrap.php": "afc36720d0b690bfae30d03c222b65a7030350f50944b9284654941fbb33a1bd",
-      "application/modules/users/controllers/UserController.php": "72071ac3323fe8ad31e5ae3cc95f5118f06313036d9e3dc6d453d72948dbc357",
+      "application/modules/users/controllers/UserController.php": "f3e57f8fe7266a858dd0054ce24e024a1231bff60cab9a063f2dc577cc6cfe12",
       "application/modules/users/forms/Login.php": "9533de68e875a43047d061ac6a9ae05884f9e941e56172b3efdca7e166240a39",
       "application/modules/users/forms/Password.php": "fc0d321853ddcf07c7ccee02f487e632bb75fd4a6f01fe5f80f2381970f40a39",
       "application/modules/users/forms/User.php": "896479afdd35f1cb77fb1ea448febc4d6139b984bb674f83768ccf3bf602fd95",
@@ -1016,7 +1017,7 @@
       "application/plugins/ListResponse.php": "5991087b0685f64d9829a8f68f7b0519cdef9ffd2a450e7a5a6bfd5ab059bbea",
       "application/plugins/SecurityHeaders.php": "6dfdaa6f7b499a1a8b9e4d2d65cc4249684e68f15f9760cbcf13a5e8add94c0a",
       "application/plugins/State.php": "44dbd4c4c25dc1c7f6bd251e1f9dd5e2f0fb0be4ca65efa4025b34d657455a4f",
-      "application/plugins/Translate.php": "836f66c2daf4189e359feeea836efc01f93fcb3d21300cd15b3263d39ebf7c2a",
+      "application/plugins/Translate.php": "5f1c20c2e32180ae3fe0e20f6d8d12c9701b1a7552dd4e2e1200ddeb16500827",
       "application/views/helpers/Actions.php": "5bcef6660722760abdac3e7789642b8acf7fcbaff9a0890c3cf5e45ca938c78f",
       "application/views/helpers/Breadcrumbs.php": "ea96c147d53b7c9d3e8768b837f972014f25a97dfe9cd502c6a55d1f460a4fb5",
       "application/views/helpers/Button.php": "bcbc71643163117e9cee79fd7e252ad8c925c7f43ed28fb9eb786d1cbf28470a",
@@ -1044,7 +1045,7 @@
       "application/views/helpers/TreeMenu.php": "e08b47733f0c61391a44b4defbaff22767196869d61e604f05d7b2b6f3ad5fc9",
       "application/views/scripts/error/error.phtml": "b9a07474bee6ceacc8dd54773b316b27cf1193904df7bc9421e24581e17cb7b7",
       "application/views/scripts/feedback/index.phtml": "af53fd105af795a53bc9e2f7fec2791d4201a46d820a6dc8c630c4b3178180d9",
-      "application/views/scripts/index/index.phtml": "6e46a8def1444d177ab687efb610123f8a57bb02667efaeafdc9b610594ae3d5",
+      "application/views/scripts/index/index.phtml": "4e8b70ca192d8ba2e25f2f1d5b561fdd084d2749bda80db6c41b55b86c1b59b6",
       "application/views/scripts/list/list.phtml": "5999ec4539434ab9e73d858d428f96be8607757e8a8bb5f86ad29fef2f639cd6",
       "application/views/scripts/partials/calendar-reminders.phtml": "42577bb04cd732061fee485e74eb2fdea78c70790aa9a436124eb6daf9739247",
       "application/views/scripts/partials/document-original-review.phtml": "047ddd6442219a538d7008232a9e3c000e44c16611dd7976c77e50806bb6983c",
@@ -1131,7 +1132,7 @@
       "library/DEEC/Export/Gobd.php": "902bc8e1db08e894dfb2d274de118e870fcf5c036e7a47c030342b5b88be20e2",
       "library/DEEC/Export/GobdIssuer.php": "880de62cd21551995a6abe7829bedb471da95307a8482235e26d7379cf93f515",
       "library/DEEC/Export/Xlsx.php": "06434e2d332fab4f4da5c81b8c2d3ee7180365bb2e5c0d182c62d6c924ae5a59",
-      "library/DEEC/Feedback.php": "69f003ca47f6f3d5cec43c35dd3879e5c1f2dd6852f0774b49ac52d159327ce2",
+      "library/DEEC/Feedback.php": "730e1f132980d643aff31d1e829b24cfa7fdaedc3bb728733226263bb3bc5ce7",
       "library/DEEC/Filter.php": "945fe35a4c978278b18b2754c233c39e3a9971d260003e3e50775704a716cae8",
       "library/DEEC/Form.php": "8c9e8e930decc18e0a17a1c19b609b5d11d1a518c1299b8f7ef7356414b456af",
       "library/DEEC/List/Ordering.php": "16c29af5d50b94825394b3e102d7a046ffe220edcc4425317d04f6c211fa57bb",
@@ -1140,7 +1141,7 @@
       "library/DEEC/Model/DbTable/Entity.php": "d12a4fc5b236ea6952b224b2486d457f9533c2856d6266bdfe69faea12038972",
       "library/DEEC/Model/DbTable/Position.php": "845b66100bedbba4e1025b05bc82d9c0f3540668d9a96f0097c95f675a24c27b",
       "library/DEEC/Model/DbTable/SiteEntity.php": "98e11e138febf604e8ddaa3bc0d8c7b7f6112e3a2be47413deb1783774de2446",
-      "library/DEEC/Pdf.php": "ffbf687dd8bdc672ba8538ec6ae113b2d176d2e81c0451657737b51b9f80f6b3",
+      "library/DEEC/Pdf.php": "b4dbbd623603cf3dd69fc2076535f3c4e2e2a0f3ad71ee2b91a23019ed3ad8f3",
       "library/DEEC/Permission.php": "a1de12363673eee5ec1f42d680389ef79e43ded72cc36e47103a0d5b412ed633",
       "library/DEEC/PriceRule.php": "2f49a79db2a4e52f1fc14bed4245d72b7a89c4014f91b7d4d8d14d90f127d6c0",
       "library/DEEC/PriceRuleShop.php": "bfab7e5e852f9795856bee2dc19dd903af660150abeeec157e2a7d0e4240bd58",
@@ -1154,7 +1155,7 @@
       "library/DEEC/Site/Router.php": "3fb3a117ec92b1aabeb0165e015f5528aec363efe8a2cc6b89495b06f647d107",
       "library/DEEC/Site/SubmissionLimiter.php": "356f1e2f4b014dfc58ec8700c42b95b866cbd1a473b58b2335e53d1057062929",
       "library/DEEC/Sns.php": "1ab82cf634bff5b76723e417e58fbc857c15a8c5f31d14c399e8757bdc65c12a",
-      "library/DEEC/Translate.php": "7d6753d50d7f0919df16c7e8a31efda02d49612fbe48738257cba410a7729f26",
+      "library/DEEC/Translate.php": "e459f8f233c954cbf1c039cac5b10426f4240bfebbc715f9f3659498066c630b",
       "library/DEEC/UrlDownload.php": "e689697dd23f6e632608882cd5a834b17eccd51309cca68879b4b6d27be9a019",
       "library/DEEC/User.php": "f183234c800918bf77be7e811f8fa935436d4f8f471c5b6ceb7c8362008d2157",
       "library/DEEC/Util.php": "f6ee6cc6b6f7284e2480356f19a893df31d968860bc0fe25e8f3f87c1fd97562",
@@ -2518,7 +2519,7 @@
     "locales": 2,
     "application_modules": 13,
     "catalogue_modules_including_default": 17,
-    "catalogue_files": 114,
+    "catalogue_files": 115,
     "entries": 6206,
     "unique_keys_union": 3607,
     "by_locale": {
@@ -2529,7 +2530,7 @@
         "catalogue_modules": 16
       },
       "en_US": {
-        "files": 48,
+        "files": 49,
         "entries": 2680,
         "unique_keys": 2664,
         "catalogue_modules": 14
@@ -2538,16 +2539,16 @@
     "shared_unique_keys": 2570,
     "missing_unique_keys_en_US": 943,
     "missing_unique_keys_de_DE": 94,
-    "missing_files_en_US": 22,
+    "missing_files_en_US": 21,
     "missing_files_de_DE": 4,
-    "literal_calls": 1443,
-    "literal_key_calls": 1429,
-    "unique_literal_keys": 830,
-    "dynamic_calls": 194,
+    "literal_calls": 1444,
+    "literal_key_calls": 1430,
+    "unique_literal_keys": 829,
+    "dynamic_calls": 195,
     "usage_classifications": {
       "unresolved": 914,
-      "literal_call_found": 809,
-      "indirect_literal_candidate": 1781,
+      "literal_call_found": 808,
+      "indirect_literal_candidate": 1782,
       "possibly_dynamic": 103
     },
     "safely_unused": 0,
@@ -2629,10 +2630,10 @@
         "common": true
       },
       "en_US": {
-        "files": 4,
+        "files": 5,
         "entries": 409,
         "unique_keys": 409,
-        "common": false
+        "common": true
       }
     },
     {
@@ -5753,10 +5754,25 @@
           "key": "CONTACTS_EMAIL_ERROR",
           "value": "Fehler!",
           "line": 24
+        },
+        {
+          "key": "CONTACTS_PHONE",
+          "value": "Telefon",
+          "line": 25
+        },
+        {
+          "key": "CONTACTS_INTERNET",
+          "value": "Internet",
+          "line": 26
+        },
+        {
+          "key": "CONTACTS_CONTACT_DATA",
+          "value": "Kontaktdaten",
+          "line": 27
         }
       ],
-      "sha256": "4f6ccb8a8b809a7defffaf9811166b47759bdbded88bcc2108918d5fb85f2732",
-      "bytes": 923
+      "sha256": "5821e2a83eec484c3cecf8f0e5ef79bb610bf8b4ab95d60a2b528d5d8de99f19",
+      "bytes": 1036
     },
     "languages/de_DE/contacts/contact.php": {
       "entries": [
@@ -5811,593 +5827,578 @@
           "line": 11
         },
         {
-          "key": "CONTACTS_PHONE",
-          "value": "Telefon",
-          "line": 12
-        },
-        {
           "key": "CONTACTS_FAX",
           "value": "Fax",
-          "line": 13
+          "line": 12
         },
         {
           "key": "CONTACTS_MOBILE",
           "value": "Mobil",
-          "line": 14
+          "line": 13
         },
         {
           "key": "CONTACTS_EMAIL",
           "value": "E-Mail",
-          "line": 15
-        },
-        {
-          "key": "CONTACTS_INTERNET",
-          "value": "Internet",
-          "line": 16
+          "line": 14
         },
         {
           "key": "CONTACTS_STREET",
           "value": "Straße",
-          "line": 17
+          "line": 15
         },
         {
           "key": "CONTACTS_POSTCODE",
           "value": "PLZ",
-          "line": 18
+          "line": 16
         },
         {
           "key": "CONTACTS_CITY",
           "value": "Ort",
-          "line": 19
+          "line": 17
         },
         {
           "key": "CONTACTS_COUNTRY",
           "value": "Land",
-          "line": 20
+          "line": 18
         },
         {
           "key": "CONTACTS_POSTCODE_CITY",
           "value": "PLZ/Ort",
-          "line": 21
+          "line": 19
         },
         {
           "key": "CONTACTS_COUNTRY_ADDRESS_TYPE",
           "value": "Land/Adressentyp",
-          "line": 22
+          "line": 20
         },
         {
           "key": "CONTACTS_DEPARTMENT",
           "value": "Abteilung",
-          "line": 23
+          "line": 21
         },
         {
           "key": "CONTACTS_ADDRESS",
           "value": "Adresse",
-          "line": 24
+          "line": 22
         },
         {
           "key": "CONTACTS_ADDRESS_TYPE",
           "value": "Adressentyp",
-          "line": 25
+          "line": 23
         },
         {
           "key": "CONTACTS_BILLING_ADDRESS",
           "value": "Rechnungsadresse",
-          "line": 26
+          "line": 24
         },
         {
           "key": "CONTACTS_SHIPPING_ADDRESS",
           "value": "Lieferadresse",
-          "line": 27
+          "line": 25
         },
         {
           "key": "CONTACTS_OTHER_ADDRESS",
           "value": "Sonstiges",
-          "line": 28
-        },
-        {
-          "key": "CONTACTS_CONTACT_DATA",
-          "value": "Kontaktdaten",
-          "line": 29
+          "line": 26
         },
         {
           "key": "CONTACTS_INFO",
           "value": "Info",
-          "line": 30
+          "line": 27
         },
         {
           "key": "CONTACTS_INFO_INTERNAL",
           "value": "Interne Informationen",
-          "line": 31
+          "line": 28
         },
         {
           "key": "CONTACTS_NOTES",
           "value": "Notizen",
-          "line": 32
+          "line": 29
         },
         {
           "key": "CONTACTS_DEBITOR_NUMBER",
           "value": "Kreditoren/Debitorennr.",
-          "line": 33
+          "line": 30
         },
         {
           "key": "CONTACTS_TAX_NUMBER",
           "value": "Steuernummer",
-          "line": 34
+          "line": 31
         },
         {
           "key": "CONTACTS_VATIN",
           "value": "USt-IdNr.",
-          "line": 35
+          "line": 32
         },
         {
           "key": "CONTACTS_TAX_FREE",
           "value": "Umsatzsteuer frei",
-          "line": 36
+          "line": 33
         },
         {
           "key": "CONTACTS_CURRENCY",
           "value": "Währung",
-          "line": 37
+          "line": 34
         },
         {
           "key": "CONTACTS_PAYMENT_METHOD",
           "value": "Zahlart",
-          "line": 38
+          "line": 35
         },
         {
           "key": "CONTACTS_PAYMENT_TERM",
           "value": "Zahlungsziel",
-          "line": 39
+          "line": 36
         },
         {
           "key": "CONTACTS_CASH_DISCOUNT_DAYS",
           "value": "Skonto Tage",
-          "line": 40
+          "line": 37
         },
         {
           "key": "CONTACTS_CASH_DISCOUNT_DAYS_PERCENT",
           "value": "Skonto Prozent",
-          "line": 41
+          "line": 38
         },
         {
           "key": "CONTACTS_TYPE",
           "value": "Kontakttyp",
-          "line": 42
+          "line": 39
         },
         {
           "key": "CONTACTS_ROLES",
           "value": "Rollen",
-          "line": 43
+          "line": 40
         },
         {
           "key": "CONTACTS_ROLE_CUSTOMER",
           "value": "Kunde",
-          "line": 44
+          "line": 41
         },
         {
           "key": "CONTACTS_ROLE_SUPPLIER",
           "value": "Lieferant",
-          "line": 45
+          "line": 42
         },
         {
           "key": "CONTACTS_ROLE_PROSPECT",
           "value": "Interessent",
-          "line": 46
+          "line": 43
         },
         {
           "key": "CONTACTS_ROLE_PARTNER",
           "value": "Partner",
-          "line": 47
+          "line": 44
         },
         {
           "key": "CONTACTS_TAGS",
           "value": "Tags",
-          "line": 48
+          "line": 45
         },
         {
           "key": "CONTACTS_EXPORT_TITLE",
           "value": "Kontakte exportieren",
-          "line": 49
+          "line": 46
         },
         {
           "key": "CONTACTS_EXPORT_DESCRIPTION",
           "value": "Die aktuellen Filter werden auf den vollständigen Export angewendet.",
-          "line": 50
+          "line": 47
         },
         {
           "key": "CONTACTS_EXPORT_COMBINED",
           "value": "Kontakte komplett (CSV)",
-          "line": 51
+          "line": 48
         },
         {
           "key": "CONTACTS_EXPORT_COMBINED_DESCRIPTION",
           "value": "Kontakte komplett enthält Unternehmen und aktive Ansprechpartner. Der CSV-Import unterstützt Unternehmensdaten, aber keinen vollständigen Reimport der Ansprechpartner.",
-          "line": 52
+          "line": 49
         },
         {
           "key": "CONTACTS_EXPORT_COMPANY_NAME",
           "value": "Firmenname",
-          "line": 53
+          "line": 50
         },
         {
           "key": "CONTACTS_EXPORT_COMPANY_DEPARTMENT",
           "value": "Unternehmensabteilung",
-          "line": 54
+          "line": 51
         },
         {
           "key": "CONTACTS_EXPORT_COMPANY_PHONE",
           "value": "Telefon Unternehmen",
-          "line": 55
+          "line": 52
         },
         {
           "key": "CONTACTS_EXPORT_COMPANY_EMAIL",
           "value": "E-Mail Unternehmen",
-          "line": 56
+          "line": 53
         },
         {
           "key": "CONTACTS_EXPORT_CONTACTPERSON_DEPARTMENT",
           "value": "Abteilung Ansprechpartner",
-          "line": 57
+          "line": 54
         },
         {
           "key": "CONTACTS_EXPORT_CONTACTPERSON_EMAIL",
           "value": "E-Mail Ansprechpartner",
-          "line": 58
+          "line": 55
         },
         {
           "key": "CONTACTS_EXPORT_COMPANIES",
           "value": "Unternehmen (CSV)",
-          "line": 59
+          "line": 56
         },
         {
           "key": "CONTACTS_EXPORT_CONTACTPERSONS",
           "value": "Ansprechpartner (CSV)",
-          "line": 60
+          "line": 57
         },
         {
           "key": "CONTACTS_EXPORT_COMPANY",
           "value": "Unternehmen",
-          "line": 61
+          "line": 58
         },
         {
           "key": "CONTACTS_IMPORT_TITLE",
           "value": "Kontakte importieren",
-          "line": 62
+          "line": 59
         },
         {
           "key": "CONTACTS_IMPORT_DESCRIPTION",
           "value": "CSV-Datei hochladen, Zuordnung prüfen und den Import anschließend bestätigen.",
-          "line": 63
+          "line": 60
         },
         {
           "key": "CONTACTS_IMPORT_SUPPORTED_HEADERS",
           "value": "Unterstützte Spalten: Kontaktnr., Firmenname, Namenszusatz, Abteilung, Kategorie, Straße, PLZ, Ort, Land, Telefon, E-Mail und Internet.",
-          "line": 64
+          "line": 61
         },
         {
           "key": "CONTACTS_IMPORT_SEPARATOR",
           "value": "Trennzeichen",
-          "line": 65
+          "line": 62
         },
         {
           "key": "CONTACTS_IMPORT_SEPARATOR_AUTO",
           "value": "Automatisch erkennen",
-          "line": 66
+          "line": 63
         },
         {
           "key": "CONTACTS_IMPORT_SEPARATOR_COMMA",
           "value": "Komma",
-          "line": 67
+          "line": 64
         },
         {
           "key": "CONTACTS_IMPORT_SEPARATOR_SEMICOLON",
           "value": "Semikolon",
-          "line": 68
+          "line": 65
         },
         {
           "key": "CONTACTS_IMPORT_TAG",
           "value": "Optionales Tag",
-          "line": 69
+          "line": 66
         },
         {
           "key": "CONTACTS_IMPORT_TAG_NONE",
           "value": "Kein Tag zuweisen",
-          "line": 70
+          "line": 67
         },
         {
           "key": "CONTACTS_IMPORT_PREVIEW",
           "value": "Vorschau anzeigen",
-          "line": 71
+          "line": 68
         },
         {
           "key": "CONTACTS_IMPORT_PREVIEW_TITLE",
           "value": "Importvorschau",
-          "line": 72
+          "line": 69
         },
         {
           "key": "CONTACTS_IMPORT_CONFIRM",
           "value": "Import bestätigen",
-          "line": 73
+          "line": 70
         },
         {
           "key": "CONTACTS_IMPORT_CANCEL",
           "value": "Vorschau verwerfen",
-          "line": 74
+          "line": 71
         },
         {
           "key": "CONTACTS_IMPORT_MAX_FILE_SIZE",
           "value": "Maximale Dateigröße: %s",
-          "line": 75
+          "line": 72
         },
         {
           "key": "CONTACTS_IMPORT_LINE",
           "value": "Zeile",
-          "line": 76
+          "line": 73
         },
         {
           "key": "CONTACTS_IMPORT_STATUS",
           "value": "Status",
-          "line": 77
+          "line": 74
         },
         {
           "key": "CONTACTS_IMPORT_NOTES",
           "value": "Hinweise",
-          "line": 78
+          "line": 75
         },
         {
           "key": "CONTACTS_IMPORT_STATUS_NEW",
           "value": "Neu",
-          "line": 79
+          "line": 76
         },
         {
           "key": "CONTACTS_IMPORT_STATUS_UPDATE",
           "value": "Aktualisieren",
-          "line": 80
+          "line": 77
         },
         {
           "key": "CONTACTS_IMPORT_STATUS_DUPLICATE",
           "value": "Mögliche Dublette",
-          "line": 81
+          "line": 78
         },
         {
           "key": "CONTACTS_IMPORT_STATUS_ERROR",
           "value": "Fehler",
-          "line": 82
+          "line": 79
         },
         {
           "key": "CONTACTS_IMPORT_DUPLICATE_MATCHES",
           "value": "Mögliche Übereinstimmungen: %s",
-          "line": 83
+          "line": 80
         },
         {
           "key": "CONTACTS_IMPORT_DUPLICATE_IN_CSV",
           "value": "Der Firmenname kommt ohne Kontaktnummer mehrfach in der CSV-Datei vor.",
-          "line": 84
+          "line": 81
         },
         {
           "key": "CONTACTS_IMPORT_UNKNOWN_HEADERS",
           "value": "Nicht unterstützte Spalten werden ignoriert: %s",
-          "line": 85
+          "line": 82
         },
         {
           "key": "CONTACTS_IMPORT_RESULT",
           "value": "%d Kontakte erstellt, %d aktualisiert, %d übersprungen.",
-          "line": 86
+          "line": 83
         },
         {
           "key": "CONTACTS_IMPORT_EMPTY_FILE",
           "value": "Die CSV-Datei enthält keine importierbaren Daten.",
-          "line": 87
+          "line": 84
         },
         {
           "key": "CONTACTS_IMPORT_DUPLICATE_HEADER",
           "value": "Eine unterstützte Spalte wurde mehrfach zugeordnet.",
-          "line": 88
+          "line": 85
         },
         {
           "key": "CONTACTS_IMPORT_REQUIRED_HEADER",
           "value": "Die CSV-Datei benötigt mindestens eine Spalte für Kontaktnummer oder Firmenname.",
-          "line": 89
+          "line": 86
         },
         {
           "key": "CONTACTS_IMPORT_TOO_MANY_ROWS",
           "value": "Die CSV-Datei überschreitet die Höchstzahl von 5.000 Datensätzen.",
-          "line": 90
+          "line": 87
         },
         {
           "key": "CONTACTS_IMPORT_INVALID_CONTACT_ID",
           "value": "Die Kontaktnummer muss eine positive ganze Zahl sein.",
-          "line": 91
+          "line": 88
         },
         {
           "key": "CONTACTS_IMPORT_DUPLICATE_CONTACT_ID_CSV",
           "value": "Die Kontaktnummer kommt mehrfach in der CSV-Datei vor.",
-          "line": 92
+          "line": 89
         },
         {
           "key": "CONTACTS_IMPORT_AMBIGUOUS_CONTACT_ID",
           "value": "Die Kontaktnummer ist im Bestand nicht eindeutig.",
-          "line": 93
+          "line": 90
         },
         {
           "key": "CONTACTS_IMPORT_NAME_REQUIRED",
           "value": "Für neue Kontakte ist ein Firmenname erforderlich.",
-          "line": 94
+          "line": 91
         },
         {
           "key": "CONTACTS_IMPORT_INVALID_CATEGORY",
           "value": "Die Kategorie ist unbekannt oder nicht eindeutig.",
-          "line": 95
+          "line": 92
         },
         {
           "key": "CONTACTS_IMPORT_INVALID_EMAIL",
           "value": "Mindestens eine E-Mail-Adresse ist ungültig.",
-          "line": 96
+          "line": 93
         },
         {
           "key": "CONTACTS_IMPORT_SESSION_EXPIRED",
           "value": "Die Importvorschau ist abgelaufen. Bitte laden Sie die Datei erneut hoch.",
-          "line": 97
+          "line": 94
         },
         {
           "key": "CONTACTS_IMPORT_FILE_ERROR",
           "value": "Die CSV-Datei konnte nicht verarbeitet werden.",
-          "line": 98
+          "line": 95
         },
         {
           "key": "CONTACTS_IMPORT_FAILED",
           "value": "Der Import wurde zurückgerollt und es wurden keine Kontakte geändert.",
-          "line": 99
+          "line": 96
         },
         {
           "key": "CONTACTS_AVAILABLE_DOWNLOADS",
           "value": "Verfügbare Downloads",
-          "line": 100
+          "line": 97
         },
         {
           "key": "CONTACTS_ACCESS_LIST",
           "value": "Zugriffsliste",
-          "line": 101
+          "line": 98
         },
         {
           "key": "CONTACTS_FILE_NAME",
           "value": "Dateiname",
-          "line": 102
+          "line": 99
         },
         {
           "key": "CONTACTS_FILE_SIZE",
           "value": "Dateigröße",
-          "line": 103
+          "line": 100
         },
         {
           "key": "CONTACTS_FILE_LANGUAGE",
           "value": "Dateisprache",
-          "line": 104
+          "line": 101
         },
         {
           "key": "CONTACTS_ACCESS_TIME",
           "value": "Zugriffszeit",
-          "line": 105
+          "line": 102
         },
         {
           "key": "CONTACTS_USER_AGENT",
           "value": "Endgerät",
-          "line": 106
+          "line": 103
         },
         {
           "key": "CONTACTS_DOCUMENT_ID",
           "value": "Belegnr.",
-          "line": 107
+          "line": 104
         },
         {
           "key": "CONTACTS_DOCUMENT_TYPE",
           "value": "Belegart",
-          "line": 108
+          "line": 105
         },
         {
           "key": "CONTACTS_DOCUMENT_DATE",
           "value": "Belegdatum",
-          "line": 109
+          "line": 106
         },
         {
           "key": "CONTACTS_DOCUMENT_TITLE",
           "value": "Projekt",
-          "line": 110
+          "line": 107
         },
         {
           "key": "CONTACTS_DOCUMENT_MODIFIED",
           "value": "le. Änderung",
-          "line": 111
+          "line": 108
         },
         {
           "key": "CONTACTS_DOCUMENT_SUBTOTAL",
           "value": "Nettobetrag",
-          "line": 112
+          "line": 109
         },
         {
           "key": "CONTACTS_DOCUMENT_TOTAL",
           "value": "Betrag",
-          "line": 113
+          "line": 110
         },
         {
           "key": "CONTACTS_DOCUMENT_STATE",
           "value": "Status",
-          "line": 114
+          "line": 111
         },
         {
           "key": "CONTACTS_ISSUED_DOCUMENT_FILES",
           "value": "Ausgestellte Belege",
-          "line": 115
+          "line": 112
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_STATUS",
           "value": "Originalstatus",
-          "line": 116
+          "line": 113
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_AVAILABLE",
           "value": "Archiviertes Original verfügbar",
-          "line": 117
+          "line": 114
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_ORIGINAL_ONLY",
           "value": "Original verfügbar, Attachment fehlt",
-          "line": 118
+          "line": 115
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_ATTACHMENT_ONLY",
           "value": "Original fehlt, Attachment verfügbar",
-          "line": 119
+          "line": 116
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_COPY_AVAILABLE",
           "value": "Kopie verfügbar",
-          "line": 120
+          "line": 117
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_MISSING",
           "value": "Archiviertes Original fehlt",
-          "line": 121
+          "line": 118
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_INVALID",
           "value": "Gespeicherte Datei ist ungültig",
-          "line": 122
+          "line": 119
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_MIGRATION_REQUIRED",
           "value": "Historischer Wiederherstellungskandidat muss migriert werden",
-          "line": 123
+          "line": 120
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_CONFLICT",
           "value": "Gespeicherte Fassungen weichen ab",
-          "line": 124
+          "line": 121
         },
         {
           "key": "CONTACTS_CUSTOMER",
           "value": "Kunde",
-          "line": 126
+          "line": 123
         },
         {
           "key": "CONTACTS_CUSTOMERS",
           "value": "Kunden",
-          "line": 127
+          "line": 124
         },
         {
           "key": "CONTACTS_SUPPLIER",
           "value": "Lieferant",
-          "line": 129
+          "line": 126
         },
         {
           "key": "CONTACTS_SUPPLIERS",
           "value": "Lieferanten",
-          "line": 130
+          "line": 127
         }
       ],
-      "sha256": "d36346b248aefac2b15b51521d0f3c50c627683b69908119640779eae996ccc5",
-      "bytes": 7302
+      "sha256": "bb496300bf624d19a9694d0947c4d6e64614091e42c3536524fe97b5ef0be4ad",
+      "bytes": 7190
     },
     "languages/de_DE/contacts/contactperson.php": {
       "entries": [
@@ -22662,6 +22663,27 @@
       "sha256": "deeb8d02a6c4d3553771fd16995073276e32605a640f1e40dc0c3aab627f90c3",
       "bytes": 2309
     },
+    "languages/en_US/contacts/common.php": {
+      "entries": [
+        {
+          "key": "CONTACTS_PHONE",
+          "value": "Phone",
+          "line": 2
+        },
+        {
+          "key": "CONTACTS_INTERNET",
+          "value": "Internet",
+          "line": 3
+        },
+        {
+          "key": "CONTACTS_CONTACT_DATA",
+          "value": "Contact data",
+          "line": 4
+        }
+      ],
+      "sha256": "372eebffe770f9b35735ec3620d162bbbd5538ce1a48481dd8999255a29f083c",
+      "bytes": 133
+    },
     "languages/en_US/contacts/contact.php": {
       "entries": [
         {
@@ -22720,553 +22742,538 @@
           "line": 14
         },
         {
-          "key": "CONTACTS_PHONE",
-          "value": "Phone",
-          "line": 15
-        },
-        {
           "key": "CONTACTS_FAX",
           "value": "Fax",
-          "line": 16
+          "line": 15
         },
         {
           "key": "CONTACTS_MOBILE",
           "value": "Mobile",
-          "line": 17
+          "line": 16
         },
         {
           "key": "CONTACTS_EMAIL",
           "value": "Email",
-          "line": 18
-        },
-        {
-          "key": "CONTACTS_INTERNET",
-          "value": "Internet",
-          "line": 19
+          "line": 17
         },
         {
           "key": "CONTACTS_BANK_ACCOUNT",
           "value": "Bank account",
-          "line": 20
+          "line": 18
         },
         {
           "key": "CONTACTS_IBAN_BIC",
           "value": "IBAN/BIC",
-          "line": 21
+          "line": 19
         },
         {
           "key": "CONTACTS_STREET",
           "value": "Street",
-          "line": 22
+          "line": 20
         },
         {
           "key": "CONTACTS_POSTCODE",
           "value": "Post code",
-          "line": 23
+          "line": 21
         },
         {
           "key": "CONTACTS_CITY",
           "value": "City",
-          "line": 24
+          "line": 22
         },
         {
           "key": "CONTACTS_COUNTRY",
           "value": "Country",
-          "line": 25
+          "line": 23
         },
         {
           "key": "CONTACTS_POSTCODE_CITY",
           "value": "Post code/City",
-          "line": 26
+          "line": 24
         },
         {
           "key": "CONTACTS_COUNTRY_ADDRESS_TYPE",
           "value": "Country/Address type",
-          "line": 27
+          "line": 25
         },
         {
           "key": "CONTACTS_DEPARTMENT",
           "value": "Department",
-          "line": 28
+          "line": 26
         },
         {
           "key": "CONTACTS_ADDRESS",
           "value": "Address",
-          "line": 29
+          "line": 27
         },
         {
           "key": "CONTACTS_ADDRESS_TYPE",
           "value": "Address type",
-          "line": 30
+          "line": 28
         },
         {
           "key": "CONTACTS_BILLING_ADDRESS",
           "value": "Billing address",
-          "line": 31
+          "line": 29
         },
         {
           "key": "CONTACTS_SHIPPING_ADDRESS",
           "value": "Shipping address",
-          "line": 32
+          "line": 30
         },
         {
           "key": "CONTACTS_OTHER_ADDRESS",
           "value": "Other address",
-          "line": 33
-        },
-        {
-          "key": "CONTACTS_CONTACT_DATA",
-          "value": "Contact data",
-          "line": 34
+          "line": 31
         },
         {
           "key": "CONTACTS_INFO",
           "value": "Info",
-          "line": 35
+          "line": 32
         },
         {
           "key": "CONTACTS_INFO_INTERNAL",
           "value": "Info internal",
-          "line": 36
+          "line": 33
         },
         {
           "key": "CONTACTS_DEBITOR_NUMBER",
           "value": "Creditor/Debtor no.",
-          "line": 37
+          "line": 34
         },
         {
           "key": "CONTACTS_TAX_NUMBER",
           "value": "Tax number",
-          "line": 38
+          "line": 35
         },
         {
           "key": "CONTACTS_VATIN",
           "value": "VATIN",
-          "line": 39
+          "line": 36
         },
         {
           "key": "CONTACTS_TAX_FREE",
           "value": "Tax free",
-          "line": 40
+          "line": 37
         },
         {
           "key": "CONTACTS_CURRENCY",
           "value": "Currency",
-          "line": 41
+          "line": 38
         },
         {
           "key": "CONTACTS_DISCOUNT",
           "value": "Discount",
-          "line": 42
+          "line": 39
         },
         {
           "key": "CONTACTS_DISCOUNT_RULE",
           "value": "Discount rule",
-          "line": 43
+          "line": 40
         },
         {
           "key": "CONTACTS_PAYMENT_METHOD",
           "value": "Payment method",
-          "line": 44
+          "line": 41
         },
         {
           "key": "CONTACTS_PAYMENT_TERM",
           "value": "Payment term",
-          "line": 45
+          "line": 42
         },
         {
           "key": "CONTACTS_CASH_DISCOUNT_DAYS",
           "value": "Cash discount days",
-          "line": 46
+          "line": 43
         },
         {
           "key": "CONTACTS_CASH_DISCOUNT_DAYS_PERCENT",
           "value": "Cash discount days percent",
-          "line": 47
+          "line": 44
         },
         {
           "key": "CONTACTS_TYPE",
           "value": "Contact type",
-          "line": 48
+          "line": 45
         },
         {
           "key": "CONTACTS_ROLES",
           "value": "Roles",
-          "line": 49
+          "line": 46
         },
         {
           "key": "CONTACTS_ROLE_CUSTOMER",
           "value": "Customer",
-          "line": 50
+          "line": 47
         },
         {
           "key": "CONTACTS_ROLE_SUPPLIER",
           "value": "Supplier",
-          "line": 51
+          "line": 48
         },
         {
           "key": "CONTACTS_ROLE_PROSPECT",
           "value": "Prospect",
-          "line": 52
+          "line": 49
         },
         {
           "key": "CONTACTS_ROLE_PARTNER",
           "value": "Partner",
-          "line": 53
+          "line": 50
         },
         {
           "key": "CONTACTS_TAGS",
           "value": "Tags",
-          "line": 54
+          "line": 51
         },
         {
           "key": "CONTACTS_EXPORT_TITLE",
           "value": "Export contacts",
-          "line": 55
+          "line": 52
         },
         {
           "key": "CONTACTS_EXPORT_DESCRIPTION",
           "value": "The current filters are applied to the complete export.",
-          "line": 56
+          "line": 53
         },
         {
           "key": "CONTACTS_EXPORT_COMBINED",
           "value": "Complete contacts (CSV)",
-          "line": 57
+          "line": 54
         },
         {
           "key": "CONTACTS_EXPORT_COMBINED_DESCRIPTION",
           "value": "Complete contacts includes companies and active contact persons. The CSV import supports company data, but cannot fully reimport contact persons.",
-          "line": 58
+          "line": 55
         },
         {
           "key": "CONTACTS_EXPORT_COMPANY_NAME",
           "value": "Company name",
-          "line": 59
+          "line": 56
         },
         {
           "key": "CONTACTS_EXPORT_COMPANY_DEPARTMENT",
           "value": "Company department",
-          "line": 60
+          "line": 57
         },
         {
           "key": "CONTACTS_EXPORT_COMPANY_PHONE",
           "value": "Company phone",
-          "line": 61
+          "line": 58
         },
         {
           "key": "CONTACTS_EXPORT_COMPANY_EMAIL",
           "value": "Company email",
-          "line": 62
+          "line": 59
         },
         {
           "key": "CONTACTS_EXPORT_CONTACTPERSON_DEPARTMENT",
           "value": "Contact person department",
-          "line": 63
+          "line": 60
         },
         {
           "key": "CONTACTS_EXPORT_CONTACTPERSON_EMAIL",
           "value": "Contact person email",
-          "line": 64
+          "line": 61
         },
         {
           "key": "CONTACTS_EXPORT_COMPANIES",
           "value": "Companies (CSV)",
-          "line": 65
+          "line": 62
         },
         {
           "key": "CONTACTS_EXPORT_CONTACTPERSONS",
           "value": "Contact persons (CSV)",
-          "line": 66
+          "line": 63
         },
         {
           "key": "CONTACTS_EXPORT_COMPANY",
           "value": "Company",
-          "line": 67
+          "line": 64
         },
         {
           "key": "CONTACTS_IMPORT_TITLE",
           "value": "Import contacts",
-          "line": 68
+          "line": 65
         },
         {
           "key": "CONTACTS_IMPORT_DESCRIPTION",
           "value": "Upload a CSV file, review the mapping and confirm the import.",
-          "line": 69
+          "line": 66
         },
         {
           "key": "CONTACTS_IMPORT_SUPPORTED_HEADERS",
           "value": "Supported columns: Contact ID, company, name affix, department, category, street, post code, city, country, phone, email and internet.",
-          "line": 70
+          "line": 67
         },
         {
           "key": "CONTACTS_IMPORT_SEPARATOR",
           "value": "Separator",
-          "line": 71
+          "line": 68
         },
         {
           "key": "CONTACTS_IMPORT_SEPARATOR_AUTO",
           "value": "Detect automatically",
-          "line": 72
+          "line": 69
         },
         {
           "key": "CONTACTS_IMPORT_SEPARATOR_COMMA",
           "value": "Comma",
-          "line": 73
+          "line": 70
         },
         {
           "key": "CONTACTS_IMPORT_SEPARATOR_SEMICOLON",
           "value": "Semicolon",
-          "line": 74
+          "line": 71
         },
         {
           "key": "CONTACTS_IMPORT_TAG",
           "value": "Optional tag",
-          "line": 75
+          "line": 72
         },
         {
           "key": "CONTACTS_IMPORT_TAG_NONE",
           "value": "Do not assign a tag",
-          "line": 76
+          "line": 73
         },
         {
           "key": "CONTACTS_IMPORT_PREVIEW",
           "value": "Show preview",
-          "line": 77
+          "line": 74
         },
         {
           "key": "CONTACTS_IMPORT_PREVIEW_TITLE",
           "value": "Import preview",
-          "line": 78
+          "line": 75
         },
         {
           "key": "CONTACTS_IMPORT_CONFIRM",
           "value": "Confirm import",
-          "line": 79
+          "line": 76
         },
         {
           "key": "CONTACTS_IMPORT_CANCEL",
           "value": "Discard preview",
-          "line": 80
+          "line": 77
         },
         {
           "key": "CONTACTS_IMPORT_MAX_FILE_SIZE",
           "value": "Maximum file size: %s",
-          "line": 81
+          "line": 78
         },
         {
           "key": "CONTACTS_IMPORT_LINE",
           "value": "Line",
-          "line": 82
+          "line": 79
         },
         {
           "key": "CONTACTS_IMPORT_STATUS",
           "value": "Status",
-          "line": 83
+          "line": 80
         },
         {
           "key": "CONTACTS_IMPORT_NOTES",
           "value": "Notes",
-          "line": 84
+          "line": 81
         },
         {
           "key": "CONTACTS_IMPORT_STATUS_NEW",
           "value": "New",
-          "line": 85
+          "line": 82
         },
         {
           "key": "CONTACTS_IMPORT_STATUS_UPDATE",
           "value": "Update",
-          "line": 86
+          "line": 83
         },
         {
           "key": "CONTACTS_IMPORT_STATUS_DUPLICATE",
           "value": "Possible duplicate",
-          "line": 87
+          "line": 84
         },
         {
           "key": "CONTACTS_IMPORT_STATUS_ERROR",
           "value": "Error",
-          "line": 88
+          "line": 85
         },
         {
           "key": "CONTACTS_IMPORT_DUPLICATE_MATCHES",
           "value": "Possible matches: %s",
-          "line": 89
+          "line": 86
         },
         {
           "key": "CONTACTS_IMPORT_DUPLICATE_IN_CSV",
           "value": "The company name occurs more than once without a contact number in the CSV file.",
-          "line": 90
+          "line": 87
         },
         {
           "key": "CONTACTS_IMPORT_UNKNOWN_HEADERS",
           "value": "Unsupported columns are ignored: %s",
-          "line": 91
+          "line": 88
         },
         {
           "key": "CONTACTS_IMPORT_RESULT",
           "value": "%d contacts created, %d updated, %d skipped.",
-          "line": 92
+          "line": 89
         },
         {
           "key": "CONTACTS_IMPORT_EMPTY_FILE",
           "value": "The CSV file does not contain importable data.",
-          "line": 93
+          "line": 90
         },
         {
           "key": "CONTACTS_IMPORT_DUPLICATE_HEADER",
           "value": "A supported column was mapped more than once.",
-          "line": 94
+          "line": 91
         },
         {
           "key": "CONTACTS_IMPORT_REQUIRED_HEADER",
           "value": "The CSV file needs at least a contact number or company column.",
-          "line": 95
+          "line": 92
         },
         {
           "key": "CONTACTS_IMPORT_TOO_MANY_ROWS",
           "value": "The CSV file exceeds the limit of 5,000 records.",
-          "line": 96
+          "line": 93
         },
         {
           "key": "CONTACTS_IMPORT_INVALID_CONTACT_ID",
           "value": "The contact number must be a positive integer.",
-          "line": 97
+          "line": 94
         },
         {
           "key": "CONTACTS_IMPORT_DUPLICATE_CONTACT_ID_CSV",
           "value": "The contact number occurs more than once in the CSV file.",
-          "line": 98
+          "line": 95
         },
         {
           "key": "CONTACTS_IMPORT_AMBIGUOUS_CONTACT_ID",
           "value": "The contact number is not unique in existing data.",
-          "line": 99
+          "line": 96
         },
         {
           "key": "CONTACTS_IMPORT_NAME_REQUIRED",
           "value": "A company name is required for new contacts.",
-          "line": 100
+          "line": 97
         },
         {
           "key": "CONTACTS_IMPORT_INVALID_CATEGORY",
           "value": "The category is unknown or ambiguous.",
-          "line": 101
+          "line": 98
         },
         {
           "key": "CONTACTS_IMPORT_INVALID_EMAIL",
           "value": "At least one email address is invalid.",
-          "line": 102
+          "line": 99
         },
         {
           "key": "CONTACTS_IMPORT_SESSION_EXPIRED",
           "value": "The import preview has expired. Please upload the file again.",
-          "line": 103
+          "line": 100
         },
         {
           "key": "CONTACTS_IMPORT_FILE_ERROR",
           "value": "The CSV file could not be processed.",
-          "line": 104
+          "line": 101
         },
         {
           "key": "CONTACTS_IMPORT_FAILED",
           "value": "The import was rolled back and no contacts were changed.",
-          "line": 105
+          "line": 102
         },
         {
           "key": "CONTACTS_FILE_NAME",
           "value": "Filename",
-          "line": 106
+          "line": 103
         },
         {
           "key": "CONTACTS_DOCUMENT_ID",
           "value": "Document no.",
-          "line": 107
+          "line": 104
         },
         {
           "key": "CONTACTS_DOCUMENT_TYPE",
           "value": "Document type",
-          "line": 108
+          "line": 105
         },
         {
           "key": "CONTACTS_DOCUMENT_DATE",
           "value": "Document date",
-          "line": 109
+          "line": 106
         },
         {
           "key": "CONTACTS_ISSUED_DOCUMENT_FILES",
           "value": "Issued documents",
-          "line": 110
+          "line": 107
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_STATUS",
           "value": "Original status",
-          "line": 111
+          "line": 108
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_AVAILABLE",
           "value": "Archived original available",
-          "line": 112
+          "line": 109
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_ORIGINAL_ONLY",
           "value": "Original available, attachment missing",
-          "line": 113
+          "line": 110
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_ATTACHMENT_ONLY",
           "value": "Original missing, attachment available",
-          "line": 114
+          "line": 111
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_COPY_AVAILABLE",
           "value": "Copy available",
-          "line": 115
+          "line": 112
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_MISSING",
           "value": "Archived original missing",
-          "line": 116
+          "line": 113
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_INVALID",
           "value": "Stored file is invalid",
-          "line": 117
+          "line": 114
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_MIGRATION_REQUIRED",
           "value": "Historical recovery candidate requires migration",
-          "line": 118
+          "line": 115
         },
         {
           "key": "CONTACTS_DOCUMENT_FILE_CONFLICT",
           "value": "Stored versions differ",
-          "line": 119
+          "line": 116
         },
         {
           "key": "CONTACTS_CUSTOMER",
           "value": "Customer",
-          "line": 121
+          "line": 118
         },
         {
           "key": "CONTACTS_CUSTOMERS",
           "value": "Customers",
-          "line": 122
+          "line": 119
         },
         {
           "key": "CONTACTS_SUPPLIER",
           "value": "Supplier",
-          "line": 124
+          "line": 121
         },
         {
           "key": "CONTACTS_SUPPLIERS",
           "value": "Suplliers",
-          "line": 125
+          "line": 122
         }
       ],
-      "sha256": "029194859194fcf81e2bb7787f6954facaff8748ed946463f363bf2394a3f51e",
-      "bytes": 6707
+      "sha256": "cf7c90e6f9d7c5352459a70c77587c358b1bdcf8510b8e6496157e92d1d2a3e8",
+      "bytes": 6597
     },
     "languages/en_US/contacts/contactperson.php": {
       "entries": [
@@ -34818,7 +34825,7 @@
     {
       "relative_file": "contacts/common.php",
       "de_DE": "languages/de_DE/contacts/common.php",
-      "en_US": null,
+      "en_US": "languages/en_US/contacts/common.php",
       "missing_in_en_US": [
         "CONTACT",
         "CONTACTS",
@@ -38208,15 +38215,28 @@
         }
       },
       {
+        "key": "CONTACTS_INTERNET",
+        "de_DE": {
+          "file": "languages/de_DE/contacts/common.php",
+          "line": 26,
+          "value": "Internet"
+        },
+        "en_US": {
+          "file": "languages/en_US/contacts/common.php",
+          "line": 3,
+          "value": "Internet"
+        }
+      },
+      {
         "key": "CONTACTS_FAX",
         "de_DE": {
           "file": "languages/de_DE/contacts/contact.php",
-          "line": 13,
+          "line": 12,
           "value": "Fax"
         },
         "en_US": {
           "file": "languages/en_US/contacts/contact.php",
-          "line": 16,
+          "line": 15,
           "value": "Fax"
         }
       },
@@ -38224,12 +38244,12 @@
         "key": "CONTACTS_IMPORT_STATUS",
         "de_DE": {
           "file": "languages/de_DE/contacts/contact.php",
-          "line": 77,
+          "line": 74,
           "value": "Status"
         },
         "en_US": {
           "file": "languages/en_US/contacts/contact.php",
-          "line": 83,
+          "line": 80,
           "value": "Status"
         }
       },
@@ -38237,26 +38257,13 @@
         "key": "CONTACTS_INFO",
         "de_DE": {
           "file": "languages/de_DE/contacts/contact.php",
-          "line": 30,
+          "line": 27,
           "value": "Info"
         },
         "en_US": {
           "file": "languages/en_US/contacts/contact.php",
-          "line": 35,
+          "line": 32,
           "value": "Info"
-        }
-      },
-      {
-        "key": "CONTACTS_INTERNET",
-        "de_DE": {
-          "file": "languages/de_DE/contacts/contact.php",
-          "line": 16,
-          "value": "Internet"
-        },
-        "en_US": {
-          "file": "languages/en_US/contacts/contact.php",
-          "line": 19,
-          "value": "Internet"
         }
       },
       {
@@ -38276,12 +38283,12 @@
         "key": "CONTACTS_ROLE_PARTNER",
         "de_DE": {
           "file": "languages/de_DE/contacts/contact.php",
-          "line": 47,
+          "line": 44,
           "value": "Partner"
         },
         "en_US": {
           "file": "languages/en_US/contacts/contact.php",
-          "line": 53,
+          "line": 50,
           "value": "Partner"
         }
       },
@@ -38289,12 +38296,12 @@
         "key": "CONTACTS_TAGS",
         "de_DE": {
           "file": "languages/de_DE/contacts/contact.php",
-          "line": 48,
+          "line": 45,
           "value": "Tags"
         },
         "en_US": {
           "file": "languages/en_US/contacts/contact.php",
-          "line": 54,
+          "line": 51,
           "value": "Tags"
         }
       },
@@ -42218,10 +42225,11 @@
         "languages/de_DE/users/common.php"
       ],
       "require_calls": 26,
+      "merge_inputs": 26,
       "unique_files": 26,
-      "bytes_in_require_calls": 67790,
-      "effective_keys": 1160,
-      "effective_sha256": "71e2b5d15299c7cc34d21ebed4a4c8080278366aef88cbf7b8303f269a9ffcac",
+      "bytes_in_require_calls": 67903,
+      "effective_keys": 1163,
+      "effective_sha256": "d55120172aaf07b53deeea7a446396401d5d1ce42b19eee5f2d02b2cf6a50f8d",
       "literal_module_calls": 0,
       "unresolved_module_calls": 0,
       "within_domain_overwrites": [
@@ -42336,10 +42344,11 @@
         "languages/de_DE/admin/page.php"
       ],
       "require_calls": 30,
+      "merge_inputs": 30,
       "unique_files": 30,
-      "bytes_in_require_calls": 79909,
-      "effective_keys": 1410,
-      "effective_sha256": "4b40f5ac3f45720c52eca647f7ffffd1732cca66aff999b44ef159f06482c2f6",
+      "bytes_in_require_calls": 80022,
+      "effective_keys": 1413,
+      "effective_sha256": "d46d543e0eabc4251ce60c4fcea9b792a59499de4fb7522e7323608f9bac9277",
       "literal_module_calls": 160,
       "unresolved_module_calls": 6,
       "within_domain_overwrites": [
@@ -42450,11 +42459,12 @@
         "languages/de_DE/users/common.php",
         "languages/de_DE/calendar/common.php"
       ],
-      "require_calls": 27,
+      "require_calls": 26,
+      "merge_inputs": 27,
       "unique_files": 26,
-      "bytes_in_require_calls": 78506,
-      "effective_keys": 1160,
-      "effective_sha256": "71e2b5d15299c7cc34d21ebed4a4c8080278366aef88cbf7b8303f269a9ffcac",
+      "bytes_in_require_calls": 67903,
+      "effective_keys": 1163,
+      "effective_sha256": "d55120172aaf07b53deeea7a446396401d5d1ce42b19eee5f2d02b2cf6a50f8d",
       "literal_module_calls": 24,
       "unresolved_module_calls": 0,
       "within_domain_overwrites": [
@@ -45213,10 +45223,11 @@
         "languages/de_DE/campaigns/campaigns.php"
       ],
       "require_calls": 27,
+      "merge_inputs": 27,
       "unique_files": 27,
-      "bytes_in_require_calls": 74895,
-      "effective_keys": 1306,
-      "effective_sha256": "8bb312956b88137f9a926af87f420793e7f6bfb5dc48a902ea68ec840cfcba9c",
+      "bytes_in_require_calls": 75008,
+      "effective_keys": 1309,
+      "effective_sha256": "edf72b2ef039a8516d66527a17da7012bef2c7d59d093648a211a40cbf890677",
       "literal_module_calls": 66,
       "unresolved_module_calls": 1,
       "within_domain_overwrites": [
@@ -45365,9 +45376,10 @@
         "languages/de_DE/contacts/map.php",
         "languages/de_DE/contacts/pricerule.php"
       ],
-      "require_calls": 35,
+      "require_calls": 34,
+      "merge_inputs": 35,
       "unique_files": 34,
-      "bytes_in_require_calls": 101389,
+      "bytes_in_require_calls": 100467,
       "effective_keys": 1588,
       "effective_sha256": "472c145264e8cad3a6d848ccba5947a4ff7886190fb39565b9d7fd36f97de8cc",
       "literal_module_calls": 169,
@@ -45458,7 +45470,7 @@
           },
           "winner": {
             "file": "languages/de_DE/contacts/contact.php",
-            "line": 15,
+            "line": 14,
             "domain": "contacts",
             "value": "E-Mail"
           }
@@ -45520,6 +45532,24 @@
           "different_values": false
         },
         {
+          "key": "CONTACTS_CONTACT_DATA",
+          "winner": {
+            "file": "languages/de_DE/contacts/common.php",
+            "line": 27,
+            "domain": "contacts_common",
+            "value": "Kontaktdaten"
+          },
+          "shadowed": [
+            {
+              "file": "languages/de_DE/contacts/common.php",
+              "line": 27,
+              "domain": "contacts",
+              "value": "Kontaktdaten"
+            }
+          ],
+          "different_values": false
+        },
+        {
           "key": "CONTACTS_EMAIL",
           "winner": {
             "file": "languages/de_DE/contacts/common.php",
@@ -45530,7 +45560,7 @@
           "shadowed": [
             {
               "file": "languages/de_DE/contacts/contact.php",
-              "line": 15,
+              "line": 14,
               "domain": "contacts",
               "value": "E-Mail"
             }
@@ -45808,6 +45838,24 @@
           "different_values": false
         },
         {
+          "key": "CONTACTS_INTERNET",
+          "winner": {
+            "file": "languages/de_DE/contacts/common.php",
+            "line": 26,
+            "domain": "contacts_common",
+            "value": "Internet"
+          },
+          "shadowed": [
+            {
+              "file": "languages/de_DE/contacts/common.php",
+              "line": 26,
+              "domain": "contacts",
+              "value": "Internet"
+            }
+          ],
+          "different_values": false
+        },
+        {
           "key": "CONTACTS_NO_ATTACHMENTS",
           "winner": {
             "file": "languages/de_DE/contacts/common.php",
@@ -45821,6 +45869,24 @@
               "line": 9,
               "domain": "contacts",
               "value": "Keine Anhänge vorhanden"
+            }
+          ],
+          "different_values": false
+        },
+        {
+          "key": "CONTACTS_PHONE",
+          "winner": {
+            "file": "languages/de_DE/contacts/common.php",
+            "line": 25,
+            "domain": "contacts_common",
+            "value": "Telefon"
+          },
+          "shadowed": [
+            {
+              "file": "languages/de_DE/contacts/common.php",
+              "line": 25,
+              "domain": "contacts",
+              "value": "Telefon"
             }
           ],
           "different_values": false
@@ -45890,10 +45956,11 @@
         "languages/de_DE/ebay/ebay.php"
       ],
       "require_calls": 27,
+      "merge_inputs": 27,
       "unique_files": 27,
-      "bytes_in_require_calls": 75215,
-      "effective_keys": 1295,
-      "effective_sha256": "9ae4a1208fff368459a3e8e192182f52e5e2d583a21b656a1c4089ca65753377",
+      "bytes_in_require_calls": 75328,
+      "effective_keys": 1298,
+      "effective_sha256": "5ba9412d33b286873b667e8a1ffa2d9195cebf82f8146775d4f65a36cc29143d",
       "literal_module_calls": 70,
       "unresolved_module_calls": 1,
       "within_domain_overwrites": [
@@ -46015,11 +46082,12 @@
         "languages/de_DE/items/stockplanning.php",
         "languages/de_DE/items/variant.php"
       ],
-      "require_calls": 38,
+      "require_calls": 37,
+      "merge_inputs": 38,
       "unique_files": 37,
-      "bytes_in_require_calls": 83436,
-      "effective_keys": 1460,
-      "effective_sha256": "dd4a36e7982f63e36fa019d39357b3dfdd45062dff904ac9e397db5b89d26bcc",
+      "bytes_in_require_calls": 82929,
+      "effective_keys": 1463,
+      "effective_sha256": "85684a373a7f0a5fae44bc4faba66b30a2cfe8e6e267f518861c9b75df386ae2",
       "literal_module_calls": 112,
       "unresolved_module_calls": 7,
       "within_domain_overwrites": [
@@ -46381,11 +46449,12 @@
         "languages/de_DE/processes/common.php",
         "languages/de_DE/processes/processes.php"
       ],
-      "require_calls": 28,
+      "require_calls": 27,
+      "merge_inputs": 28,
       "unique_files": 27,
-      "bytes_in_require_calls": 72766,
-      "effective_keys": 1265,
-      "effective_sha256": "720e30383d2e836bd7b1ecb10ef1e966eb7ae4f8818771a25d557ad5aca09bcb",
+      "bytes_in_require_calls": 72675,
+      "effective_keys": 1268,
+      "effective_sha256": "42d10e69fd1ee6d013de7bdf86327de29ec66e2cec865273ed6e08a71f09ab88",
       "literal_module_calls": 61,
       "unresolved_module_calls": 2,
       "within_domain_overwrites": [
@@ -46586,13 +46655,14 @@
         "languages/de_DE/purchases/purchaseorder.php",
         "languages/de_DE/purchases/quoterequest.php"
       ],
-      "require_calls": 29,
+      "require_calls": 28,
+      "merge_inputs": 29,
       "unique_files": 28,
-      "bytes_in_require_calls": 74483,
-      "effective_keys": 1288,
-      "effective_sha256": "4a2009a65dc50e9d12fff907bb4219a3fe9083bf4c3809b6564dc326b987ffc2",
+      "bytes_in_require_calls": 74061,
+      "effective_keys": 1291,
+      "effective_sha256": "12106ddf5420cc64942f81815d0def942add494cc9ff46c81892528817cda3a1",
       "literal_module_calls": 31,
-      "unresolved_module_calls": 4,
+      "unresolved_module_calls": 1,
       "within_domain_overwrites": [
         {
           "key": "CONTROL_PANEL_DOCUMENT_MODIFIED",
@@ -46906,13 +46976,14 @@
         "languages/de_DE/sales/reminder.php",
         "languages/de_DE/sales/salesorder.php"
       ],
-      "require_calls": 33,
+      "require_calls": 32,
+      "merge_inputs": 33,
       "unique_files": 32,
-      "bytes_in_require_calls": 91871,
-      "effective_keys": 1634,
-      "effective_sha256": "f5725064d96b116fc3bdac297685e67226f531a34c1b0c73b92ac203d86d17a8",
+      "bytes_in_require_calls": 90258,
+      "effective_keys": 1637,
+      "effective_sha256": "3807c4193c8621ca2674a86d7461887f6f21d7d76e93aebd84c4d8f88d0e59cd",
       "literal_module_calls": 113,
-      "unresolved_module_calls": 4,
+      "unresolved_module_calls": 1,
       "within_domain_overwrites": [
         {
           "key": "CONTROL_PANEL_DOCUMENT_MODIFIED",
@@ -47707,10 +47778,11 @@
         "languages/de_DE/shops/shops.php"
       ],
       "require_calls": 27,
+      "merge_inputs": 27,
       "unique_files": 27,
-      "bytes_in_require_calls": 76294,
-      "effective_keys": 1316,
-      "effective_sha256": "092a91bbdeb8b24963f65e18690cb3995d4de0aac3855c03a9851a01faf146ef",
+      "bytes_in_require_calls": 76407,
+      "effective_keys": 1319,
+      "effective_sha256": "1d360a9531cf10db1b7670f2c2767b74a677ac164a1248e4fd8bbc68d234c572",
       "literal_module_calls": 170,
       "unresolved_module_calls": 9,
       "within_domain_overwrites": [
@@ -47837,11 +47909,12 @@
         "languages/de_DE/statistics/common.php",
         "languages/de_DE/statistics/statistics.php"
       ],
-      "require_calls": 28,
+      "require_calls": 27,
+      "merge_inputs": 28,
       "unique_files": 27,
-      "bytes_in_require_calls": 71243,
-      "effective_keys": 1209,
-      "effective_sha256": "3ab9f2dfa70697aa8161212ae415d2bd6073a65e589b8f81df389788af07e575",
+      "bytes_in_require_calls": 71179,
+      "effective_keys": 1212,
+      "effective_sha256": "4f7fad384d8ea82aa844e3fff31dbde0b4321f6daa2d7807b8798ff08f60ff12",
       "literal_module_calls": 56,
       "unresolved_module_calls": 0,
       "within_domain_overwrites": [
@@ -48008,10 +48081,11 @@
         "languages/de_DE/tasks/tasks.php"
       ],
       "require_calls": 27,
+      "merge_inputs": 27,
       "unique_files": 27,
-      "bytes_in_require_calls": 72382,
-      "effective_keys": 1270,
-      "effective_sha256": "5ad33e3e0bc741d950eecc69d84fedb372a53c109354cdb9b2a1311697a38ffe",
+      "bytes_in_require_calls": 72495,
+      "effective_keys": 1273,
+      "effective_sha256": "3f040debf980bed0decf9d182a7a36686a509c2c66c097ea621e1cc8b1d649b9",
       "literal_module_calls": 59,
       "unresolved_module_calls": 3,
       "within_domain_overwrites": [
@@ -48153,11 +48227,12 @@
         "languages/de_DE/users/common.php",
         "languages/de_DE/users/user.php"
       ],
-      "require_calls": 28,
+      "require_calls": 27,
+      "merge_inputs": 28,
       "unique_files": 27,
-      "bytes_in_require_calls": 68185,
-      "effective_keys": 1170,
-      "effective_sha256": "d64590342f1a66bb9ba479f2bdd77e17ccb79573e52b816b66a08eb32d68675b",
+      "bytes_in_require_calls": 68275,
+      "effective_keys": 1173,
+      "effective_sha256": "2a62af62e80c7646d922d1e1d7e9e031c7fc8c2dc30778f0f8d10d551cf8be7c",
       "literal_module_calls": 8,
       "unresolved_module_calls": 0,
       "within_domain_overwrites": [
@@ -48230,6 +48305,7 @@
       "domains": [
         "default",
         "calendar_common",
+        "contacts_common",
         "items_common"
       ],
       "files_in_load_order": [
@@ -48250,13 +48326,15 @@
         "languages/en_US/default/user.php",
         "languages/en_US/default/validation.php",
         "languages/en_US/calendar/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/items/common.php"
       ],
-      "require_calls": 18,
-      "unique_files": 18,
-      "bytes_in_require_calls": 53496,
-      "effective_keys": 985,
-      "effective_sha256": "5e87a275698ecda7003a6df1d68322ee4bf32cc589532d9d7ca6ddb2dc7eec07",
+      "require_calls": 19,
+      "merge_inputs": 19,
+      "unique_files": 19,
+      "bytes_in_require_calls": 53629,
+      "effective_keys": 988,
+      "effective_sha256": "c1799f5d207d87998c51c554e8fcb22ba29be380f924852d28597ad126b130c2",
       "literal_module_calls": 0,
       "unresolved_module_calls": 0,
       "within_domain_overwrites": [],
@@ -48268,6 +48346,7 @@
       "domains": [
         "default",
         "calendar_common",
+        "contacts_common",
         "items_common",
         "admin"
       ],
@@ -48289,15 +48368,17 @@
         "languages/en_US/default/user.php",
         "languages/en_US/default/validation.php",
         "languages/en_US/calendar/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/items/common.php",
         "languages/en_US/admin/admin.php",
         "languages/en_US/admin/client.php"
       ],
-      "require_calls": 20,
-      "unique_files": 20,
-      "bytes_in_require_calls": 61301,
-      "effective_keys": 1142,
-      "effective_sha256": "48bb4c5233f0042836a316fc83443232165f66a3b05a4632ed0965a9966dc72e",
+      "require_calls": 21,
+      "merge_inputs": 21,
+      "unique_files": 21,
+      "bytes_in_require_calls": 61434,
+      "effective_keys": 1145,
+      "effective_sha256": "40a581a1fd6de638cf4fb594cc975507a68c431b962e28837dce232b7f5bebbb",
       "literal_module_calls": 160,
       "unresolved_module_calls": 54,
       "within_domain_overwrites": [],
@@ -48309,6 +48390,7 @@
       "domains": [
         "default",
         "calendar_common",
+        "contacts_common",
         "items_common",
         "calendar"
       ],
@@ -48330,14 +48412,16 @@
         "languages/en_US/default/user.php",
         "languages/en_US/default/validation.php",
         "languages/en_US/calendar/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/items/common.php",
         "languages/en_US/calendar/common.php"
       ],
       "require_calls": 19,
-      "unique_files": 18,
-      "bytes_in_require_calls": 63348,
-      "effective_keys": 985,
-      "effective_sha256": "5e87a275698ecda7003a6df1d68322ee4bf32cc589532d9d7ca6ddb2dc7eec07",
+      "merge_inputs": 20,
+      "unique_files": 19,
+      "bytes_in_require_calls": 53629,
+      "effective_keys": 988,
+      "effective_sha256": "c1799f5d207d87998c51c554e8fcb22ba29be380f924852d28597ad126b130c2",
       "literal_module_calls": 24,
       "unresolved_module_calls": 0,
       "within_domain_overwrites": [],
@@ -50996,6 +51080,7 @@
       "domains": [
         "default",
         "calendar_common",
+        "contacts_common",
         "items_common",
         "campaigns"
       ],
@@ -51017,14 +51102,16 @@
         "languages/en_US/default/user.php",
         "languages/en_US/default/validation.php",
         "languages/en_US/calendar/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/items/common.php",
         "languages/en_US/campaigns/campaigns.php"
       ],
-      "require_calls": 19,
-      "unique_files": 19,
-      "bytes_in_require_calls": 55805,
-      "effective_keys": 1035,
-      "effective_sha256": "94621b0f2889573d2c4e12a80e3d4a74a489e24c7408e23ed716148fbac5bb5b",
+      "require_calls": 20,
+      "merge_inputs": 20,
+      "unique_files": 20,
+      "bytes_in_require_calls": 55938,
+      "effective_keys": 1038,
+      "effective_sha256": "748815e5e86c0b82f14c80b8c21c210ad6dedbcebea8a7356f9626f680c6cba5",
       "literal_module_calls": 66,
       "unresolved_module_calls": 33,
       "within_domain_overwrites": [],
@@ -51036,6 +51123,7 @@
       "domains": [
         "default",
         "calendar_common",
+        "contacts_common",
         "items_common",
         "contacts"
       ],
@@ -51057,21 +51145,78 @@
         "languages/en_US/default/user.php",
         "languages/en_US/default/validation.php",
         "languages/en_US/calendar/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/items/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/contacts/contact.php",
         "languages/en_US/contacts/contactperson.php",
         "languages/en_US/contacts/inquiry.php",
         "languages/en_US/contacts/map.php"
       ],
-      "require_calls": 22,
-      "unique_files": 22,
-      "bytes_in_require_calls": 83106,
+      "require_calls": 23,
+      "merge_inputs": 24,
+      "unique_files": 23,
+      "bytes_in_require_calls": 83129,
       "effective_keys": 1393,
       "effective_sha256": "d5bda6fa4355da71c627920636e22e03fa7da54a019562e83d949be9e8567925",
       "literal_module_calls": 169,
       "unresolved_module_calls": 42,
       "within_domain_overwrites": [],
       "cross_domain_collisions": [
+        {
+          "key": "CONTACTS_CONTACT_DATA",
+          "winner": {
+            "file": "languages/en_US/contacts/common.php",
+            "line": 4,
+            "domain": "contacts_common",
+            "value": "Contact data"
+          },
+          "shadowed": [
+            {
+              "file": "languages/en_US/contacts/common.php",
+              "line": 4,
+              "domain": "contacts",
+              "value": "Contact data"
+            }
+          ],
+          "different_values": false
+        },
+        {
+          "key": "CONTACTS_INTERNET",
+          "winner": {
+            "file": "languages/en_US/contacts/common.php",
+            "line": 3,
+            "domain": "contacts_common",
+            "value": "Internet"
+          },
+          "shadowed": [
+            {
+              "file": "languages/en_US/contacts/common.php",
+              "line": 3,
+              "domain": "contacts",
+              "value": "Internet"
+            }
+          ],
+          "different_values": false
+        },
+        {
+          "key": "CONTACTS_PHONE",
+          "winner": {
+            "file": "languages/en_US/contacts/common.php",
+            "line": 2,
+            "domain": "contacts_common",
+            "value": "Phone"
+          },
+          "shadowed": [
+            {
+              "file": "languages/en_US/contacts/common.php",
+              "line": 2,
+              "domain": "contacts",
+              "value": "Phone"
+            }
+          ],
+          "different_values": false
+        },
         {
           "key": "MENU_CONTACT_INQUIRIES",
           "winner": {
@@ -51098,6 +51243,7 @@
       "domains": [
         "default",
         "calendar_common",
+        "contacts_common",
         "items_common",
         "ebay"
       ],
@@ -51119,14 +51265,16 @@
         "languages/en_US/default/user.php",
         "languages/en_US/default/validation.php",
         "languages/en_US/calendar/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/items/common.php",
         "languages/en_US/ebay/ebay.php"
       ],
-      "require_calls": 19,
-      "unique_files": 19,
-      "bytes_in_require_calls": 60725,
-      "effective_keys": 1116,
-      "effective_sha256": "46c6e63755ac8a5ed6132e0c0834e38d5398707479a458e4f9580091a0f43069",
+      "require_calls": 20,
+      "merge_inputs": 20,
+      "unique_files": 20,
+      "bytes_in_require_calls": 60858,
+      "effective_keys": 1119,
+      "effective_sha256": "6848632c89baf389b6e004c37617ec002315571adbcfe1153b90b8c1235ba2d7",
       "literal_module_calls": 70,
       "unresolved_module_calls": 9,
       "within_domain_overwrites": [],
@@ -51138,6 +51286,7 @@
       "domains": [
         "default",
         "calendar_common",
+        "contacts_common",
         "items_common",
         "items"
       ],
@@ -51159,6 +51308,7 @@
         "languages/en_US/default/user.php",
         "languages/en_US/default/validation.php",
         "languages/en_US/calendar/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/items/common.php",
         "languages/en_US/items/common.php",
         "languages/en_US/items/inventory.php",
@@ -51170,10 +51320,11 @@
         "languages/en_US/items/stockplanning.php"
       ],
       "require_calls": 26,
-      "unique_files": 25,
-      "bytes_in_require_calls": 66129,
-      "effective_keys": 1241,
-      "effective_sha256": "d2b607a644d697c5bd6384eb49a483e637c4f24a38190683353e2f6785f9ad87",
+      "merge_inputs": 27,
+      "unique_files": 26,
+      "bytes_in_require_calls": 66152,
+      "effective_keys": 1244,
+      "effective_sha256": "40b1dcc3ab73331daeb3712bb0bc59a7dcf2d746755eb3d76bcfbe227c8f25ec",
       "literal_module_calls": 112,
       "unresolved_module_calls": 30,
       "within_domain_overwrites": [
@@ -51253,6 +51404,7 @@
       "domains": [
         "default",
         "calendar_common",
+        "contacts_common",
         "items_common",
         "processes"
       ],
@@ -51274,14 +51426,16 @@
         "languages/en_US/default/user.php",
         "languages/en_US/default/validation.php",
         "languages/en_US/calendar/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/items/common.php",
         "languages/en_US/processes/processes.php"
       ],
-      "require_calls": 19,
-      "unique_files": 19,
-      "bytes_in_require_calls": 58045,
-      "effective_keys": 1083,
-      "effective_sha256": "036a33515ee95d2656f707bdf0d0588e64c4873c9ba25417b07ed1237f9702e1",
+      "require_calls": 20,
+      "merge_inputs": 20,
+      "unique_files": 20,
+      "bytes_in_require_calls": 58178,
+      "effective_keys": 1086,
+      "effective_sha256": "fe99eb5a0fcb1afa004693e38aefc5e8e513414b8336bada0fdb8cec63e4afd0",
       "literal_module_calls": 61,
       "unresolved_module_calls": 32,
       "within_domain_overwrites": [
@@ -51324,6 +51478,7 @@
       "domains": [
         "default",
         "calendar_common",
+        "contacts_common",
         "items_common",
         "purchases"
       ],
@@ -51345,18 +51500,20 @@
         "languages/en_US/default/user.php",
         "languages/en_US/default/validation.php",
         "languages/en_US/calendar/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/items/common.php",
         "languages/en_US/purchases/purchaseorder.php",
         "languages/en_US/purchases/purchases.php",
         "languages/en_US/purchases/quoterequest.php"
       ],
-      "require_calls": 21,
-      "unique_files": 21,
-      "bytes_in_require_calls": 58266,
-      "effective_keys": 1084,
-      "effective_sha256": "0adeeedc8371aeecf9d6d2f3fa27bb706435315628b5188819b0cb4a3f9fb218",
+      "require_calls": 22,
+      "merge_inputs": 22,
+      "unique_files": 22,
+      "bytes_in_require_calls": 58399,
+      "effective_keys": 1087,
+      "effective_sha256": "02550fd06713b45be377d5afa17ea009ec6315040be2bdd395f20213d19a6cd4",
       "literal_module_calls": 31,
-      "unresolved_module_calls": 14,
+      "unresolved_module_calls": 11,
       "within_domain_overwrites": [
         {
           "key": "PURCHASE_ORDERS_DELIVERY_DATE",
@@ -51397,6 +51554,7 @@
       "domains": [
         "default",
         "calendar_common",
+        "contacts_common",
         "items_common",
         "sales"
       ],
@@ -51418,6 +51576,7 @@
         "languages/en_US/default/user.php",
         "languages/en_US/default/validation.php",
         "languages/en_US/calendar/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/items/common.php",
         "languages/en_US/sales/creditnote.php",
         "languages/en_US/sales/deliveryorder.php",
@@ -51427,13 +51586,14 @@
         "languages/en_US/sales/sales.php",
         "languages/en_US/sales/salesorder.php"
       ],
-      "require_calls": 25,
-      "unique_files": 25,
-      "bytes_in_require_calls": 71411,
-      "effective_keys": 1370,
-      "effective_sha256": "43dd0084ff140560a23e58d4dcafcf81b6d4e7c38b77767c81219bc952641ef7",
+      "require_calls": 26,
+      "merge_inputs": 26,
+      "unique_files": 26,
+      "bytes_in_require_calls": 71544,
+      "effective_keys": 1373,
+      "effective_sha256": "41a079cc0aa7e989d44a277c54e22bf9d6b22e8e9a7a8c83be0bf2afb3c9f706",
       "literal_module_calls": 113,
-      "unresolved_module_calls": 22,
+      "unresolved_module_calls": 19,
       "within_domain_overwrites": [
         {
           "key": "DELIVERY_ORDERS_DELIVERY_DATE",
@@ -51474,6 +51634,7 @@
       "domains": [
         "default",
         "calendar_common",
+        "contacts_common",
         "items_common",
         "shops"
       ],
@@ -51495,14 +51656,16 @@
         "languages/en_US/default/user.php",
         "languages/en_US/default/validation.php",
         "languages/en_US/calendar/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/items/common.php",
         "languages/en_US/shops/shops.php"
       ],
-      "require_calls": 19,
-      "unique_files": 19,
-      "bytes_in_require_calls": 54546,
-      "effective_keys": 994,
-      "effective_sha256": "81dd4af2d0b65aa6301790134666e2643994e86be0370b7aa136f1804f20d8af",
+      "require_calls": 20,
+      "merge_inputs": 20,
+      "unique_files": 20,
+      "bytes_in_require_calls": 54679,
+      "effective_keys": 997,
+      "effective_sha256": "1856a8169df3be4f9ebc0fe131b3497ea03a886b38f82954f39454560609b454",
       "literal_module_calls": 170,
       "unresolved_module_calls": 105,
       "within_domain_overwrites": [],
@@ -51641,6 +51804,7 @@
       "domains": [
         "default",
         "calendar_common",
+        "contacts_common",
         "items_common",
         "statistics"
       ],
@@ -51662,14 +51826,16 @@
         "languages/en_US/default/user.php",
         "languages/en_US/default/validation.php",
         "languages/en_US/calendar/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/items/common.php",
         "languages/en_US/statistics/statistics.php"
       ],
-      "require_calls": 19,
-      "unique_files": 19,
-      "bytes_in_require_calls": 53764,
-      "effective_keys": 990,
-      "effective_sha256": "4d589f3c2c52c4f9cc2edcb601156e730e1b0c856b4965313dbca2338e3a5b4e",
+      "require_calls": 20,
+      "merge_inputs": 20,
+      "unique_files": 20,
+      "bytes_in_require_calls": 53897,
+      "effective_keys": 993,
+      "effective_sha256": "b01d5d3a07fd4fa2e77f43817cef657880a96574b95430f142601027e80a34f1",
       "literal_module_calls": 56,
       "unresolved_module_calls": 45,
       "within_domain_overwrites": [],
@@ -51681,6 +51847,7 @@
       "domains": [
         "default",
         "calendar_common",
+        "contacts_common",
         "items_common"
       ],
       "files_in_load_order": [
@@ -51701,13 +51868,15 @@
         "languages/en_US/default/user.php",
         "languages/en_US/default/validation.php",
         "languages/en_US/calendar/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/items/common.php"
       ],
-      "require_calls": 18,
-      "unique_files": 18,
-      "bytes_in_require_calls": 53496,
-      "effective_keys": 985,
-      "effective_sha256": "5e87a275698ecda7003a6df1d68322ee4bf32cc589532d9d7ca6ddb2dc7eec07",
+      "require_calls": 19,
+      "merge_inputs": 19,
+      "unique_files": 19,
+      "bytes_in_require_calls": 53629,
+      "effective_keys": 988,
+      "effective_sha256": "c1799f5d207d87998c51c554e8fcb22ba29be380f924852d28597ad126b130c2",
       "literal_module_calls": 59,
       "unresolved_module_calls": 43,
       "within_domain_overwrites": [],
@@ -51719,6 +51888,7 @@
       "domains": [
         "default",
         "calendar_common",
+        "contacts_common",
         "items_common"
       ],
       "files_in_load_order": [
@@ -51739,13 +51909,15 @@
         "languages/en_US/default/user.php",
         "languages/en_US/default/validation.php",
         "languages/en_US/calendar/common.php",
+        "languages/en_US/contacts/common.php",
         "languages/en_US/items/common.php"
       ],
-      "require_calls": 18,
-      "unique_files": 18,
-      "bytes_in_require_calls": 53496,
-      "effective_keys": 985,
-      "effective_sha256": "5e87a275698ecda7003a6df1d68322ee4bf32cc589532d9d7ca6ddb2dc7eec07",
+      "require_calls": 19,
+      "merge_inputs": 19,
+      "unique_files": 19,
+      "bytes_in_require_calls": 53629,
+      "effective_keys": 988,
+      "effective_sha256": "c1799f5d207d87998c51c554e8fcb22ba29be380f924852d28597ad126b130c2",
       "literal_module_calls": 8,
       "unresolved_module_calls": 0,
       "within_domain_overwrites": [],
@@ -51944,36 +52116,6 @@
       "certainty": "static_request_model"
     },
     {
-      "file": "application/modules/purchases/views/helpers/ContactData.php",
-      "line": 8,
-      "method": "translate",
-      "key": "CONTACTS_CONTACT_DATA",
-      "locale": "de_DE",
-      "module": "purchases",
-      "exists_elsewhere": true,
-      "certainty": "static_request_model"
-    },
-    {
-      "file": "application/modules/purchases/views/helpers/ContactData.php",
-      "line": 11,
-      "method": "translate",
-      "key": "CONTACTS_PHONE",
-      "locale": "de_DE",
-      "module": "purchases",
-      "exists_elsewhere": true,
-      "certainty": "static_request_model"
-    },
-    {
-      "file": "application/modules/purchases/views/helpers/ContactData.php",
-      "line": 27,
-      "method": "translate",
-      "key": "CONTACTS_INTERNET",
-      "locale": "de_DE",
-      "module": "purchases",
-      "exists_elsewhere": true,
-      "certainty": "static_request_model"
-    },
-    {
       "file": "application/modules/purchases/views/scripts/position/index.phtml",
       "line": 18,
       "method": "translate",
@@ -51981,36 +52123,6 @@
       "locale": "de_DE",
       "module": "purchases",
       "exists_elsewhere": false,
-      "certainty": "static_request_model"
-    },
-    {
-      "file": "application/modules/sales/views/helpers/ContactData.php",
-      "line": 8,
-      "method": "translate",
-      "key": "CONTACTS_CONTACT_DATA",
-      "locale": "de_DE",
-      "module": "sales",
-      "exists_elsewhere": true,
-      "certainty": "static_request_model"
-    },
-    {
-      "file": "application/modules/sales/views/helpers/ContactData.php",
-      "line": 11,
-      "method": "translate",
-      "key": "CONTACTS_PHONE",
-      "locale": "de_DE",
-      "module": "sales",
-      "exists_elsewhere": true,
-      "certainty": "static_request_model"
-    },
-    {
-      "file": "application/modules/sales/views/helpers/ContactData.php",
-      "line": 23,
-      "method": "translate",
-      "key": "CONTACTS_INTERNET",
-      "locale": "de_DE",
-      "module": "sales",
-      "exists_elsewhere": true,
       "certainty": "static_request_model"
     },
     {
@@ -54185,39 +54297,9 @@
     },
     {
       "file": "application/modules/purchases/views/helpers/ContactData.php",
-      "line": 8,
-      "method": "translate",
-      "key": "CONTACTS_CONTACT_DATA",
-      "locale": "en_US",
-      "module": "purchases",
-      "exists_elsewhere": true,
-      "certainty": "static_request_model"
-    },
-    {
-      "file": "application/modules/purchases/views/helpers/ContactData.php",
-      "line": 11,
-      "method": "translate",
-      "key": "CONTACTS_PHONE",
-      "locale": "en_US",
-      "module": "purchases",
-      "exists_elsewhere": true,
-      "certainty": "static_request_model"
-    },
-    {
-      "file": "application/modules/purchases/views/helpers/ContactData.php",
       "line": 19,
       "method": "translate",
       "key": "CONTACTS_EMAIL",
-      "locale": "en_US",
-      "module": "purchases",
-      "exists_elsewhere": true,
-      "certainty": "static_request_model"
-    },
-    {
-      "file": "application/modules/purchases/views/helpers/ContactData.php",
-      "line": 27,
-      "method": "translate",
-      "key": "CONTACTS_INTERNET",
       "locale": "en_US",
       "module": "purchases",
       "exists_elsewhere": true,
@@ -54405,39 +54487,9 @@
     },
     {
       "file": "application/modules/sales/views/helpers/ContactData.php",
-      "line": 8,
-      "method": "translate",
-      "key": "CONTACTS_CONTACT_DATA",
-      "locale": "en_US",
-      "module": "sales",
-      "exists_elsewhere": true,
-      "certainty": "static_request_model"
-    },
-    {
-      "file": "application/modules/sales/views/helpers/ContactData.php",
-      "line": 11,
-      "method": "translate",
-      "key": "CONTACTS_PHONE",
-      "locale": "en_US",
-      "module": "sales",
-      "exists_elsewhere": true,
-      "certainty": "static_request_model"
-    },
-    {
-      "file": "application/modules/sales/views/helpers/ContactData.php",
       "line": 17,
       "method": "translate",
       "key": "CONTACTS_EMAIL",
-      "locale": "en_US",
-      "module": "sales",
-      "exists_elsewhere": true,
-      "certainty": "static_request_model"
-    },
-    {
-      "file": "application/modules/sales/views/helpers/ContactData.php",
-      "line": 23,
-      "method": "translate",
-      "key": "CONTACTS_INTERNET",
       "locale": "en_US",
       "module": "sales",
       "exists_elsewhere": true,
@@ -73610,7 +73662,7 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 135,
+          "line": 125,
           "method": "translate",
           "key": "CONTROL_PANEL_COMMENT"
         }
@@ -73618,7 +73670,7 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 135
+          "line": 125
         }
       ]
     },
@@ -73628,31 +73680,31 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 261,
+          "line": 246,
           "method": "translate",
           "key": "CONTROL_PANEL_CONTACT"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 330,
+          "line": 315,
           "method": "translate",
           "key": "CONTROL_PANEL_CONTACT"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 399,
+          "line": 384,
           "method": "translate",
           "key": "CONTROL_PANEL_CONTACT"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 468,
+          "line": 453,
           "method": "translate",
           "key": "CONTROL_PANEL_CONTACT"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 537,
+          "line": 522,
           "method": "translate",
           "key": "CONTROL_PANEL_CONTACT"
         }
@@ -73660,23 +73712,23 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 261
+          "line": 246
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 330
+          "line": 315
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 399
+          "line": 384
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 468
+          "line": 453
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 537
+          "line": 522
         }
       ]
     },
@@ -73686,31 +73738,31 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 260,
+          "line": 245,
           "method": "translate",
           "key": "CONTROL_PANEL_CONTACT_ID"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 329,
+          "line": 314,
           "method": "translate",
           "key": "CONTROL_PANEL_CONTACT_ID"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 398,
+          "line": 383,
           "method": "translate",
           "key": "CONTROL_PANEL_CONTACT_ID"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 467,
+          "line": 452,
           "method": "translate",
           "key": "CONTROL_PANEL_CONTACT_ID"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 536,
+          "line": 521,
           "method": "translate",
           "key": "CONTROL_PANEL_CONTACT_ID"
         }
@@ -73718,23 +73770,23 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 260
+          "line": 245
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 329
+          "line": 314
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 398
+          "line": 383
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 467
+          "line": 452
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 536
+          "line": 521
         }
       ]
     },
@@ -73750,37 +73802,37 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 190,
+          "line": 175,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_ID"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 258,
+          "line": 243,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_ID"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 327,
+          "line": 312,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_ID"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 396,
+          "line": 381,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_ID"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 465,
+          "line": 450,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_ID"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 534,
+          "line": 519,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_ID"
         }
@@ -73788,27 +73840,27 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 190
+          "line": 175
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 258
+          "line": 243
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 327
+          "line": 312
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 396
+          "line": 381
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 465
+          "line": 450
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 534
+          "line": 519
         }
       ]
     },
@@ -73818,31 +73870,31 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 262,
+          "line": 247,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_MODIFIED"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 331,
+          "line": 316,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_MODIFIED"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 400,
+          "line": 385,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_MODIFIED"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 469,
+          "line": 454,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_MODIFIED"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 538,
+          "line": 523,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_MODIFIED"
         }
@@ -73850,23 +73902,23 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 262
+          "line": 247
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 331
+          "line": 316
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 400
+          "line": 385
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 469
+          "line": 454
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 538
+          "line": 523
         }
       ]
     },
@@ -73876,31 +73928,31 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 263,
+          "line": 248,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_STATE"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 332,
+          "line": 317,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_STATE"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 401,
+          "line": 386,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_STATE"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 470,
+          "line": 455,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_STATE"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 539,
+          "line": 524,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_STATE"
         }
@@ -73908,23 +73960,23 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 263
+          "line": 248
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 332
+          "line": 317
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 401
+          "line": 386
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 470
+          "line": 455
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 539
+          "line": 524
         }
       ]
     },
@@ -73940,37 +73992,37 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 191,
+          "line": 176,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_TITLE"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 259,
+          "line": 244,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_TITLE"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 328,
+          "line": 313,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_TITLE"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 397,
+          "line": 382,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_TITLE"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 466,
+          "line": 451,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_TITLE"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 535,
+          "line": 520,
           "method": "translate",
           "key": "CONTROL_PANEL_DOCUMENT_TITLE"
         }
@@ -73978,27 +74030,27 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 191
+          "line": 176
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 259
+          "line": 244
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 328
+          "line": 313
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 397
+          "line": 382
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 466
+          "line": 451
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 535
+          "line": 520
         }
       ]
     },
@@ -74050,7 +74102,7 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 192,
+          "line": 177,
           "method": "translate",
           "key": "CONTROL_PANEL_RESPONSIBLE_PERSON"
         }
@@ -74058,7 +74110,7 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 192
+          "line": 177
         }
       ]
     },
@@ -74068,13 +74120,13 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 80,
+          "line": 75,
           "method": "translate",
           "key": "CONTROL_PANEL_SKU"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 134,
+          "line": 124,
           "method": "translate",
           "key": "CONTROL_PANEL_SKU"
         }
@@ -74082,11 +74134,11 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 80
+          "line": 75
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 134
+          "line": 124
         }
       ]
     },
@@ -74096,7 +74148,7 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 194,
+          "line": 179,
           "method": "translate",
           "key": "CONTROL_PANEL_TASK_DUE_DATE"
         }
@@ -74104,7 +74156,7 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 194
+          "line": 179
         }
       ]
     },
@@ -74114,7 +74166,7 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 193,
+          "line": 178,
           "method": "translate",
           "key": "CONTROL_PANEL_TASK_PRIORITY"
         }
@@ -74122,7 +74174,7 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 193
+          "line": 178
         }
       ]
     },
@@ -74132,7 +74184,7 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 221,
+          "line": 206,
           "method": "translate",
           "key": "CONTROL_PANEL_TASK_PRIORITY_HIGH"
         }
@@ -74140,7 +74192,7 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 221
+          "line": 206
         }
       ]
     },
@@ -74150,7 +74202,7 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 222,
+          "line": 207,
           "method": "translate",
           "key": "CONTROL_PANEL_TASK_PRIORITY_HIGHEST"
         }
@@ -74158,7 +74210,7 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 222
+          "line": 207
         }
       ]
     },
@@ -74168,7 +74220,7 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 220,
+          "line": 205,
           "method": "translate",
           "key": "CONTROL_PANEL_TASK_PRIORITY_LOW"
         }
@@ -74176,7 +74228,7 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 220
+          "line": 205
         }
       ]
     },
@@ -74186,7 +74238,7 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 219,
+          "line": 204,
           "method": "translate",
           "key": "CONTROL_PANEL_TASK_PRIORITY_LOWEST"
         }
@@ -74194,7 +74246,7 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 219
+          "line": 204
         }
       ]
     },
@@ -74204,7 +74256,7 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 218,
+          "line": 203,
           "method": "translate",
           "key": "CONTROL_PANEL_TASK_PRIORITY_NORMAL"
         }
@@ -74212,7 +74264,7 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 218
+          "line": 203
         }
       ]
     },
@@ -74222,7 +74274,7 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 81,
+          "line": 76,
           "method": "translate",
           "key": "CONTROL_PANEL_TITLE"
         }
@@ -74230,7 +74282,7 @@
       "indirect_references": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 81
+          "line": 76
         }
       ]
     },
@@ -74290,7 +74342,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 158
+          "line": 166
         }
       ]
     },
@@ -74381,7 +74433,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 158
+          "line": 166
         }
       ]
     },
@@ -74427,7 +74479,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 157,
+          "line": 165,
           "method": "translate",
           "key": "CORRECTION_CUMULATIVE"
         }
@@ -74435,7 +74487,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 157
+          "line": 165
         }
       ]
     },
@@ -74445,7 +74497,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 149,
+          "line": 157,
           "method": "translate",
           "key": "CORRECTION_DATE"
         }
@@ -74453,7 +74505,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 149
+          "line": 157
         }
       ]
     },
@@ -74504,7 +74556,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 158
+          "line": 166
         }
       ]
     },
@@ -74745,7 +74797,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 151,
+          "line": 159,
           "method": "translate",
           "key": "CORRECTION_ISSUER"
         }
@@ -74753,7 +74805,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 151
+          "line": 159
         }
       ]
     },
@@ -74870,7 +74922,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 158
+          "line": 166
         }
       ]
     },
@@ -74945,7 +74997,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 150,
+          "line": 158,
           "method": "translate",
           "key": "CORRECTION_PREVIOUS"
         }
@@ -74953,7 +75005,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 150
+          "line": 158
         }
       ]
     },
@@ -74963,7 +75015,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 154,
+          "line": 162,
           "method": "translate",
           "key": "CORRECTION_RECIPIENT"
         }
@@ -74971,7 +75023,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 154
+          "line": 162
         }
       ]
     },
@@ -74998,7 +75050,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 148,
+          "line": 156,
           "method": "translate",
           "key": "CORRECTION_REFERENCE"
         }
@@ -75010,7 +75062,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 148
+          "line": 156
         }
       ]
     },
@@ -75020,7 +75072,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 165,
+          "line": 173,
           "method": "translate",
           "key": "CORRECTION_REFERENCE_SCOPE"
         }
@@ -75028,7 +75080,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 165
+          "line": 173
         }
       ]
     },
@@ -75168,13 +75220,13 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 142,
+          "line": 150,
           "method": "translate",
           "key": "CORRECTION_TITLE"
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 147,
+          "line": 155,
           "method": "translate",
           "key": "CORRECTION_TITLE"
         }
@@ -75190,11 +75242,11 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 142
+          "line": 150
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 147
+          "line": 155
         }
       ]
     },
@@ -75210,7 +75262,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 156,
+          "line": 164,
           "method": "translate",
           "key": "CORRECTION_UNCHANGED_AMOUNTS"
         }
@@ -75222,7 +75274,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 156
+          "line": 164
         }
       ]
     },
@@ -75565,7 +75617,7 @@
       "literal_calls": [
         {
           "file": "application/modules/sales/services/CreateDataFactory.php",
-          "line": 43,
+          "line": 47,
           "method": "translate",
           "key": "CREDIT_NOTES_NEW_CREDIT_NOTE"
         },
@@ -75579,7 +75631,7 @@
       "indirect_references": [
         {
           "file": "application/modules/sales/services/CreateDataFactory.php",
-          "line": 43
+          "line": 47
         },
         {
           "file": "application/modules/sales/views/scripts/creditnote/edit.phtml",
@@ -76535,7 +76587,7 @@
       "literal_calls": [
         {
           "file": "application/modules/sales/services/CreateDataFactory.php",
-          "line": 42,
+          "line": 46,
           "method": "translate",
           "key": "DELIVERY_ORDERS_NEW_DELIVERY_ORDER"
         },
@@ -76549,7 +76601,7 @@
       "indirect_references": [
         {
           "file": "application/modules/sales/services/CreateDataFactory.php",
-          "line": 42
+          "line": 46
         },
         {
           "file": "application/modules/sales/views/scripts/deliveryorder/edit.phtml",
@@ -77599,7 +77651,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2014,
+          "line": 2023,
           "method": "translate",
           "key": "DOCUMENTS_BALANCE"
         }
@@ -77607,7 +77659,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2014
+          "line": 2023
         }
       ]
     },
@@ -77653,19 +77705,19 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 822,
+          "line": 831,
           "method": "translate",
           "key": "DOCUMENTS_CUSTOMER_ID"
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 968,
+          "line": 977,
           "method": "translate",
           "key": "DOCUMENTS_CUSTOMER_ID"
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2046,
+          "line": 2055,
           "method": "translate",
           "key": "DOCUMENTS_CUSTOMER_ID"
         }
@@ -77673,15 +77725,15 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 822
+          "line": 831
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 968
+          "line": 977
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2046
+          "line": 2055
         }
       ]
     },
@@ -77703,13 +77755,13 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 830,
+          "line": 839,
           "method": "translate",
           "key": "DOCUMENTS_DELIVERY_DATE"
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 976,
+          "line": 985,
           "method": "translate",
           "key": "DOCUMENTS_DELIVERY_DATE"
         }
@@ -77717,11 +77769,11 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 830
+          "line": 839
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 976
+          "line": 985
         }
       ]
     },
@@ -77749,13 +77801,13 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1805,
+          "line": 1814,
           "method": "translate",
           "key": "DOCUMENTS_DESCRIPTION"
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1814,
+          "line": 1823,
           "method": "translate",
           "key": "DOCUMENTS_DESCRIPTION"
         }
@@ -77763,11 +77815,11 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1805
+          "line": 1814
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1814
+          "line": 1823
         }
       ]
     },
@@ -77846,11 +77898,11 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 123
+          "line": 131
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 167
+          "line": 175
         }
       ]
     },
@@ -77860,7 +77912,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1776,
+          "line": 1785,
           "method": "translate",
           "key": "DOCUMENTS_EMAIL"
         }
@@ -77868,7 +77920,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1776
+          "line": 1785
         }
       ]
     },
@@ -77940,7 +77992,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1603,
+          "line": 1612,
           "method": "translate",
           "key": "DOCUMENTS_ILLUSTRATION_SIMILAR"
         }
@@ -77948,7 +78000,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1603
+          "line": 1612
         }
       ]
     },
@@ -77982,7 +78034,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1772,
+          "line": 1781,
           "method": "translate",
           "key": "DOCUMENTS_MOBILE"
         }
@@ -77990,7 +78042,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1772
+          "line": 1781
         }
       ]
     },
@@ -78000,25 +78052,25 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1177,
+          "line": 1186,
           "method": "translate",
           "key": "DOCUMENTS_OPTION_INCLUDED"
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1390,
+          "line": 1399,
           "method": "translate",
           "key": "DOCUMENTS_OPTION_INCLUDED"
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2083,
+          "line": 2092,
           "method": "translate",
           "key": "DOCUMENTS_OPTION_INCLUDED"
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2090,
+          "line": 2099,
           "method": "translate",
           "key": "DOCUMENTS_OPTION_INCLUDED"
         }
@@ -78026,19 +78078,19 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1177
+          "line": 1186
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1390
+          "line": 1399
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2083
+          "line": 2092
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2090
+          "line": 2099
         }
       ]
     },
@@ -78048,7 +78100,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2094,
+          "line": 2103,
           "method": "translate",
           "key": "DOCUMENTS_OPTION_ON_REQUEST"
         }
@@ -78056,7 +78108,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2094
+          "line": 2103
         }
       ]
     },
@@ -78066,7 +78118,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2098,
+          "line": 2107,
           "method": "translate",
           "key": "DOCUMENTS_OPTION_UNAVAILABLE"
         }
@@ -78074,7 +78126,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2098
+          "line": 2107
         }
       ]
     },
@@ -78186,7 +78238,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1660,
+          "line": 1669,
           "method": "translate",
           "key": "DOCUMENTS_PAGE"
         }
@@ -78198,7 +78250,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1660
+          "line": 1669
         }
       ]
     },
@@ -78208,13 +78260,13 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 869,
+          "line": 878,
           "method": "translate",
           "key": "DOCUMENTS_PHONE"
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1768,
+          "line": 1777,
           "method": "translate",
           "key": "DOCUMENTS_PHONE"
         }
@@ -78222,11 +78274,11 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 869
+          "line": 878
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1768
+          "line": 1777
         }
       ]
     },
@@ -78236,13 +78288,13 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1803,
+          "line": 1812,
           "method": "translate",
           "key": "DOCUMENTS_POSITION"
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1811,
+          "line": 1820,
           "method": "translate",
           "key": "DOCUMENTS_POSITION"
         }
@@ -78250,11 +78302,11 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1803
+          "line": 1812
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1811
+          "line": 1820
         }
       ]
     },
@@ -78264,7 +78316,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2012,
+          "line": 2021,
           "method": "translate",
           "key": "DOCUMENTS_PREPAYMENT"
         }
@@ -78272,7 +78324,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2012
+          "line": 2021
         }
       ]
     },
@@ -78388,7 +78440,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1808,
+          "line": 1817,
           "method": "translate",
           "key": "DOCUMENTS_PRICE_SINGLE"
         }
@@ -78396,7 +78448,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1808
+          "line": 1817
         }
       ]
     },
@@ -78406,7 +78458,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1809,
+          "line": 1818,
           "method": "translate",
           "key": "DOCUMENTS_PRICE_TOTAL"
         }
@@ -78414,7 +78466,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1809
+          "line": 1818
         }
       ]
     },
@@ -78460,13 +78512,13 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1806,
+          "line": 1815,
           "method": "translate",
           "key": "DOCUMENTS_QUANTITY"
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1815,
+          "line": 1824,
           "method": "translate",
           "key": "DOCUMENTS_QUANTITY"
         }
@@ -78474,11 +78526,11 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1806
+          "line": 1815
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1815
+          "line": 1824
         }
       ]
     },
@@ -78500,7 +78552,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 917,
+          "line": 926,
           "method": "translate",
           "key": "DOCUMENTS_QUOTE_ID_%s_FROM_%s"
         }
@@ -78508,7 +78560,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 917
+          "line": 926
         }
       ]
     },
@@ -78542,7 +78594,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 297,
+          "line": 305,
           "method": "translate",
           "key": "DOCUMENTS_RECONSTRUCTED_EXPLANATION"
         }
@@ -78554,7 +78606,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 297
+          "line": 305
         }
       ]
     },
@@ -78576,11 +78628,11 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 208
+          "line": 216
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 310
+          "line": 318
         }
       ]
     },
@@ -78677,7 +78729,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1782,
+          "line": 1791,
           "method": "translate",
           "key": "DOCUMENTS_RESPONSIBLE_TEXT"
         }
@@ -78685,7 +78737,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1782
+          "line": 1791
         }
       ]
     },
@@ -78695,7 +78747,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1752,
+          "line": 1761,
           "method": "translate",
           "key": "DOCUMENTS_RESPONSIBLE_TITLE"
         }
@@ -78703,7 +78755,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1752
+          "line": 1761
         }
       ]
     },
@@ -78985,7 +79037,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 927,
+          "line": 936,
           "method": "translate",
           "key": "DOCUMENTS_SALES_ORDER_ID_%s_FROM_%s"
         }
@@ -78993,7 +79045,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 927
+          "line": 936
         }
       ]
     },
@@ -79009,13 +79061,13 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 834,
+          "line": 843,
           "method": "translate",
           "key": "DOCUMENTS_SALES_PERSON"
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 979,
+          "line": 988,
           "method": "translate",
           "key": "DOCUMENTS_SALES_PERSON"
         }
@@ -79027,11 +79079,11 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 834
+          "line": 843
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 979
+          "line": 988
         }
       ]
     },
@@ -79075,7 +79127,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 841,
+          "line": 850,
           "method": "translate",
           "key": "DOCUMENTS_SHIPPING_ADDRESS"
         }
@@ -79083,7 +79135,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 841
+          "line": 850
         }
       ]
     },
@@ -79093,7 +79145,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1813,
+          "line": 1822,
           "method": "translate",
           "key": "DOCUMENTS_SKU"
         }
@@ -79101,7 +79153,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1813
+          "line": 1822
         }
       ]
     },
@@ -79117,7 +79169,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 297,
+          "line": 305,
           "method": "translate",
           "key": "DOCUMENTS_STORED_DATA_GAPS"
         }
@@ -79129,7 +79181,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 297
+          "line": 305
         }
       ]
     },
@@ -79139,7 +79191,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 297,
+          "line": 305,
           "method": "translate",
           "key": "DOCUMENTS_STORED_DATA_VIEW"
         }
@@ -79147,7 +79199,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 297
+          "line": 305
         }
       ]
     },
@@ -79157,7 +79209,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1989,
+          "line": 1998,
           "method": "translate",
           "key": "DOCUMENTS_SUBTOTAL"
         }
@@ -79165,7 +79217,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1989
+          "line": 1998
         }
       ]
     },
@@ -79181,7 +79233,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1998,
+          "line": 2007,
           "method": "translate",
           "key": "DOCUMENTS_TAXES"
         }
@@ -79189,7 +79241,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1998
+          "line": 2007
         }
       ]
     },
@@ -79212,7 +79264,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1627
+          "line": 1636
         }
       ]
     },
@@ -79223,7 +79275,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1627
+          "line": 1636
         }
       ]
     },
@@ -79234,7 +79286,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1627
+          "line": 1636
         }
       ]
     },
@@ -79245,7 +79297,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1627
+          "line": 1636
         }
       ]
     },
@@ -79256,7 +79308,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1627
+          "line": 1636
         }
       ]
     },
@@ -79266,7 +79318,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1625,
+          "line": 1634,
           "method": "translate",
           "key": "DOCUMENTS_TOC_TITLE"
         }
@@ -79274,7 +79326,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1625
+          "line": 1634
         }
       ]
     },
@@ -79284,7 +79336,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2007,
+          "line": 2016,
           "method": "translate",
           "key": "DOCUMENTS_TOTAL"
         }
@@ -79292,7 +79344,7 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2007
+          "line": 2016
         }
       ]
     },
@@ -79317,13 +79369,13 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1807,
+          "line": 1816,
           "method": "translate",
           "key": "DOCUMENTS_UOM"
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1816,
+          "line": 1825,
           "method": "translate",
           "key": "DOCUMENTS_UOM"
         }
@@ -79331,11 +79383,11 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1807
+          "line": 1816
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1816
+          "line": 1825
         }
       ]
     },
@@ -79345,13 +79397,13 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 826,
+          "line": 835,
           "method": "translate",
           "key": "DOCUMENTS_VATIN"
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 972,
+          "line": 981,
           "method": "translate",
           "key": "DOCUMENTS_VATIN"
         }
@@ -79359,11 +79411,11 @@
       "indirect_references": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 826
+          "line": 835
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 972
+          "line": 981
         }
       ]
     },
@@ -79665,7 +79717,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 155,
+          "line": 163,
           "method": "translate",
           "key": "DOCUMENT_CHANGES_REASON"
         }
@@ -79689,7 +79741,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 155
+          "line": 163
         }
       ]
     },
@@ -82476,7 +82528,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 415,
+          "line": 400,
           "method": "translate",
           "key": "INVOICE"
         }
@@ -82488,7 +82540,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 415
+          "line": 400
         }
       ]
     },
@@ -82504,7 +82556,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 386,
+          "line": 371,
           "method": "translate",
           "key": "INVOICES"
         }
@@ -82516,7 +82568,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 386
+          "line": 371
         },
         {
           "file": "application/views/scripts/partials/history.phtml",
@@ -82768,7 +82820,7 @@
       "literal_calls": [
         {
           "file": "application/modules/sales/services/CreateDataFactory.php",
-          "line": 41,
+          "line": 45,
           "method": "translate",
           "key": "INVOICES_NEW_INVOICE"
         },
@@ -82782,7 +82834,7 @@
       "indirect_references": [
         {
           "file": "application/modules/sales/services/CreateDataFactory.php",
-          "line": 41
+          "line": 45
         },
         {
           "file": "application/modules/sales/views/scripts/invoice/edit.phtml",
@@ -83375,7 +83427,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 70,
+          "line": 65,
           "method": "translate",
           "key": "ITEMS"
         }
@@ -83407,7 +83459,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 70
+          "line": 65
         }
       ]
     },
@@ -84724,7 +84776,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 124,
+          "line": 114,
           "method": "translate",
           "key": "ITEMS_MOVEMENTS"
         }
@@ -84744,7 +84796,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 124
+          "line": 114
         }
       ]
     },
@@ -88181,7 +88233,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 2014
+          "line": 2023
         }
       ]
     },
@@ -88313,7 +88365,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1989
+          "line": 1998
         }
       ]
     },
@@ -90517,29 +90569,16 @@
     },
     {
       "key": "MESSAGES_HELLO_NAME",
-      "classification": "literal_call_found",
-      "literal_calls": [
-        {
-          "file": "application/controllers/helpers/Email.php",
-          "line": 501,
-          "method": "translate",
-          "key": "MESSAGES_HELLO_NAME"
-        },
-        {
-          "file": "application/controllers/helpers/Email.php",
-          "line": 543,
-          "method": "translate",
-          "key": "MESSAGES_HELLO_NAME"
-        }
-      ],
+      "classification": "indirect_literal_candidate",
+      "literal_calls": [],
       "indirect_references": [
         {
           "file": "application/controllers/helpers/Email.php",
-          "line": 501
+          "line": 507
         },
         {
           "file": "application/controllers/helpers/Email.php",
-          "line": 543
+          "line": 549
         }
       ]
     },
@@ -92345,13 +92384,13 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 599,
+          "line": 584,
           "method": "translate",
           "key": "MORE"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 616,
+          "line": 601,
           "method": "translate",
           "key": "MORE"
         }
@@ -92363,11 +92402,11 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 599
+          "line": 584
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 616
+          "line": 601
         }
       ]
     },
@@ -96333,7 +96372,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 524,
+          "line": 509,
           "method": "translate",
           "key": "PURCHASE_ORDERS"
         }
@@ -96345,7 +96384,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 524
+          "line": 509
         },
         {
           "file": "application/views/scripts/partials/history.phtml",
@@ -96582,7 +96621,7 @@
       "literal_calls": [
         {
           "file": "application/modules/purchases/services/CreateDataFactory.php",
-          "line": 40,
+          "line": 44,
           "method": "translate",
           "key": "PURCHASE_ORDERS_NEW_PURCHASE_ORDER"
         },
@@ -96596,7 +96635,7 @@
       "indirect_references": [
         {
           "file": "application/modules/purchases/services/CreateDataFactory.php",
-          "line": 40
+          "line": 44
         },
         {
           "file": "application/modules/purchases/views/scripts/purchaseorder/edit.phtml",
@@ -97131,7 +97170,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 248,
+          "line": 233,
           "method": "translate",
           "key": "QUOTES"
         }
@@ -97143,7 +97182,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 248
+          "line": 233
         },
         {
           "file": "application/views/scripts/partials/history.phtml",
@@ -97949,7 +97988,7 @@
       "literal_calls": [
         {
           "file": "application/modules/sales/services/CreateDataFactory.php",
-          "line": 39,
+          "line": 43,
           "method": "translate",
           "key": "QUOTES_NEW_QUOTE"
         },
@@ -97963,7 +98002,7 @@
       "indirect_references": [
         {
           "file": "application/modules/sales/services/CreateDataFactory.php",
-          "line": 39
+          "line": 43
         },
         {
           "file": "application/modules/sales/views/scripts/quote/edit.phtml",
@@ -98155,7 +98194,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1018,
+          "line": 1027,
           "method": "translate",
           "key": "QUOTES_REFERENCE"
         }
@@ -98167,7 +98206,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1018
+          "line": 1027
         }
       ]
     },
@@ -98320,7 +98359,7 @@
       "literal_calls": [
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1017,
+          "line": 1026,
           "method": "translate",
           "key": "QUOTES_SUBJECT"
         }
@@ -98332,7 +98371,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1017
+          "line": 1026
         }
       ]
     },
@@ -98449,7 +98488,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 455,
+          "line": 440,
           "method": "translate",
           "key": "QUOTE_REQUESTS"
         }
@@ -98461,7 +98500,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 455
+          "line": 440
         },
         {
           "file": "application/views/scripts/partials/history.phtml",
@@ -98698,7 +98737,7 @@
       "literal_calls": [
         {
           "file": "application/modules/purchases/services/CreateDataFactory.php",
-          "line": 39,
+          "line": 43,
           "method": "translate",
           "key": "QUOTE_REQUESTS_NEW_QUOTE_REQUEST"
         },
@@ -98712,7 +98751,7 @@
       "indirect_references": [
         {
           "file": "application/modules/purchases/services/CreateDataFactory.php",
-          "line": 39
+          "line": 43
         },
         {
           "file": "application/modules/purchases/views/scripts/quoterequest/edit.phtml",
@@ -99430,7 +99469,7 @@
       "literal_calls": [
         {
           "file": "application/modules/sales/services/CreateDataFactory.php",
-          "line": 44,
+          "line": 48,
           "method": "translate",
           "key": "REMINDERS_NEW_REMINDER"
         },
@@ -99444,7 +99483,7 @@
       "indirect_references": [
         {
           "file": "application/modules/sales/services/CreateDataFactory.php",
-          "line": 44
+          "line": 48
         },
         {
           "file": "application/modules/sales/views/scripts/reminder/edit.phtml",
@@ -100005,7 +100044,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 317,
+          "line": 302,
           "method": "translate",
           "key": "SALES_ORDERS"
         }
@@ -100017,7 +100056,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 317
+          "line": 302
         },
         {
           "file": "application/views/scripts/partials/history.phtml",
@@ -100237,7 +100276,7 @@
       "literal_calls": [
         {
           "file": "application/modules/sales/services/CreateDataFactory.php",
-          "line": 40,
+          "line": 44,
           "method": "translate",
           "key": "SALES_ORDERS_NEW_SALES_ORDER"
         },
@@ -100251,7 +100290,7 @@
       "indirect_references": [
         {
           "file": "application/modules/sales/services/CreateDataFactory.php",
-          "line": 40
+          "line": 44
         },
         {
           "file": "application/modules/sales/views/scripts/salesorder/edit.phtml",
@@ -104057,49 +104096,49 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 72,
+          "line": 67,
           "method": "translate",
           "key": "SHOW_ALL"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 126,
+          "line": 116,
           "method": "translate",
           "key": "SHOW_ALL"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 182,
+          "line": 167,
           "method": "translate",
           "key": "SHOW_ALL"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 250,
+          "line": 235,
           "method": "translate",
           "key": "SHOW_ALL"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 319,
+          "line": 304,
           "method": "translate",
           "key": "SHOW_ALL"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 388,
+          "line": 373,
           "method": "translate",
           "key": "SHOW_ALL"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 457,
+          "line": 442,
           "method": "translate",
           "key": "SHOW_ALL"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 526,
+          "line": 511,
           "method": "translate",
           "key": "SHOW_ALL"
         }
@@ -104111,35 +104150,35 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 72
+          "line": 67
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 126
+          "line": 116
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 182
+          "line": 167
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 250
+          "line": 235
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 319
+          "line": 304
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 388
+          "line": 373
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 457
+          "line": 442
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 526
+          "line": 511
         }
       ]
     },
@@ -105482,13 +105521,13 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 597,
+          "line": 582,
           "method": "translate",
           "key": "STATISTICS_TURNOVER"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 607,
+          "line": 592,
           "method": "translate",
           "key": "STATISTICS_TURNOVER"
         }
@@ -105500,11 +105539,11 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 597
+          "line": 582
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 607
+          "line": 592
         }
       ]
     },
@@ -105532,13 +105571,13 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 614,
+          "line": 599,
           "method": "translate",
           "key": "STATISTICS_TURNOVER_CUSTOMER_GROUPS"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 624,
+          "line": 609,
           "method": "translate",
           "key": "STATISTICS_TURNOVER_CUSTOMER_GROUPS"
         }
@@ -105562,11 +105601,11 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 614
+          "line": 599
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 624
+          "line": 609
         }
       ]
     },
@@ -106998,7 +107037,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 180,
+          "line": 165,
           "method": "translate",
           "key": "TASKS"
         }
@@ -107010,7 +107049,7 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 180
+          "line": 165
         }
       ]
     },
@@ -109376,19 +109415,37 @@
       "literal_calls": [
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 53,
+          "line": 47,
           "method": "translate",
           "key": "TOOLBAR_EDIT"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 107,
+          "line": 48,
           "method": "translate",
           "key": "TOOLBAR_EDIT"
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 161,
+          "line": 96,
+          "method": "translate",
+          "key": "TOOLBAR_EDIT"
+        },
+        {
+          "file": "application/views/scripts/index/index.phtml",
+          "line": 97,
+          "method": "translate",
+          "key": "TOOLBAR_EDIT"
+        },
+        {
+          "file": "application/views/scripts/index/index.phtml",
+          "line": 145,
+          "method": "translate",
+          "key": "TOOLBAR_EDIT"
+        },
+        {
+          "file": "application/views/scripts/index/index.phtml",
+          "line": 146,
           "method": "translate",
           "key": "TOOLBAR_EDIT"
         }
@@ -109452,15 +109509,27 @@
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 53
+          "line": 47
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 107
+          "line": 48
         },
         {
           "file": "application/views/scripts/index/index.phtml",
-          "line": 161
+          "line": 96
+        },
+        {
+          "file": "application/views/scripts/index/index.phtml",
+          "line": 97
+        },
+        {
+          "file": "application/views/scripts/index/index.phtml",
+          "line": 145
+        },
+        {
+          "file": "application/views/scripts/index/index.phtml",
+          "line": 146
         }
       ]
     },
@@ -110761,7 +110830,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 1990
+          "line": 1999
         }
       ]
     },
@@ -111208,7 +111277,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 78,
+          "line": 86,
           "method": "translate",
           "key": "VALIDATION_EMAIL"
         }
@@ -111220,7 +111289,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 78
+          "line": 86
         }
       ]
     },
@@ -111236,7 +111305,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 88,
+          "line": 96,
           "method": "translate",
           "key": "VALIDATION_INVALID"
         }
@@ -111248,7 +111317,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 88
+          "line": 96
         }
       ]
     },
@@ -111264,7 +111333,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 84,
+          "line": 92,
           "method": "translate",
           "key": "VALIDATION_MAX"
         }
@@ -111276,7 +111345,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 84
+          "line": 92
         }
       ]
     },
@@ -111310,7 +111379,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 82,
+          "line": 90,
           "method": "translate",
           "key": "VALIDATION_MIN"
         }
@@ -111322,7 +111391,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 82
+          "line": 90
         }
       ]
     },
@@ -111338,7 +111407,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 80,
+          "line": 88,
           "method": "translate",
           "key": "VALIDATION_NUMBER"
         }
@@ -111350,7 +111419,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 80
+          "line": 88
         }
       ]
     },
@@ -111366,7 +111435,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 86,
+          "line": 94,
           "method": "translate",
           "key": "VALIDATION_PATTERN"
         }
@@ -111378,7 +111447,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 86
+          "line": 94
         }
       ]
     },
@@ -111394,7 +111463,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 76,
+          "line": 84,
           "method": "translate",
           "key": "VALIDATION_REQUIRED"
         }
@@ -111406,7 +111475,7 @@
         },
         {
           "file": "library/DEEC/Pdf.php",
-          "line": 76
+          "line": 84
         }
       ]
     },
@@ -112169,11 +112238,19 @@
   "dynamic_calls": [
     {
       "file": "application/controllers/helpers/Email.php",
-      "line": 621,
+      "line": 499,
+      "method": "t",
+      "key": null,
+      "prefix": null,
+      "expression": "$key"
+    },
+    {
+      "file": "application/controllers/helpers/Email.php",
+      "line": 499,
       "method": "translate",
       "key": null,
       "prefix": null,
-      "expression": "$matches[1]"
+      "expression": "$key"
     },
     {
       "file": "application/layouts/scripts/site.phtml",
@@ -112753,7 +112830,7 @@
     },
     {
       "file": "application/modules/purchases/services/CreateDataFactory.php",
-      "line": 62,
+      "line": 67,
       "method": "t",
       "key": null,
       "prefix": null,
@@ -112833,7 +112910,7 @@
     },
     {
       "file": "application/modules/sales/services/CreateDataFactory.php",
-      "line": 66,
+      "line": 71,
       "method": "t",
       "key": null,
       "prefix": null,
@@ -113121,7 +113198,7 @@
     },
     {
       "file": "application/views/scripts/index/index.phtml",
-      "line": 214,
+      "line": 199,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113129,7 +113206,7 @@
     },
     {
       "file": "application/views/scripts/index/index.phtml",
-      "line": 297,
+      "line": 282,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113137,7 +113214,7 @@
     },
     {
       "file": "application/views/scripts/index/index.phtml",
-      "line": 366,
+      "line": 351,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113145,7 +113222,7 @@
     },
     {
       "file": "application/views/scripts/index/index.phtml",
-      "line": 435,
+      "line": 420,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113153,7 +113230,7 @@
     },
     {
       "file": "application/views/scripts/index/index.phtml",
-      "line": 504,
+      "line": 489,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113161,7 +113238,7 @@
     },
     {
       "file": "application/views/scripts/index/index.phtml",
-      "line": 573,
+      "line": 558,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113575,7 +113652,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 158,
+      "line": 166,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113583,7 +113660,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 161,
+      "line": 169,
       "method": "translate",
       "key": null,
       "prefix": "CORRECTION_FIELD_",
@@ -113591,7 +113668,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 425,
+      "line": 433,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113599,7 +113676,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 498,
+      "line": 506,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113607,7 +113684,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 816,
+      "line": 825,
       "method": "translate",
       "key": null,
       "prefix": "DOCUMENTS_",
@@ -113615,7 +113692,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 819,
+      "line": 828,
       "method": "translate",
       "key": null,
       "prefix": "DOCUMENTS_",
@@ -113623,7 +113700,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 865,
+      "line": 874,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113631,7 +113708,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 878,
+      "line": 887,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113639,7 +113716,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 909,
+      "line": 918,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113647,7 +113724,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 962,
+      "line": 971,
       "method": "translate",
       "key": null,
       "prefix": "DOCUMENTS_",
@@ -113655,7 +113732,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 965,
+      "line": 974,
       "method": "translate",
       "key": null,
       "prefix": "DOCUMENTS_",
@@ -113663,7 +113740,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 987,
+      "line": 996,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113671,7 +113748,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 1008,
+      "line": 1017,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113679,7 +113756,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 1631,
+      "line": 1640,
       "method": "translate",
       "key": null,
       "prefix": null,
@@ -113687,7 +113764,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 2036,
+      "line": 2045,
       "method": "translate",
       "key": null,
       "prefix": "DOCUMENTS_",
@@ -113695,7 +113772,7 @@
     },
     {
       "file": "library/DEEC/Pdf.php",
-      "line": 2041,
+      "line": 2050,
       "method": "translate",
       "key": null,
       "prefix": "DOCUMENTS_",
@@ -114566,7 +114643,7 @@
     },
     {
       "file": "application/views/scripts/index/index.phtml",
-      "line": 229,
+      "line": 214,
       "kind": "html_text",
       "text": "überfällig",
       "certainty": "manual_review"
@@ -115499,7 +115576,7 @@
   "runtime": {
     "status": "passed",
     "php_version": "8.3.6",
-    "checks": 110,
+    "checks": 143,
     "passed_checks": [
       "bootstrap unauthenticated locale (none)",
       "bootstrap unauthenticated locale en_US",
@@ -115507,68 +115584,96 @@
       "bootstrap unauthenticated locale xx_YY",
       "tenant config chooses en_US without session selection",
       "session locale takes precedence over tenant config",
-      "existing non-locale path selects root and fails currency initialization: Zend_Currency_Exception",
+      "invalid locale path falls back to valid tenant locale without currency error",
       "bootstrap alone does not load sales details",
       "de_DE/default: real plugin domain order and module boundary",
+      "de_DE/default: shared files evaluated once per instance",
       "de_DE/default: translation preserves context registries",
       "de_DE/admin: real plugin domain order and module boundary",
+      "de_DE/admin: shared files evaluated once per instance",
       "de_DE/admin: translation preserves context registries",
       "de_DE/calendar: real plugin domain order and module boundary",
+      "de_DE/calendar: shared files evaluated once per instance",
       "de_DE/calendar: translation preserves context registries",
       "de_DE/campaigns: real plugin domain order and module boundary",
+      "de_DE/campaigns: shared files evaluated once per instance",
       "de_DE/campaigns: translation preserves context registries",
       "de_DE/contacts: real plugin domain order and module boundary",
+      "de_DE/contacts: shared files evaluated once per instance",
       "de_DE/contacts: translation preserves context registries",
       "de_DE/ebay: real plugin domain order and module boundary",
+      "de_DE/ebay: shared files evaluated once per instance",
       "de_DE/ebay: translation preserves context registries",
       "de_DE/items: real plugin domain order and module boundary",
+      "de_DE/items: shared files evaluated once per instance",
       "de_DE/items: translation preserves context registries",
       "de_DE/processes: real plugin domain order and module boundary",
+      "de_DE/processes: shared files evaluated once per instance",
       "de_DE/processes: translation preserves context registries",
       "de_DE/purchases: real plugin domain order and module boundary",
+      "de_DE/purchases: shared files evaluated once per instance",
       "de_DE/purchases: translation preserves context registries",
       "de_DE/sales: real plugin domain order and module boundary",
+      "de_DE/sales: shared files evaluated once per instance",
       "de_DE/sales: translation preserves context registries",
       "de_DE/shops: real plugin domain order and module boundary",
+      "de_DE/shops: shared files evaluated once per instance",
       "de_DE/shops: translation preserves context registries",
       "de_DE/statistics: real plugin domain order and module boundary",
+      "de_DE/statistics: shared files evaluated once per instance",
       "de_DE/statistics: translation preserves context registries",
       "de_DE/tasks: real plugin domain order and module boundary",
+      "de_DE/tasks: shared files evaluated once per instance",
       "de_DE/tasks: translation preserves context registries",
       "de_DE/users: real plugin domain order and module boundary",
+      "de_DE/users: shared files evaluated once per instance",
       "de_DE/users: translation preserves context registries",
       "en_US/default: real plugin domain order and module boundary",
+      "en_US/default: shared files evaluated once per instance",
       "en_US/default: translation preserves context registries",
       "en_US/admin: real plugin domain order and module boundary",
+      "en_US/admin: shared files evaluated once per instance",
       "en_US/admin: translation preserves context registries",
       "en_US/calendar: real plugin domain order and module boundary",
+      "en_US/calendar: shared files evaluated once per instance",
       "en_US/calendar: translation preserves context registries",
       "en_US/campaigns: real plugin domain order and module boundary",
+      "en_US/campaigns: shared files evaluated once per instance",
       "en_US/campaigns: translation preserves context registries",
       "en_US/contacts: real plugin domain order and module boundary",
+      "en_US/contacts: shared files evaluated once per instance",
       "en_US/contacts: translation preserves context registries",
       "en_US/ebay: real plugin domain order and module boundary",
+      "en_US/ebay: shared files evaluated once per instance",
       "en_US/ebay: translation preserves context registries",
       "en_US/items: real plugin domain order and module boundary",
+      "en_US/items: shared files evaluated once per instance",
       "en_US/items: translation preserves context registries",
       "en_US/processes: real plugin domain order and module boundary",
+      "en_US/processes: shared files evaluated once per instance",
       "en_US/processes: translation preserves context registries",
       "en_US/purchases: real plugin domain order and module boundary",
+      "en_US/purchases: shared files evaluated once per instance",
       "en_US/purchases: translation preserves context registries",
       "en_US/sales: real plugin domain order and module boundary",
+      "en_US/sales: shared files evaluated once per instance",
       "en_US/sales: translation preserves context registries",
       "en_US/shops: real plugin domain order and module boundary",
+      "en_US/shops: shared files evaluated once per instance",
       "en_US/shops: translation preserves context registries",
       "en_US/statistics: real plugin domain order and module boundary",
+      "en_US/statistics: shared files evaluated once per instance",
       "en_US/statistics: translation preserves context registries",
       "en_US/tasks: real plugin domain order and module boundary",
+      "en_US/tasks: shared files evaluated once per instance",
       "en_US/tasks: translation preserves context registries",
       "en_US/users: real plugin domain order and module boundary",
+      "en_US/users: shared files evaluated once per instance",
       "en_US/users: translation preserves context registries",
-      "de_DE: sales shared ContactData helper lacks contacts catalogue",
-      "de_DE: global navigation common-file asymmetry",
-      "en_US: sales shared ContactData helper lacks contacts catalogue",
-      "en_US: global navigation common-file asymmetry",
+      "de_DE: sales shared ContactData helper reaches shared labels",
+      "de_DE: global navigation follows shared module labels",
+      "en_US: sales shared ContactData helper reaches shared labels",
+      "en_US: global navigation follows shared module labels",
       "view helper unknown key is returned unchanged",
       "view helper missing registry returns key without formatting",
       "view helper invalid registry type returns key",
@@ -115581,20 +115686,21 @@
       "escaped percentage",
       "format returned raw without arguments",
       "unknown keys are formatted when arguments exist",
-      "too few printf arguments escape Exception handler on PHP 8",
-      "invalid format in fallback key escapes Exception handler",
-      "setLocale retains data and loaded flags",
-      "empty setLocale yields de without installed de directory",
-      "constructor does not normalize empty locale",
-      "missing file locks domain against retry",
+      "too few printf arguments return raw text on PHP 8",
+      "invalid fallback format returns raw text without exception",
+      "setLocale clears data and loaded flags before new catalogue load",
+      "empty setLocale selects installed default and clears old domains",
+      "constructor normalizes empty locale",
+      "missing file remains retryable with a valid file",
       "missing directory remains retryable",
       "empty domain ignored",
-      "non-array file silently locks domain",
-      "catalogue parse error propagates",
+      "non-array file remains retryable with a valid file",
+      "catalogue parse error is diagnosed without poisoning domain",
+      "catalogue failures remain observable",
       "alphabetically later file wins within one directory domain",
       "loaded directory ignores changes within same instance",
       "fresh instance sees file changes without Zend cache invalidation",
-      "no automatic German fallback for an English catalogue gap",
+      "missing keys remain visible and diagnosed without changing language",
       "DEEC_Form: registry translator used",
       "DEEC_Form: explicit translator takes precedence",
       "DEEC_Form: translator retained on component",
@@ -115605,18 +115711,22 @@
       "DEEC_List: explicit translator takes precedence",
       "DEEC_List: translator retained on component",
       "PDF translate adapter does not select document language",
+      "de_DE: actual PDF payload selects document language and preserves stored values",
+      "de_DE: PDF locale does not mutate UI registry",
+      "en_US: actual PDF payload selects document language and preserves stored values",
+      "en_US: PDF locale does not mutate UI registry",
       "form setLocale does not change translator locale",
       "existing form retains cached translator after registry replacement",
       "feedback explicitly loads requested locale",
       "feedback invalid locale falls back to registry",
-      "anonymous site en_US and bootstrap de_DE can disagree",
+      "public shop uses site language independently of UI session",
       "JS message export is a fixed subset of registry translations"
     ],
-    "known_defects_are_characterized_not_fixed": true,
+    "known_defects_are_characterized_not_fixed": false,
     "observations": {
       "invalid_existing_locale_path": {
-        "exception": "Zend_Currency_Exception",
-        "locale": "root"
+        "exception": null,
+        "locale": "en_US"
       },
       "request_contexts": [
         {
@@ -115633,8 +115743,8 @@
             "statistics_common",
             "users_common"
           ],
-          "effective_keys": 1160,
-          "effective_sha256": "71e2b5d15299c7cc34d21ebed4a4c8080278366aef88cbf7b8303f269a9ffcac"
+          "effective_keys": 1163,
+          "effective_sha256": "d55120172aaf07b53deeea7a446396401d5d1ce42b19eee5f2d02b2cf6a50f8d"
         },
         {
           "locale": "de_DE",
@@ -115651,8 +115761,8 @@
             "users_common",
             "admin"
           ],
-          "effective_keys": 1410,
-          "effective_sha256": "4b40f5ac3f45720c52eca647f7ffffd1732cca66aff999b44ef159f06482c2f6"
+          "effective_keys": 1413,
+          "effective_sha256": "d46d543e0eabc4251ce60c4fcea9b792a59499de4fb7522e7323608f9bac9277"
         },
         {
           "locale": "de_DE",
@@ -115669,8 +115779,8 @@
             "users_common",
             "calendar"
           ],
-          "effective_keys": 1160,
-          "effective_sha256": "71e2b5d15299c7cc34d21ebed4a4c8080278366aef88cbf7b8303f269a9ffcac"
+          "effective_keys": 1163,
+          "effective_sha256": "d55120172aaf07b53deeea7a446396401d5d1ce42b19eee5f2d02b2cf6a50f8d"
         },
         {
           "locale": "de_DE",
@@ -115687,8 +115797,8 @@
             "users_common",
             "campaigns"
           ],
-          "effective_keys": 1306,
-          "effective_sha256": "8bb312956b88137f9a926af87f420793e7f6bfb5dc48a902ea68ec840cfcba9c"
+          "effective_keys": 1309,
+          "effective_sha256": "edf72b2ef039a8516d66527a17da7012bef2c7d59d093648a211a40cbf890677"
         },
         {
           "locale": "de_DE",
@@ -115723,8 +115833,8 @@
             "users_common",
             "ebay"
           ],
-          "effective_keys": 1295,
-          "effective_sha256": "9ae4a1208fff368459a3e8e192182f52e5e2d583a21b656a1c4089ca65753377"
+          "effective_keys": 1298,
+          "effective_sha256": "5ba9412d33b286873b667e8a1ffa2d9195cebf82f8146775d4f65a36cc29143d"
         },
         {
           "locale": "de_DE",
@@ -115741,8 +115851,8 @@
             "users_common",
             "items"
           ],
-          "effective_keys": 1460,
-          "effective_sha256": "dd4a36e7982f63e36fa019d39357b3dfdd45062dff904ac9e397db5b89d26bcc"
+          "effective_keys": 1463,
+          "effective_sha256": "85684a373a7f0a5fae44bc4faba66b30a2cfe8e6e267f518861c9b75df386ae2"
         },
         {
           "locale": "de_DE",
@@ -115759,8 +115869,8 @@
             "users_common",
             "processes"
           ],
-          "effective_keys": 1265,
-          "effective_sha256": "720e30383d2e836bd7b1ecb10ef1e966eb7ae4f8818771a25d557ad5aca09bcb"
+          "effective_keys": 1268,
+          "effective_sha256": "42d10e69fd1ee6d013de7bdf86327de29ec66e2cec865273ed6e08a71f09ab88"
         },
         {
           "locale": "de_DE",
@@ -115777,8 +115887,8 @@
             "users_common",
             "purchases"
           ],
-          "effective_keys": 1288,
-          "effective_sha256": "4a2009a65dc50e9d12fff907bb4219a3fe9083bf4c3809b6564dc326b987ffc2"
+          "effective_keys": 1291,
+          "effective_sha256": "12106ddf5420cc64942f81815d0def942add494cc9ff46c81892528817cda3a1"
         },
         {
           "locale": "de_DE",
@@ -115795,8 +115905,8 @@
             "users_common",
             "sales"
           ],
-          "effective_keys": 1634,
-          "effective_sha256": "f5725064d96b116fc3bdac297685e67226f531a34c1b0c73b92ac203d86d17a8"
+          "effective_keys": 1637,
+          "effective_sha256": "3807c4193c8621ca2674a86d7461887f6f21d7d76e93aebd84c4d8f88d0e59cd"
         },
         {
           "locale": "de_DE",
@@ -115813,8 +115923,8 @@
             "users_common",
             "shops"
           ],
-          "effective_keys": 1316,
-          "effective_sha256": "092a91bbdeb8b24963f65e18690cb3995d4de0aac3855c03a9851a01faf146ef"
+          "effective_keys": 1319,
+          "effective_sha256": "1d360a9531cf10db1b7670f2c2767b74a677ac164a1248e4fd8bbc68d234c572"
         },
         {
           "locale": "de_DE",
@@ -115831,8 +115941,8 @@
             "users_common",
             "statistics"
           ],
-          "effective_keys": 1209,
-          "effective_sha256": "3ab9f2dfa70697aa8161212ae415d2bd6073a65e589b8f81df389788af07e575"
+          "effective_keys": 1212,
+          "effective_sha256": "4f7fad384d8ea82aa844e3fff31dbde0b4321f6daa2d7807b8798ff08f60ff12"
         },
         {
           "locale": "de_DE",
@@ -115849,8 +115959,8 @@
             "users_common",
             "tasks"
           ],
-          "effective_keys": 1270,
-          "effective_sha256": "5ad33e3e0bc741d950eecc69d84fedb372a53c109354cdb9b2a1311697a38ffe"
+          "effective_keys": 1273,
+          "effective_sha256": "3f040debf980bed0decf9d182a7a36686a509c2c66c097ea621e1cc8b1d649b9"
         },
         {
           "locale": "de_DE",
@@ -115867,8 +115977,8 @@
             "users_common",
             "users"
           ],
-          "effective_keys": 1170,
-          "effective_sha256": "d64590342f1a66bb9ba479f2bdd77e17ccb79573e52b816b66a08eb32d68675b"
+          "effective_keys": 1173,
+          "effective_sha256": "2a62af62e80c7646d922d1e1d7e9e031c7fc8c2dc30778f0f8d10d551cf8be7c"
         },
         {
           "locale": "en_US",
@@ -115876,10 +115986,11 @@
           "domains": [
             "default",
             "calendar_common",
+            "contacts_common",
             "items_common"
           ],
-          "effective_keys": 985,
-          "effective_sha256": "5e87a275698ecda7003a6df1d68322ee4bf32cc589532d9d7ca6ddb2dc7eec07"
+          "effective_keys": 988,
+          "effective_sha256": "c1799f5d207d87998c51c554e8fcb22ba29be380f924852d28597ad126b130c2"
         },
         {
           "locale": "en_US",
@@ -115887,11 +115998,12 @@
           "domains": [
             "default",
             "calendar_common",
+            "contacts_common",
             "items_common",
             "admin"
           ],
-          "effective_keys": 1142,
-          "effective_sha256": "48bb4c5233f0042836a316fc83443232165f66a3b05a4632ed0965a9966dc72e"
+          "effective_keys": 1145,
+          "effective_sha256": "40a581a1fd6de638cf4fb594cc975507a68c431b962e28837dce232b7f5bebbb"
         },
         {
           "locale": "en_US",
@@ -115899,11 +116011,12 @@
           "domains": [
             "default",
             "calendar_common",
+            "contacts_common",
             "items_common",
             "calendar"
           ],
-          "effective_keys": 985,
-          "effective_sha256": "5e87a275698ecda7003a6df1d68322ee4bf32cc589532d9d7ca6ddb2dc7eec07"
+          "effective_keys": 988,
+          "effective_sha256": "c1799f5d207d87998c51c554e8fcb22ba29be380f924852d28597ad126b130c2"
         },
         {
           "locale": "en_US",
@@ -115911,11 +116024,12 @@
           "domains": [
             "default",
             "calendar_common",
+            "contacts_common",
             "items_common",
             "campaigns"
           ],
-          "effective_keys": 1035,
-          "effective_sha256": "94621b0f2889573d2c4e12a80e3d4a74a489e24c7408e23ed716148fbac5bb5b"
+          "effective_keys": 1038,
+          "effective_sha256": "748815e5e86c0b82f14c80b8c21c210ad6dedbcebea8a7356f9626f680c6cba5"
         },
         {
           "locale": "en_US",
@@ -115923,6 +116037,7 @@
           "domains": [
             "default",
             "calendar_common",
+            "contacts_common",
             "items_common",
             "contacts"
           ],
@@ -115935,11 +116050,12 @@
           "domains": [
             "default",
             "calendar_common",
+            "contacts_common",
             "items_common",
             "ebay"
           ],
-          "effective_keys": 1116,
-          "effective_sha256": "46c6e63755ac8a5ed6132e0c0834e38d5398707479a458e4f9580091a0f43069"
+          "effective_keys": 1119,
+          "effective_sha256": "6848632c89baf389b6e004c37617ec002315571adbcfe1153b90b8c1235ba2d7"
         },
         {
           "locale": "en_US",
@@ -115947,11 +116063,12 @@
           "domains": [
             "default",
             "calendar_common",
+            "contacts_common",
             "items_common",
             "items"
           ],
-          "effective_keys": 1241,
-          "effective_sha256": "d2b607a644d697c5bd6384eb49a483e637c4f24a38190683353e2f6785f9ad87"
+          "effective_keys": 1244,
+          "effective_sha256": "40b1dcc3ab73331daeb3712bb0bc59a7dcf2d746755eb3d76bcfbe227c8f25ec"
         },
         {
           "locale": "en_US",
@@ -115959,11 +116076,12 @@
           "domains": [
             "default",
             "calendar_common",
+            "contacts_common",
             "items_common",
             "processes"
           ],
-          "effective_keys": 1083,
-          "effective_sha256": "036a33515ee95d2656f707bdf0d0588e64c4873c9ba25417b07ed1237f9702e1"
+          "effective_keys": 1086,
+          "effective_sha256": "fe99eb5a0fcb1afa004693e38aefc5e8e513414b8336bada0fdb8cec63e4afd0"
         },
         {
           "locale": "en_US",
@@ -115971,11 +116089,12 @@
           "domains": [
             "default",
             "calendar_common",
+            "contacts_common",
             "items_common",
             "purchases"
           ],
-          "effective_keys": 1084,
-          "effective_sha256": "0adeeedc8371aeecf9d6d2f3fa27bb706435315628b5188819b0cb4a3f9fb218"
+          "effective_keys": 1087,
+          "effective_sha256": "02550fd06713b45be377d5afa17ea009ec6315040be2bdd395f20213d19a6cd4"
         },
         {
           "locale": "en_US",
@@ -115983,11 +116102,12 @@
           "domains": [
             "default",
             "calendar_common",
+            "contacts_common",
             "items_common",
             "sales"
           ],
-          "effective_keys": 1370,
-          "effective_sha256": "43dd0084ff140560a23e58d4dcafcf81b6d4e7c38b77767c81219bc952641ef7"
+          "effective_keys": 1373,
+          "effective_sha256": "41a079cc0aa7e989d44a277c54e22bf9d6b22e8e9a7a8c83be0bf2afb3c9f706"
         },
         {
           "locale": "en_US",
@@ -115995,11 +116115,12 @@
           "domains": [
             "default",
             "calendar_common",
+            "contacts_common",
             "items_common",
             "shops"
           ],
-          "effective_keys": 994,
-          "effective_sha256": "81dd4af2d0b65aa6301790134666e2643994e86be0370b7aa136f1804f20d8af"
+          "effective_keys": 997,
+          "effective_sha256": "1856a8169df3be4f9ebc0fe131b3497ea03a886b38f82954f39454560609b454"
         },
         {
           "locale": "en_US",
@@ -116007,11 +116128,12 @@
           "domains": [
             "default",
             "calendar_common",
+            "contacts_common",
             "items_common",
             "statistics"
           ],
-          "effective_keys": 990,
-          "effective_sha256": "4d589f3c2c52c4f9cc2edcb601156e730e1b0c856b4965313dbca2338e3a5b4e"
+          "effective_keys": 993,
+          "effective_sha256": "b01d5d3a07fd4fa2e77f43817cef657880a96574b95430f142601027e80a34f1"
         },
         {
           "locale": "en_US",
@@ -116019,10 +116141,11 @@
           "domains": [
             "default",
             "calendar_common",
+            "contacts_common",
             "items_common"
           ],
-          "effective_keys": 985,
-          "effective_sha256": "5e87a275698ecda7003a6df1d68322ee4bf32cc589532d9d7ca6ddb2dc7eec07"
+          "effective_keys": 988,
+          "effective_sha256": "c1799f5d207d87998c51c554e8fcb22ba29be380f924852d28597ad126b130c2"
         },
         {
           "locale": "en_US",
@@ -116030,17 +116153,18 @@
           "domains": [
             "default",
             "calendar_common",
+            "contacts_common",
             "items_common"
           ],
-          "effective_keys": 985,
-          "effective_sha256": "5e87a275698ecda7003a6df1d68322ee4bf32cc589532d9d7ca6ddb2dc7eec07"
+          "effective_keys": 988,
+          "effective_sha256": "c1799f5d207d87998c51c554e8fcb22ba29be380f924852d28597ad126b130c2"
         }
       ],
-      "printf_argument_mismatch": "ValueError",
-      "printf_invalid_format": "ValueError",
+      "printf_argument_mismatch": null,
+      "printf_invalid_format": null,
       "anonymous_site_locale": {
         "site": "en_US",
-        "translator": "de_DE"
+        "translator": "en_US"
       },
       "javascript_export_keys": [
         "MESSAGES_CAMPAIGN_LOADING",

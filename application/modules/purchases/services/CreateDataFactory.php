@@ -2,6 +2,8 @@
 
 class Purchases_Service_CreateDataFactory
 {
+	protected $translator = null;
+
 	public function build(string $controller, int $contactId = 0): array
 	{
 		$data = $this->getDefaults($controller);
@@ -23,6 +25,8 @@ class Purchases_Service_CreateDataFactory
 		$currency = $currencies->getPrimaryCurrency();
 		$language = $languages->getPrimaryLanguage();
 		$template = $templates->getPrimaryTemplate();
+		$this->translator = new DEEC_Translate($language['code']);
+		$this->translator->loadModule('purchases');
 
 		return [
 			'title' => $this->getDefaultTitle($controller),
@@ -45,6 +49,7 @@ class Purchases_Service_CreateDataFactory
 
 	protected function getTranslator(): ?DEEC_Translate
 	{
+		if ($this->translator) return $this->translator;
 		if (Zend_Registry::isRegistered('DEEC_Translate')) {
 			$translator = Zend_Registry::get('DEEC_Translate');
 			if ($translator instanceof DEEC_Translate) {

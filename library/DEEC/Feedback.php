@@ -212,7 +212,7 @@ class DEEC_Feedback
 
 	public function getTranslator(string $locale): DEEC_Translate
 	{
-		$locale = trim($locale);
+		$locale = DEEC_Translate::normalizeLocale($locale, '');
 
 		if($locale !== '' && is_dir(BASE_PATH . '/languages/' . $locale . '/default')) {
 			$translator = new DEEC_Translate($locale);

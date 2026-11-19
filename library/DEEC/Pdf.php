@@ -69,6 +69,14 @@ class DEEC_Pdf
 		return $key;
 	}
 
+	protected function useDocumentLanguage(array $document, string $module): void
+	{
+		$locale = DEEC_Translate::normalizeLocale((string)($document['language'] ?? ''), '');
+		if ($locale === '') return;
+		$this->translator = new DEEC_Translate($locale);
+		$this->translator->loadModule($module === 'shops' ? 'sales' : $module);
+	}
+
 	protected function translateError($code): string
 	{
 		switch ((string)$code) {
@@ -137,7 +145,7 @@ class DEEC_Pdf
 	public function correction(array $record): string
 	{
 		$document = $record['snapshot']['source']['document'];
-		$this->translator = new DEEC_Translate(str_starts_with($document['language'] ?? '', 'en') ? 'en_US' : 'de_DE');
+		$this->translator = new DEEC_Translate((string)($document['language'] ?? ''));
 		$this->translator->loadDir('default', dirname(__DIR__, 2) . '/languages/' . $this->translator->getLocale() . '/default');
 		$this->bootstrapTcpdf(); $pdf = $this->initPdf($this->translate('CORRECTION_TITLE'));
 		$pdf->SetFont('dejavusans', '', 9);
@@ -424,8 +432,8 @@ class DEEC_Pdf
 	{
 		$text = $this->translate($key);
 		if ($text === $key) {
-			$locale = Zend_Registry::isRegistered('Zend_Locale') ? (string)Zend_Registry::get('Zend_Locale') : 'de_DE';
-			$texts = require dirname(__DIR__, 2) . '/languages/' . (str_starts_with($locale, 'en') ? 'en_US' : 'de_DE') . '/default/document.php';
+			$locale = $this->getTranslator() ? $this->getTranslator()->getLocale() : 'de_DE';
+			$texts = require dirname(__DIR__, 2) . '/languages/' . $locale . '/default/document.php';
 			$text = $texts[$key];
 		}
 		$pdf->SetAutoPageBreak(false);
@@ -506,6 +514,7 @@ class DEEC_Pdf
 		$module = $payload['meta']['module'];
 		$controller = $payload['meta']['controller'];
 		$document = $payload['document'];
+		$this->useDocumentLanguage($document, $module);
 
 		$options = ['templateid' => $payload['meta']['templateid']];
 		if (!empty($payload['meta']['historical_snapshot'])) $options['historical_snapshot'] = true;

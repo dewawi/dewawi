@@ -138,14 +138,9 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 
 		//Locale
 		$authNamespace = new Zend_Session_Namespace('Zend_Auth');
-		if(isset($authNamespace->storage->language) && $authNamespace->storage->language && file_exists(BASE_PATH.'/languages/'.$authNamespace->storage->language)) {
-			$language = new Zend_Locale($authNamespace->storage->language);
-		} elseif(isset($config) && file_exists(BASE_PATH.'/languages/'.$config['language'])) {
-			$language = new Zend_Locale($config['language']);
-		} else {
-			$files = scandir(BASE_PATH.'/languages/');
-			$language = new Zend_Locale($files[2]);
-		}
+		$localeCode = DEEC_Translate::normalizeLocale((string)($authNamespace->storage->language ?? ''), '');
+		if ($localeCode === '') $localeCode = DEEC_Translate::normalizeLocale((string)($config['language'] ?? ''));
+		$language = new Zend_Locale($localeCode);
 		Zend_Registry::set('Zend_Locale', $language);
 
 		$currency = new Zend_Currency(array(

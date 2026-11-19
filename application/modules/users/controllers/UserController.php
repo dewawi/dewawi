@@ -357,7 +357,12 @@ class Users_UserController extends Zend_Controller_Action
 	{
 		$this->_helper->viewRenderer->setNoRender();
 		$this->_helper->getHelper('layout')->disableLayout();
-		$language = $this->_getParam('language', 0);
+		$value = $this->_getParam('language', '');
+		$language = is_string($value) ? DEEC_Translate::normalizeLocale($value, '') : '';
+		if ($language === '') {
+			$this->getResponse()->setHttpResponseCode(400);
+			return;
+		}
 		if($language) {
 			$authNamespace = new Zend_Session_Namespace('Zend_Auth');
 			$authNamespace->storage->language = $language;

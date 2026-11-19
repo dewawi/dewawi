@@ -492,13 +492,19 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$shop = Zend_Registry::get('Shop');
 
 			$viewRenderer = Zend_Controller_Action_HelperBroker::getStaticHelper('ViewRenderer');
+			$locale = DEEC_Translate::normalizeLocale((string)($shop['language'] ?? ''), '');
+			$translator = null;
+			if ($locale !== '') { $translator = new DEEC_Translate($locale); $translator->loadModule('shops'); }
+			$translate = static function (string $key, array $args = []) use ($translator, $viewRenderer): string {
+				return $translator ? $translator->t($key, $args) : $viewRenderer->view->translate($key, $args);
+			};
 
 			if(!isset($data['name'])) $data['name'] = '';
 
 			// Replace dynamic placeholders with values
 			$dynamicPlaceholders = [
 				'#HELLO_NAME#' => sprintf(
-					$viewRenderer->view->translate('MESSAGES_HELLO_NAME'),
+					$translate('MESSAGES_HELLO_NAME'),
 					htmlspecialchars($data['name'])
 				),
 				'#SHOP_TITLE#' => htmlspecialchars($shop['title']),
@@ -540,7 +546,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				// Replace dynamic placeholders with values
 				$dynamicPlaceholders = [
 					'#HELLO_NAME#' => sprintf(
-						$viewRenderer->view->translate('MESSAGES_HELLO_NAME'),
+						$translate('MESSAGES_HELLO_NAME'),
 						htmlspecialchars($formData['billingname'])
 					),
 					'#SHOP_TITLE#' => htmlspecialchars($shop['title']),
@@ -617,13 +623,13 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			// Translate email template
 			$body = preg_replace_callback(
 				'/t#t(.*?)t#t/', // Regex to match text between t#t and t#t
-				function ($matches) use ($viewRenderer) {
-					return $viewRenderer->view->translate($matches[1]);
+				function ($matches) use ($translate) {
+					return $translate($matches[1]);
 				},
 				$body
 			);
 
-			$subject = $template['subject'];
+			$subject = preg_replace_callback('/t#t(.*?)t#t/', static fn($matches) => $translate($matches[1]), $template['subject']);
 			return [$body, $subject];
 		} else {
 			$body = $data['body'];
