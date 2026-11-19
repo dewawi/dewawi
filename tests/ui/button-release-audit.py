@@ -23,6 +23,7 @@ root = Path(__file__).resolve().parents[2]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--engine', choices=['chromium', 'firefox'], default='chromium')
 parser.add_argument('--output', type=Path, default=Path('/tmp/dewawi-button-release-audit'))
+parser.add_argument('--document-icons', action='store_true', help='Check original complete MVC documents and actual SVG pixels')
 args = parser.parse_args()
 args.output.mkdir(parents=True, exist_ok=True)
 spec = importlib.util.spec_from_file_location('audit_browser', root / 'tests/site/accessibility-http.py')
@@ -101,6 +102,14 @@ class Firefox:
         self.loop.close()
         self.log.close()
         self.profile.cleanup()
+
+
+if args.document_icons:
+    spec = importlib.util.spec_from_file_location('svg_document_context', root / 'tests/ui/svg-document-context.py')
+    document_probe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(document_probe)
+    document_probe.run(root, browser, Firefox if args.engine == 'firefox' else browser.WebDriver, args.engine, args.output)
+    raise SystemExit(0)
 
 
 def php(file, *options):
