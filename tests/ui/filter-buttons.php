@@ -57,6 +57,13 @@ if (($argv[1] ?? '') === 'fixtures') {
 	$out = [];
 	foreach (array_merge(filterGroups(), ['contacts/email', 'items/inventory', 'admin/paymentmethod']) as $route) {
 		$out[$route] = ['page' => filterPage($argv[2], $route), 'long' => filterPage($argv[2], $route, 'index', 'layout', 'index', 'long')];
+		if (($argv[3] ?? '') === 'audit' && in_array($route, filterGroups(), true) && $route !== 'contacts/inquiry' && !str_starts_with($route, 'statistics/')) {
+			foreach (['index', 'select', 'edit', 'view'] as $action) {
+				$layout = $action === 'select' ? 'plain' : 'layout';
+				$out[$route]['audit'][$action] = toolbarPage($argv[2], $route, $action, $layout, ['view', 'add', 'edit', 'delete'], false, 'index', false, false, in_array($action, ['index', 'select'], true), null, filterFixture($route, 'active'));
+				if (in_array($action, ['index', 'select'], true)) $out[$route]['auditSearch'][$action] = toolbarPage($argv[2], $route, 'search', $layout, ['view', 'add', 'edit', 'delete'], false, $action, false, false, true, null, filterFixture($route, 'clear'));
+			}
+		}
 		if ($route === 'tasks/task') foreach (['multi', 'date'] as $state) $out[$route][$state] = filterPage($argv[2], $route, 'index', 'layout', 'index', $state);
 		if (in_array($route, ['contacts/email', 'admin/paymentmethod'], true)) $out[$route]['legacy-select'] = filterPage($argv[2], $route, 'select', 'plain');
 		foreach (['active', 'clear'] as $state) $out[$route]['search'][$state] = filterPage($argv[2], $route, 'search', 'layout', 'index', $state);

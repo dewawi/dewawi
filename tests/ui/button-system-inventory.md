@@ -1,5 +1,7 @@
 # DEWAWI – Button-System-Inventur, aktualisiert mit B12
 
+Gesamtprüfung: [B13 – Integration und Freigabematrix](button-release-audit.md) bestätigt die folgenden Bestandszahlen unverändert und ergänzt Firefox-/320-px-Prüfungen sowie konkrete offene Freigabegates. Keine zusätzliche Migration.
+
 Stand: 19.11.2026. B11-Basis `f337ba70` einschließlich B2–B10 (`96549509`), B11-Commit `83a51db1`. B12 ergänzt den [gemeinsamen Filterchip-/Disclosureblock](filter-buttons.md); der unabhängige Dokumentcommit `b32241c1` ist keine Buttonmigration. Grundlage: `AGENTS.md` und [B1](buttons-icons-analysis.md), [B2](buttons-foundation.md), [B3](button-icons.md), [B4](inquiry-buttons.md), [B5](toolbar-buttons.md), [B6](tasks-toolbar.md), [B7](remaining-toolbars.md), [B8](button-quality-audit.md), [B9](apply-buttons.md), [B10](list-buttons.md), [B11](mobile-table-actions.md).
 
 ## Zählmethoden und überprüfbare Ergebnisse

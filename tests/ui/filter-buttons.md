@@ -1,5 +1,7 @@
 # B12 – Gemeinsame Standard-Filterbuttons
 
+Fortsetzung: [B13 – Gesamtprüfung und Freigabematrix](button-release-audit.md). Die Filtermigration bleibt unverändert; B13 ergänzt ausschließlich Testabdeckung und prüft die Freigabegrenzen.
+
 Stand: 19.11.2026. Grundlage: `AGENTS.md`, [aktuelle Inventur](button-system-inventory.md), [B11-Mobilbericht](mobile-table-actions.md), [B8-Audit](button-quality-audit.md) und die relevanten B1–B10-Berichte. Ausgangs-HEAD `83a51db1`. Zu Beginn vorhandene fremde Dokument-/Recoveryänderungen wurden weder bearbeitet noch gestaged; während der Arbeit separat als `b32241c1` committed. Lokaler Code ist maßgeblich.
 
 ## Priorität, Ursache und vollständiger gewählter Block
