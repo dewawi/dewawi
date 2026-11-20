@@ -49,3 +49,7 @@ Ein Wiederholungsbutton wird nicht angeboten: Für diese Nachrichten gibt es bis
 Ein späterer sicherer Wiederholungsmechanismus benötigt eine getrennt beauftragte Umsetzung: unveränderliche Empfänger und Nachrichtenkopien eindeutig an Bestellung und Benachrichtigungszweck binden, Versandversuche atomar reservieren, parallele Ausführungen ausschließen und unklare Annahmeergebnisse vor einer Wiederholung auflösen. Bereits angenommene Empfänger dürfen nicht erneut bedient werden. Dafür notwendige SQL-Änderungen müssen die freigegebenen Migrationsregeln einhalten; C3 führt keine Schemaänderung ein.
 
 Die isolierte Regression läuft mit `python3 tests/security/shop-checkout-db.py`; Datenbanken, Sitzungen und Versand-Fixtures werden temporär angelegt. Es werden keine produktiven Datenbanken oder SMTP-Dienste benötigt.
+
+## Versandkostenkern
+
+Der noch nicht angebundene Versandkostenkern und der Datenbankentwurf für seine spätere Konfiguration sind in [shop-shipping-review.md](tests/security/shop-shipping-review.md) beschrieben. Die reinen Regressions-Fixtures laufen mit `php tests/security/shop-shipping.php`; es werden keine Datenbank oder SMTP-Dienste benötigt.
