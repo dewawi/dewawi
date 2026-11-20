@@ -57,6 +57,34 @@ class Shops_Service_OrderWorkflow
 		return (new Sales_Model_DbTable_Salesorder())->setClientId($this->owner('sales'))->getById((int)$order['salesorderid']);
 	}
 
+	public static function allowedStatuses(array $order): array
+	{
+		if (in_array($order['status'], ['completed', 'cancelled'], true)) return [];
+		if ($order['status'] === 'transferred' || !empty($order['salesorderid'])) return ['completed', 'cancelled'];
+		if (!in_array($order['status'], [null, 'new', 'in_progress'], true)) return [];
+		return array_values(array_diff(['in_progress', 'completed', 'cancelled'], [$order['status']]));
+	}
+
+	public static function canTransfer(array $order): bool
+	{
+		return empty($order['salesorderid']) && in_array($order['status'], [null, 'new', 'in_progress'], true);
+	}
+
+	public function contact(array $order): ?array
+	{
+		$this->requirePermission('view');
+		if (empty($order['contactid']) || !$this->permission->hasPermission('contacts', 'contact', 'view')) return null;
+		return (new Contacts_Model_DbTable_Contact())->setClientId($this->owner('contacts'))->getById((int)$order['contactid']);
+	}
+
+	public static function notificationStatus(array $message): string
+	{
+		if (($message['deliverystatus'] ?? '') === 'delivered' && !empty($message['deliverydate'])) return 'SHOPS_ORDER_MAIL_DELIVERED';
+		if (in_array($message['deliverystatus'] ?? '', ['bounced', 'rejected', 'failed'], true)) return 'SHOPS_ORDER_MAIL_FAILED';
+		if (($message['deliverystatus'] ?? '') === 'accepted' || ($message['response'] ?? '') === 'sent') return 'SHOPS_ORDER_MAIL_ACCEPTED';
+		return 'SHOPS_ORDER_MAIL_UNKNOWN';
+	}
+
 	public function changeStatus(int $id, string $status): void
 	{
 		if (!isset(Shops_Model_DbTable_Order::STATUSES[$status])) throw new DomainException('SHOPS_ORDER_STATUS_INVALID');
@@ -68,9 +96,7 @@ class Shops_Service_OrderWorkflow
 			$order = $db->getByIdForUpdate($id);
 			if (!$order) throw new DomainException('SHOPS_ORDER_NOT_FOUND', 404);
 			if (($order['status'] ?? '') !== $status) {
-				$allowed = in_array($order['status'], ['completed', 'cancelled'], true) ? [] : ['in_progress', 'completed', 'cancelled'];
-				if (!empty($order['salesorderid']) && $allowed) $allowed = ['completed', 'cancelled'];
-				if (!in_array($status, $allowed, true)) throw new DomainException('SHOPS_ORDER_STATUS_INVALID');
+				if (!in_array($status, self::allowedStatuses($order), true)) throw new DomainException('SHOPS_ORDER_STATUS_INVALID');
 				$db->recordStatus($order, $status);
 			}
 			$adapter->commit();
@@ -94,7 +120,7 @@ class Shops_Service_OrderWorkflow
 				$adapter->commit();
 				return ['id' => (int)$salesorder['id'], 'created' => false];
 			}
-			if (in_array($order['status'], ['completed', 'cancelled', 'transferred'], true)) throw new DomainException('SHOPS_ORDER_STATUS_INVALID');
+			if (!self::canTransfer($order)) throw new DomainException('SHOPS_ORDER_STATUS_INVALID');
 			$positions = (new Shops_Model_DbTable_Orderpos())->setClientId($this->owner('shops'))->getForOrder($order);
 			if (Shops_Service_OrderSnapshot::problems($order, $positions)) throw new DomainException('SHOPS_ORDER_INCOMPLETE');
 			$shop = $adapter->fetchRow($adapter->select()->from('shop', ['id'])->where('id = ?', (int)$order['shopid'])->where('clientid = ?', $this->owner('shops')));

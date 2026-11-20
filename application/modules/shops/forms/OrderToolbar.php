@@ -61,7 +61,7 @@ class Shops_Form_OrderToolbar extends DEEC_Form
 			'type' => 'select',
 			'label' => 'SHOPS_ORDER_STATUS',
 			'default' => 'all',
-			'options' => ['all' => 'TOOLBAR_ALL'] + ['unknown' => 'SHOPS_ORDER_UNKNOWN'] + Shops_Model_DbTable_Order::STATUSES,
+			'options' => ['all' => 'TOOLBAR_ALL'] + ['open' => 'SHOPS_ORDER_OPEN', 'unknown' => 'SHOPS_ORDER_UNKNOWN'] + Shops_Model_DbTable_Order::STATUSES,
 			'filter' => true,
 			'toolbar' => 'filters',
 			'wrap' => false,
@@ -74,6 +74,7 @@ class Shops_Form_OrderToolbar extends DEEC_Form
 			'default' => 'orderdate',
 			'options' => [
 				'orderdate' => 'SHOPS_ORDER_DATE',
+				'created' => 'SHOPS_ORDER_RECEIVED_AT',
 				'orderid' => 'SHOPS_ORDER_ID',
 				'customername' => 'SHOPS_ORDER_CUSTOMER',
 				'total' => 'SHOPS_ORDER_NET',

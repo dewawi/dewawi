@@ -68,6 +68,16 @@ class Shops_Model_DbTable_Emailmessage
     }
 }
 
+class Shops_Model_DbTable_Order
+{
+    private int $clientId;
+    public static array $order = ['id' => 77, 'clientid' => 7, 'shopid' => 41, 'token' => 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'email' => 'customer@example.invalid'];
+    public function setClientId(int $clientId): self { $this->clientId = $clientId; return $this; }
+    public function getByCheckoutToken(int $siteId, string $token): ?array {
+        return $this->clientId === self::$order['clientid'] && $siteId === self::$order['shopid'] && $token === self::$order['token'] ? self::$order : null;
+    }
+}
+
 class DEEC_Email
 {
     public static array $behaviors = [];
@@ -136,7 +146,7 @@ $viewRenderer->view = new class {
     public function translate(string $message): string { return $message; }
 };
 
-function sendShopEmail(string $customerEmail, string $internalEmail, array $behaviors): array
+function sendShopEmail(string $customerEmail, string $internalEmail, array $behaviors, string $controller = 'contact', int $orderId = 0, array $overrides = [], ?array $site = null): array
 {
     Zend_Registry::set('Shop', [
         'id' => 41,
@@ -159,6 +169,12 @@ function sendShopEmail(string $customerEmail, string $internalEmail, array $beha
         'replyto' => 'reply@example.invalid',
         '__attach_paths' => [__FILE__],
     ];
+    if ($controller === 'checkout') {
+        $post = array_merge($post, ['module' => 'shops', 'controller' => 'checkout', 'checkout_token' => str_repeat('a', 32), 'orderid' => '1000', 'orderdate' => '2026-11-20', 'differentshippingaddress' => 0]);
+        foreach (['billing', 'shipping'] as $prefix) foreach (['name', 'company', 'department', 'street', 'postcode', 'city', 'country', 'phone'] as $field) $post[$prefix . $field] = 'Fixture';
+        Zend_Registry::set('SiteContext', new DEEC_Site_Context($site ?? ['id' => 41, 'clientid' => 7]));
+    }
+    $post = array_replace($post, $overrides);
     Shops_Form_Contact::$values = $post;
     Shops_Model_DbTable_Emailmessage::reset();
     DEEC_Email::$behaviors = $behaviors;
@@ -167,10 +183,11 @@ function sendShopEmail(string $customerEmail, string $internalEmail, array $beha
     $_SERVER['REQUEST_METHOD'] = 'POST';
     $_POST = [];
     $request = new Zend_Controller_Request_Http();
-    $request->setModuleName('shops')->setControllerName('contact')->setActionName('send')->setPost($post);
+    $request->setModuleName('shops')->setControllerName($controller)->setActionName('send')->setPost($post);
+    if ($controller === 'checkout') $request->setParams(['documentid' => 9999, 'campaignid' => 9999, 'messageid' => 9999, 'contactid' => 9999]);
     Zend_Controller_Front::getInstance()->setRequest($request);
 
-    return (new Application_Controller_Action_Helper_Email())->sendEmail('shops', 'contact');
+    return (new Application_Controller_Action_Helper_Email())->sendEmail('shops', $controller, false, null, $orderId);
 }
 
 $result = sendShopEmail('customer@example.invalid', 'shop@example.invalid', [true, true]);
@@ -217,6 +234,36 @@ $result = sendShopEmail('invalid-recipient', 'shop@example.invalid', [true]);
 check($result['customerAccepted'] === false && $result['internalAccepted'] === true, 'Invalid customer recipient was silently ignored or stopped the internal attempt');
 check(count(Shops_Model_DbTable_Emailmessage::$inserted) === 2 && count(DEEC_Email::$messages) === 1, 'Invalid recipient did not receive a tracked failed attempt');
 check(array_column(Shops_Model_DbTable_Emailmessage::$rows, 'response') === ['Invalid shop email recipient', 'sent'], 'Invalid recipient error was not stored');
+
+$result = sendShopEmail('customer@example.invalid', 'shop@example.invalid', [true, true], 'contact', 0, ['module' => 'shops', 'controller' => 'order']);
+check(array_column(Shops_Model_DbTable_Emailmessage::$rows, 'controller') === ['contact', 'contact'], 'Public contact input forged an order notification');
+$result = sendShopEmail('customer@example.invalid', 'shop@example.invalid', [true, true], 'contact', 0, ['module' => 'sales', 'controller' => 'order']);
+check(array_column(Shops_Model_DbTable_Emailmessage::$rows, 'module') === ['shops', 'shops'] && array_column(Shops_Model_DbTable_Emailmessage::$rows, 'controller') === ['contact', 'contact'], 'Public shop input forged another document namespace');
+
+$result = sendShopEmail('customer@example.invalid', 'shop@example.invalid', [true, false], 'checkout', 77);
+$rows = array_values(Shops_Model_DbTable_Emailmessage::$rows);
+check($result['customerAccepted'] === true && $result['internalAccepted'] === false, 'Order recipient outcomes were conflated');
+check(array_column($rows, 'documentid') === [77, 77] && array_column($rows, 'controller') === ['order', 'order'] && array_column($rows, 'module') === ['shops', 'shops'], 'Verified order linkage was replaced by public routing input');
+check(array_column($rows, 'deliverystatus') === ['accepted', 'failed'], 'Order mail acceptance/failure states were not recorded');
+foreach (DEEC_Email::$messages as $message) {
+    check(empty($message['cc']) && empty($message['bcc']) && empty($message['replyTo']) && !$message['attachments'], 'Public checkout routed unapproved recipients or attachments');
+}
+check(array_column($rows, 'campaignid') === [null, null], 'Order notification was linked to an injected campaign');
+foreach ([
+    [78, [], null],
+    [77, ['checkout_token' => str_repeat('b', 32)], null],
+    [77, ['email' => 'other@example.invalid'], null],
+    [77, [], ['id' => 42, 'clientid' => 7]],
+    [77, [], ['id' => 41, 'clientid' => 8]],
+] as [$orderId, $overrides, $site]) {
+    try {
+        sendShopEmail('customer@example.invalid', 'shop@example.invalid', [true, true], 'checkout', $orderId, $overrides, $site);
+        throw new LogicException('Invalid order notification context accepted');
+    } catch (RuntimeException $e) {
+        check(!DEEC_Email::$messages && !Shops_Model_DbTable_Emailmessage::$inserted, 'Rejected order context sent or stored mail');
+    }
+}
+Zend_Registry::getInstance()->offsetUnset('SiteContext');
 
 $contactSource = file_get_contents($root . '/application/modules/shops/controllers/ContactController.php');
 $inquirySource = file_get_contents($root . '/application/modules/shops/controllers/InquiryController.php');

@@ -2,7 +2,7 @@
 
 class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_Helper_Abstract
 {
-	public function sendEmail($module, $controller, $redirect = false, $items = null)
+	public function sendEmail($module, $controller, $redirect = false, $items = null, int $shopOrderId = 0)
 	{
 		$request = $this->getRequest();
 		if (!$request->isPost()) {
@@ -10,6 +10,20 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 		}
 
 		$data = $request->getPost();
+		$verifiedOrderId = 0;
+		if ($shopOrderId !== 0) {
+			if ($shopOrderId <= 0 || $module !== 'shops' || $controller !== 'checkout' || !Zend_Registry::isRegistered('SiteContext') || !is_string($data['checkout_token'] ?? null)) throw new RuntimeException('Invalid shop order notification context');
+			$context = Zend_Registry::get('SiteContext');
+			$shop = Zend_Registry::get('Shop');
+			if ((int)$shop['id'] !== (int)$context->getSiteId() || (int)$shop['clientid'] !== (int)$context->getClientId()) throw new RuntimeException('Shop notification sender context mismatch');
+			$order = (new Shops_Model_DbTable_Order())->setClientId((int)$context->getClientId())->getByCheckoutToken((int)$context->getSiteId(), $data['checkout_token']);
+			if (!$order || (int)$order['id'] !== $shopOrderId || strcasecmp((string)$order['email'], trim((string)($data['email'] ?? ''))) !== 0) throw new RuntimeException('Shop order notification is not available');
+			$verifiedOrderId = $shopOrderId;
+		}
+		if ($module === 'shops' && $controller === 'checkout') {
+			// Checkout recipients and attachment routing must never come from public form input.
+			$data = array_diff_key($data, array_flip(['cc', 'bcc', 'replyto', 'files', '__attach_paths']));
+		}
 
 		if ($module === 'shops' && ($controller === 'inquiry' || $controller === 'offer')) {
 			$formDataSession = new Zend_Session_Namespace('MultiStepForm');
@@ -35,6 +49,10 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$contactid = $request->getParam('contactid', 0);
 			$documentid = $request->getParam('documentid', 0);
 			$campaignid = $request->getParam('campaignid', 0);
+			if ($module === 'shops' && $controller === 'checkout') {
+				$messageid = $contactid = $campaignid = 0;
+				$documentid = $verifiedOrderId;
+			}
 
 			if($module == 'shops') {
 				if($controller == 'checkout') {
@@ -101,6 +119,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					$formData = $form->getValues();
 				}
 
+				if ($module === 'shops' && $controller === 'checkout') $formData = array_diff_key($formData, array_flip(['cc', 'bcc', 'replyto', 'files', '__attach_paths']));
 				if($form->isValid($data) || true) {
 					// Get SMTP settings
 					list($smtpConfig, $fromEmail, $fromName) = $this->getEmailConfig($module);
@@ -248,13 +267,17 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$body = $this->personalizeBody($body, $recipient);
 
 			//Save email message to the db
+			$trackedOrder = $module === 'shops' && $controller === 'checkout' && $documentid > 0;
+			$messageModule = $module === 'shops' ? 'shops' : ($data['module'] ?? $module);
+			$messageController = $module === 'shops' ? ($trackedOrder ? 'order' : $controller) : ($data['controller'] ?? $controller);
+			if (!$trackedOrder && $messageModule === 'shops' && $messageController === 'order') throw new RuntimeException('Invalid shop order notification context');
 			$emailmessage = DEEC_Email::prepareMessageData([
 				'contactid' => $recipient['contactid'],
 				'documentid' => $documentid,
 				'campaignid' => $campaignid,
 				'feedbackid' => !empty($feedback['request']['id']) ? (int)$feedback['request']['id'] : null,
-				'module' => $data['module'] ?? $module,
-				'controller' => $data['controller'] ?? $controller,
+				'module' => $messageModule,
+				'controller' => $messageController,
 				'sender' => $fromEmail,
 				'recipient' => $recipient['email'],
 				'cc' => $cc,
@@ -265,6 +288,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				'attachments' => $attachmentsSent,
 			]);
 
+			if ($trackedOrder) $emailmessage['deliverystatus'] = 'pending';
 			$messageid = $emailmessageDb->addEmailmessage($emailmessage);
 
 			if(!empty($formData['__attach_paths']) && is_array($formData['__attach_paths'])) {
@@ -328,10 +352,10 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 				$result['ok'] = false;
 				$result['failed']++;
 				$error = trim((string)($sendResult['error'] ?? ''));
-				error_log('Email transport did not confirm SMTP acceptance: ' . $error);
+				error_log('Email transport did not confirm SMTP acceptance (message #' . (int)$messageid . '): ' . $error);
 				$error = $error !== '' ? $error : 'Email transport did not confirm SMTP acceptance';
 				if($emailmessageDb instanceof Contacts_Model_DbTable_Emailmessage) $emailmessageDb->markFailed((int)$messageid, $error);
-				else $emailmessageDb->updateEmailmessage($messageid, ['response' => $error]);
+				else $emailmessageDb->updateEmailmessage($messageid, array_merge(['response' => $error], $trackedOrder ? ['deliverystatus' => 'failed'] : []));
 
 				if($feedback['service'] && $feedback['request'] && $feedback['created']) {
 					$feedback['service']->deleteRequest($feedback['request']);
@@ -347,7 +371,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			} else {
 				$result['sent']++;
 				if($emailmessageDb instanceof Contacts_Model_DbTable_Emailmessage) $emailmessageDb->markAccepted((int)$messageid);
-				else $emailmessageDb->updateEmailmessage($messageid, ['response' => 'sent']);
+				else $emailmessageDb->updateEmailmessage($messageid, array_merge(['response' => 'sent'], $trackedOrder ? ['deliverystatus' => 'accepted'] : []));
 
 				if($feedback['service'] && $feedback['request']) {
 					try {

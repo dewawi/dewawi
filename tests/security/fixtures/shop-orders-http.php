@@ -24,7 +24,7 @@ Zend_Db_Table::setDefaultAdapter($db);
 // All internal HTTP cases run after public checkout has been disabled.
 if ((int)$db->fetchOne('SELECT checkoutenabled FROM shop WHERE id = 41 AND clientid = 7') !== 0) throw new RuntimeException('Expected disabled checkout fixture');
 Zend_Session::setOptions(['save_path' => dirname($socket) . '/order-sessions']);
-$role = $_GET['role'] ?? 'editor'; $userId = ['editor' => 42, 'reader' => 43, 'denied' => 44, 'guest' => 0][$role] ?? 44;
+$role = $_GET['role'] ?? 'editor'; $userId = ['editor' => 42, 'reader' => 43, 'denied' => 44, 'guest' => 0, 'noadd' => 45, 'nocontacts' => 46, 'noedit' => 47][$role] ?? 44;
 $tenant = (int)($_GET['tenant'] ?? 7);
 $client = ['id' => $tenant, 'parentid' => 0];
 if ($tenant === 9) $client = ['id' => 9, 'parentid' => 7, 'modules' => ['shops' => 7, 'sales' => 9]];
@@ -67,6 +67,7 @@ require_once $root . '/application/modules/shops/controllers/OrderController.php
 try {
 	$controller = new Shops_OrderController($request, $response);
 	$view->addScriptPath($root . '/application/views/scripts');
+	if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($action, ['state', 'createsalesorder'], true)) file_put_contents(dirname($socket) . '/order-write-events.log', $id . ':' . $action . "\n", FILE_APPEND | LOCK_EX);
 	$controller->{$action . 'Action'}();
 	if (in_array($action, ['index', 'search'], true)) {
 		$options = Zend_Controller_Action_HelperBroker::getExistingHelper('Options');

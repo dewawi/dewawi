@@ -1056,11 +1056,20 @@ function prepareFormSubmit($form, $button, submitter) {
 	return complete;
 }
 
+$(document).on('submit', 'form[data-shop-order-action]', function (event) {
+	var $form = $(this);
+	if ($form.data('dw-submit-complete')) { event.preventDefault(); return; }
+	var complete = prepareFormSubmit($form, $form.find(':submit'), event.originalEvent && event.originalEvent.submitter);
+	if (!complete) { event.preventDefault(); return; }
+	$form.attr('aria-busy', 'true').find('[data-order-feedback]').text($form.attr('data-pending')).prop('hidden', false);
+});
+
 $(window).on('pageshow', function () {
 	$('form').each(function () {
 		var complete = $(this).data('dw-submit-complete');
 		if (complete) complete();
 	});
+	$('form[data-shop-order-action]').attr('aria-busy', 'false').find('[data-order-feedback]').prop('hidden', true);
 });
 
 $(document).on('click', '.dw-toolbar button.save:not([data-action])', function () { save(this); });

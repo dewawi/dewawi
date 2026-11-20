@@ -6,7 +6,7 @@ import tempfile
 
 root = Path(__file__).resolve().parents[2]
 source = (root / 'js/shops.js').read_text()
-dependency_js = source[source.index('function toggleDependentFields()'):source.index('// Function to show or hide shipping fields')]
+dependency_js = source[source.index('function toggleDependentFields()'):source.index('function toggleShippingFields()')]
 checks = r'''
 try {
     function check(value, message) { if (!value) throw new Error(message); }

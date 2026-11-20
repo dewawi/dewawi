@@ -102,6 +102,23 @@ try:
     check(request('/view?tenant=8')[0] == 404, 'Foreign tenant accesses order')
     check(request('/view?id=999999')[0] == 404, 'Missing order is not 404')
     check(request('/add')[0] == 404 and request('/delete')[0] == 404, 'Legacy write actions remain available')
+    for role in ('noadd', 'nocontacts', 'noedit'):
+        check(request('/view?role=' + role)[0] == 200, role + ' cannot inspect authorized order')
+        check(request(convert_url + '?role=' + role, {'csrf': csrf, 'contactid': fixtures['contact']})[0] == 403, role + ' bypassed combined conversion rights')
+    status, notification_view, _ = request('/view?contactquery=Changed')
+    check(all(address in notification_view for address in ['customer-order@example.test', 'internal-order@example.test', 'pending-order@example.test']), 'Linked notification recipients missing')
+    check(all(address not in notification_view for address in ['foreign-notification@example.test', 'unverified-legacy@example.test', 'other-module@example.test', 'deleted-notification@example.test']), 'Unverified or foreign mail metadata leaked')
+    check('fixture-secret' not in notification_view and 'Vom Mailserver angenommen' in notification_view and 'Versandversuchs unbekannt' in notification_view, 'Notification status is unsafe or misleading')
+    check('data-autosave="false"' in notification_view and '<option value=""></option>' not in notification_view and 'value=""' in notification_view, 'Explicit action controls missing')
+    check('12,3456' in notification_view and 'Versandkosten werden in diesem Checkout nicht berechnet' in notification_view, 'Historical precision or shipping notice missing')
+    check(request('/resend')[0] == 404, 'Uncontrolled notification resend action available')
+    status, orphan, _ = request('/view?id=' + str(fixtures['orphan']))
+    check(status == 200 and 'name="contactid"' not in orphan and 'value="in_progress"' not in orphan, 'Orphan transferred order advertises invalid actions')
+    check(request('/shops/order/state/id/' + str(fixtures['orphan']), {'csrf': csrf, 'status': 'in_progress'})[0] == 200, 'Invalid orphan transition did not return a reviewable error')
+    status, malformed, _ = request('/view?id=' + str(fixtures['malformed']))
+    check(status == 200 and 'name="contactid"' not in malformed and 'Fatal error' not in malformed, 'Malformed snapshot breaks the detail view or offers conversion')
+    status, no_contacts, _ = request('/view?contactquery=NoKnownContact')
+    check(status == 200 and 'Keine zugänglichen Kontakte gefunden' in no_contacts and 'id="order-contact"' in no_contacts and 'required aria-describedby="order-conversion-notice" disabled' in no_contacts, 'Empty contact search offers an active transfer')
     status, legacy, _ = request('/view?id=' + str(fixtures['legacy']))
     check(status == 200 and 'Historische Bestelldaten fehlen' in legacy and 'name="contactid"' not in legacy, 'Incomplete historical order exposes conversion')
     status, listing, _ = request('/shops/order')
@@ -136,6 +153,7 @@ try:
     listing_search(all_rows[:11], dict(base, shopid=41))
     listing_search(all_rows[11:], dict(base, shopid=42))
     listing_search(all_rows[1::2], dict(base, status='cancelled'))
+    listing_search(all_rows[::2], dict(base, status='open'))
     listing_search(['LIST-012'], dict(base, shopid=42, status='cancelled'))
     listing_search(['LIST-013'], dict(base, keyword='List customer 13'))
     listing_search([], dict(base, keyword='No matching customer'))
@@ -154,7 +172,7 @@ try:
     chrome = shutil.which('chromium') or shutil.which('google-chrome')
     if not chrome:
         raise AssertionError('Chromium unavailable')
-    for width in (1280, 390):
+    for width in (1280, 390, 320):
         script = """const frame=document.querySelector('iframe');frame.onload=()=>setTimeout(()=>{const d=frame.contentDocument,w=frame.contentWindow;const failures=[];let checks=0;function check(v,m){checks++;if(!v)failures.push(m)}check(d.body.textContent.includes('Original buyer GmbH'),'Missing customer');check(!!d.querySelector('select[name="contactid"]'),'Missing customer selection');check(d.documentElement.scrollWidth<=w.innerWidth,'Horizontal page overflow');check(d.querySelectorAll('input[name="csrf"]').length===2,'Missing action tokens');check(d.querySelector('form[action*="createsalesorder"]').method==='post','Conversion is not explicit POST');check(!d.querySelector('[data-name="price"]'),'Historical price is editable');document.querySelector('#metrics').textContent=JSON.stringify({checks,failures});},300);"""
         page = f'<!doctype html><html><body><iframe src="{origin}/view?contactquery=Changed" style="width:{width}px;height:1400px;border:0"></iframe><pre id="metrics"></pre><script>{script}</script></body></html>'
         # The parent must share the fixture origin to inspect its iframe.
@@ -168,7 +186,7 @@ try:
         checks += metrics['checks']
 
     # Exercise the repository's global.js events, real AJAX response plugin and rendered list.
-    for width in (1280, 390):
+    for width in (1280, 390, 320):
         script = r"""
 const frame=document.querySelector('iframe');
 frame.onload=()=>setTimeout(async()=>{
@@ -213,6 +231,66 @@ frame.onload=()=>setTimeout(async()=>{
     status, linked, _ = request(convert_url, {'csrf': csrf, 'contactid': fixtures['contact']})
     check(status == 200 and '/sales/salesorder/' in linked and 'name="contactid"' not in linked, 'Conversion did not create a linked draft')
     check(request(convert_url, {'csrf': csrf, 'contactid': fixtures['contact']})[0] == 200, 'Conversion replay failed')
+    # Exercise explicit native actions with the existing submit guard and real SQL history.
+    for width in (1280, 390, 320):
+        order_id = fixtures['browser'][str(width)]
+        script = r"""
+const frame=document.querySelector('iframe');
+frame.onload=()=>{frame.onload=null;setTimeout(async()=>{
+ let d=frame.contentDocument,w=frame.contentWindow,$=w.jQuery;const failures=[];let checks=0;
+ function check(v,m){checks++;if(!v)throw new Error(m)}
+ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+ async function until(fn,phase){for(let i=0;i<100;i++){if(fn())return;await wait(50)}throw new Error(phase+' navigation did not complete: '+frame.contentWindow.location.href+' | '+frame.contentDocument.body.textContent.slice(0,250))}
+ try{
+  check(d.documentElement.scrollWidth<=w.innerWidth,'Detail overflow: '+JSON.stringify([...d.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>w.innerWidth+1).slice(0,8).map(e=>[e.tagName,e.className,e.getBoundingClientRect().right])));
+  check($('#order-contact').val()==='','A contact was selected automatically');
+  check($('#order-status').val()==='','A state transition was selected automatically');
+  check(d.querySelector('[role="region"][tabindex="0"]'),'Positions cannot receive keyboard focus');
+  const state=d.querySelector('#shop-order-state');
+  state.requestSubmit();check(!$(state).data('dw-submit-complete'),'Invalid state submission was allowed');
+  $('#order-contact-query').val('Unsubmitted search').trigger('input');
+  $('#order-status').val('in_progress').trigger('change');
+  check(!d.querySelector('[data-autosave-unsaved]'),'Explicit order fields triggered auto-save');
+  const previous=d;
+  state.requestSubmit();state.requestSubmit();
+  check($(state).attr('aria-busy')==='true'&&$(state).find(':submit').prop('disabled'),'Status action has no submit lock');
+  await until(()=>frame.contentDocument!==previous&&frame.contentDocument.querySelector('#shop-order-state'),'status');
+  await wait(150);d=frame.contentDocument;w=frame.contentWindow;$=w.jQuery;
+  check(!$('#order-status option[value="in_progress"]').length,'Current status is offered as a new transition');
+  check($('#order-contact').val()==='','Status change selected a contact automatically');
+  const beforeSearch=d;
+  $('#order-contact-query').val('Changed');
+  d.querySelector('.dw-order-contact-search').requestSubmit();
+  await until(()=>frame.contentDocument!==beforeSearch&&frame.contentDocument.querySelector('#order-contact option[value="CONTACT_ID"]'),'contact search');
+  await wait(150);d=frame.contentDocument;w=frame.contentWindow;$=w.jQuery;
+  check($('#order-contact').val()==='','Contact search selected a customer automatically');
+  $('#order-contact').val('CONTACT_ID').trigger('change');
+  check(!d.querySelector('[data-autosave-unsaved]'),'Contact choice triggered auto-save');
+  const transfer=d.querySelector('#shop-order-transfer'),before=d;
+  transfer.requestSubmit();transfer.requestSubmit();
+  check($(transfer).find(':submit').prop('disabled'),'Transfer action has no submit lock');
+  await until(()=>frame.contentDocument!==before&&frame.contentDocument.querySelector('a[href*="/sales/salesorder/"]'),'transfer');
+  await wait(150);d=frame.contentDocument;w=frame.contentWindow;$=w.jQuery;
+  check(!d.querySelector('#shop-order-transfer'),'Linked order still offers another transfer');
+  check(d.querySelectorAll('.dw-order-history li').length===3,'Native actions duplicated or lost status history');
+  check(!$('#order-status option[value="in_progress"]').length,'Linked order can revert to in-progress');
+  check(d.body.textContent.includes('Original buyer GmbH')&&d.body.textContent.includes('ORIGINAL-SKU'),'Transfer replaced the immutable snapshot');
+  check(d.documentElement.scrollWidth<=w.innerWidth,'Transferred detail overflow');
+ }catch(error){failures.push(error.message)}
+ document.querySelector('#metrics').textContent=JSON.stringify({checks,failures});
+},350)};
+""".replace('CONTACT_ID', str(fixtures['contact']))
+        page = f'<!doctype html><html><body><iframe src="{origin}/view?id={order_id}&contactquery=Changed" style="width:{width}px;height:1800px;border:0"></iframe><pre id="metrics"></pre><script>{script}</script></body></html>'
+        (work / 'order-browser.html').write_text(page)
+        with tempfile.TemporaryDirectory(prefix='dewawi-order-operations-') as profile:
+            result = subprocess.run([chrome, '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', f'--user-data-dir={profile}', f'--window-size={max(width,800)},1500', '--virtual-time-budget=14000', '--dump-dom', origin + '/order-browser.html'], capture_output=True, text=True, timeout=45)
+        found = re.findall(r'<pre id="metrics">(.*?)</pre>', result.stdout, re.S)
+        check(result.returncode == 0 and bool(found) and bool(found[-1]), 'Chromium did not complete operational order actions')
+        metrics = json.loads(html.unescape(found[-1]))
+        check(not metrics['failures'], f"{width}px operations: " + '; '.join(metrics['failures']))
+        checks += metrics['checks']
+        events = (work / 'order-write-events.log').read_text().splitlines()
+        check(events.count(str(order_id) + ':state') == 1 and events.count(str(order_id) + ':createsalesorder') == 1, 'Double native submit sent duplicate mutations')
     print(f'PASS: {checks} order HTTP, CSRF, permission, legacy and responsive browser checks')
 finally:
     server.terminate()

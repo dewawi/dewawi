@@ -48,13 +48,14 @@ class Shops_Service_OrderSnapshot
 	{
 		$snapshot = self::decode($order['snapshot'] ?? null);
 		$problems = [];
-		if (!$snapshot || ($snapshot['price_basis'] ?? '') !== 'net') return ['SHOPS_ORDER_SNAPSHOT_MISSING'];
+		if (!$snapshot || ($snapshot['price_basis'] ?? '') !== 'net' || !is_array($snapshot['shop'] ?? null) || !is_string($snapshot['message'] ?? null)) return ['SHOPS_ORDER_SNAPSHOT_MISSING'];
 		if ((int)($snapshot['shop']['id'] ?? 0) !== (int)$order['shopid'] || (int)($snapshot['shop']['clientid'] ?? 0) !== (int)$order['clientid']) return ['SHOPS_ORDER_SNAPSHOT_MISSING'];
 		foreach (['billing', 'shipping'] as $type) {
 			if (!is_array($snapshot[$type] ?? null)) { $problems[] = 'SHOPS_ORDER_ADDRESS_INCOMPLETE'; continue; }
 			foreach (['name', 'street', 'postcode', 'city', 'country'] as $field) {
-				if (trim((string)($snapshot[$type][$field] ?? '')) === '') $problems[] = 'SHOPS_ORDER_ADDRESS_INCOMPLETE';
+				if (!is_scalar($snapshot[$type][$field] ?? null) || trim((string)$snapshot[$type][$field]) === '') $problems[] = 'SHOPS_ORDER_ADDRESS_INCOMPLETE';
 			}
+			foreach (['company', 'department', 'phone'] as $field) if (isset($snapshot[$type][$field]) && !is_scalar($snapshot[$type][$field])) $problems[] = 'SHOPS_ORDER_ADDRESS_INCOMPLETE';
 		}
 		if (!filter_var($snapshot['email'] ?? '', FILTER_VALIDATE_EMAIL)) $problems[] = 'SHOPS_ORDER_EMAIL_INVALID';
 		if (($order['currency'] ?? '') !== 'EUR') $problems[] = 'SHOPS_ORDER_CURRENCY_INVALID';
@@ -63,11 +64,13 @@ class Shops_Service_OrderSnapshot
 		if (!$date || $date->format('Y-m-d') !== ($order['orderdate'] ?? '') || !$positions) $problems[] = 'SHOPS_ORDER_POSITIONS_INCOMPLETE';
 		foreach ($positions as $position) {
 			$row = self::decode($position['snapshot'] ?? null);
-			if (!$row || trim((string)($row['sku'] ?? '')) === '' || trim((string)($row['title'] ?? '')) === ''
+			if (!$row || !is_scalar($row['sku'] ?? null) || trim((string)$row['sku']) === '' || !is_scalar($row['title'] ?? null) || trim((string)$row['title']) === ''
+				|| (isset($row['description']) && !is_string($row['description'])) || (isset($row['uom']) && !is_string($row['uom']))
 				|| ($row['currency'] ?? null) !== ($order['currency'] ?? null)
 				|| !isset($position['shoporderid']) || (int)$position['shoporderid'] !== (int)$order['id']
 				|| !is_numeric($position['quantity']) || !is_finite((float)$position['quantity']) || (float)$position['quantity'] <= 0
 				|| !is_numeric($position['price']) || !is_finite((float)$position['price']) || (float)$position['price'] < 0
+				|| !is_numeric($position['total']) || !is_finite((float)$position['total'])
 				|| abs(round((float)$position['price'] * (float)$position['quantity'], 2) - (float)$position['total']) > 0.0001) $problems[] = 'SHOPS_ORDER_POSITIONS_INCOMPLETE';
 			if (!isset($row['taxrate']) || !is_numeric($row['taxrate']) || !is_finite((float)$row['taxrate']) || (float)$row['taxrate'] < 0 || (float)$row['taxrate'] > 100) $problems[] = 'SHOPS_ORDER_TAX_UNKNOWN';
 		}

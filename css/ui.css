@@ -2801,3 +2801,65 @@ cursor: default;
   #inquiry-technical-comparison .comparison-table tr { margin-bottom: 1.2rem; }
   #inquiry-technical-comparison .comparison-table td::before { content: attr(data-candidate); display: block; font-weight: bold; margin-bottom: .5rem; }
 }
+
+.dw-order-overview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.dw-shop-order {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dw-order-addresses {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.dw-shop-order form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem;
+}
+
+.dw-shop-order input,
+.dw-shop-order select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dw-shop-order [data-order-feedback] {
+  flex-basis: 100%;
+}
+
+.dw-shop-order [hidden] {
+  display: none !important;
+}
+
+.dw-order-notifications li,
+.dw-order-history li {
+  margin-bottom: .75rem;
+}
+
+@media (max-width: 600px) {
+  .dw-app-shell__inner.shops .dw-app-header {
+    flex-wrap: wrap;
+  }
+  .dw-app-shell__inner.shops .dw-app-header__meta {
+    min-width: 0;
+  }
+  .dw-order-addresses {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dw-shop-order form > label,
+  .dw-shop-order form > select,
+  .dw-shop-order form > input:not([type="hidden"]),
+  .dw-shop-order form > button {
+    width: 100%;
+  }
+}

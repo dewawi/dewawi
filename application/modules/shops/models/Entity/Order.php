@@ -17,6 +17,7 @@ class Shops_Model_Entity_Order
 	public static function filterStatus($select, $value): void
 	{
 		if (!is_string($value)) $select->where('1 = 0');
+		elseif ($value === 'open') $select->where('o.status IN (?)', ['new', 'in_progress', 'transferred']);
 		elseif ($value === 'unknown') $select->where('o.status IS NULL');
 		elseif (isset(Shops_Model_DbTable_Order::STATUSES[$value])) $select->where('o.status = ?', $value);
 		else $select->where('1 = 0');

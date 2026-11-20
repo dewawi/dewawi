@@ -3,106 +3,148 @@ $order = $this->order;
 $snapshot = $order['snapshot_data'];
 $unknown = $this->translate('SHOPS_ORDER_UNKNOWN');
 $t = fn(string $key): string => $this->escape($this->translate($key));
-$money = fn($value): string => $value === null ? $this->escape($unknown) : $this->escape(number_format((float)$value, 2, ',', '.') . ' ' . ($order['currency'] ?: $unknown));
+$text = fn($value): string => is_scalar($value) ? $this->escape((string)$value) : $this->escape($unknown);
+$money = function($value, bool $unitPrice = false) use ($order, $unknown): string {
+	if (!is_numeric($value) || !is_finite((float)$value)) return $this->escape($unknown);
+	$precision = $unitPrice && round((float)$value, 2) != (float)$value ? 4 : 2;
+	return $this->escape(Zend_Registry::get('Zend_Currency')->toCurrency($value, ['display' => Zend_Currency::NO_SYMBOL, 'precision' => $precision]) . ' ' . ($order['currency'] ?: $unknown));
+};
 $url = fn(string $action): string => $this->url(['module' => 'shops', 'controller' => 'order', 'action' => $action, 'id' => (int)$order['id']], null, true);
 $this->title = $this->translate('SHOPS_ORDER_ID') . ' ' . $order['orderid'];
 $this->headTitle($this->title);
 echo $this->Messages();
 ?>
-<div class="dw-card">
-	<h2><?php echo $this->escape($this->title); ?></h2>
-	<dl class="view">
-		<dt><?php echo $t('SHOPS_ORDER_DATE'); ?></dt><dd><?php echo $this->escape($order['orderdate'] ?: $unknown); ?> · <?php echo $this->escape($order['created'] ?: $unknown); ?></dd>
-		<dt><?php echo $t('SHOPS_ORDER_SHOP'); ?></dt><dd><?php echo $this->escape($snapshot['shop']['title'] ?? $unknown); ?> (#<?php echo $this->escape($order['shopid']); ?>)</dd>
-		<dt><?php echo $t('SHOPS_ORDER_STATUS'); ?></dt><dd><?php echo $t(Shops_Model_DbTable_Order::STATUSES[$order['status'] ?? ''] ?? 'SHOPS_ORDER_UNKNOWN'); ?></dd>
-		<dt><?php echo $t('SHOPS_ORDER_EMAIL'); ?></dt><dd><?php echo $this->escape($snapshot['email'] ?? $unknown); ?></dd>
-	</dl>
-	<div class="row">
-		<?php foreach (['billing' => 'SHOPS_ORDER_BILLING', 'shipping' => 'SHOPS_ORDER_SHIPPING'] as $type => $label) : ?>
-			<div class="col-sm-12 col-lg-6">
-				<h3><?php echo $t($label); ?></h3>
-				<address>
-					<?php if (isset($snapshot[$type])) : ?>
-						<?php foreach (['company', 'name', 'department', 'street'] as $field) : ?>
-							<?php if (($snapshot[$type][$field] ?? '') !== '') echo nl2br($this->escape($snapshot[$type][$field])) . '<br>'; ?>
-						<?php endforeach; ?>
-						<?php echo $this->escape(trim(($snapshot[$type]['postcode'] ?? '') . ' ' . ($snapshot[$type]['city'] ?? ''))); ?><br>
-						<?php echo $this->escape($snapshot[$type]['country'] ?? ''); ?><br>
-						<?php echo $t('SHOPS_ORDER_PHONE'); ?>: <?php echo $this->escape($snapshot[$type]['phone'] ?? ''); ?>
-					<?php else : echo $this->escape($unknown); endif; ?>
-				</address>
-			</div>
-		<?php endforeach; ?>
-	</div>
-	<h3><?php echo $t('SHOPS_ORDER_POSITIONS'); ?></h3>
-	<div class="dw-table-wrap">
-		<table class="dw-table">
-			<thead><tr><?php foreach (['SHOPS_ORDER_ITEM', 'SHOPS_ORDER_QUANTITY', 'SHOPS_ORDER_UNIT_PRICE', 'SHOPS_ORDER_NET', 'SHOPS_ORDER_TAX_RATE'] as $label) : ?><th><?php echo $t($label); ?></th><?php endforeach; ?></tr></thead>
-			<tbody>
-				<?php foreach ($order['positions'] as $position) : $row = $position['snapshot_data']; ?>
-					<tr>
-						<td><?php echo $this->escape($row['sku'] ?? $unknown); ?><br><strong><?php echo $this->escape($row['title'] ?? $unknown); ?></strong><br><?php echo nl2br($this->escape($row['description'] ?? '')); ?><br>#<?php echo (int)$position['itemid']; ?></td>
-						<td><?php echo $this->escape($position['quantity'] ?? $unknown); ?> <?php echo $this->escape($row['uom'] ?? ''); ?></td>
-						<td><?php echo $money($position['price']); ?></td><td><?php echo $money($position['total']); ?></td>
-						<td><?php echo isset($row['taxrate']) ? $this->escape((string)$row['taxrate']) . ' %' : $this->escape($unknown); ?></td>
-					</tr>
-				<?php endforeach; ?>
-			</tbody>
-		</table>
-	</div>
-	<dl class="view">
-		<?php foreach (['total' => 'SHOPS_ORDER_NET', 'taxes' => 'SHOPS_ORDER_TAX', 'grosstotal' => 'SHOPS_ORDER_GROSS'] as $field => $label) : ?>
-			<dt><?php echo $t($label); ?></dt><dd><?php echo $money($order[$field]); ?></dd>
-		<?php endforeach; ?>
-	</dl>
-	<h3><?php echo $t('SHOPS_ORDER_NOTES'); ?></h3>
-	<p><?php echo nl2br($this->escape($snapshot['message'] ?? $unknown)); ?></p>
-	<?php if ($this->salesorder) : ?>
-		<p><a class="dw-btn dw-btn--primary" href="<?php echo $this->escape($this->url(['module' => 'sales', 'controller' => 'salesorder', 'action' => 'edit', 'id' => (int)$this->salesorder['id']], null, true)); ?>"><?php echo $t('SHOPS_ORDER_ERP'); ?> #<?php echo (int)$this->salesorder['id']; ?></a></p>
-	<?php elseif (!empty($order['salesorderid'])) : ?>
-		<p><?php echo $t('SHOPS_ORDER_LINK_UNAVAILABLE'); ?></p>
-	<?php endif; ?>
-</div>
-
-<?php if ($this->permissions['edit'] && !in_array($order['status'], ['completed', 'cancelled'], true)) : ?>
-	<form method="post" action="<?php echo $this->escape($url('state')); ?>" class="dw-card">
-		<input type="hidden" name="csrf" value="<?php echo $this->escape($this->csrf); ?>">
-		<label for="order-status"><?php echo $t('SHOPS_ORDER_STATUS'); ?></label>
-		<select id="order-status" name="status">
-			<?php foreach (Shops_Model_DbTable_Order::STATUSES as $value => $label) : if ($value === 'new' || $value === 'transferred' || ($value === 'in_progress' && !empty($order['salesorderid']))) continue; ?>
-				<option value="<?php echo $this->escape($value); ?>"<?php echo $value === $order['status'] ? ' selected' : ''; ?>><?php echo $t($label); ?></option>
+<div class="dw-shop-order">
+	<p><a href="<?php echo $this->escape($this->url(['module' => 'shops', 'controller' => 'order', 'action' => 'index'], null, true)); ?>"><?php echo $t('SHOPS_ORDER_BACK'); ?></a></p>
+	<section class="dw-card" aria-labelledby="order-title">
+		<h2 id="order-title"><?php echo $this->escape($this->title); ?></h2>
+		<p><?php echo $t('SHOPS_ORDER_OPERATION_NOTICE'); ?></p>
+		<dl class="view">
+			<dt><?php echo $t('SHOPS_ORDER_DATE'); ?></dt><dd><?php echo $text($order['orderdate'] ?: $unknown); ?></dd>
+			<dt><?php echo $t('SHOPS_ORDER_RECEIVED_AT'); ?></dt><dd><?php echo $text($order['created'] ?: $unknown); ?></dd>
+			<dt><?php echo $t('SHOPS_ORDER_SHOP'); ?></dt><dd><?php echo $text($snapshot['shop']['title'] ?? $unknown); ?> (#<?php echo (int)$order['shopid']; ?>)</dd>
+			<dt><?php echo $t('SHOPS_ORDER_DATA_TENANT'); ?></dt><dd>#<?php echo (int)$order['clientid']; ?></dd>
+			<dt><?php echo $t('SHOPS_ORDER_STATUS'); ?></dt><dd><?php echo $t(Shops_Model_DbTable_Order::STATUSES[$order['status'] ?? ''] ?? 'SHOPS_ORDER_UNKNOWN'); ?></dd>
+			<dt><?php echo $t('SHOPS_ORDER_CUSTOMER'); ?></dt><dd><?php echo $text($order['customername'] ?: $unknown); ?></dd>
+			<dt><?php echo $t('SHOPS_ORDER_EMAIL'); ?></dt><dd><?php echo $text($snapshot['email'] ?? $order['email'] ?? $unknown); ?></dd>
+			<dt><?php echo $t(!empty($order['salesorderid']) ? 'SHOPS_ORDER_CONFIRMED_CONTACT' : 'SHOPS_ORDER_SUGGESTED_CONTACT'); ?></dt>
+			<dd><?php if ($this->contact) : ?><?php echo $text($this->contact['contactid'] . ' · ' . $this->contact['name1'] . ' ' . ($this->contact['name2'] ?? '')); ?><?php else : echo $t('SHOPS_ORDER_CONTACT_UNCONFIRMED'); endif; ?></dd>
+		</dl>
+		<p><?php echo $t('SHOPS_ORDER_SNAPSHOT_NOTICE'); ?></p>
+		<div class="dw-order-addresses">
+			<?php foreach (['billing' => 'SHOPS_ORDER_BILLING', 'shipping' => 'SHOPS_ORDER_SHIPPING'] as $type => $label) : ?>
+				<section>
+					<h3><?php echo $t($label); ?></h3>
+					<address>
+						<?php if (is_array($snapshot[$type] ?? null)) : ?>
+							<?php foreach (['company', 'name', 'department', 'street'] as $field) : ?>
+								<?php if (($snapshot[$type][$field] ?? '') !== '') echo nl2br($text($snapshot[$type][$field])) . '<br>'; ?>
+							<?php endforeach; ?>
+							<?php echo $text($snapshot[$type]['postcode'] ?? ''); ?> <?php echo $text($snapshot[$type]['city'] ?? ''); ?><br>
+							<?php echo $text($snapshot[$type]['country'] ?? ''); ?><br>
+							<?php echo $t('SHOPS_ORDER_PHONE'); ?>: <?php echo $text($snapshot[$type]['phone'] ?? ''); ?>
+						<?php else : echo $this->escape($unknown); endif; ?>
+					</address>
+				</section>
 			<?php endforeach; ?>
-		</select>
-		<button type="submit" class="dw-btn dw-btn--primary"><?php echo $t('SHOPS_ORDER_SAVE_STATUS'); ?></button>
-	</form>
-<?php endif; ?>
-
-<?php if ($this->problems) : ?>
-	<div class="dw-card"><h3><?php echo $t('SHOPS_ORDER_REVIEW_REQUIRED'); ?></h3><ul><?php foreach ($this->problems as $problem) : ?><li><?php echo $t($problem); ?></li><?php endforeach; ?></ul></div>
-<?php elseif ($this->canConvert && empty($order['salesorderid']) && !in_array($order['status'], ['completed', 'cancelled'], true)) : ?>
-	<section class="dw-card">
-		<h3><?php echo $t('SHOPS_ORDER_CREATE_ERP'); ?></h3>
-		<p><?php echo $t('SHOPS_ORDER_CONTACT_NOTICE'); ?></p>
-		<form method="get" action="<?php echo $this->escape($url('view')); ?>">
-			<label for="order-contact-query"><?php echo $t('SHOPS_ORDER_CONTACT_SEARCH'); ?></label>
-			<input id="order-contact-query" name="contactquery" maxlength="100" value="<?php echo $this->escape($this->contactquery); ?>">
-			<button type="submit" class="dw-btn"><?php echo $t('SHOPS_ORDER_SEARCH'); ?></button>
-		</form>
-		<p><?php echo $t('SHOPS_ORDER_CONVERSION_NOTICE'); ?></p>
-		<form method="post" action="<?php echo $this->escape($url('createsalesorder')); ?>">
-			<input type="hidden" name="csrf" value="<?php echo $this->escape($this->csrf); ?>">
-			<label for="order-contact"><?php echo $t('SHOPS_ORDER_CUSTOMER'); ?></label>
-			<select id="order-contact" name="contactid" required><option value=""><?php echo $t('SHOPS_ORDER_SELECT_CONTACT'); ?></option>
-				<?php foreach ($this->contacts as $contact) : ?><option value="<?php echo (int)$contact['id']; ?>"><?php echo $this->escape($contact['label'] . ($contact['subtitle'] !== '' ? ' · ' . $contact['subtitle'] : '')); ?></option><?php endforeach; ?>
-			</select>
-			<button type="submit" class="dw-btn dw-btn--primary"><?php echo $t('SHOPS_ORDER_CREATE_ERP'); ?></button>
-		</form>
-		<?php if ($this->canCreateContact) : ?><p><a href="<?php echo $this->escape($this->url(['module' => 'contacts', 'controller' => 'contact', 'action' => 'add'], null, true)); ?>" target="_blank" rel="noopener"><?php echo $t('SHOPS_ORDER_NEW_CONTACT'); ?></a></p><?php endif; ?>
+		</div>
+		<h3 id="order-positions-title"><?php echo $t('SHOPS_ORDER_POSITIONS'); ?></h3>
+		<div class="dw-table-wrap" role="region" aria-labelledby="order-positions-title" tabindex="0">
+			<table class="dw-table">
+				<thead><tr><?php foreach (['SHOPS_ORDER_ITEM', 'SHOPS_ORDER_QUANTITY', 'SHOPS_ORDER_UNIT_PRICE', 'SHOPS_ORDER_NET', 'SHOPS_ORDER_TAX_RATE'] as $label) : ?><th scope="col"><?php echo $t($label); ?></th><?php endforeach; ?></tr></thead>
+				<tbody>
+					<?php foreach ($order['positions'] as $position) : $row = $position['snapshot_data']; ?>
+						<tr>
+							<td data-label="<?php echo $t('SHOPS_ORDER_ITEM'); ?>"><?php echo $text($row['sku'] ?? $unknown); ?><br><strong><?php echo $text($row['title'] ?? $unknown); ?></strong><br><?php echo nl2br($text($row['description'] ?? '')); ?></td>
+							<td data-label="<?php echo $t('SHOPS_ORDER_QUANTITY'); ?>"><?php echo $text($position['quantity'] ?? $unknown); ?> <?php echo $text($row['uom'] ?? ''); ?></td>
+							<td data-label="<?php echo $t('SHOPS_ORDER_UNIT_PRICE'); ?>"><?php echo $money($position['price'], true); ?></td>
+							<td data-label="<?php echo $t('SHOPS_ORDER_NET'); ?>"><?php echo $money($position['total']); ?></td>
+							<td data-label="<?php echo $t('SHOPS_ORDER_TAX_RATE'); ?>"><?php echo isset($row['taxrate']) && is_numeric($row['taxrate']) ? $text($row['taxrate']) . ' %' : $this->escape($unknown); ?></td>
+						</tr>
+					<?php endforeach; ?>
+					<?php if (!$order['positions']) : ?><tr><td colspan="5"><?php echo $t('SHOPS_ORDER_POSITIONS_INCOMPLETE'); ?></td></tr><?php endif; ?>
+				</tbody>
+			</table>
+		</div>
+		<dl class="view">
+			<?php foreach (['total' => 'SHOPS_ORDER_NET', 'taxes' => 'SHOPS_ORDER_TAX', 'grosstotal' => 'SHOPS_ORDER_GROSS'] as $field => $label) : ?>
+				<dt><?php echo $t($label); ?></dt><dd><?php echo $money($order[$field]); ?></dd>
+			<?php endforeach; ?>
+		</dl>
+		<p><?php echo $t($snapshot ? 'SHOPS_CHECKOUT_SHIPPING_NOTICE' : 'SHOPS_ORDER_SHIPPING_UNKNOWN'); ?></p>
+		<h3><?php echo $t('SHOPS_ORDER_NOTES'); ?></h3>
+		<p><?php echo nl2br($text($snapshot['message'] ?? $unknown)); ?></p>
+		<?php if ($this->salesorder) : ?>
+			<p><a class="dw-btn dw-btn--primary" href="<?php echo $this->escape($this->url(['module' => 'sales', 'controller' => 'salesorder', 'action' => 'edit', 'id' => (int)$this->salesorder['id']], null, true)); ?>"><?php echo $t('SHOPS_ORDER_ERP'); ?> · <?php echo $t('SHOPS_ORDER_INTERNAL_ID'); ?> #<?php echo (int)$this->salesorder['id']; ?></a></p>
+		<?php elseif (!empty($order['salesorderid'])) : ?><p><?php echo $t('SHOPS_ORDER_LINK_UNAVAILABLE'); ?></p><?php endif; ?>
 	</section>
-<?php endif; ?>
 
-<?php if ($order['history']) : ?>
-	<section class="dw-card"><h3><?php echo $t('SHOPS_ORDER_HISTORY'); ?></h3>
-		<ul><?php foreach ($order['history'] as $event) : ?><li><?php echo $this->escape($event['created'] . ' · ' . ($event['createdbyname'] ?: '#' . $event['createdby'])); ?>: <?php echo $t(Shops_Model_DbTable_Order::STATUSES[$event['oldstatus'] ?? ''] ?? 'SHOPS_ORDER_UNKNOWN'); ?> → <?php echo $t(Shops_Model_DbTable_Order::STATUSES[$event['newstatus']]); ?></li><?php endforeach; ?></ul>
+	<section class="dw-card" aria-labelledby="order-status-title">
+		<h3 id="order-status-title"><?php echo $t('SHOPS_ORDER_SAVE_STATUS'); ?></h3>
+		<p><?php echo $t('SHOPS_ORDER_STATUS_NOTICE'); ?></p>
+		<?php if ($this->permissions['edit'] && $this->allowedStatuses) : ?>
+			<form id="shop-order-state" method="post" action="<?php echo $this->escape($url('state')); ?>" data-autosave="false" data-shop-order-action data-pending="<?php echo $t('SHOPS_ORDER_PENDING'); ?>">
+				<input type="hidden" name="csrf" value="<?php echo $this->escape($this->csrf); ?>">
+				<label for="order-status"><?php echo $t('SHOPS_ORDER_STATUS'); ?></label>
+				<select id="order-status" name="status" required>
+					<option value=""><?php echo $t('SHOPS_ORDER_SELECT_STATUS'); ?></option>
+					<?php foreach ($this->allowedStatuses as $value) : ?><option value="<?php echo $this->escape($value); ?>"><?php echo $t(Shops_Model_DbTable_Order::STATUSES[$value]); ?></option><?php endforeach; ?>
+				</select>
+				<button type="submit" class="dw-btn dw-btn--primary"><?php echo $t('SHOPS_ORDER_SAVE_STATUS'); ?></button>
+				<p data-order-feedback role="status" hidden></p>
+			</form>
+		<?php else : ?><p><?php echo $t($this->permissions['edit'] ? 'SHOPS_ORDER_NO_TRANSITIONS' : 'SHOPS_ORDER_READ_ONLY'); ?></p><?php endif; ?>
 	</section>
-<?php endif; ?>
+
+	<?php if ($this->problems) : ?>
+		<section class="dw-card"><h3><?php echo $t('SHOPS_ORDER_REVIEW_REQUIRED'); ?></h3><ul><?php foreach ($this->problems as $problem) : ?><li><?php echo $t($problem); ?></li><?php endforeach; ?></ul></section>
+	<?php elseif ($this->canTransfer && $this->canConvert) : ?>
+		<section class="dw-card" aria-labelledby="order-transfer-title">
+			<h3 id="order-transfer-title"><?php echo $t('SHOPS_ORDER_CREATE_ERP'); ?></h3>
+			<p><?php echo $t('SHOPS_ORDER_CONTACT_NOTICE'); ?></p>
+			<form method="get" action="<?php echo $this->escape($url('view')); ?>" class="dw-order-contact-search" data-autosave="false">
+				<label for="order-contact-query"><?php echo $t('SHOPS_ORDER_CONTACT_SEARCH'); ?></label>
+				<input id="order-contact-query" name="contactquery" maxlength="100" value="<?php echo $this->escape($this->contactquery); ?>">
+				<button type="submit" class="dw-btn"><?php echo $t('SHOPS_ORDER_SEARCH'); ?></button>
+			</form>
+			<?php if (!$this->contacts) : ?><p role="status"><?php echo $t('SHOPS_ORDER_NO_CONTACT_RESULTS'); ?></p><?php endif; ?>
+			<p id="order-conversion-notice"><?php echo $t('SHOPS_ORDER_CONVERSION_NOTICE'); ?></p>
+			<form id="shop-order-transfer" method="post" action="<?php echo $this->escape($url('createsalesorder')); ?>" data-autosave="false" data-shop-order-action data-pending="<?php echo $t('SHOPS_ORDER_PENDING'); ?>">
+				<input type="hidden" name="csrf" value="<?php echo $this->escape($this->csrf); ?>">
+				<label for="order-contact"><?php echo $t('SHOPS_ORDER_CUSTOMER'); ?></label>
+				<select id="order-contact" name="contactid" required aria-describedby="order-conversion-notice"<?php if (!$this->contacts) echo ' disabled'; ?>><option value=""><?php echo $t('SHOPS_ORDER_SELECT_CONTACT'); ?></option>
+					<?php foreach ($this->contacts as $contact) : ?><option value="<?php echo (int)$contact['id']; ?>"><?php echo $this->escape($contact['label'] . ($contact['subtitle'] !== '' ? ' · ' . $contact['subtitle'] : '')); ?></option><?php endforeach; ?>
+				</select>
+				<button type="submit" class="dw-btn dw-btn--primary"<?php if (!$this->contacts) echo ' disabled'; ?>><?php echo $t('SHOPS_ORDER_CREATE_ERP'); ?></button>
+				<p data-order-feedback role="status" hidden></p>
+			</form>
+			<?php if ($this->canCreateContact) : ?><p><a href="<?php echo $this->escape($this->url(['module' => 'contacts', 'controller' => 'contact', 'action' => 'add'], null, true)); ?>" target="_blank" rel="noopener"><?php echo $t('SHOPS_ORDER_NEW_CONTACT'); ?></a></p><?php endif; ?>
+		</section>
+	<?php elseif ($this->canTransfer) : ?><section class="dw-card"><p><?php echo $t('SHOPS_ORDER_TRANSFER_DENIED'); ?></p></section><?php endif; ?>
+
+	<section class="dw-card" aria-labelledby="order-mail-title">
+		<h3 id="order-mail-title"><?php echo $t('SHOPS_ORDER_MAIL_TITLE'); ?></h3>
+		<p><?php echo $t('SHOPS_ORDER_MAIL_NOTICE'); ?></p>
+		<?php if ($order['notifications']) : ?>
+			<ul class="dw-order-notifications">
+				<?php foreach ($order['notifications'] as $message) : ?>
+					<li><strong><?php echo $text($message['recipient']); ?></strong> · <?php echo $t(Shops_Service_OrderWorkflow::notificationStatus($message)); ?><br>
+						<?php echo $t('SHOPS_ORDER_MAIL_REFERENCE'); ?> #<?php echo (int)$message['id']; ?> · <?php echo $text($message['messagesent'] ?: $unknown); ?>
+						<?php if ($message['deliverydate']) : ?> · <?php echo $text($message['deliverydate']); ?><?php endif; ?>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+		<?php else : ?><p><?php echo $t('SHOPS_ORDER_MAIL_UNTRACKED'); ?></p><?php endif; ?>
+		<p><?php echo $t('SHOPS_ORDER_MAIL_FOLLOWUP'); ?></p>
+	</section>
+
+	<section class="dw-card" aria-labelledby="order-history-title">
+		<h3 id="order-history-title"><?php echo $t('SHOPS_ORDER_HISTORY'); ?></h3>
+		<?php if ($order['history']) : ?>
+			<ol class="dw-order-history"><?php foreach ($order['history'] as $event) : ?><li>
+				<time><?php echo $text($event['created']); ?></time> · <?php echo $text($event['createdbyname'] ?: ($event['createdby'] ? '#' . $event['createdby'] : $this->translate('SHOPS_ORDER_NO_ACTOR'))); ?>:
+				<?php if ($event['oldstatus'] !== null) : ?><?php echo $t(Shops_Model_DbTable_Order::STATUSES[$event['oldstatus']] ?? 'SHOPS_ORDER_UNKNOWN'); ?> → <?php endif; ?><?php echo $t(Shops_Model_DbTable_Order::STATUSES[$event['newstatus']] ?? 'SHOPS_ORDER_UNKNOWN'); ?>
+			</li><?php endforeach; ?></ol>
+		<?php else : ?><p><?php echo $t('SHOPS_ORDER_NO_HISTORY'); ?></p><?php endif; ?>
+	</section>
+</div>

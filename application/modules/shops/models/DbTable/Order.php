@@ -110,6 +110,15 @@ class Shops_Model_DbTable_Order extends DEEC_Model_DbTable_Entity
 		}
 	}
 
+	public function getStatusCounts(): array
+	{
+		$rows = $this->getAdapter()->fetchAll($this->select()->from($this->_name, ['status', 'count' => new Zend_Db_Expr('COUNT(*)')])
+			->where('clientid = ?', $this->getClientId())->where('deleted = ?', 0)->group('status'));
+		$counts = array_fill_keys(array_keys(self::STATUSES), 0);
+		foreach ($rows as $row) if (isset($counts[$row['status'] ?? ''])) $counts[$row['status']] = (int)$row['count'];
+		return $counts;
+	}
+
 	public function getDetail(int $id): ?array
 	{
 		$order = $this->getById($id);
@@ -118,6 +127,10 @@ class Shops_Model_DbTable_Order extends DEEC_Model_DbTable_Entity
 		$order['positions'] = (new Shops_Model_DbTable_Orderpos())->setClientId($this->getClientId())->getForOrder($order);
 		$order['history'] = $this->getAdapter()->fetchAll($this->getAdapter()->select()->from('shoporderhistory')
 			->where('clientid = ?', $this->getClientId())->where('shopid = ?', $order['shopid'])->where('shoporderid = ?', $id)->order('id ASC'));
+		$order['notifications'] = $this->getAdapter()->fetchAll($this->getAdapter()->select()
+			->from('emailmessage', ['id', 'recipient', 'messagesent', 'response', 'deliverystatus', 'deliverydate'])
+			->where('clientid = ?', $this->getClientId())->where('module = ?', 'shops')->where('controller = ?', 'order')
+			->where('documentid = ?', $id)->where('deleted = ?', 0)->order('id ASC'));
 		return $order;
 	}
 

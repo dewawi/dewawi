@@ -11,7 +11,7 @@ for step in [1, 2, 3]:
     result = subprocess.run(['php', str(root / 'tests/security/inquiry-pilot.php'), 'render-' + str(step)], check=True, capture_output=True, text=True)
     forms[str(step)] = '<form id="inquiry-form" data-current-step="' + str(step) + '">' + result.stdout.split('<!--fixture-->', 1)[1] + '</form>'
 source = (root / 'js/shops.js').read_text()
-script = source[source.index('function toggleDependentFields()'):source.index('// Function to show or hide shipping fields')]
+script = source[source.index('function toggleDependentFields()'):source.index('function toggleShippingFields()')]
 script += source[source.index('function submitStep('):source.index("$(document).on('submit', '#inquiry-form'")]
 script += source[source.index('function goBackStep('):]
 checks = r'''

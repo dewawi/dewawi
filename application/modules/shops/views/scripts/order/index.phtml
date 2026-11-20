@@ -4,4 +4,10 @@ $this->headTitle($this->title);
 echo $this->Messages();
 echo $this->Pagination();
 ?>
+<?php $counts = $this->statusCounts; $open = $counts['new'] + $counts['in_progress'] + $counts['transferred']; ?>
+<nav class="dw-order-overview" aria-label="<?php echo $this->escape($this->translate('SHOPS_ORDER_OVERVIEW')); ?>">
+	<a href="<?php echo $this->escape($this->url(['module' => 'shops', 'controller' => 'order', 'action' => 'index'], null, true) . '?status=new'); ?>"><?php echo $this->translate('SHOPS_ORDER_STATUS_NEW'); ?>: <strong><?php echo (int)$counts['new']; ?></strong></a>
+	<a href="<?php echo $this->escape($this->url(['module' => 'shops', 'controller' => 'order', 'action' => 'index'], null, true) . '?status=open'); ?>"><?php echo $this->translate('SHOPS_ORDER_OPEN'); ?>: <strong><?php echo (int)$open; ?></strong></a>
+	<span><?php echo $this->translate('SHOPS_ORDER_DATA_TENANT'); ?> #<?php echo (int)$this->orderOwnerId; ?></span>
+</nav>
 <div class="dw-list-page"><?php echo $this->orders->render(); ?></div>

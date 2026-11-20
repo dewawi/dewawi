@@ -24,6 +24,8 @@ class Shops_OrderController extends DEEC_Controller_Action
 
 	protected function buildIndexView(): void
 	{
+		$this->view->statusCounts = $this->workflow->db()->getStatusCounts();
+		$this->view->orderOwnerId = $this->workflow->owner('shops');
 		$this->buildListView([
 			'viewKey' => 'orders', 'list' => 'Shops_Model_List_Orders', 'entity' => Shops_Model_Entity_Order::listConfig(),
 			'toolbar' => 'Shops_Form_OrderToolbar', 'toolbarInline' => 'Shops_Form_OrderToolbarInline', 'selectable' => false, 'exportable' => false,
@@ -46,7 +48,9 @@ class Shops_OrderController extends DEEC_Controller_Action
 		if (empty($session->csrf)) $session->csrf = bin2hex(random_bytes(32));
 		$permission = new DEEC_Permission($this->_user);
 		$this->view->assign([
-			'order' => $order, 'csrf' => $session->csrf, 'contactquery' => $query,
+			'order' => $order, 'contact' => $this->workflow->contact($order),
+			'allowedStatuses' => Shops_Service_OrderWorkflow::allowedStatuses($order), 'canTransfer' => Shops_Service_OrderWorkflow::canTransfer($order),
+			'csrf' => $session->csrf, 'contactquery' => $query,
 			'contacts' => $this->workflow->contacts($query), 'salesorder' => $this->workflow->salesorder($order),
 			'problems' => Shops_Service_OrderSnapshot::problems($order, $order['positions']),
 			'canConvert' => $this->workflow->allowed('edit') && $this->workflow->allowed('add') && $permission->hasPermission('contacts', 'contact', 'view'),
@@ -79,7 +83,7 @@ class Shops_OrderController extends DEEC_Controller_Action
 				$contactId = filter_var($post['contactid'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 				if (!$contactId) throw new DomainException('SHOPS_ORDER_SELECT_CONTACT');
 				$result = $this->workflow->createSalesorder($id, (int)$contactId);
-				$this->_flashMessenger->addMessage($result['created'] ? 'SHOPS_ORDER_CREATED' : 'SHOPS_ORDER_ALREADY_CREATED');
+				$this->_flashMessenger->addMessage(['type' => 'success', 'message' => $result['created'] ? 'SHOPS_ORDER_CREATED' : 'SHOPS_ORDER_ALREADY_CREATED']);
 			} else {
 				if (!is_string($post['status'] ?? null)) throw new DomainException('SHOPS_ORDER_STATUS_INVALID');
 				$this->workflow->changeStatus($id, $post['status']);

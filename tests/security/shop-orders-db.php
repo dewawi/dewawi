@@ -73,8 +73,9 @@ class OrderCheckoutControllerFixture extends Shops_CheckoutController {
 }
 class OrderMailFixture extends Zend_Controller_Action_Helper_Abstract {
     public int $calls = 0;
+    public int $orderId = 0;
     public function getName() { return 'Email'; }
-    public function sendEmail(...$arguments): array { $this->calls++; return ['customerAccepted' => true, 'internalAccepted' => true]; }
+    public function sendEmail(...$arguments): array { $this->calls++; $this->orderId = (int)($arguments[4] ?? 0); return ['customerAccepted' => true, 'internalAccepted' => true]; }
 }
 $mail = new OrderMailFixture(); Zend_Controller_Action_HelperBroker::addHelper($mail);
 $db->insert('country', ['code' => 'DE', 'name' => 'Germany', 'language' => 'de_DE', 'clientid' => 7]);
@@ -143,7 +144,7 @@ $publicSnapshot = Shops_Service_OrderSnapshot::decode($publicOrder['snapshot']);
 check($publicSnapshot['shipping'] === $publicSnapshot['billing'] && $publicSnapshot['billing']['company'] === $post['billingcompany'], 'Real checkout lost normalized addresses');
 $publicPositions = (new Shops_Model_DbTable_Orderpos())->setClientId(7)->getForOrder($publicOrder);
 check($publicPositions[0]['snapshot_data']['title'] === 'Checkout article' && $publicPositions[0]['snapshot_data']['price_source'] === 'specialprice', 'Checkout used session label or lost special-price basis');
-check($mail->calls === 1 && $cart->getItems() === [], 'Checkout notifications or cart clearing changed');
+check($mail->calls === 1 && $mail->orderId === (int)$publicOrder['id'] && $cart->getItems() === [], 'Checkout notifications or cart clearing changed');
 $controller->sendAction();
 check($mail->calls === 1 && (int)$db->fetchOne('SELECT COUNT(*) FROM shoporder WHERE token = ?', $checkoutPost['checkout_token']) === 1, 'Repeated checkout duplicated storage or email');
 Zend_Registry::set('User', $reviewer); Zend_Registry::getInstance()->offsetUnset('SiteContext');
@@ -306,6 +307,69 @@ check($disabledWorkflow->detail($storedId)['status'] === 'in_progress', 'Checkou
 $disabledResult = $disabledWorkflow->createSalesorder($storedId, 21);
 check($disabledResult['created'] && $disabledWorkflow->detail($storedId)['salesorderid'] == $disabledResult['id'], 'Checkout deactivation prevents explicit ERP draft creation');
 
+// C3 uses one transition policy for presentation and writes, including inconsistent historical links.
+$orphanId = $save(hash('sha256', 'c3-orphan-transfer'))['order']['id'];
+$db->update('shoporder', ['status' => 'transferred'], 'id = ' . (int)$orphanId);
+$orphan = (new Shops_Service_OrderWorkflow())->detail((int)$orphanId);
+check(Shops_Service_OrderWorkflow::allowedStatuses($orphan) === ['completed', 'cancelled'] && !Shops_Service_OrderWorkflow::canTransfer($orphan), 'Transferred state without a link offers another transfer or in-progress');
+denied(fn() => (new Shops_Service_OrderWorkflow())->changeStatus((int)$orphanId, 'in_progress'), 'SHOPS_ORDER_STATUS_INVALID');
+denied(fn() => (new Shops_Service_OrderWorkflow())->createSalesorder((int)$orphanId, 21), 'SHOPS_ORDER_STATUS_INVALID');
+foreach (['completed', 'cancelled'] as $status) check(Shops_Service_OrderWorkflow::allowedStatuses(['status' => $status, 'salesorderid' => null]) === [], 'Terminal state offers a transition');
+check(Shops_Service_OrderWorkflow::allowedStatuses(['status' => 'forged', 'salesorderid' => null]) === [], 'Unknown state offers transitions');
+
+// Malformed JSON values must not become ERP addresses, labels, units or notes.
+$snapshotOrder = (new Shops_Service_OrderWorkflow())->detail((int)$httpId);
+check(Shops_Service_OrderSnapshot::problems($snapshotOrder, $snapshotOrder['positions']) === [], 'C3 snapshot validation fixture is not valid');
+foreach ([['billing', ['name' => []], 'SHOPS_ORDER_ADDRESS_INCOMPLETE'], ['message', [], 'SHOPS_ORDER_SNAPSHOT_MISSING']] as [$field, $invalid, $expected]) {
+    $invalidSnapshot = Shops_Service_OrderSnapshot::decode($snapshotOrder['snapshot']);
+    $invalidSnapshot[$field] = $invalid;
+    check(in_array($expected, Shops_Service_OrderSnapshot::problems(array_replace($snapshotOrder, ['snapshot' => json_encode($invalidSnapshot)]), $snapshotOrder['positions']), true), 'Malformed order snapshot passed inspection');
+}
+foreach (['description', 'uom'] as $field) {
+    $invalidRows = $snapshotOrder['positions'];
+    $invalidRow = Shops_Service_OrderSnapshot::decode($invalidRows[0]['snapshot']); $invalidRow[$field] = [];
+    $invalidRows[0]['snapshot'] = json_encode($invalidRow);
+    check(in_array('SHOPS_ORDER_POSITIONS_INCOMPLETE', Shops_Service_OrderSnapshot::problems($snapshotOrder, $invalidRows), true), 'Malformed position text passed inspection');
+}
+$malformedData = $data; $malformed = Shops_Service_OrderSnapshot::decode($data['snapshot']); $malformed['billing'] = 'invalid address';
+$malformedData['snapshot'] = json_encode($malformed);
+$malformedId = $save(hash('sha256', 'c3-malformed'), $malformedData)['order']['id'];
+denied(fn() => (new Shops_Service_OrderWorkflow())->createSalesorder((int)$malformedId, 21), 'SHOPS_ORDER_INCOMPLETE');
+
+foreach ([45 => ['view', 'edit'], 46 => ['view', 'edit', 'add'], 47 => ['view', 'add']] as $userId => $rights) {
+    $db->insert('permission', ['userid' => $userId, 'clientid' => 7, 'sales' => json_encode(['salesorder' => $rights]), 'contacts' => json_encode(['contact' => $userId === 46 ? [] : ['view']])]);
+    Zend_Registry::set('User', ['id' => $userId, 'clientid' => 7, 'name' => 'Limited operator']);
+    $limited = new Shops_Service_OrderWorkflow();
+    check((int)$limited->detail((int)$httpId)['id'] === (int)$httpId, 'Limited operator cannot read an authorized order');
+    denied(fn() => $limited->createSalesorder((int)$httpId, 21), 'SHOPS_ORDER_DENIED');
+    if ($userId === 46) check($limited->contacts('Changed') === [] && $limited->contact(['contactid' => 21]) === null, 'Contacts are visible without the contact view right');
+    if ($userId === 47) denied(fn() => $limited->changeStatus((int)$httpId, 'completed'), 'SHOPS_ORDER_DENIED');
+}
+Zend_Registry::set('User', $reviewer);
+
+// Only explicit entity linkage is reliable; public numbers, email matching and old checkout rows are not evidence.
+$notifications = [];
+foreach ([
+    [7, 'shops', 'order', $httpId, 0, 'customer-order@example.test', 'accepted', 'sent'],
+    [7, 'shops', 'order', $httpId, 0, 'internal-order@example.test', 'failed', 'SMTP password=fixture-secret'],
+    [7, 'shops', 'order', $httpId, 0, 'pending-order@example.test', 'pending', 'pending'],
+    [8, 'shops', 'order', $httpId, 0, 'foreign-notification@example.test', 'accepted', 'sent'],
+    [7, 'shops', 'checkout', $httpId, 0, 'unverified-legacy@example.test', null, 'sent'],
+    [7, 'contacts', 'order', $httpId, 0, 'other-module@example.test', 'accepted', 'sent'],
+    [7, 'shops', 'order', $id, 0, 'other-order@example.test', 'accepted', 'sent'],
+    [7, 'shops', 'order', $httpId, 1, 'deleted-notification@example.test', 'accepted', 'sent'],
+] as [$owner, $module, $controller, $documentId, $deleted, $recipient, $deliveryStatus, $responseText]) {
+    $db->insert('emailmessage', ['clientid' => $owner, 'module' => $module, 'controller' => $controller, 'documentid' => $documentId, 'contactid' => 0, 'deleted' => $deleted, 'recipient' => $recipient, 'response' => $responseText, 'deliverystatus' => $deliveryStatus, 'messagesent' => '2026-11-20 10:00:00']);
+    if ($owner === 7 && $module === 'shops' && $controller === 'order' && $documentId === $httpId && !$deleted) $notifications[] = (int)$db->lastInsertId();
+}
+$detail = (new Shops_Service_OrderWorkflow())->detail((int)$httpId);
+check(array_map('intval', array_column($detail['notifications'], 'id')) === $notifications, 'Mail history leaked another tenant/module/order or guessed old notification linkage');
+check(array_map([Shops_Service_OrderWorkflow::class, 'notificationStatus'], $detail['notifications']) === ['SHOPS_ORDER_MAIL_ACCEPTED', 'SHOPS_ORDER_MAIL_FAILED', 'SHOPS_ORDER_MAIL_UNKNOWN'], 'Notification outcomes claim acceptance or delivery without evidence');
+Zend_Registry::set('Client', ['id' => 9, 'parentid' => 7, 'modules' => ['shops' => 7, 'contacts' => 8, 'sales' => 9]]);
+$shared = new Shops_Service_OrderWorkflow();
+check(count($shared->detail((int)$httpId)['notifications']) === 3 && $shared->contact(['contactid' => 21]) === null, 'Shared shop history and contact owner were conflated');
+Zend_Registry::set('Client', ['id' => 7, 'parentid' => 0]);
+
 $db->insert('permission', ['userid' => 43, 'clientid' => 7, 'sales' => json_encode(['salesorder' => ['view']])]);
 $db->insert('permission', ['userid' => 44, 'clientid' => 7, 'sales' => json_encode(['salesorder' => []])]);
 
@@ -356,5 +420,7 @@ check((new Shops_Model_DbTable_Item())->getItem(101) !== null, 'Own site item un
 Zend_Registry::set('SiteContext', new DEEC_Site_Context(array_replace($shop, ['id' => 42]), [], ['catalog']));
 check((new Shops_Model_DbTable_Item())->getItem(101) === null, 'Foreign site item became public');
 Zend_Registry::getInstance()->offsetUnset('SiteContext');
-file_put_contents(dirname($socket) . '/order-fixtures.json', json_encode(['new' => $httpId, 'legacy' => $legacyId, 'linked' => $id, 'contact' => 21, 'foreign_contact' => 22]));
+$browserIds = [];
+foreach ([1280, 390, 320] as $width) $browserIds[$width] = (int)$save(hash('sha256', 'c3-browser-' . $width))['order']['id'];
+file_put_contents(dirname($socket) . '/order-fixtures.json', json_encode(['new' => $httpId, 'legacy' => $legacyId, 'linked' => $id, 'contact' => 21, 'foreign_contact' => 22, 'malformed' => $malformedId, 'orphan' => $orphanId, 'browser' => $browserIds]));
 echo "PASS: $checks persistent order, status, permissions, snapshots, ERP draft and concurrency checks\n";

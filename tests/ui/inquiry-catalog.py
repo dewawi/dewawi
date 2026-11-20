@@ -9,7 +9,7 @@ work = Path(sys.argv[1])
 if not str(work).startswith('/tmp/dewawi-shop-inquiry-quote-'):
     raise SystemExit('Only isolated catalog fixtures are accepted')
 source = (root / 'js/shops.js').read_text()
-helpers = source[source.index('function toggleDependentFields()'):source.index('// Function to show or hide shipping fields')]
+helpers = source[source.index('function toggleDependentFields()'):source.index('function toggleShippingFields()')]
 binding = source[source.index("$(document).on('click', '#inquiry-form .select-catalog-suggestion'"):source.index("$(document).on('click', '[data-show-tab]'")]
 script = r'''
 try {
