@@ -19,6 +19,8 @@ if ($path === '/assets/jquery.js') { header('Content-Type: application/javascrip
 $fixtures = json_decode(file_get_contents(dirname($socket) . '/order-fixtures.json'), true);
 $db = new Zend_Db_Adapter_Pdo_Mysql(['host' => 'localhost', 'unix_socket' => $socket, 'username' => 'root', 'password' => '', 'dbname' => 'dewawi_shop_orders_test', 'charset' => 'utf8mb4']);
 Zend_Db_Table::setDefaultAdapter($db);
+// All internal HTTP cases run after public checkout has been disabled.
+if ((int)$db->fetchOne('SELECT checkoutenabled FROM shop WHERE id = 41 AND clientid = 7') !== 0) throw new RuntimeException('Expected disabled checkout fixture');
 Zend_Session::setOptions(['save_path' => dirname($socket) . '/order-sessions']);
 $role = $_GET['role'] ?? 'editor'; $userId = ['editor' => 42, 'reader' => 43, 'denied' => 44, 'guest' => 0][$role] ?? 44;
 $tenant = (int)($_GET['tenant'] ?? 7);

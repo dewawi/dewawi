@@ -81,6 +81,10 @@ try:
     check(request(state_url + '?role=reader', {'csrf': csrf, 'status': 'completed'})[0] == 403, 'Reader changes order')
     for role in ('guest', 'denied'):
         check(request('/view?role=' + role)[0] == 403, role + ' can inspect order')
+        check(request('/index?role=' + role)[0] == 403, role + ' can list stored orders')
+        check(request('/search?role=' + role)[0] == 403, role + ' can search stored orders')
+        check(request(convert_url + '?role=' + role, {'csrf': csrf, 'contactid': fixtures['contact']})[0] == 403, role + ' can convert stored orders')
+    check(request(convert_url + '?role=reader', {'csrf': csrf, 'contactid': fixtures['contact']})[0] == 403, 'Reader converts stored orders')
     check(request('/view?tenant=8')[0] == 404, 'Foreign tenant accesses order')
     check(request('/view?id=999999')[0] == 404, 'Missing order is not 404')
     check(request('/add')[0] == 404 and request('/delete')[0] == 404, 'Legacy write actions remain available')

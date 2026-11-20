@@ -243,6 +243,30 @@ $r1 = json_decode(file_get_contents(dirname($socket) . '/order-child-0'), true);
 $r2 = json_decode(file_get_contents(dirname($socket) . '/order-child-1'), true);
 check($r1['id'] === $r2['id'] && $r1['created'] !== $r2['created'], 'Parallel conversion created more than one sales order');
 $httpId = $save(str_repeat('e', 32))['order']['id'];
+
+// Disabling public checkout must preserve ERP processing of previously stored orders.
+$db->update('shop', ['checkoutenabled' => 0], ['id = ?' => 41, 'clientid = ?' => 7]);
+$resolver = new class extends DEEC_Site_Resolver {
+	protected function getActiveSites() { return (new Zend_Db_Table('shop'))->fetchAll(['id = ?' => 41]); }
+};
+$disabledContext = $resolver->resolveByHost('shop.example.test');
+check($disabledContext !== null && !$disabledContext->hasFeature('checkout'), 'Disabled checkout still grants the public checkout feature');
+Zend_Registry::set('SiteContext', $disabledContext);
+$beforeOrders = (int)$db->fetchOne('SELECT COUNT(*) FROM shoporder');
+try {
+	new OrderCheckoutControllerFixture($request, new Zend_Controller_Response_Http());
+	throw new RuntimeException('Disabled shop accepts public checkout');
+} catch (Zend_Controller_Action_Exception $e) { check($e->getCode() === 404, 'Disabled public checkout was not rejected'); }
+check((int)$db->fetchOne('SELECT COUNT(*) FROM shoporder') === $beforeOrders && $mail->calls === 1, 'Rejected checkout stored an order or sent a notification');
+Zend_Registry::getInstance()->offsetUnset('SiteContext');
+$disabledWorkflow = new Shops_Service_OrderWorkflow();
+$storedId = (int)$publicOrder['id'];
+check($disabledWorkflow->detail($storedId)['snapshot'] === $publicOrder['snapshot'], 'Checkout deactivation hides or changes stored orders');
+$disabledWorkflow->changeStatus($storedId, 'in_progress');
+check($disabledWorkflow->detail($storedId)['status'] === 'in_progress', 'Checkout deactivation prevents internal status changes');
+$disabledResult = $disabledWorkflow->createSalesorder($storedId, 21);
+check($disabledResult['created'] && $disabledWorkflow->detail($storedId)['salesorderid'] == $disabledResult['id'], 'Checkout deactivation prevents explicit ERP draft creation');
+
 $db->insert('permission', ['userid' => 43, 'clientid' => 7, 'sales' => json_encode(['salesorder' => ['view']])]);
 $db->insert('permission', ['userid' => 44, 'clientid' => 7, 'sales' => json_encode(['salesorder' => []])]);
 file_put_contents(dirname($socket) . '/order-fixtures.json', json_encode(['new' => $httpId, 'legacy' => $legacyId, 'linked' => $id, 'contact' => 21, 'foreign_contact' => 22]));
