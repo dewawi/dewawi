@@ -40,6 +40,16 @@ class Shops_Model_DbTable_Item extends DEEC_Model_DbTable_SiteEntity
 		return $this->getPublicById($id);
 	}
 
+	public function getCartItem(int $id): ?array
+	{
+		$row = $this->fetchRow($this->getPublicSelect()->where('id = ?', $id)->where('shopenabled = ?', 1)->limit(1));
+		if (!$row) return null;
+		$item = $row->toArray();
+		$item['uom'] = !empty($item['uomid']) ? $this->getAdapter()->fetchOne($this->getAdapter()->select()
+			->from('uom', ['title'])->where('id = ?', (int)$item['uomid'])->where('clientid = ?', $this->getClientId())->where('deleted = ?', 0)) : null;
+		return $item;
+	}
+
 	public function getItemBySku(string $sku): ?array
 	{
 		$row = $this->fetchRow(

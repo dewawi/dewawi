@@ -79,7 +79,7 @@ class OrderMailFixture extends Zend_Controller_Action_Helper_Abstract {
 $mail = new OrderMailFixture(); Zend_Controller_Action_HelperBroker::addHelper($mail);
 $db->insert('country', ['code' => 'DE', 'name' => 'Germany', 'language' => 'de_DE', 'clientid' => 7]);
 $db->insert('taxrate', ['id' => 11, 'name' => 'VAT', 'rate' => 19, 'clientid' => 7]);
-$db->insert('item', ['id' => 103, 'clientid' => 7, 'shopid' => 41, 'catid' => 0, 'title' => 'Checkout article', 'sku' => 'CHECKOUT', 'price' => 500, 'specialprice' => 100, 'taxid' => 11, 'currency' => 'EUR']);
+$db->insert('item', ['id' => 103, 'clientid' => 7, 'shopid' => 41, 'catid' => 0, 'title' => 'Checkout article', 'shopenabled' => 1, 'sku' => 'CHECKOUT', 'price' => 500, 'specialprice' => 100, 'taxid' => 11, 'currency' => 'EUR']);
 $tr = new DEEC_Translate('de_DE'); $tr->loadModule('shops'); Zend_Registry::set('DEEC_Translate', $tr);
 Zend_Registry::set('SiteContext', new DEEC_Site_Context($shop, [], ['catalog', 'checkout', 'cart']));
 $reviewer = Zend_Registry::get('User'); Zend_Registry::set('User', ['id' => 0]);
@@ -96,6 +96,32 @@ $controller = new OrderCheckoutControllerFixture($request, $response);
 $form = new Shops_Form_Checkout(); $form->csrf_token->initCsrfToken();
 $checkoutPost = array_merge($post, ['email' => 'alice@example.com', 'csrf_token' => $form->csrf_token->getHash(), 'checkout_token' => $form->checkout_token->getValue(), 'privacy' => 1, 'module' => 'shops', 'controller' => 'checkout', 'differentshippingaddress' => 0]);
 $cart = new Shops_Model_ShoppingCart(); $cart->addItem(103, 'Stale basket label', 'CHECKOUT', 100, 2);
+$checkoutPost['cart_revision'] = $cart->getRevision();
+// Revalidation must reject a stale checkout and untrusted or revoked cart rows before persistence.
+$originalCart = $cart->getItems();
+$cartSession = new Zend_Session_Namespace('shopping_cart_7_41');
+$invalidCheckout = static function(array $overrides = []) use ($request, $response, $controller, $checkoutPost, $db): void {
+	$response->clearBody(); $response->clearHeaders(); $response->setHttpResponseCode(200);
+	$request->setPost(array_replace($checkoutPost, $overrides));
+	$controller->sendAction();
+	$result = json_decode($response->getBody(), true);
+	check(($result['success'] ?? null) === false && (int)$db->fetchOne('SELECT COUNT(*) FROM shoporder') === 0, 'Invalid checkout stored an order');
+};
+$invalidCheckout(['cart_revision' => $cart->getRevision() - 1]);
+foreach (['1e309', '-1', '100001', '0.00001'] as $invalidQuantity) {
+	$rows = $originalCart; $rows[103]['quantity'] = $invalidQuantity; $cartSession->items = $rows;
+	$invalidCheckout();
+}
+$cartSession->items = $originalCart;
+foreach ([['shopenabled' => 0], ['shopid' => 42], ['clientid' => 8], ['deleted' => 1], ['specialprice' => 110], ['specialprice' => '100.0001']] as $invalidItem) {
+	$db->update('item', $invalidItem, 'id = 103');
+	$invalidCheckout();
+	$db->update('item', ['shopenabled' => 1, 'shopid' => 41, 'clientid' => 7, 'deleted' => 0, 'specialprice' => 100], 'id = 103');
+}
+$cartSession->items = [];
+$invalidCheckout();
+$cartSession->items = $originalCart;
+$response->clearBody(); $response->clearHeaders(); $response->setHttpResponseCode(200);
 $request->setPost($checkoutPost); $controller->sendAction();
 check($response->isRedirect(), 'Real checkout failed: ' . $response->getBody());
 $publicOrder = (new Shops_Model_DbTable_Order())->setClientId(7)->getByCheckoutToken(41, $checkoutPost['checkout_token']);

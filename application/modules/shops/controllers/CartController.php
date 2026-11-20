@@ -5,6 +5,7 @@ class Shops_CartController extends Shops_Controller_Action
 	public function init()
 	{
 		parent::init();
+		if (!$this->_siteContext->hasFeature('cart')) throw new Zend_Controller_Action_Exception('Not found', 404);
 		$this->initSiteCart();
 	}
 
@@ -20,7 +21,8 @@ class Shops_CartController extends Shops_Controller_Action
 				'title' => $item['title'],
 				'sku' => $item['sku'],
 				'quantity' => $item['quantity'],
-				'total' => $currency->toCurrency($item['price'] * $item['quantity']),
+				'uom' => $item['uom'],
+				'total' => $currency->toCurrency(round($item['price'] * $item['quantity'], 2)),
 				'price' => $currency->toCurrency($item['price']),
 			];
 		}
@@ -33,104 +35,97 @@ class Shops_CartController extends Shops_Controller_Action
 
 	public function addAction()
 	{
-		if (!$this->getRequest()->isPost()) {
-			return $this->_helper->json(['success' => false, 'message' => 'Invalid request']);
-		}
+		if (!$this->validateMutation()) return;
+		$id = $this->postedId();
+		$quantity = $this->getRequest()->getPost('quantity', '1');
+		if (!$id || !Shops_Model_ShoppingCart::validQuantity($quantity)) return $this->cartResponse(false, 'SHOPS_CART_INVALID', 400);
 
-		$id = (int)$this->_getParam('id', 0);
-		$quantity = $this->_getParam('quantity', 1);
-
-		if (!$id || !is_numeric($quantity) || (float)$quantity <= 0) {
-			return $this->_helper->json(['success' => false, 'message' => 'Invalid cart item']);
-		}
-
-		$itemDb = new Shops_Model_DbTable_Item();
-		$item = $itemDb->getItem($id);
-
-		if (!$item) {
-			return $this->_helper->json(['success' => false, 'message' => 'Item not found']);
-		}
-
-		$price = !empty($item['specialprice']) ? $item['specialprice'] : $item['price'];
-
-		$this->cart->addItem($id, $item['title'], $item['sku'], $price, (float)$quantity);
-
-		return $this->_helper->json([
-			'success' => true,
-			'cart' => $this->cart->getItems(),
-			'total' => $this->cart->getTotalPrice(),
-			'cartItemCount' => $this->cart->getItemCount(),
-		]);
+		$item = (new Shops_Model_DbTable_Item())->getCartItem($id);
+		$price = $item ? Shops_Model_ShoppingCart::itemPrice($item) : null;
+		if ($price === null) return $this->cartResponse(false, 'SHOPS_CART_UNAVAILABLE', 400);
+		if (!$this->cart->addItem($id, $item['title'], $item['sku'], $price, $quantity, $item['uom'])) return $this->cartResponse(false, 'SHOPS_CART_INVALID', 400);
+		$this->_flashMessenger->addMessage(['type' => 'success', 'message' => 'SHOPS_CART_ADDED']);
+		return $this->cartResponse(true, 'SHOPS_CART_ADDED');
 	}
 
 	public function updateAction()
 	{
-		if (!$this->getRequest()->isPost()) {
-			return $this->_helper->json(['success' => false, 'message' => 'Invalid request']);
-		}
-
-		$id = (int)$this->_getParam('id');
-		$quantity = $this->_getParam('quantity');
-
-		if(!$id || !is_numeric($quantity)) {
-			return $this->_helper->json(['success' => false, 'message' => 'Invalid cart item']);
-		}
-
-		if(!$this->cart->updateItem($id, (float)$quantity)) {
-			return $this->_helper->json(['success' => false, 'message' => 'Cart item not found']);
-		}
-
-		return $this->_helper->json([
-			'success' => true,
-			'cart' => $this->cart->getItems(),
-			'total' => $this->cart->getTotalPrice(),
-			'cartItemCount' => $this->cart->getItemCount(),
-		]);
+		if (!$this->validateMutation()) return;
+		$id = $this->postedId();
+		$quantity = $this->getRequest()->getPost('quantity');
+		if (!$id || !Shops_Model_ShoppingCart::validQuantity($quantity, true)
+			|| !$this->cart->updateItem($id, $quantity)) return $this->cartResponse(false, 'SHOPS_CART_INVALID', 400);
+		return $this->cartResponse(true, 'SHOPS_CART_UPDATED');
 	}
 
 	public function countAction()
 	{
-		$count = $this->cart->getItemCount();
-		$response = [
-			'success' => true,
-			'count' => $count,
-		];
-		$this->_helper->json($response);
+		$this->cart->revalidate();
+		return $this->cartResponse(true);
 	}
 
 	public function removeAction()
 	{
-		if (!$this->getRequest()->isPost()) {
-			return $this->_helper->json(['success' => false, 'message' => 'Invalid request']);
-		}
-
-		$id = (int)$this->_getParam('id');
-
-		if(!$id || !$this->cart->removeItem($id)) {
-			return $this->_helper->json(['success' => false, 'message' => 'Cart item not found']);
-		}
-
-		return $this->_helper->json([
-			'success' => true,
-			'cart' => $this->cart->getItems(),
-			'total' => $this->cart->getTotalPrice(),
-			'cartItemCount' => $this->cart->getItemCount(),
-		]);
+		if (!$this->validateMutation()) return;
+		$id = $this->postedId();
+		if (!$id || !$this->cart->removeItem($id)) return $this->cartResponse(false, 'SHOPS_CART_UNAVAILABLE', 400);
+		return $this->cartResponse(true, 'SHOPS_CART_ITEM_REMOVED');
 	}
 
 	public function clearAction()
 	{
-		if (!$this->getRequest()->isPost()) {
-			return $this->_helper->json(['success' => false, 'message' => 'Invalid request']);
-		}
-
+		if (!$this->validateMutation()) return;
 		$this->cart->clearCart();
+		return $this->cartResponse(true, 'SHOPS_CART_CLEARED');
+	}
 
+	private function postedId(): int
+	{
+		return (int)filter_var($this->getRequest()->getPost('id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+	}
+
+	private function validateMutation(): bool
+	{
+		$request = $this->getRequest();
+		if (!$request->isPost()) {
+			$this->getResponse()->setHeader('Allow', 'POST', true);
+			$this->cartResponse(false, 'SHOPS_CART_REQUEST_INVALID', 405);
+			return false;
+		}
+		$token = $request->getPost('csrf_token');
+		if (!is_string($token) || !hash_equals($this->cart->getCsrfToken(), $token)) {
+			$this->cartResponse(false, 'SHOPS_FORM_EXPIRED', 403);
+			return false;
+		}
+		if (!$this->isReasonableSubmission((array)$request->getPost(), 8, 2048, 2)) {
+			$this->cartResponse(false, 'SHOPS_SUBMISSION_TOO_LARGE', 413);
+			return false;
+		}
+		$revision = filter_var($request->getPost('revision'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+		$changed = $this->cart->revalidate();
+		if ($revision === false || $revision !== $this->cart->getRevision() || $changed) {
+			$this->cartResponse(false, 'SHOPS_CART_CHANGED', 409);
+			return false;
+		}
+		return true;
+	}
+
+	private function cartResponse(bool $success, string $message = '', int $status = 200)
+	{
+		$this->getResponse()->setHttpResponseCode($status)->setHeader('Cache-Control', 'private, no-store', true);
+		$items = $this->cart->getItems();
+		foreach ($items as &$item) $item['total'] = round($item['price'] * $item['quantity'], 2);
+		unset($item);
 		return $this->_helper->json([
-			'success' => true,
-			'cart' => [],
-			'total' => 0,
-			'cartItemCount' => 0,
+			'success' => $success,
+			'message' => $message === '' ? '' : $this->view->translate($message),
+			'notices' => array_map(fn($key) => $this->view->translate($key), $this->cart->consumeNotices()),
+			'cart' => $items,
+			'total' => $this->cart->getTotalPrice(),
+			'count' => $this->cart->getItemCount(),
+			'cartItemCount' => $this->cart->getItemCount(),
+			'revision' => $this->cart->getRevision(),
+			'checkoutEnabled' => $this->_siteContext->hasFeature('checkout'),
 		]);
 	}
 }

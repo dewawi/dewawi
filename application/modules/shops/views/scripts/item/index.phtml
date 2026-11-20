@@ -26,7 +26,7 @@ $seo = $this->SiteMetadata([
 	'image' => $previewImage['url'] ?? null,
 ]);
 
-$hasSpecial = !empty($this->prices['rawspecialprice']);
+$hasSpecial = (float)($this->prices['rawspecialprice'] ?? 0) > 0;
 $base = (float)($this->prices['raw'] ?? 0);
 $special = (float)($this->prices['rawspecialprice'] ?? 0);
 $discountPct = $hasSpecial && $base > 0 && $special > 0 && $special < $base ? round((1 - ($special / $base)) * 100) : null;
@@ -186,7 +186,7 @@ if ($productUrl !== null && $price > 0 && preg_match('/^[A-Z]{3}$/', $currency))
 						<?php endif; ?>
 					</p>
 					<?php if($this->prices['rawtax'] > $this->prices['raw']) : ?>
-						<?php if($this->prices['rawspecialprice']) : ?>
+						<?php if($hasSpecial) : ?>
 							<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices['formattedspecialpricetax']; ?> inkl. MwSt.</p>
 						<?php else : ?>
 							<p style="margin-bottom: 0; font-size: 0.8rem;"><?php echo $this->prices['formattedtax']; ?> inkl. MwSt.</p>

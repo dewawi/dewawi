@@ -6,7 +6,7 @@ class Shops_CheckoutController extends Shops_Controller_Action
 	public function init()
 	{
 		parent::init();
-		if (!$this->_siteContext->hasFeature('checkout')) throw new Zend_Controller_Action_Exception('Not found', 404);
+		if (!$this->_siteContext->hasFeature('checkout') || !$this->_siteContext->hasFeature('cart')) throw new Zend_Controller_Action_Exception('Not found', 404);
 
 		$this->initSiteCart();
 		$this->checkoutDataSession = new Zend_Session_Namespace('ShopsCheckout');
@@ -28,6 +28,8 @@ class Shops_CheckoutController extends Shops_Controller_Action
 		$this->initSiteLayout();
 
 		$checkout = new Shops_Form_Checkout();
+		$checkout->setAction($this->view->url([], 'checkout_send'));
+		$checkout->addElement('hidden', 'cart_revision', ['value' => $this->cart->getRevision(), 'decorators' => ['ViewHelper']]);
 		$this->view->checkout = $checkout;
 
 		if (!empty($this->checkoutDataSession->formData)) {
@@ -53,7 +55,8 @@ class Shops_CheckoutController extends Shops_Controller_Action
 				'title' => $item['title'],
 				'sku' => $item['sku'],
 				'quantity' => $item['quantity'],
-				'total' => $currency->toCurrency($item['price'] * $item['quantity']),
+				'uom' => $item['uom'],
+				'total' => $currency->toCurrency(round($item['price'] * $item['quantity'], 2)),
 				'price' => $currency->toCurrency($item['price']),
 			];
 		}
@@ -121,6 +124,12 @@ class Shops_CheckoutController extends Shops_Controller_Action
 			return $this->_helper->redirector->gotoRoute([], 'checkout_success', true);
 		}
 
+		$cartRevision = filter_var($post['cart_revision'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+		if ($cartRevision === false || $cartRevision !== $this->cart->getRevision()) {
+			$this->getResponse()->setHttpResponseCode(409);
+			return $this->_helper->json(['success' => false, 'message' => $this->view->translate('SHOPS_CART_CHANGED')]);
+		}
+
 		$cart = $this->cart->getItems();
 		if(empty($cart)) {
 			return $this->_helper->json(['success' => false, 'message' => $this->view->translate('SHOPS_CART_EMPTY')]);
@@ -138,10 +147,11 @@ class Shops_CheckoutController extends Shops_Controller_Action
 
 			$quantity = (float)$row['quantity'];
 			$price = (float)$row['price'];
-			$item = $itemDb->getItemBySku((string)$row['sku']);
-			$currentPrice = $item && !empty($item['specialprice']) ? (float)$item['specialprice'] : (float)($item['price'] ?? 0);
-			if (!$item || (int)$item['id'] !== (int)$cartId || !is_finite($quantity) || !is_finite($price)
-				|| $quantity <= 0 || $quantity > 100000 || $price < 0 || $price > 99999999 || abs($currentPrice - $price) > 0.0001
+			$item = $itemDb->getCartItem((int)$cartId);
+			$currentPrice = $item ? Shops_Model_ShoppingCart::itemPrice($item) : null;
+			if (!$item || $currentPrice === null || !Shops_Model_ShoppingCart::validQuantity($row['quantity'])
+				|| (int)$item['id'] !== (int)$cartId || (string)$item['sku'] !== (string)$row['sku'] || !is_finite($quantity) || !is_finite($price)
+				|| $quantity <= 0 || $quantity > 100000 || $price < 0 || $price > 99999999 || $currentPrice !== $price
 				|| strtoupper((string)$item['currency']) !== 'EUR') {
 				return $this->_helper->json(['success' => false, 'message' => $this->view->translate('SHOPS_CART_CHANGED')]);
 			}
@@ -162,7 +172,7 @@ class Shops_CheckoutController extends Shops_Controller_Action
 					'version' => 1, 'sku' => (string)$item['sku'], 'title' => (string)$item['title'],
 					'description' => (string)($item['description'] ?? ''), 'currency' => 'EUR', 'uom' => $uom ?: null,
 					'taxrate' => $tax && is_numeric($tax['rate']) && (float)$tax['rate'] >= 0 && (float)$tax['rate'] <= 100 ? (float)$tax['rate'] : null,
-					'price_source' => !empty($item['specialprice']) ? 'specialprice' : 'price',
+					'price_source' => (float)($item['specialprice'] ?? 0) > 0 ? 'specialprice' : 'price',
 				], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
 			];
 		}

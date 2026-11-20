@@ -1,61 +1,32 @@
-<?php
-//$this->title = $this->translate('SHOPS_ACCOUNTS');
-//$this->headTitle($this->title);
-//echo $this->Messages();
-?>
-
-<?php
-$checkout = $this->CheckoutForm($this->translate('SHOPS_ORDER_FORM'));
-?>
-
 <section id="checkout" class="py-5">
 	<div class="container">
+		<h2><?php echo $this->translate('SHOPS_ORDER_FORM'); ?></h2>
+		<p><a href="<?php echo $this->escape($this->url([], 'cart')); ?>"><?php echo $this->translate('SHOPS_SHOPPING_CART_EDIT'); ?></a></p>
 		<div class="row">
-			<div class="col-md-12 mb-4">
-				<h2><?php echo $this->translate('SHOPS_ORDER_FORM'); ?></h2>
-			</div>
-			<div class="col-md-8 mb-4" >
-				<?php echo $checkout; ?>
+			<div class="col-md-8 mb-4">
+				<?php if ($this->items) echo $this->CheckoutForm($this->translate('SHOPS_ORDER_FORM')); ?>
 			</div>
 			<div class="col-md-4 mb-4">
-				<h2 class="text-center mb-4"><?php echo $this->translate('SHOPS_SHOPPING_CART'); ?></h2>
+				<h2><?php echo $this->translate('SHOPS_SHOPPING_CART'); ?></h2>
 				<div class="cart-wrapper">
-					<!-- Cart Container -->
-					<div id="cart-container">
-						<?php if (!empty($this->items)) : ?>
-							<div class="cart-header d-flex justify-content-between align-items-center">
-								<span><?php echo $this->translate('SHOPS_PRODUCT'); ?></span>
-								<span><?php echo $this->translate('SHOPS_PRICE'); ?></span>
-								<span><?php echo $this->translate('SHOPS_QUANTITY'); ?></span>
-								<span><?php echo $this->translate('SHOPS_TOTAL'); ?></span>
+					<?php if ($this->items) : ?>
+						<?php foreach ($this->items as $item) : ?>
+							<div class="cart-item">
+								<strong><?php echo $this->escape($item['title']); ?></strong>
+								<div class="text-muted"><?php echo $this->escape($item['sku']); ?></div>
+								<div><?php echo $this->translate('SHOPS_PRICE'); ?>: <?php echo $item['price']; ?></div>
+								<div><?php echo $this->translate('SHOPS_QUANTITY'); ?>: <?php echo $this->escape($item['quantity'] . ' ' . ($item['uom'] ?? '')); ?></div>
+								<div><?php echo $this->translate('SHOPS_TOTAL'); ?>: <?php echo $item['total']; ?></div>
 							</div>
-							<div id="cart-items">
-								<?php foreach ($this->items as $id => $item) : ?>
-									<div class="cart-item d-flex justify-content-between align-items-center" data-id="<?php echo $id; ?>">
-										<div><?php echo $this->escape($item['title']); ?></div>
-										<div><?php echo $this->escape($item['sku']); ?></div>
-										<div><?php echo $item['price']; ?></div>
-										<div>
-											<span><?php echo $item['quantity']; ?></span>
-										</div>
-										<div class="item-total"><?php echo $item['total']; ?></div>
-									</div>
-								<?php endforeach; ?>
-							</div>
-							<div class="cart-summary d-flex justify-content-between align-items-center mt-3">
-								<h4><?php echo $this->translate('SHOPS_TOTAL') . ':'; ?> <span id="cart-total"><?php echo $this->total; ?></span></h4>
-								<button id="edit-btn" class="btn btn-success" type="button"><?php echo $this->translate('SHOPS_SHOPPING_CART_EDIT'); ?></button><br>
-							</div>
-							<div class="mt-3">
-								<?php $shippingPage = $this->PageByType('shipping'); ?>
-								<?php if($shippingPage) : ?>
-									<span style="font-size: 0.8rem;"><?php echo $this->translate('SHOPS_NET_PRICE_NOTICE'); ?> <a href="<?php echo $this->SlugUrl('page', (int)$shippingPage['id']); ?>" target="_blank"><?php echo $this->translate('SHOPS_SHIPPING_COSTS'); ?></a></span>
-								<?php endif; ?>
-							</div>
-						<?php else : ?>
-							<p><?php echo $this->translate('SHOPS_SHOPPING_CART_EMPTY'); ?></p>
-						<?php endif; ?>
-					</div>
+						<?php endforeach; ?>
+						<p class="cart-summary"><?php echo $this->translate('SHOPS_TOTAL'); ?>: <?php echo $this->total; ?></p>
+					<?php else : ?>
+						<p><?php echo $this->translate('SHOPS_SHOPPING_CART_EMPTY'); ?></p>
+					<?php endif; ?>
+					<p class="small mt-3"><?php echo $this->translate('SHOPS_CART_NET_NOTICE'); ?>
+						<?php $shippingPage = $this->PageByType('shipping'); ?>
+						<?php if ($shippingPage) : ?><a href="<?php echo $this->escape($this->SlugUrl('page', (int)$shippingPage['id'])); ?>"><?php echo $this->translate('SHOPS_SHIPPING_COSTS'); ?></a><?php endif; ?>
+					</p>
 				</div>
 			</div>
 		</div>

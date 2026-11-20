@@ -37,7 +37,7 @@ try:
                 break
         time.sleep(0.1)
 
-    for script in [Path(__file__).with_suffix('.php'), Path(__file__).with_name('shop-orders-db.php')]:
+    for script in [Path(__file__).with_suffix('.php'), Path(__file__).with_name('shop-cart-db.php'), Path(__file__).with_name('shop-orders-db.php')]:
         result = subprocess.run(
             ['php', str(script), socket], text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         )

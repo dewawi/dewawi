@@ -31,7 +31,7 @@ abstract class Shops_Controller_Action extends DEEC_Controller_SiteAction
 		}
 
 		if ($this->_siteContext->hasFeature('cart')) {
-			$this->initSiteCart();
+			$this->initSiteCart()->revalidate();
 		}
 
 		$this->initSiteContactForm();

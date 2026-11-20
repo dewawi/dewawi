@@ -248,7 +248,7 @@ $inquiryEnabled = $this->siteContext->hasFeature('inquiry');
 								</div>
 
 								<?php
-								$hasSpecial = !empty($itemPrice['rawspecialprice']);
+								$hasSpecial = (float)($itemPrice['rawspecialprice'] ?? 0) > 0;
 								$base = (float)$itemPrice['raw'];
 								$special = (float)$itemPrice['rawspecialprice'];
 

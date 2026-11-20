@@ -10,156 +10,134 @@ $(document).ready(function () {
 		});
 	});
 
-	const cartItemsContainer = $('#cart-items');
-	const cartTotal = $('#cart-total');
-	const cartCount = $('#cart-count');
+	const $cartState = $('#shop-cart-state');
+	if ($cartState.length) {
+		const config = JSON.parse($cartState.attr('data-config'));
+		const $items = $('#cart-items');
+		let revision = config.revision;
+		let busy = false;
+		let focusId = null;
+		let focusRemove = false;
+		const currency = new Intl.NumberFormat(document.documentElement.lang || 'de-DE', { style: 'currency', currency: 'EUR' });
 
-	// Define the locale and currency
-	const userLocale = document.documentElement.lang || 'de-DE';
-	const userCurrency = 'EUR'; // Euro currency
+		function feedback(message, error = false) {
+			$('#cart-feedback').text(message).prop('hidden', !message).toggleClass('alert-danger', error).toggleClass('alert-info', !error);
+		}
 
-	function formatCurrency(value, locale, currency) {
-		return new Intl.NumberFormat(locale, {
-			style: 'currency',
-			currency: currency,
-		}).format(value);
-	}
+		function setBusy(value) {
+			busy = value;
+			$('#cart-container').attr('aria-busy', String(value));
+			$('.add-to-cart, .quantity-input, .remove-item, #clear-cart, #checkout-btn').prop('disabled', value);
+		}
 
-	// Function to render cart items dynamically
-	function renderCartItems(cart) {
-		const cartItemsContainer = $('#cart-items'); // Ensure the container is correctly selected
-		const quantityLabel = cartItemsContainer.data('quantity-label') || 'Quantity';
-		const removeLabel = cartItemsContainer.data('remove-label') || 'Remove';
-		const emptyLabel = cartItemsContainer.data('empty-label') || 'Your cart is empty.';
-		cartItemsContainer.empty();
-
-		if (Object.keys(cart).length === 0) {
-			cartItemsContainer.append($('<p>').text(emptyLabel));
-		} else {
-			$.each(cart, function (id, item) {
-				const title = String(item.title ?? '');
-				const sku = String(item.sku ?? '');
-				const $row = $('<div>', { class: 'cart-item d-flex justify-content-between align-items-center' }).attr('data-id', id);
-				const $details = $('<div>', { class: 'product-details' }).css({ flex: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center' });
-				$details.append($('<strong>', { class: 'product-title' }).text(title));
-				$details.append($('<div>', { class: 'product-sku text-muted' }).css('font-size', '0.9rem').text('SKU: ' + sku));
+		function render(response) {
+			if (!response || !response.cart || !Number.isInteger(response.revision)) return false;
+			revision = response.revision;
+			const links = {};
+			$items.find('.cart-item').each(function () { links[$(this).attr('data-id')] = $(this).find('.product-details a').attr('href'); });
+			$items.empty();
+			$.each(response.cart, function (id, item) {
+				const $row = $('<div>', { class: 'cart-item' }).attr('data-id', id);
+				const $details = $('<div>', { class: 'product-details' });
+				const $title = $('<strong>', { class: 'product-title' }).text(item.title);
+				$details.append(links[id] ? $('<a>').attr('href', links[id]).append($title) : $title);
+				$details.append($('<div>', { class: 'product-sku text-muted' }).text(item.sku));
 				$row.append($details);
-				$row.append($('<div>').css({ flex: 1, textAlign: 'center' }).text(formatCurrency(item.price, userLocale, userCurrency)));
-				const $quantity = $('<input>', { type: 'number', class: 'form-control quantity-input', min: 1 })
-					.val(item.quantity).attr('data-id', id).attr('aria-label', quantityLabel + ' ' + title);
-				$row.append($('<div>').css({ flex: 1, textAlign: 'center' }).append($quantity));
-				$row.append($('<div>', { class: 'item-total' }).css({ flex: 1, textAlign: 'center' }).text(formatCurrency(item.price * item.quantity, userLocale, userCurrency)));
-				const $remove = $('<button>', { type: 'button', class: 'btn btn-danger btn-sm remove-item' })
-					.attr('data-id', id).text(removeLabel);
-				$row.append($('<div>').css({ flex: 1, textAlign: 'center' }).append($remove));
-				cartItemsContainer.append($row);
+				$row.append($('<div>', { class: 'cart-price' }).attr('data-label', config.price).text(currency.format(item.price)));
+				const $input = $('<input>', { type: 'number', class: 'form-control quantity-input', min: 0, max: 100000, step: 0.0001 })
+					.val(item.quantity).attr('data-id', id).attr('aria-label', config.quantity + ' ' + item.title);
+				$row.append($('<div>', { class: 'cart-quantity' }).attr('data-label', config.quantity).append($input, $('<span>', { class: 'cart-uom' }).text(item.uom || '')));
+				$row.append($('<div>', { class: 'item-total' }).attr('data-label', config.total).text(currency.format(item.total)));
+				const $remove = $('<button>', { type: 'button', class: 'btn btn-danger btn-sm remove-item' }).attr('data-id', id)
+					.attr('aria-label', config.remove + ' ' + item.title).text(config.remove);
+				$row.append($('<div>', { class: 'cart-actions' }).append($remove));
+				$items.append($row);
+			});
+			const empty = Object.keys(response.cart).length === 0;
+			$('#cart-empty').prop('hidden', !empty);
+			$('.cart-header, .cart-summary').prop('hidden', empty);
+			$('#cart-total').text(currency.format(response.total));
+			$('#cart-count').text(new Intl.NumberFormat(document.documentElement.lang || 'de-DE', { maximumFractionDigits: 4 }).format(response.cartItemCount));
+			$('#checkout-btn').prop('hidden', empty || !response.checkoutEnabled);
+			return true;
+		}
+
+		function restoreFocus() {
+			if (!focusId) return;
+			let $target = $items.find(focusRemove ? '.remove-item' : '.quantity-input').filter(function () { return $(this).attr('data-id') === focusId; });
+			if (!$target.length) $target = $items.find('.quantity-input').first();
+			if (!$target.length) $target = $('#cart-feedback');
+			$target.trigger('focus');
+			focusId = null;
+		}
+
+		function complete(response) {
+			if (!render(response)) return false;
+			feedback([response.message].concat(response.notices || []).filter(Boolean).join(' '), !response.success);
+			setBusy(false);
+			restoreFocus();
+			return true;
+		}
+
+		function reconcile() {
+			// A failed response may still have committed. Read the cart before allowing another write.
+			$.ajax({ url: config.countUrl, dataType: 'json', timeout: 20000, cache: false }).done(function (response) {
+				if (render(response)) {
+					feedback([config.failed].concat(response.notices || []).join(' '), true);
+					setBusy(false);
+					restoreFocus();
+				} else unavailable();
+			}).fail(unavailable);
+		}
+
+		function unavailable() {
+			feedback(config.unknown, true);
+			$('#cart-reload').prop('hidden', false).trigger('focus');
+		}
+
+		function mutate(action, data, element) {
+			if (busy) return;
+			focusId = $(element).attr('data-id') || (action === 'clear' ? 'clear' : null);
+			focusRemove = $(element).hasClass('remove-item');
+			setBusy(true);
+			feedback(config.saving);
+			$.ajax({ url: config[action + 'Url'], method: 'POST', dataType: 'json', timeout: 20000,
+				data: Object.assign({}, data, { csrf_token: config.token, revision: revision })
+			}).done(function (response) {
+				if (action === 'add' && response && response.success) {
+					window.location.assign(config.url);
+					return;
+				}
+				if (!complete(response)) reconcile();
+			}).fail(function (xhr) {
+				if (!complete(xhr.responseJSON)) reconcile();
 			});
 		}
+
+		$(document).on('click', '.add-to-cart', function () { mutate('add', { id: $(this).attr('data-id'), quantity: 1 }, this); });
+		$items.on('change', '.quantity-input', function () {
+			if (busy) return;
+			const value = this.value;
+			if (!/^[0-9]+(?:\.[0-9]{1,4})?$/.test(value) || !this.checkValidity()) {
+				feedback(config.invalid, true);
+				$(this).attr('aria-invalid', 'true');
+				return;
+			}
+			$(this).removeAttr('aria-invalid');
+			mutate('update', { id: $(this).attr('data-id'), quantity: value }, this);
+		});
+		$items.on('click', '.remove-item', function () { mutate('remove', { id: $(this).attr('data-id') }, this); });
+		$('#clear-cart').on('click', function () { mutate('clear', {}, this); });
+		$('#checkout-btn').on('click', function () {
+			if (!busy && !$items.find('[aria-invalid="true"]').length && config.checkout) window.location.assign(config.checkout);
+		});
+		$('#cart-reload').on('click', function () { window.location.reload(); });
+		$(window).on('pageshow', function (event) { if (event.originalEvent.persisted) window.location.reload(); });
 	}
-
-	// Function to update cart summary
-	function updateCartSummary(total) {
-		cartTotal.text(formatCurrency(total, userLocale, userCurrency));
-	}
-
-	// Function to update cart count
-	function updateCartCount(count) {
-		cartCount.text(count || 0);
-	}
-
-	// Add to Cart
-	$('.add-to-cart').on('click', function () {
-		const id = $(this).data('id');
-
-		$.post('/cart/add', { id, quantity: 1 }, function (response) {
-			if (response.success) {
-				renderCartItems(response.cart);
-				updateCartSummary(response.total);
-				updateCartCount(response.cartItemCount);
-				window.location.href = '/cart';
-			} else {
-				console.error('Failed to add to cart:', response.message);
-			}
-		}).fail(function () {
-			console.error('Error adding item to cart.');
-		});
-	});
-
-	// Update Cart Item
-	cartItemsContainer.on('click', '.update-item', function () {
-		const id = $(this).data('id');
-		const quantity = $(this).data('quantity');
-
-		if (quantity <= 0) {
-			console.log('Quantity must be at least 1.');
-			return;
-		}
-
-		$.post('/cart/update', { id, quantity }, function (response) {
-			if (response.success) {
-				renderCartItems(response.cart);
-				updateCartSummary(response.total);
-				updateCartCount(response.cartItemCount);
-			} else {
-				console.log('Failed to update item quantity.');
-			}
-		});
-	});
-
-	// Update Item Quantity
-	cartItemsContainer.on('change', '.quantity-input', function () {
-		const id = $(this).data('id');
-		const quantity = $(this).val();
-
-		if (quantity <= 0) {
-			console.error('Quantity must be greater than zero.');
-			return;
-		}
-
-		$.post('/cart/update', { id, quantity }, function (response) {
-			if (response.success) {
-				renderCartItems(response.cart);
-				updateCartSummary(response.total);
-				updateCartCount(response.cartItemCount);
-			}
-		});
-	});
-
-	// Remove from Cart
-	cartItemsContainer.on('click', '.remove-item', function () {
-		const id = $(this).data('id');
-
-		$.post('/cart/remove', { id }, function (response) {
-			if (response.success) {
-				renderCartItems(response.cart);
-				updateCartSummary(response.total);
-				updateCartCount(response.cartItemCount);
-			} else {
-				console.log('Failed to remove item from the cart.');
-			}
-		});
-	});
-
-	// Clear Cart
-	$('#clear-cart').on('click', function () {
-		$.post('/cart/clear', function (response) {
-			if (response.success) {
-				renderCartItems(response.cart);
-				updateCartSummary(response.total);
-				updateCartCount(0);
-				console.log('Cart cleared.');
-			} else {
-				console.log('Failed to clear the cart.');
-			}
-		});
-	});
-
-	$('#checkout-btn').on('click', function () {
-		window.location.href = 'checkout';
-	});
 
 	$('#edit-btn').on('click', function () {
-		window.location.href = 'cart';
+		const config = $cartState.length ? JSON.parse($cartState.attr('data-config')) : null;
+		if (config) window.location.assign(config.url);
 	});
 
 	// Add a change event listener to the checkbox

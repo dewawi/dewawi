@@ -1,0 +1,19 @@
+<?php
+$config = [
+	'token' => $this->cart->getCsrfToken(), 'revision' => $this->cart->getRevision(),
+	'url' => $this->url([], 'cart'),
+	'checkout' => $this->siteContext->hasFeature('checkout') ? $this->url([], 'checkout') : null,
+	'quantity' => $this->translate('SHOPS_QUANTITY'), 'remove' => $this->translate('SHOPS_REMOVE'),
+	'price' => $this->translate('SHOPS_PRICE'), 'total' => $this->translate('SHOPS_TOTAL'),
+	'empty' => $this->translate('SHOPS_SHOPPING_CART_EMPTY'),
+	'saving' => $this->translate('SHOPS_CART_SAVING'), 'invalid' => $this->translate('SHOPS_CART_INVALID'),
+	'failed' => $this->translate('SHOPS_CART_NETWORK_ERROR'), 'unknown' => $this->translate('SHOPS_CART_NETWORK_UNKNOWN'),
+];
+foreach (['add', 'update', 'remove', 'clear', 'count'] as $action) $config[$action . 'Url'] = $this->url([], 'cart_' . $action);
+$notices = array_map(fn($key) => $this->translate($key), $this->cart->consumeNotices());
+?>
+<div id="shop-cart-state" hidden data-config="<?php echo $this->escape(json_encode($config, JSON_UNESCAPED_UNICODE)); ?>"></div>
+<div class="container">
+	<div id="cart-feedback" class="alert alert-info" role="status" aria-live="polite" aria-atomic="true" tabindex="-1"<?php if (!$notices) echo ' hidden'; ?>><?php echo $this->escape(implode(' ', $notices)); ?></div>
+	<button id="cart-reload" class="btn btn-secondary mb-3" type="button" hidden><?php echo $this->translate('SHOPS_CART_RELOAD'); ?></button>
+</div>

@@ -226,6 +226,9 @@ class DEEC_Site_Router
 		}
 
 		if ($siteContext->hasFeature('cart')) {
+			$router->addRoute('cart_count', new Zend_Controller_Router_Route('cart/count', [
+				'module' => 'shops', 'controller' => 'cart', 'action' => 'count',
+			]));
 			$router->addRoute('cart', new Zend_Controller_Router_Route(
 				'cart',
 				array(

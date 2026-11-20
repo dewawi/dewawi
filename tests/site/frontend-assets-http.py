@@ -242,7 +242,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
 <div id="slider" class="carousel slide" data-ride="carousel" data-interval="5000"><button class="btn dw-carousel-toggle" type="button" data-carousel-toggle aria-controls="slider" data-paused="false" data-pause-label="Pause" data-play-label="Play">Pause</button><div class="carousel-inner"><div class="carousel-item active">First</div><div class="carousel-item">Second</div></div></div>
 <button id="details-button" data-toggle="collapse" data-target="#details">Details</button><div id="details" class="collapse"><ul class="nav nav-tabs"><li><a id="tab-one" class="nav-link active" data-toggle="tab" href="#pane-one">One</a></li><li><a id="tab-two" class="nav-link" data-toggle="tab" href="#pane-two">Two</a></li></ul><div class="tab-content"><div id="pane-one" class="tab-pane active">One</div><div id="pane-two" class="tab-pane">Two</div></div></div>
 <button id="gallery-button" type="button" data-toggle="modal" data-target="#imageModal">Gallery</button><div id="imageModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modal-label"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h2 id="modal-label">Product images</h2><button type="button" data-dismiss="modal">Close</button></div><div class="modal-body"><a href="#modal-link">Image link</a></div></div></div></div>
-<div id="cart-items" aria-live="polite" data-quantity-label="Quantity" data-remove-label="Remove" data-empty-label="Empty"><input class="quantity-input" data-id="7" value="2" aria-label="Quantity Pump"></div><span id="cart-total"></span><button id="clear-cart" type="button">Clear cart</button>
+{self.cart_state()}<p id="cart-empty" hidden>Empty</p><div id="cart-items" aria-live="polite" data-quantity-label="Quantity" data-remove-label="Remove" data-empty-label="Empty"><input class="quantity-input" data-id="7" value="2" aria-label="Quantity Pump"></div><span id="cart-total"></span><button id="clear-cart" type="button">Clear cart</button>
 <label for="suggestion-sku">Suggested SKU</label><input id="suggestion-sku" name="sku"><label for="suggestion-title">Suggested product</label><input id="suggestion-title" name="titel"><button class="select-suggestion" type="button" data-sku="P-7" data-title="Heat pump">Choose suggestion</button>
 <form id="inquiry-form" data-current-step="1"><label for="message">Message</label><input id="message" name="message" value="Request" required><button type="submit">Send</button></form><div id="form-container">Form</div>
 <button id="checkout-btn" type="button">Checkout</button></main>
@@ -251,15 +251,25 @@ class FixtureHandler(BaseHTTPRequestHandler):
 <script src="/js/shops.js"></script>{'' if manual else '<script>' + self.test_script() + '</script>'}<footer><nav aria-label="Footer navigation"><a href="#legal">Legal</a></nav></footer></body></html>"""
 
     @staticmethod
+    def cart_state() -> str:
+        config = {'token': 'fixture-token', 'revision': 0, 'url': '/cart', 'checkout': '/checkout',
+                  'quantity': 'Quantity', 'remove': 'Remove', 'price': 'Price', 'total': 'Total',
+                  'empty': 'Empty', 'saving': 'Saving', 'invalid': 'Invalid quantity',
+                  'failed': 'Connection interrupted', 'unknown': 'Reload the page'}
+        for action in ['add', 'update', 'remove', 'clear', 'count']:
+            config[action + 'Url'] = '/cart/' + action
+        return '<div id="shop-cart-state" hidden data-config="' + html.escape(json.dumps(config), quote=True) + '"></div><div id="cart-feedback" role="status" hidden></div><button id="cart-reload" hidden>Reload</button>'
+
+    @staticmethod
     def checkout_fixture() -> str:
-        return f"""<!doctype html><html><body><button id="checkout-btn">Checkout</button>
+        return f"""<!doctype html><html><body>{FixtureHandler.cart_state()}<button id="checkout-btn">Checkout</button>
 <script src="/assets/jquery.min.js" integrity="{ASSET_DEFINITIONS['/assets/jquery.min.js'][1]}" crossorigin="anonymous"></script>
 <script src="/assets/bootstrap.bundle.min.js" integrity="{ASSET_DEFINITIONS['/assets/bootstrap.bundle.min.js'][1]}" crossorigin="anonymous"></script>
 <script src="/js/shops.js"></script><script>setTimeout(function(){{$('#checkout-btn').trigger('click')}},100)</script></body></html>"""
 
     @staticmethod
     def cart_add_fixture() -> str:
-        return f"""<!doctype html><html><body><button class="add-to-cart" type="button" data-id="7">Add</button>
+        return f"""<!doctype html><html><body>{FixtureHandler.cart_state()}<button class="add-to-cart" type="button" data-id="7">Add</button>
 <script src="/assets/jquery.min.js" integrity="{ASSET_DEFINITIONS['/assets/jquery.min.js'][1]}" crossorigin="anonymous"></script>
 <script src="/assets/bootstrap.bundle.min.js" integrity="{ASSET_DEFINITIONS['/assets/bootstrap.bundle.min.js'][1]}" crossorigin="anonymous"></script>
 <script src="/js/shops.js"></script><script>setTimeout(function(){{$('.add-to-cart').trigger('click')}},100)</script></body></html>"""
@@ -296,7 +306,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
   check(categoryDetail.getBoundingClientRect().height<=420&&categoryDetailImage.getBoundingClientRect().height===categoryDetail.getBoundingClientRect().height&&getComputedStyle(categoryDetailImage).objectFit==='contain','category detail image is not responsively contained within its height limit');
   $('.quantity-input').val('3').trigger('change');await wait(350);check($('#cart-count').text()==='4'&&$('#cart-items .cart-item').length===2,'cart AJAX update failed');check($('#cart-items script,#cart-items img').length===0&&$('#cart-items').text().includes('<img src=x onerror=alert(1)>')&&$('#cart-items').text().includes('</div><'+'script>alert(1)</'+'script>'),'cart response content was interpreted as markup');
   $('#cart-items .remove-item').first().trigger('click');await wait(350);check($('#cart-count').text()==='1'&&$('#cart-items .product-title').text()==='Remaining item','cart remove failed');
-  $('#clear-cart').trigger('click');await wait(350);check($('#cart-count').text()==='0'&&$('#cart-items').text()==='Empty','cart clear failed');
+  $('#clear-cart').trigger('click');await wait(350);check($('#cart-count').text()==='0'&&$('#cart-empty').text()==='Empty'&&!$('#cart-empty').prop('hidden'),'cart clear failed');
   document.querySelector('#inquiry-form input').value='';check(submitStep(document.getElementById('inquiry-form'),1)===false&&document.querySelector('#inquiry-form input:invalid'),'native form validation failed');document.querySelector('#inquiry-form input').value='Request';
   submitStep(document.getElementById('inquiry-form'),1);submitStep(document.getElementById('inquiry-form'),1);await wait(500);check($('#form-container').attr('data-saved')==='true','inquiry AJAX response was not rendered');check($('#form-container').attr('data-request-count')==='1','inquiry multiple click sent more than one request');check($('#saved-field').attr('aria-invalid')==='true'&&$('#saved-field-error').attr('role')==='alert','inquiry AJAX errors were not announced');
   const inquiryEvents=window.dataLayer.filter(item=>item.event==='technical_inquiry_submitted');check(inquiryEvents.length===1&&Object.keys(inquiryEvents[0]).sort().join(',')==='event,shop_id','AJAX conversion was duplicated or contains non-minimal data');
@@ -321,6 +331,11 @@ class FixtureHandler(BaseHTTPRequestHandler):
 """
 
     def send_json(self, value: dict, status: int = 200) -> None:
+        if 'cart' in value:
+            for item in value['cart'].values():
+                item['total'] = round(item['price'] * item['quantity'], 2)
+            value.setdefault('revision', 1)
+            value.setdefault('checkoutEnabled', True)
         self.send_body(json.dumps(value).encode(), "application/json", status)
 
     def send_body(self, body: bytes, content_type: str, status: int = 200) -> None:

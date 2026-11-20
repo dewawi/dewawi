@@ -109,6 +109,7 @@ echo $this->doctype();
 	</header>
 
 	<main id="main-content" tabindex="-1">
+		<?php if ($this->siteContext->hasFeature('cart')) echo $this->partial('cart/_state.phtml', ['cart' => $this->cart, 'siteContext' => $this->siteContext]); ?>
 		<?php echo $this->layout()->content; ?>
 
 		<?php if($this->controller === 'category' && $this->siteContext->hasFeature('inquiry') && isset($this->category)) : ?>
