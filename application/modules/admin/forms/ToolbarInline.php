@@ -68,5 +68,10 @@ class Admin_Form_ToolbarInline extends DEEC_Form
 				$this->setElementData($name, ['label' => $label, 'icon' => $name, 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm', 'attribs' => $attribs]);
 			}
 		}
+
+		if ($request && get_class($this) === self::class && $request->getModuleName() === 'admin' && $request->getControllerName() === 'shop'
+			&& in_array($request->getActionName(), ['index', 'search'], true) && $request->getParam('context_action', 'index') === 'index') {
+			$this->setElementData('copy', ['icon' => 'copy', 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm']);
+		}
 	}
 }

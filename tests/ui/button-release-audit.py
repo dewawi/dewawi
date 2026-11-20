@@ -23,6 +23,7 @@ root = Path(__file__).resolve().parents[2]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--engine', choices=['chromium', 'firefox'], default='chromium')
 parser.add_argument('--output', type=Path, default=Path('/tmp/dewawi-button-release-audit'))
+parser.add_argument('--standard-areas', action='store_true', help='Probe B18 areas with original read-only MVC documents')
 parser.add_argument('--standard-actions', action='store_true', help='Probe standard Delete actions using memory-only complete documents')
 parser.add_argument('--document-icons', action='store_true', help='Check original complete MVC documents and actual SVG pixels')
 args = parser.parse_args()
@@ -106,6 +107,13 @@ class Firefox:
         self.log.close()
         self.profile.cleanup()
 
+
+if args.standard_areas:
+    spec = importlib.util.spec_from_file_location('standard_area_browser', root / 'tests/ui/standard-area-browser.py')
+    area_probe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(area_probe)
+    area_probe.run(root, browser, Firefox if args.engine == 'firefox' else browser.WebDriver, args.engine, args.output)
+    raise SystemExit(0)
 
 if args.standard_actions:
     spec = importlib.util.spec_from_file_location('delete_apply_browser', root / 'tests/ui/delete-apply-browser.py')

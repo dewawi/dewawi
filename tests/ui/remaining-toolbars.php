@@ -30,7 +30,7 @@ if (($argv[1] ?? '') === 'snapshot') {
 	exit;
 }
 
-$adminControllers = ['country', 'uom', 'deliverytime', 'manufacturer', 'warehouse', 'shippingmethod'];
+$adminControllers = ['country', 'uom', 'deliverytime', 'manufacturer', 'warehouse', 'shippingmethod', 'shop'];
 $reportControllers = ['customer', 'quote', 'turnover'];
 $standardActions = ['index', 'search', 'select', 'edit', 'view'];
 $standardIcons = ['add' => 'add', 'edit' => 'edit', 'copy' => 'copy', 'delete' => 'delete', 'filter' => 'filter', 'reset' => 'reset', 'clear' => 'close'];
@@ -59,7 +59,7 @@ foreach (remainingContexts() as [$module, $controller]) foreach (['index', 'sear
 	}
 	foreach ((new Admin_Form_ToolbarInline())->getElements() as $name => $element) check(isset($element['iconFormat']) === ($module === 'admin' && in_array($controller, $adminControllers, true) && in_array($action, ['index', 'search'], true) && $name === 'copy'), 'Admin table actions escaped their explicit scope');
 }
-check($changedContexts === 36, 'Unexpected number of enabled route-action contexts');
+check($changedContexts === 41, 'Unexpected number of enabled route-action contexts');
 
 foreach (['de_DE', 'en_US'] as $locale) foreach (['admin' => $adminControllers, 'statistics' => $reportControllers] as $module => $controllers) foreach ($controllers as $controller) {
 	$profiles = $module === 'admin' ? ['index', 'select', 'edit', 'view'] : ['index'];

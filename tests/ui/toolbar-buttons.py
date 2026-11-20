@@ -49,7 +49,7 @@ if remaining_mode:
     r = subprocess.run(['php', str(root / 'tests/ui/toolbar-buttons.php'), 'render', 'en_US', 'statistics/turnover', 'index', 'layout', 'legacy-statistics'], capture_output=True, text=True, check=True)
     pages['/fixture/legacy/statistics-turnover'] = json.loads(r.stdout)['html'].encode()
     for locale in ['de_DE', 'en_US']:
-        for controller in ['currency', 'taxrate', 'paymentmethod', 'shop', 'user', 'category']:
+        for controller in ['currency', 'taxrate', 'paymentmethod', 'config', 'user', 'category']:
             r = subprocess.run(['php', str(root / 'tests/ui/toolbar-buttons.php'), 'render', locale, 'admin/' + controller, 'index', 'layout'], capture_output=True, text=True, check=True)
             pages[f'/fixture/legacy/{locale}/{controller}'] = json.loads(r.stdout)['html'].encode()
 
@@ -246,7 +246,7 @@ try:
             check(driver.execute('return [...document.querySelectorAll(".dw-btn--control")].every(b=>b.disabled&&parseFloat(getComputedStyle(b).opacity)<1)'), f'{locale}/{module}: readonly enabled')
     if remaining_mode:
         for locale in ['de_DE', 'en_US']:
-            for controller in ['currency', 'taxrate', 'paymentmethod', 'shop', 'user', 'category']:
+            for controller in ['currency', 'taxrate', 'paymentmethod', 'config', 'user', 'category']:
                 for width in [390, 1280]:
                     driver.emulate_viewport(width, 1100)
                     driver.navigate(f'http://127.0.0.1:{server.server_port}/fixture/legacy/{locale}/{controller}')

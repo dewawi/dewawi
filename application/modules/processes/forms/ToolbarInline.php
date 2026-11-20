@@ -38,5 +38,11 @@ class Processes_Form_ToolbarInline extends DEEC_Form
 			'attribs' => ['class' => 'pdf nolabel'],
 			'wrap' => false,
 		]);
+
+		$request = $this->getCurrentRequest();
+		if ($request && get_class($this) === self::class && $request->getModuleName() === 'processes' && $request->getControllerName() === 'process'
+			&& in_array($request->getActionName(), ['index', 'search'], true) && $request->getParam('context_action', 'index') === 'index') {
+			foreach (['view', 'edit', 'copy', 'delete'] as $name) $this->setElementData($name, ['icon' => $name, 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm']);
+		}
 	}
 }

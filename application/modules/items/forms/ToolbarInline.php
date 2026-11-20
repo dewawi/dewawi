@@ -54,5 +54,10 @@ class Items_Form_ToolbarInline extends DEEC_Form
 			}
 			$this->setElementData('delete', ['label' => 'TOOLBAR_DELETE', 'icon' => 'delete', 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm']);
 		}
+
+		if ($request && get_class($this) === self::class && $request->getModuleName() === 'items' && $request->getControllerName() === 'pricerule'
+			&& in_array($request->getActionName(), ['index', 'search'], true) && $request->getParam('context_action', 'index') === 'index') {
+			foreach (['edit', 'copy', 'delete'] as $name) $this->setElementData($name, ['icon' => $name, 'iconFormat' => 'svg', 'iconOnly' => true, 'size' => 'sm']);
+		}
 	}
 }

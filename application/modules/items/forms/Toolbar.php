@@ -165,12 +165,12 @@ class Items_Form_Toolbar extends DEEC_Form
 		]);
 
 		$request = class_exists('Zend_Controller_Front') ? Zend_Controller_Front::getInstance()->getRequest() : null;
-		if ($request && $request->getModuleName() === 'items' && $request->getControllerName() === 'item' && get_class($this) === self::class && in_array($request->getActionName(), ['index', 'search', 'select', 'edit', 'view'], true)) {
+		if ($request && $request->getModuleName() === 'items' && in_array($request->getControllerName(), ['item', 'pricerule'], true) && get_class($this) === self::class && in_array($request->getActionName(), ['index', 'search', 'select', 'edit', 'view'], true)) {
 			foreach (['add' => 'add', 'edit' => 'edit', 'copy' => 'copy', 'delete' => 'delete', 'filter' => 'filter', 'reset' => 'reset'] as $name => $icon) {
 				$this->setElementData($name, ['icon' => $icon, 'iconFormat' => 'svg']);
 			}
 			$this->setElementData('clear', ['label' => 'CLEAR', 'icon' => 'clear', 'iconFormat' => 'svg', 'iconOnly' => true]);
-			if ($request->getActionName() === 'select' || ($request->getActionName() === 'search' && $request->getParam('context_action') === 'select')) {
+			if ($request->getControllerName() === 'item' && ($request->getActionName() === 'select' || ($request->getActionName() === 'search' && $request->getParam('context_action') === 'select'))) {
 				$this->setElementData('apply', ['icon' => 'apply', 'iconFormat' => 'svg']);
 			}
 		}

@@ -286,11 +286,12 @@ class Zend_View_Helper_Toolbar extends Zend_View_Helper_Abstract
 		$classes = [
 			'contacts/inquiry' => 'Contacts_Form_InquiryToolbar',
 			'contacts/contact' => 'Contacts_Form_Toolbar',
-			'items/item' => 'Items_Form_Toolbar',
+			'items/item' => 'Items_Form_Toolbar', 'items/pricerule' => 'Items_Form_Toolbar',
+			'processes/process' => 'Processes_Form_Toolbar',
 			'tasks/task' => 'Tasks_Form_Toolbar',
 			'admin/country' => 'Admin_Form_Toolbar', 'admin/uom' => 'Admin_Form_Toolbar',
 			'admin/deliverytime' => 'Admin_Form_Toolbar', 'admin/manufacturer' => 'Admin_Form_Toolbar',
-			'admin/warehouse' => 'Admin_Form_Toolbar', 'admin/shippingmethod' => 'Admin_Form_Toolbar',
+			'admin/warehouse' => 'Admin_Form_Toolbar', 'admin/shippingmethod' => 'Admin_Form_Toolbar', 'admin/shop' => 'Admin_Form_Toolbar',
 			'statistics/customer' => 'Statistics_Form_Toolbar', 'statistics/quote' => 'Statistics_Form_Toolbar', 'statistics/turnover' => 'Statistics_Form_Toolbar',
 		];
 		$context = (string)$this->view->module . '/' . (string)$this->view->controller;

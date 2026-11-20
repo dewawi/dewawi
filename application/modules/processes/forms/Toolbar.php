@@ -264,5 +264,12 @@ class Processes_Form_Toolbar extends DEEC_Form
 			'format' => ['type' => 'string'],
 			'attribs' => ['class' => 'hidden-sm'],
 		]);
+
+		$request = $this->getCurrentRequest();
+		if ($request && get_class($this) === self::class && $request->getModuleName() === 'processes' && $request->getControllerName() === 'process'
+			&& in_array($request->getActionName(), ['index', 'search', 'select', 'edit', 'view'], true)) {
+			foreach (['add', 'edit', 'copy', 'delete', 'filter', 'reset'] as $name) $this->setElementData($name, ['icon' => $name, 'iconFormat' => 'svg']);
+			$this->setElementData('clear', ['label' => 'CLEAR', 'icon' => 'clear', 'iconFormat' => 'svg', 'iconOnly' => true]);
+		}
 	}
 }

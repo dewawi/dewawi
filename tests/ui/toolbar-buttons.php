@@ -20,13 +20,15 @@ function toolbarContext(string $module, string $controller, string $action, arra
 {
 	global $root, $adapter;
 	$adapter->permissions = [['id' => 1, 'userid' => 42, 'clientid' => 70, 'deleted' => 0, 'contacts' => json_encode(['contact' => $rights]), 'items' => json_encode(['item' => $rights])]];
+	if ($module === 'processes') $adapter->permissions[0]['processes'] = json_encode(['process' => $rights]);
+	if ($module === 'items' && $controller === 'pricerule') $adapter->permissions[0]['items'] = json_encode(['item' => $rights, 'pricerule' => $rights]);
 	if ($module === 'statistics') $adapter->permissions[0]['statistics'] = json_encode(['customer' => $rights, 'quote' => $rights, 'turnover' => $rights]);
 	$request = new ToolbarButtonRequestFixture('http://localhost/fixture/' . $module . '/' . $controller . '/' . $action);
 	$request->setBaseUrl('/fixture')->setModuleName($module)->setControllerName($controller)->setActionName($action);
 	$front = Zend_Controller_Front::getInstance();
 	$front->setRequest($request)->setBaseUrl('/fixture');
 	$directories = ['default' => $root . '/application/controllers'];
-	foreach (['contacts', 'items', 'tasks', 'admin', 'statistics'] as $name) $directories[$name] = $root . '/application/modules/' . $name . '/controllers';
+	foreach (['contacts', 'items', 'tasks', 'admin', 'statistics', 'processes', 'shops'] as $name) $directories[$name] = $root . '/application/modules/' . $name . '/controllers';
 	$front->setControllerDirectory($directories);
 	$front->setRouter(new Zend_Controller_Router_Rewrite());
 	$front->getRouter()->addDefaultRoutes();
@@ -50,6 +52,7 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 	Zend_Registry::set('Zend_Locale', new Zend_Locale($locale));
 	Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_NonPersistent());
 	$class = $module === 'contacts' && $controller === 'inquiry' ? 'Contacts_Form_InquiryToolbar' : ucfirst($module) . '_Form_Toolbar';
+	if ($module === 'shops' && $controller === 'order') $class = 'Shops_Form_OrderToolbar';
 	if ($legacyStatistics && $module === 'statistics') $class = 'ToolbarStatisticsLegacyFixture';
 	$toolbar = new $class();
 	$toolbar->setValues($filterFixture['values'] ?? []);
@@ -65,7 +68,7 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 	$view->headScript()->appendFile('/fixture/toolbar-setup.js');
 	$view->assign([
 		'language' => $locale, 'module' => $module, 'controller' => $controller, 'action' => $action,
-		'id' => 17, 'title' => $translator->t(['contacts' => 'CONTACTS', 'items' => 'ITEMS', 'tasks' => 'TASKS', 'admin' => 'ADMIN', 'statistics' => 'STATISTICS'][$module]),
+		'id' => 17, 'title' => $translator->t(['contacts' => 'CONTACTS', 'items' => 'ITEMS', 'tasks' => 'TASKS', 'admin' => 'ADMIN', 'statistics' => 'STATISTICS', 'processes' => 'PROCESSES', 'shops' => 'SHOPS'][$module]),
 		'toolbar' => $toolbar, 'options' => $filterFixture['options'] ?? [], 'messages' => [],
 		'user' => Zend_Registry::get('User') + ['name' => 'Fixture User'],
 		'categories' => [1 => ['id' => 1, 'parentid' => 0, 'title' => 'Fixture category']], 'tags' => [1 => 'Fixture tag'],
@@ -74,15 +77,15 @@ function toolbarPage(string $locale, string $module, string $action = 'index', s
 		'view' => $view, 'module' => $module, 'controller' => $controller, 'toolbar' => $toolbar,
 		'items' => $listItems ?? [['id' => 17, 'title' => 'Fixture A'], ['id' => 18, 'title' => 'Fixture B']],
 		'columns' => [['name' => 'title', 'label' => 'TOOLBAR_NAME']], 'selectable' => true,
-		'listFooter' => in_array($action, ['index', 'select', 'search'], true), 'context' => ['action' => $action === 'search' ? $contextAction : $action],
+		'listFooter' => in_array($action, ['index', 'select', 'search'], true), 'context' => ['user' => Zend_Registry::get('User'), 'action' => $action === 'search' ? $contextAction : $action],
 	];
 	$list = new DEEC_List($listConfig);
 	if ($listActions) {
 		Zend_Controller_Action_HelperBroker::addPath($root . '/application/controllers/helpers', 'Application_Controller_Action_Helper');
 		Zend_Registry::set('Zend_Currency', new Zend_Currency('EUR', $locale));
-		$models = ['contacts' => 'Contacts_Model_List_Contacts', 'items' => 'Items_Model_List_Items', 'tasks' => 'Tasks_Model_List_Tasks'];
-		$adminModels = ['country' => 'Countries', 'uom' => 'Uoms', 'deliverytime' => 'Deliverytimes', 'manufacturer' => 'Manufacturers', 'warehouse' => 'Warehouses', 'shippingmethod' => 'Shippingmethods'];
-		$model = $models[$module] ?? 'Admin_Model_List_' . $adminModels[$controller];
+		$models = ['contacts' => 'Contacts_Model_List_Contacts', 'items' => 'Items_Model_List_Items', 'tasks' => 'Tasks_Model_List_Tasks', 'processes' => 'Processes_Model_List_Processes'];
+		$adminModels = ['country' => 'Countries', 'uom' => 'Uoms', 'deliverytime' => 'Deliverytimes', 'manufacturer' => 'Manufacturers', 'warehouse' => 'Warehouses', 'shippingmethod' => 'Shippingmethods', 'shop' => 'Shops'];
+		$model = $module === 'items' && $controller === 'pricerule' ? 'Items_Model_List_Pricerules' : ($models[$module] ?? 'Admin_Model_List_' . $adminModels[$controller]);
 		unset($listConfig['columns']);
 		foreach ($listConfig['items'] as &$row) $row += ['name1' => $row['title'], 'name' => $row['title'], 'sku' => 'SKU-' . $row['id'], 'code' => 'FX', 'price' => '12.50', 'currency' => 'EUR'];
 		unset($row);

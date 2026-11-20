@@ -14,6 +14,8 @@ spl_autoload_register(static function (string $class): void {
 	$module = array_shift($parts);
 	$base = $module === 'Application' ? '/application/' : '/application/modules/' . strtolower($module) . '/';
 	$path = BASE_PATH . $base . strtolower(array_shift($parts)) . 's/' . implode('/', $parts) . '.php';
+	$fixturePath = (string)getenv('DEWAWI_ICON_TEST_AREA_FORMS') . substr($path, strlen(BASE_PATH));
+	if (getenv('DEWAWI_ICON_TEST_AREA_FORMS') && (!getenv('DEWAWI_ICON_TEST_COMPARE_AREAS') || isset($_GET['fixture_legacy'])) && str_contains($path, '/forms/') && is_file($fixturePath)) $path = $fixturePath;
 	if (is_file($path)) require_once $path;
 });
 
@@ -21,6 +23,7 @@ class ButtonPageReadAdapter extends Zend_Db_Adapter_Pdo_Mysql
 {
 	public array $queries = [];
 	public array $rows = [];
+	public bool $standardArea = false;
 	protected function _connect() {}
 	protected function _quote($value) { return Zend_Db_Adapter_Abstract::_quote($value); }
 	public function describeTable($table, $schema = null) {
@@ -37,6 +40,10 @@ class ButtonPageReadAdapter extends Zend_Db_Adapter_Pdo_Mysql
 		$table = '';
 		if ($sql instanceof Zend_Db_Select) { $from = $sql->getPart(Zend_Db_Select::FROM); $table = reset($from)['tableName']; }
 		$rows = is_string($table) ? ($this->rows[$table] ?? []) : [];
+		if ($this->standardArea && $sql instanceof Zend_Db_Select) {
+			$where = str_replace('`', '', implode(' ', $sql->getPart(Zend_Db_Select::WHERE)));
+			foreach (['id', 'clientid'] as $column) if (preg_match('/\b' . $column . '\s*=\s*\x27?([0-9]+)/', $where, $match)) $rows = array_values(array_filter($rows, static fn($row) => (int)($row[$column] ?? 0) === (int)$match[1]));
+		}
 		if (preg_match('/^\s*SELECT\s+COUNT\s*\(/i', $text)) $rows = [['records' => 25]];
 		if (preg_match('/\bSUM\s*\(/i', $text)) $rows = [['total' => 0]];
 		return new class($rows) {
@@ -77,6 +84,7 @@ if (PHP_SAPI === 'cli') {
 $path = (string)parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $prefix = str_starts_with($path, '/erp/') ? '/erp' : '';
 $route = substr($path, strlen($prefix));
+$standardArea = preg_match('#^/(processes/process|items/pricerule|admin/shop)(?:/(index|search|select|edit/id/[0-9]+|view/id/[0-9]+))?$#D', $route) === 1;
 if (preg_match('#^/(?:css|js|images|library)/#', $route) || $route === '/favicon.ico') {
 	$asset = realpath(BASE_PATH . $route);
 	if (!$asset || !str_starts_with($asset, BASE_PATH . '/') || !in_array(pathinfo($asset, PATHINFO_EXTENSION), ['css', 'js', 'png', 'gif', 'svg', 'ico'], true)) { http_response_code(404); exit; }
@@ -86,8 +94,10 @@ if (preg_match('#^/(?:css|js|images|library)/#', $route) || $route === '/favicon
 }
 // Calendar polling is unrelated to this rendering test; keep it synthetic as well.
 if ($route === '/calendar/index/reminders') { header('Content-Type: application/json'); echo '{"ok":true,"count":0,"reminders":[],"csrf_token":"fixture"}'; exit; }
-if (!in_array($route, ['/', '/contacts/contact', '/contacts/contact/index', '/contacts/contact/select', '/contacts/contact/search', '/items/item', '/items/item/select', '/items/item/search', '/tasks/task', '/sales/quote'], true)
+if ((!$standardArea && !in_array($route, ['/', '/contacts/contact', '/contacts/contact/index', '/contacts/contact/select', '/contacts/contact/search', '/items/item', '/items/item/select', '/items/item/search', '/tasks/task', '/sales/quote'], true))
 	|| ($_SERVER['REQUEST_METHOD'] === 'POST' && !str_ends_with($route, '/search'))) { http_response_code(405); exit; }
+
+if ($standardArea && ($_GET['fixture_ajax'] ?? '') === '1') $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
 
 require_once 'Zend/Application.php';
 $application = new Zend_Application('testing', [
@@ -126,6 +136,43 @@ foreach (range(1, 25) as $id) $adapter->rows['contact'][] = ['id' => $id, 'clien
 $adapter->rows['item'] = [['id' => 31, 'clientid' => 70, 'deleted' => 0, 'parentid' => 0, 'title' => 'Synthetic Item', 'description' => '', 'sku' => 'TEST-31', 'price' => '12.50', 'currency' => 'EUR']];
 $adapter->rows['quote'] = [['id' => 51, 'clientid' => 70, 'deleted' => 0, 'contactid' => 1, 'title' => 'Synthetic Quote', 'state' => 100, 'billingname1' => 'Synthetic Contact', 'billingname2' => '', 'modified' => '2026-11-19 10:00:00']];
 $adapter->rows['state'] = [['id' => 100, 'module' => 'sales', 'controller' => 'quote', 'state' => 100, 'title' => 'STATES_CREATED', 'clientid' => 70, 'deleted' => 0, 'ordering' => 0]];
+if ($standardArea) {
+	$adapter->standardArea = true;
+	if (isset($_GET['fixture_ajax'])) $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+	// Keep attachment preparation out of these read-only rendering probes.
+	require_once APPLICATION_PATH . '/controllers/helpers/Directory.php';
+	Zend_Controller_Action_HelperBroker::addHelper(new class extends Application_Controller_Action_Helper_Directory {
+		public function getName() { return 'Directory'; }
+		public function isWritable($id, $type, $flashMessenger) { return false; }
+	});
+	require_once APPLICATION_PATH . '/controllers/helpers/Access.php';
+	Zend_Controller_Action_HelperBroker::addHelper(new class extends Application_Controller_Action_Helper_Access {
+		public function getName() { return 'Access'; }
+		public function lock($id, $userid, $locked = null, $lockedtime = null, $db = null) { return null; }
+	});
+	$role = $_GET['fixture_role'] ?? $_SERVER['HTTP_X_BUTTON_FIXTURE_ROLE'] ?? 'full';
+	$user['admin'] = str_starts_with($route, '/admin/') && $role !== 'denied' ? 1 : 0;
+	Zend_Registry::set('User', $user);
+	Zend_Auth::getInstance()->getStorage()->write((object)$user);
+	$client = Zend_Registry::get('Client'); $client['modules']['processes'] = 70; Zend_Registry::set('Client', $client);
+	if (in_array($_GET['fixture_tenant'] ?? '', ['foreign', 'shared'], true)) {
+		$client['id'] = $_GET['fixture_tenant'] === 'foreign' ? 99 : 71;
+		$client['modules']['processes'] = $client['modules']['items'] = $_GET['fixture_tenant'] === 'foreign' ? 99 : 70;
+		Zend_Registry::set('Client', $client);
+	}
+	$rights = $role === 'denied' ? [] : ($role === 'readonly' ? ['view'] : ['view', 'add', 'edit', 'delete']);
+	$adapter->rows['permission'][0]['processes'] = json_encode(['process' => $rights]);
+	$adapter->rows['permission'][0]['items'] = json_encode(['item' => $rights, 'pricerule' => $rights]);
+	$row = ['id' => 17, 'clientid' => 70, 'deleted' => 0, 'title' => 'Synthetic B18', 'state' => 100, 'contactid' => 0, 'processid' => null, 'total' => 0, 'currency' => 'EUR', 'deliverydate' => null, 'paymentdate' => null, 'paymentstatus' => '', 'deliverystatus' => '', 'completed' => 0, 'cancelled' => 0, 'locked' => 0, 'modified' => '2026-11-20 10:00:00', 'modifiedby' => 0];
+	$adapter->rows['process'] = [$row, array_replace($row, ['id' => 18, 'state' => 105])];
+	$adapter->rows['pricerule'] = [array_replace($row, ['amount' => 5, 'action' => 'bypercent', 'datefrom' => null, 'dateto' => null, 'priority' => 1, 'itemcatid' => 0, 'contactcatid' => 0, 'activated' => 1]), array_replace($row, ['id' => 18, 'amount' => 10, 'action' => 'byfixed'])];
+	$adapter->rows['shop'] = [array_replace($row, ['url' => 'https://fixture.example.test', 'language' => $locale, 'timezone' => 'Europe/Berlin', 'activated' => 1]), array_replace($row, ['id' => 18])];
+	foreach (['process', 'pricerule', 'shop'] as $table) {
+		if (str_contains($route, '/edit/') || str_contains($route, '/view/')) $adapter->rows[$table] = [$adapter->rows[$table][0]];
+		if (($_POST['fixture_rows'] ?? '') === 'remaining') $adapter->rows[$table] = array_values(array_filter($adapter->rows[$table], static fn($row) => $row['id'] === 18));
+		if (($_POST['fixture_rows'] ?? '') === 'empty') $adapter->rows[$table] = [];
+	}
+}
 if ($route === '/' && in_array($_GET['fixture_dashboard'] ?? '', ['all', 'no-contacts', 'no-items', 'view-only'], true)) {
 	// Cover every dashboard group without enabling production modules or write routes.
 	$role = $_GET['fixture_dashboard'];

@@ -12,6 +12,10 @@ $groups = [
 	'contacts/contact' => ['Contacts_Form_Toolbar', 'Contacts_Form_ToolbarInline'],
 	'items/item' => ['Items_Form_Toolbar', 'Items_Form_ToolbarInline'],
 	'tasks/task' => ['Tasks_Form_Toolbar', 'Tasks_Form_ToolbarInline'],
+	'processes/process' => ['Processes_Form_Toolbar', 'Processes_Form_ToolbarInline'],
+	'items/pricerule' => ['Items_Form_Toolbar', 'Items_Form_ToolbarInline'],
+	'admin/shop' => ['Admin_Form_Toolbar', 'Admin_Form_ToolbarInline'],
+	'shops/order' => ['Shops_Form_OrderToolbar', 'Shops_Form_OrderToolbarInline'],
 ];
 foreach (['country', 'uom', 'deliverytime', 'manufacturer', 'warehouse', 'shippingmethod'] as $controller) $groups['admin/' . $controller] = ['Admin_Form_Toolbar', 'Admin_Form_ToolbarInline'];
 foreach (['customer', 'quote', 'turnover'] as $controller) $groups['statistics/' . $controller] = ['Statistics_Form_Toolbar'];
@@ -39,7 +43,7 @@ foreach ($groups as $route => $classes) {
 }
 ksort($fields);
 $visible = [];
-foreach (['contacts', 'items', 'tasks', 'admin/country', 'admin/uom', 'admin/deliverytime', 'admin/manufacturer', 'admin/warehouse', 'admin/shippingmethod'] as $route) {
+foreach (['contacts', 'items', 'tasks', 'admin/country', 'admin/uom', 'admin/deliverytime', 'admin/manufacturer', 'admin/warehouse', 'admin/shippingmethod', 'processes/process', 'items/pricerule', 'admin/shop'] as $route) {
 	$page = toolbarPage('de_DE', $route, 'index', 'layout', ['view', 'add', 'edit', 'delete'], false, 'index', false, false, true);
 	$visible[$route] = substr_count($page['html'], 'dw-btn--control');
 }

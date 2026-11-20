@@ -1,4 +1,46 @@
-# DEWAWI – Button-System-Inventur, aktualisiert mit B17
+# DEWAWI – Button-System-Inventur, aktualisiert mit B18
+
+
+## Aktueller Stand B18 – 20.11.2026
+
+Maßgeblich sind der lokale Stand `7ceb5e6b` vor B18 und die tatsächlich ausgeführten Scanner. [B18 – Standardbereiche](standard-area-buttons.md) migriert ausschließlich Vorgänge (`processes/process`), Preisregeln (`items/pricerule`) und Admin-Shops (`admin/shop`). Der [vollständige Quellenanhang](button-remaining-inventory.md) erfasst alle aktuellen literalen Formstellen und übrigen gefundenen Erzeugungsstellen mit Datei-/Zeilenbelegen. Die anschließenden B1–B17-Abschnitte bleiben als **historische Vergleichsbasis** erhalten; ihre älteren Zahlen sind nicht der aktuelle Gesamtstand.
+
+| Aktuelle Zähleinheit | Nachgewiesener Bestand / Grenze |
+| --- | --- |
+| Eigene Quelldateien im identischen Scan | 1.083; Tests/Vendorinnere/gespeicherte Inhalte wie bisher ausgeschlossen. |
+| Literale Formkonfigurationen | 246 in 50 Dateien: 237 Button, 9 Submit; dynamischer Bewegungsaktionsname weiterhin gesondert. |
+| Andere Erzeugungsstellen | 149 lexikalische HTML-Buttonanfänge in 81 Dateien; 80 Buttonlinks in 34; 23 alte Helperaufrufe in sieben; 13 ZF1-Submitkonstruktoren; sieben andere `addElement`-Argumentformen. Keine Laufzeitmengen. |
+| Toolbar-/Listenquellen | 36 Toolbarformulare, acht Toolbarhelper, 51 Listenmodelle; 44 mit Actionszelle. 13 Actionsmodelle haben mindestens ein in den geprüften Kontexten aktiviertes SVG-Feld, 31 liegen außerhalb dieser Zuordnung. |
+| SVG-Feldkonfigurationen | 66 eindeutige Klasse/Feld-Schlüssel, 128 Controller/Feld-Zuordnungen, 17 erfasste Controllergruppen. |
+| SVG-produzierende Quellen | 17 PHP/PHTML-Dateien: 15 Formulare (14 Toolbarquellen), ein Helper, eine View. 22 der 36 Toolbarquellen ohne eigene SVG-Konfiguration. |
+| Referenz-DOM | 180 moderne Controls in zwölf Indexfixtures mit je zwei synthetischen Rows: bisherige neun 133, neu Process 17 / Pricerule 17 / Admin-Shop 13. Kein Produktionsgesamtbestand. |
+| SVG-Filterhelper | Ein bestehender Renderweg, jetzt 28 logische Index-/Selectkontexte in 16 Gruppen; Shop-Order bleibt außerhalb dieser Filter-Allowlist. |
+| Quellstellen mit/ohne erfassten SVG-Kontext | 66 / 180 der 246 Formstellen. Bedingte Felder bleiben in anderen Kontexten Legacy; kein Migrationsprozent und keine Behauptung von 180 tatsächlich sichtbaren Buttons. |
+
+**Zählkorrektur gegenüber B17:** Die unabhängige ERP-Shopbestellintegration `17fa5f6a` bringt drei bereits vor B18 vorhandene SVG-Felder in `Shops_Form_OrderToolbar` (Filter/Reset/Clear). Der alte PHP-Inventarlauf erfasste diese nicht. Korrigierter Vorbestand daher 55 Felder / 99 Controller-Feld-Paare / 14 Gruppen statt 52/96/13. B18 selbst ergänzt elf Feld-Opt-ins und 29 Controller/Feld-Paare in drei Gruppen; Ergebnis 66/128/17. Keine Änderung an Shopbestellungen durch B18.
+
+### Tatsächlich migrierte Standardbereiche
+
+| Kontext | Haupttoolbar | Inline | Bewusst unverändert |
+| --- | --- | --- | --- |
+| `processes/process` | add/edit/copy/delete/filter/reset/clear | view/edit/copy/delete, Index/Search-Index | PDF, Pin, Status-/Liefer-/Zahlungssteuerung, Positionen/Sets, Dokumentaktionen. |
+| `items/pricerule` | dieselben sieben Felder | edit/copy/delete, Index/Search-Index | Apply in sämtlichen Pricerulekontexten; Berechnung/Priorität/Kategorien/Gültigkeit. |
+| `admin/shop` | dieselben sieben Felder | nur copy, Index/Search-Index | media-delete-Konflikt, Shop-/Slug-/Redirect-/Menü-/Seitenkonfiguration und Im-/Export. |
+
+Exakte Klassen-/Requestprüfungen bleiben verpflichtend. Vorhandene Labels, ARIA-Namen, Klassen und native/Event-/Zielattribute bleiben gleich; die Filterbuttons erhalten ausdrücklich den bestehenden Disclosure-Vertrag. Die bisher technischen Inline-ARIA-Fallbacks werden in B18 absichtlich nicht nebenbei umbenannt. Select erhält keinen neuen Filter-/Resetbutton; dort werden der vorhandene Keyword-Clear und die aktiven Filterchips geprüft. Konstruktormetadaten in View sind kein Beleg einer funktionierenden vollständigen Viewseite.
+
+### Verbleibender Bestand und Prioritäten nach B18
+
+- Sieben klassische Haupttoolbarfamilien teilweise SVG: Admin, Inquiry, Contacts, Items, Tasks, Statistics, Processes. Application, Campaigns, eBay, Purchases, Sales und die alte Shops-Haupttoolbar bleiben Legacy; die separate ERP-Ordertoolbar ist bereits teilweise SVG. Alle sechs Positionsformulare und die fachlichen Familien behalten ihre eigenen Verträge.
+- Wiederkehrende Formular-/Modal-/MultiForm-/Close-/Clearcontrols zuerst nach gemeinsamem Renderer, Submitter- und Auto-Save-Vertrag gruppieren. Weitere Module nur mit expliziten Contextgates und eigenem Funktionsnachweis.
+- Index-Apply-/Parentvertrag, Admin-media-delete-Doppelattribute und Dashboard-Altcontrols ohne vollständige Targets sind getrennte Vertragskorrekturen. Keine reine Icon-Aktivierung, keine stillschweigende neue Fachfunktion.
+- Dokumente/PDF, Mail, Export, Zahlung, Positions-/Set-/Pin-/Bestandsaktionen, öffentliche Shops/CMS, Installer und Drittanbieter bleiben eigene Abnahmegruppen. Die drei nativen Shopbestell-Status-/ERP-Submits sind keine B18-Standardtoolbar.
+- Bestehende Layout-/A11y-Grenzen gesondert bearbeiten: Process-Tabelle bei 768 px, sehr hohe Shopzeilen mobil, deutscher Headerüberlauf bei 320 px, technische Inline-Namen. Vorher/Nachher zeigen keine B18-Verschlechterung; genaue Messwerte und Testgrenzen im B18-Bericht.
+- Bekannte Assetkandidaten bleiben Kandidaten: vier SVG-Reservegeometrien, identische positions/select-PNGs, Root-Sprites, unversorgter Shop-Flag-Sprite und Fontplatzhalter. Keine Löschung ohne Nachweis für dynamische Themes und gespeicherte Inhalte.
+
+Reproduktion: `python3 tests/ui/button-inventory.py --remaining --json` und `php tests/ui/button-inventory.php`. Vollständige aktuelle Form-/Literalquellen im verlinkten Quellenanhang. Authentifizierte Live-/Produktionsabnahme wird durch lokale Memoryfixtures nicht ersetzt. Kein Push, Deployment oder Datenbankeingriff.
+
+---
 
 Historische Gesamtprüfung: [B13 – Integration und Freigabematrix](button-release-audit.md) bestätigte die damaligen Bestandszahlen unverändert und ergänzt Firefox-/320-px-Prüfungen sowie konkrete offene Freigabegates. Keine zusätzliche Migration.
 
@@ -10,7 +52,7 @@ B17: [Standard-Löschen und Übernehmen](delete-apply-buttons.md) ergänzt siebe
 
 Stand: 19.11.2026. B11-Basis `f337ba70` einschließlich B2–B10 (`96549509`), B11-Commit `83a51db1`. B12 ergänzt den [gemeinsamen Filterchip-/Disclosureblock](filter-buttons.md); der unabhängige Dokumentcommit `b32241c1` ist keine Buttonmigration. Grundlage: `AGENTS.md` und [B1](buttons-icons-analysis.md), [B2](buttons-foundation.md), [B3](button-icons.md), [B4](inquiry-buttons.md), [B5](toolbar-buttons.md), [B6](tasks-toolbar.md), [B7](remaining-toolbars.md), [B8](button-quality-audit.md), [B9](apply-buttons.md), [B10](list-buttons.md), [B11](mobile-table-actions.md).
 
-## Zählmethoden und überprüfbare Ergebnisse
+## Historische Zählmethoden und Ergebnisse bis B17
 
 Reproduzierbare, ausschließlich lokale Werkzeuge:
 
@@ -67,7 +109,7 @@ B15-Referenz-DOM separat: Das reguläre Original-Dashboard mit 25 synthetischen 
 | Installer | Eigene HTML-/CSS-/Buttonlinks und Blueprint-Abhängigkeit; getrennte Oberfläche, vollständig außerhalb der internen SVG-Migration. |
 | Drittanbieter | Responsive FileManager/MediaManager, TinyMCE/CKEditor, elFinder, jQuery UI/Datepicker und Leaflet verwenden eigene Controls/Assets/Fonts. Anwendungseigene Öffner sind separate mögliche Migrationsobjekte, Widgetinnere kein interner DEEC-Buttonbestand. |
 
-### Bereits migrierte Felder – vollständige Liste
+### Historische Feldliste bis B17
 
 | Quelle unter `application/modules/` | SVG-Felder | Kontextgrenze |
 | --- | --- | --- |
@@ -134,7 +176,7 @@ Historischer B15-Folgestand (Standard-Delete inzwischen in B17 umgesetzt): Die d
 | --- | --- | --- |
 | B13 empfohlen: verbleibende Qualitätskorrektur | Den bei 320 px reproduzierten **globalen Headerüberlauf** und technische DE/EN-Spalten-/Menü-/Reportkeys separat lokalisieren und korrigieren. B12 hat den risikoarmen Filter-Disclosure-Unterblock und den dazugehörigen gemeinsamen Clear-Filterweg umgesetzt. Header-/Katalogänderungen teilen diesen Renderer nicht und wurden nicht mitgebündelt. | Mittel, gemeinsame Layout-/Katalogwirkung. Vorher/Nachher DE/EN × 320/390/768/1280, mehrere Module, lange Benutzer-/Mandantennamen und Plainlayouts; keine stillschweigende Toolbar-/Workflowmigration. Disclosure ist nur für die B12-Scopes geschlossen, nicht global für jeden Legacyfilter. |
 | B17 abgeschlossen: Standard-Delete | Neun reguläre Toolbarkontexte und drei Inlinekontexte, sieben Feldquellen. Keine neue fachliche Aktion. | Aktuelle Tests/Abnahmegrenzen im [B17-Bericht](delete-apply-buttons.md). Admin-media-delete bleibt Legacy. |
-| B18 getrennte Vertragsklärung | Kontakte-/Artikel-Index-Apply ohne sinnvollen Parentvertrag, Admin-media-delete mit doppelten Actionattributen und Dashboard-Legacy ohne explizite Targets zunächst fachlich prüfen. | Keine reine SVG-Aktivierung: gegebenenfalls Verhaltensänderung erforderlich. Dokument-/Medien-/Buchungsaktionen weiterhin getrennt freigeben. |
+| Historische Folgeempfehlung (nicht B18-Scope) | Kontakte-/Artikel-Index-Apply ohne sinnvollen Parentvertrag, Admin-media-delete mit doppelten Actionattributen und Dashboard-Legacy ohne explizite Targets zunächst fachlich prüfen. | Keine reine SVG-Aktivierung: gegebenenfalls Verhaltensänderung erforderlich. Dokument-/Medien-/Buchungsaktionen weiterhin getrennt freigeben. |
 | Danach wiederkehrende Positions-/Set-/Pinaktionen | Dieselben bestehenden Renderer nutzen, tatsächliche Aufrufnamen/Unterklassen vorher neu prüfen. | Hoch: Parent/Set/Options-/Bestands-/Reihenfolgeverträge. Kein globales Opt-in in gemeinsamen Klassen, keine Ableitung allein aus Add/Copy/Delete-Text. |
 | Gesondert Formulare/dynamische Controls | Wiederkehrende normale Submit-/Modal-/MultiForm-/Clear-/Closecontrols mit eindeutigem Vertrag; Test- und Namensverbesserung. | Native Submitterwerte, Auto-Save-Opt-out, Fokus-/Dialoggrenzen erhalten. Keine neue parallele JS-Renderingarchitektur; ZF1-/DEEC-Unterschiede beachten. |
 | Später eigene fachliche Blöcke | Dokumente/PDF/Export, Mail/Senden, Zahlung, SaaS-/Rechte-/Mandantenverwaltung, Kampagnen, Shop/CMS und Widgetöffner. | Fachliche Abnahme, historische Werte, Rechte/Entitlements, gespeichertes HTML/Themes und Fremdwidgets. Nicht durch Entfernen vorhandener Guards freigeben. |
@@ -142,7 +184,7 @@ Historischer B15-Folgestand (Standard-Delete inzwischen in B17 umgesetzt): Die d
 
 Freigabeplan: technische B12-/B2–B11-Prüfungen gemäß [Filterbericht](filter-buttons.md) und [mobilem Bericht](mobile-table-actions.md), danach manuelle reale DE/EN-Testinstallation mit repräsentativen langen Daten, Rollen/Mandanten/Sharing und gebuchten SaaS-Features; mobile Scroll-/Touch-/Fokus-/Tooltipprüfung; Firefox/Safari und NVDA/VoiceOver. Bestehende B8-Altbefunde außerhalb des Filter-Scopes bleiben separat zu beurteilen. Der historische Notification-Fixturefehler besteht im aktuellen B17-Abschlusslauf nach dem unabhängigen T6-Commit `c196e6ad` nicht mehr; keine B17-Fachlogikkorrektur. Keine produktive Session erzeugen, um eine fehlende Testumgebung zu ersetzen.
 
-## Quellenanhang: 243 literale Konfigurationen
+## Historischer Quellenanhang: 243 literale Konfigurationen
 
 | Bereich | Stellen / Dateien | Konkrete Dateigruppen |
 | --- | --- | --- |

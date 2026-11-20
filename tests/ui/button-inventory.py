@@ -88,8 +88,22 @@ def inventory():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--json', action='store_true', help='Include every source site and path list')
+    parser.add_argument('--remaining', action='store_true', help='Join literal form sites with enumerated SVG activation contexts; not a count of live controls')
     args = parser.parse_args()
     result = inventory()
+    if args.remaining:
+        runtime = json.loads(subprocess.check_output(['php', str(root / 'tests/ui/button-inventory.php')], cwd=root, text=True))
+        fields = {}
+        for key, value in runtime['fields'].items():
+            fields.setdefault((value['file'], key.split('::')[-1]), []).extend(value['contexts'])
+        configs = [{**site, 'svg_activation_contexts': sorted(set(fields.get((site['file'], site['name']), [])))} for site in result['sites'] if site['kind'] == 'form-config']
+        result['form_presentation_inventory'] = {
+            'method': 'Source sites joined by file/field to constructor metadata. A matched field can remain legacy in other contexts. No match is not proof of global runtime inactivity.',
+            'sites_with_enumerated_svg_contexts': sum(bool(site['svg_activation_contexts']) for site in configs),
+            'sites_without_enumerated_svg_contexts': sum(not site['svg_activation_contexts'] for site in configs),
+            'unmapped_svg_form_sources': sorted(set(result['svg_form_sources']) - {value['file'] for value in runtime['fields'].values()}),
+            'configs': configs,
+        }
     if not args.json:
         for key in ['toolbar_forms', 'toolbar_helpers', 'svg_sources', 'svg_form_sources', 'svg_helper_sources', 'svg_view_sources', 'action_list_models', 'other_list_models']:
             result[key] = len(result[key])
