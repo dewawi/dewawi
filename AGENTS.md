@@ -47,14 +47,57 @@
 
 ## Database and Versioned SQL Migrations
 
-- Development version: `1.1.7`; next version: `1.1.8` until expressly changed.
-- Put **all** new migration SQL for this version only in `install/config/update-1.1.7-1.1.8.sql`; preserve existing statements and append or integrate the new changes appropriately.
+### Versioning
+
+- Use `MAJOR.MINOR.PATCH` for long-term versioning: patch versions for backward-compatible fixes, minor versions for compatible feature additions, and major versions for incompatible changes.
+- The last published version is `1.1.7`; the next planned release remains `1.1.8`. Preserve this already approved version number.
+- Distinguish the current development state, the published application version, and the database schema version. An application version alone does not prove which SQL changes have been applied.
+- Change version numbers only with explicit approval. Do not automatically release, tag or deploy.
+
+### Current transition: 1.1.7 → 1.1.8
+
+- Retain the existing SQL procedure until `1.1.8` is completed under separate release approval.
+- Put **all** new migration SQL for this transition only in `install/config/update-1.1.7-1.1.8.sql`; preserve existing statements and append or integrate new changes appropriately.
 - Keep the fresh-install schema in `install/config/structure.sql` consistent with the migration.
-- Do not create per-feature migration files, a new migration framework or a `1.1.9` migration without explicit approval.
-- Inspect current tables, columns, indexes, constraints and related SQL before editing.
-- Validate schema changes with existing installation and migration tests.
-- If an installation may already have run the active migration partially or entirely, describe any necessary manual follow-up in the completion report. Do not invent a parallel official migration.
+- Do not retroactively split this migration or create per-feature migration files. Do not implement the new migration management system or create `1.1.9` migrations as part of ongoing `1.1.8` work; later implementation requires a separately authorized task.
+- Before further updates, account for installations that have already run this migration partially or entirely. Verify the actual schema and applied changes; never automatically rerun non-idempotent statements.
+- Describe any necessary state-dependent manual follow-up in the completion report. Do not invent a parallel official migration.
+
+### Future migration system: starting with 1.1.8 → 1.1.9
+
+These requirements are binding for later implementation; they do not authorize implementing the system now.
+
+- Use version-specific directories under `install/config/migrations/`, with consecutively numbered individual migrations such as `001-calendar.sql` and `002-contacts.sql`.
+- Define a deterministic, immutable execution order, including dependencies across version transitions.
+- Maintain one central migration history per database installation, recording each migration identifier, checksum and execution timestamp.
+- Never modify or rerun an already executed migration. Retain individual migration files permanently.
+- Automatically detect missing migrations and execute them only through a controlled updater. Stop safely on checksum mismatches, errors, missing dependencies or ambiguous partial states.
+- Prevent concurrent update executions. Account explicitly for MariaDB/MySQL DDL operations that are not fully transactional; do not assume a failed update has rolled back.
+- Use a controlled CLI updater that reuses existing components. Do not run automatic migrations during normal HTTP requests or introduce unnecessary external migration frameworks.
+- For completed releases, also generate a consolidated update file in the existing `update-<from>-<to>.sql` format. Individual migrations and consolidated files must use the same execution history so that no SQL statement is executed twice, including when switching between update paths.
+- Keep `install/config/structure.sql` synchronized for fresh installations.
+
+### Existing installations and upgrade paths
+
+- Continue supporting historical version transitions and apply multi-step upgrades in the correct order.
+- Register the `1.1.7 → 1.1.8` transition as completed in the future migration history only after verifying the actual database state against all required changes.
+- Do not automatically resume partially executed historical migrations without checking their actual state and determining the missing steps.
+- Preserve tenant isolation, existing data, document history and backward compatibility throughout upgrades.
 - Never touch production databases or customer data without an explicit task authorizing that specific action. Never run destructive database commands without explicit authorization. Use local development/test environments for validation.
+
+### Release documentation
+
+- Use a central `CHANGELOG.md` or suitable existing documentation for every published version, recording the version number, publication date, short description, new features, improvements, bug fixes, security changes, SQL/schema changes, upgrade instructions and known limitations.
+- Base release notes on changes actually included and verified results. Do not create `1.1.8` release notes merely by adopting these rules.
+- At an approved version change, synchronize version references in the application, installer, documentation and relevant tests.
+
+### Migration verification and safety
+
+- Inspect current tables, columns, indexes, constraints and related SQL before editing.
+- Validate schema changes with existing installation and migration tests for both fresh and existing installations.
+- Cover already executed, partially executed and failed migrations. For the future migration system, verify execution order, checksums, repeatability without duplicate execution, and concurrency protection.
+- Never use production data for tests.
+- Before explicitly authorized production database updates, verify backups, restorability and the actual migration state.
 
 ## Security and Data Integrity
 
