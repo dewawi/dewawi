@@ -74,7 +74,7 @@ class Shops_CategoryController extends Shops_Controller_Action
 
 		foreach ($items as $item) {
 			$attributeSets[$item->id] = $this->_helper->Attributes->getAttributes($item->id);
-			$optionSets[$item->id] = $this->_helper->Options->getOptions($item->id);
+			$optionSets[$item->id] = $this->_helper->ItemOptions->getOptions($item->id);
 		}
 
 		$this->view->category = $category;

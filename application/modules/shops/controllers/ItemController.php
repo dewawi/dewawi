@@ -72,7 +72,7 @@ class Shops_ItemController extends Shops_Controller_Action
 		$this->view->category = $category;
 		$this->view->imagePath = $dir1 . '/' . $dir2 . '/' . $clientid;
 		$this->view->attributeSets = $this->_helper->Attributes->getAttributes((int)$item['id']);
-		$this->view->optionSets = $this->_helper->Options->getOptions((int)$item['id']);
+		$this->view->optionSets = $this->_helper->ItemOptions->getOptions((int)$item['id']);
 		$this->view->albisPrice = DEEC_Albis::eligiblePrice($this->_siteContext, $item);
 
 		$this->assignMessages();

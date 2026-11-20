@@ -269,5 +269,53 @@ check($disabledResult['created'] && $disabledWorkflow->detail($storedId)['saleso
 
 $db->insert('permission', ['userid' => 43, 'clientid' => 7, 'sales' => json_encode(['salesorder' => ['view']])]);
 $db->insert('permission', ['userid' => 44, 'clientid' => 7, 'sales' => json_encode(['salesorder' => []])]);
+
+// Distinct rendered results for filtering, ordering, pagination and tenant isolation.
+for ($i = 1; $i <= 13; $i++) {
+	(new Shops_Model_DbTable_Order())->setClientId(7)->create([
+		'shopid' => $i <= 11 ? 41 : 42, 'orderid' => sprintf('LIST-%03d', $i), 'orderdate' => '2026-11-20', 'invoiceid' => 0,
+		'customername' => 'List customer ' . $i, 'total' => $i, 'currency' => 'EUR', 'status' => $i % 2 ? 'new' : 'cancelled',
+	]);
+}
+(new Shops_Model_DbTable_Order())->setClientId(8)->create(['shopid' => 43, 'orderid' => 'LIST-FOREIGN', 'invoiceid' => 0, 'total' => 1, 'customername' => 'Foreign list customer']);
+(new Shops_Model_DbTable_Order())->setClientId(7)->create(['shopid' => 41, 'orderid' => 'LIST-DELETED', 'invoiceid' => 0, 'total' => 1, 'deleted' => 1]);
+$db->update('shop', ['title' => 'Foreign shop'], 'id = 43');
+$db->insert('shop', ['id' => 44, 'clientid' => 7, 'title' => 'Deleted shop', 'deleted' => 1]);
+
+// Exercise both helper load orders with the actual module registration path.
+define('APPLICATION_PATH', $root . '/application');
+foreach ([false, true] as $formFirst) {
+	Zend_Controller_Action_HelperBroker::resetHelpers();
+	Zend_Controller_Action_HelperBroker::setPluginLoader(null);
+	Zend_Controller_Action_HelperBroker::addPath(APPLICATION_PATH . '/controllers/helpers', 'Application_Controller_Action_Helper');
+	$request->setModuleName('shops')->setParams(['module' => 'shops']);
+	$front->setRequest($request);
+	if ($formFirst) Zend_Controller_Action_HelperBroker::getStaticHelper('Options');
+	(new Shops_Plugin_Helper())->routeShutdown($request);
+	$itemOptions = Zend_Controller_Action_HelperBroker::getStaticHelper('ItemOptions');
+	check($itemOptions instanceof Shops_Controller_Action_Helper_ItemOptions, 'Public item helper resolution changed');
+	check(Zend_Controller_Action_HelperBroker::getStaticHelper('Options') instanceof Application_Controller_Action_Helper_Options, 'Form helper depends on module registration/load order');
+	try {
+		$itemOptions->getOptions(101);
+		throw new LogicException('Item options accepted a missing SiteContext');
+	} catch (RuntimeException $e) { check($e->getMessage() === 'Site context is missing', 'Unexpected SiteContext rejection'); }
+}
+$db->insert('itemoptset', ['id' => 81, 'parentid' => 101, 'clientid' => 7, 'title' => 'Public options']);
+$db->insert('itemoptset', ['id' => 82, 'parentid' => 101, 'clientid' => 8, 'title' => 'Foreign options']);
+$db->insert('itemoptset', ['id' => 83, 'parentid' => 101, 'clientid' => 7, 'title' => 'Deleted options', 'deleted' => 1]);
+foreach ([
+	[91, 101, 81, 7, 0, 'Visible option'], [92, 101, 81, 8, 0, 'Foreign option'],
+	[93, 101, 81, 7, 1, 'Deleted option'], [94, 103, 81, 7, 0, 'Other item option'],
+] as [$optionId, $parentId, $setId, $owner, $deleted, $title]) {
+	$db->insert('itemopt', ['id' => $optionId, 'parentid' => $parentId, 'optsetid' => $setId, 'clientid' => $owner, 'deleted' => $deleted, 'title' => $title]);
+}
+Zend_Registry::set('SiteContext', new DEEC_Site_Context($shop, [], ['catalog']));
+$sets = $itemOptions->getOptions(101);
+check(count($sets) === 1 && $sets[0]['title'] === 'Public options' && array_keys($sets[0]['options']) === [91], 'Public option grouping/tenant/deletion/parent scope changed');
+check($itemOptions->getOptions(999999) === [], 'Empty public option result changed');
+check((new Shops_Model_DbTable_Item())->getItem(101) !== null, 'Own site item unavailable');
+Zend_Registry::set('SiteContext', new DEEC_Site_Context(array_replace($shop, ['id' => 42]), [], ['catalog']));
+check((new Shops_Model_DbTable_Item())->getItem(101) === null, 'Foreign site item became public');
+Zend_Registry::getInstance()->offsetUnset('SiteContext');
 file_put_contents(dirname($socket) . '/order-fixtures.json', json_encode(['new' => $httpId, 'legacy' => $legacyId, 'linked' => $id, 'contact' => 21, 'foreign_contact' => 22]));
 echo "PASS: $checks persistent order, status, permissions, snapshots, ERP draft and concurrency checks\n";

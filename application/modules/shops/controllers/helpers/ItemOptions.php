@@ -1,6 +1,6 @@
 <?php
 
-class Shops_Controller_Action_Helper_Options extends Zend_Controller_Action_Helper_Abstract
+class Shops_Controller_Action_Helper_ItemOptions extends Zend_Controller_Action_Helper_Abstract
 {
 	public function getOptions($itemId)
 	{
