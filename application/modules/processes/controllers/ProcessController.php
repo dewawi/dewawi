@@ -2,6 +2,29 @@
 
 class Processes_ProcessController extends DEEC_Controller_Action
 {
+	protected function shouldPrepareAttachmentDirectory(): bool
+	{
+		return $this->getRequest()->getActionName() !== 'view' && parent::shouldPrepareAttachmentDirectory();
+	}
+
+	protected function getViewAssigns(array $row, $form): array
+	{
+		$positionsDb = (new Processes_Model_DbTable_Processpos())->setClientId((int)$row['clientid']);
+		$contact = [];
+		if (!empty($row['contactid']) && (new DEEC_Permission((array)$this->_user))->hasPermission('contacts', 'contact', 'view')) {
+			$client = Zend_Registry::get('Client');
+			$contactDb = (new Contacts_Model_DbTable_Contact())->setClientId((int)($client['modules']['contacts'] ?? $client['id']));
+			$contact = $contactDb->getContactWithID($row['contactid']) ?: [];
+		}
+
+		$activeTab = $this->getRequest()->getCookie('tab', '#tabOverview');
+		return [
+			'positions' => $positionsDb->getPositions((int)$row['id'])->toArray(),
+			'contact' => $contact,
+			'activeTab' => in_array($activeTab, ['#tabOverview', '#tabFiles', '#tabMessages'], true) ? $activeTab : '#tabOverview',
+		];
+	}
+
 	protected function buildIndexView(): void
 	{
 		$this->buildListView([

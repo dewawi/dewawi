@@ -24,6 +24,7 @@ class ButtonPageReadAdapter extends Zend_Db_Adapter_Pdo_Mysql
 	public array $queries = [];
 	public array $rows = [];
 	public bool $standardArea = false;
+	public bool $processView = false;
 	protected function _connect() {}
 	protected function _quote($value) { return Zend_Db_Adapter_Abstract::_quote($value); }
 	public function describeTable($table, $schema = null) {
@@ -42,7 +43,9 @@ class ButtonPageReadAdapter extends Zend_Db_Adapter_Pdo_Mysql
 		$rows = is_string($table) ? ($this->rows[$table] ?? []) : [];
 		if ($this->standardArea && $sql instanceof Zend_Db_Select) {
 			$where = str_replace('`', '', implode(' ', $sql->getPart(Zend_Db_Select::WHERE)));
-			foreach (['id', 'clientid'] as $column) if (preg_match('/\b' . $column . '\s*=\s*\x27?([0-9]+)/', $where, $match)) $rows = array_values(array_filter($rows, static fn($row) => (int)($row[$column] ?? 0) === (int)$match[1]));
+			$columns = $this->processView ? ['id', 'clientid', 'parentid', 'contactid', 'deleted'] : ['id', 'clientid'];
+			foreach ($columns as $column) if (preg_match('/\b' . $column . '\s*=\s*\x27?(-?[0-9]+)/', $where, $match)) $rows = array_values(array_filter($rows, static fn($row) => (int)($row[$column] ?? 0) === (int)$match[1]));
+			if ($this->processView && $table === 'processpos') usort($rows, static fn($a, $b) => [(int)$a['ordering'], (int)$a['id']] <=> [(int)$b['ordering'], (int)$b['id']]);
 		}
 		if (preg_match('/^\s*SELECT\s+COUNT\s*\(/i', $text)) $rows = [['records' => 25]];
 		if (preg_match('/\bSUM\s*\(/i', $text)) $rows = [['total' => 0]];
@@ -85,6 +88,7 @@ $path = (string)parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $prefix = str_starts_with($path, '/erp/') ? '/erp' : '';
 $route = substr($path, strlen($prefix));
 $standardArea = preg_match('#^/(processes/process|items/pricerule|admin/shop)(?:/(index|search|select|edit/id/[0-9]+|view/id/[0-9]+))?$#D', $route) === 1;
+if (preg_match('#^/processes/process/view(?:/id/[^/]+)?$#D', $route)) $standardArea = true;
 if (preg_match('#^/(?:css|js|images|library)/#', $route) || $route === '/favicon.ico') {
 	$asset = realpath(BASE_PATH . $route);
 	if (!$asset || !str_starts_with($asset, BASE_PATH . '/') || !in_array(pathinfo($asset, PATHINFO_EXTENSION), ['css', 'js', 'png', 'gif', 'svg', 'ico'], true)) { http_response_code(404); exit; }
@@ -143,12 +147,18 @@ if ($standardArea) {
 	require_once APPLICATION_PATH . '/controllers/helpers/Directory.php';
 	Zend_Controller_Action_HelperBroker::addHelper(new class extends Application_Controller_Action_Helper_Directory {
 		public function getName() { return 'Directory'; }
-		public function isWritable($id, $type, $flashMessenger) { return false; }
+		public function isWritable($id, $type, $flashMessenger) {
+			if ($this->getRequest()->getModuleName() === 'processes' && $this->getRequest()->getActionName() === 'view') throw new RuntimeException('Process views must not prepare attachment directories');
+			return false;
+		}
 	});
 	require_once APPLICATION_PATH . '/controllers/helpers/Access.php';
 	Zend_Controller_Action_HelperBroker::addHelper(new class extends Application_Controller_Action_Helper_Access {
 		public function getName() { return 'Access'; }
-		public function lock($id, $userid, $locked = null, $lockedtime = null, $db = null) { return null; }
+		public function lock($id, $userid, $locked = null, $lockedtime = null, $db = null) {
+			if ($this->getRequest()->getModuleName() === 'processes' && $this->getRequest()->getActionName() === 'view') throw new RuntimeException('Process views must not acquire write locks');
+			return null;
+		}
 	});
 	$role = $_GET['fixture_role'] ?? $_SERVER['HTTP_X_BUTTON_FIXTURE_ROLE'] ?? 'full';
 	$user['admin'] = str_starts_with($route, '/admin/') && $role !== 'denied' ? 1 : 0;
@@ -186,6 +196,15 @@ if ($route === '/' && in_array($_GET['fixture_dashboard'] ?? '', ['all', 'no-con
 	$adapter->rows['ledger'] = [['id' => 41, 'clientid' => 70, 'deleted' => 0, 'itemid' => 31, 'ledgerdate' => '2026-11-19', 'comment' => 'Synthetic Movement']];
 	$adapter->rows['task'] = [['id' => 61, 'clientid' => 70, 'deleted' => 0, 'title' => 'Synthetic Task', 'startdate' => null, 'duedate' => null, 'priority' => 0, 'responsible' => 0]];
 	foreach (['salesorder', 'invoice', 'quoterequest', 'purchaseorder'] as $index => $table) $adapter->rows[$table] = [array_replace($adapter->rows['quote'][0], ['id' => 71 + $index, 'title' => 'Synthetic Document'])];
+}
+if (str_starts_with($route, '/processes/process')) {
+	// Real database rows include nullable schema columns, unlike the old sparse fixture.
+	preg_match('/CREATE TABLE IF NOT EXISTS `process` \((.*?)\) ENGINE/s', file_get_contents(BASE_PATH . '/install/config/structure.sql'), $schema);
+	preg_match_all('/^  `([^`]+)`/m', $schema[1], $columns);
+	$processDefaults = array_fill_keys($columns[1], null);
+	foreach ($adapter->rows['process'] as &$processRow) $processRow += $processDefaults;
+	unset($processRow);
+	if (isset($_GET['fixture_process_view'])) require __DIR__ . '/../processes/fixtures/process-view.php';
 }
 $front = Zend_Controller_Front::getInstance();
 $front->setParam('bootstrap', $bootstrap)->setParam('noErrorHandler', true)->throwExceptions(true)->returnResponse(true);
