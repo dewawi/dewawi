@@ -15,11 +15,7 @@ class DEEC_Albis
 		$this->cache = $cache;
 		$this->adapter = $adapter;
 		$prefix = 'DEWAWI_ALBIS_' . $context->getClientId() . '_' . $context->getSiteId() . '_' . strtoupper((string)$context->get('albisenvironment', 'test')) . '_';
-		$this->credentials = $credentials ?? [
-			'client_id' => (string)getenv($prefix . 'CLIENT_ID'),
-			'client_secret' => (string)getenv($prefix . 'CLIENT_SECRET'),
-			'cache_key' => (string)getenv($prefix . 'CACHE_KEY'),
-		];
+		$this->credentials = $credentials ?? self::loadCredentials($prefix);
 		$this->scope = 'albis_' . hash('sha256', serialize([
 			$context->getClientId(), $context->getSiteId(), $context->get('albisenvironment', 'test'),
 			defined('APPLICATION_ENV') ? APPLICATION_ENV : 'production', $this->credentials,
@@ -112,8 +108,56 @@ class DEEC_Albis
 
 	private function ready(): bool
 	{
-		return !empty($this->credentials['client_id']) && !empty($this->credentials['client_secret'])
-			&& strlen((string)base64_decode($this->credentials['cache_key'] ?? '', true)) === 32;
+		return self::validCredentials($this->credentials);
+	}
+
+	private static function loadCredentials(string $prefix): array
+	{
+		$file = self::configurationFile();
+		foreach ([$file, null] as $source) {
+			$credentials = [];
+			foreach (['client_id', 'client_secret', 'cache_key'] as $field) {
+				$key = $prefix . strtoupper($field);
+				$credentials[$field] = $source === null ? getenv($key) : ($source[$key] ?? null);
+			}
+			if (self::validCredentials($credentials)) return $credentials;
+		}
+		return [];
+	}
+
+	private static function configurationFile(): array
+	{
+		if (!defined('BASE_PATH')) return [];
+		// INI warnings may contain secret values; suppress them even with an application error handler.
+		set_error_handler(static fn() => true);
+		try {
+			$path = BASE_PATH . '/configs/albis.env';
+			if (!is_file($path) || !is_readable($path)) return [];
+			$lines = file($path, FILE_IGNORE_NEW_LINES);
+			if ($lines === false) return [];
+			$keys = [];
+			foreach ($lines as $line) {
+				$line = trim($line);
+				if ($line === '' || $line[0] === '#' || $line[0] === ';') continue;
+				if (!preg_match('/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:"[^"]*"\s*(?:;.*)?|[^"]*)$/D', $line, $match) || isset($keys[$match[1]])) return [];
+				$keys[$match[1]] = true;
+			}
+			$config = parse_ini_string(implode("\n", $lines), false, INI_SCANNER_RAW);
+			return is_array($config) && count($config) === count($keys) ? $config : [];
+		} catch (Throwable $ignored) {
+			return [];
+		} finally {
+			restore_error_handler();
+		}
+	}
+
+	private static function validCredentials(array $credentials): bool
+	{
+		foreach (['client_id', 'client_secret', 'cache_key'] as $field) {
+			$value = $credentials[$field] ?? null;
+			if (!is_string($value) || trim($value) === '' || preg_match('/[\x00-\x1f\x7f]/', $value)) return false;
+		}
+		return strlen((string)base64_decode($credentials['cache_key'], true)) === 32;
 	}
 
 	private function key(string $kind, array $params = []): string

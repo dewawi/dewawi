@@ -1,5 +1,6 @@
 /configs/database.ini
 /configs/magento.ini
+/configs/albis.env
 /cache/*
 !/cache/.gitkeep
 /files/*/*

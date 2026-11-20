@@ -132,7 +132,7 @@ with tempfile.TemporaryDirectory(prefix="dewawi-configuration-http-") as temp:
     site = temp / "site"
     site.mkdir()
     private = [
-        "configs/application.ini", "configs/database.ini", "configs/magento.ini",
+        "configs/application.ini", "configs/database.ini", "configs/magento.ini", "configs/albis.env", "configs/albis.env.bak",
         "application/Bootstrap.php", "languages/de_DE/default/default.php",
         "logs/cron.log", "logs/extensionless", "session/sess_fixture", "templates/private.phtml",
         "tests/security/fixture.php", "tests/security/file-access.php", "tests/security/url-download.php", "library/DEEC/UrlDownload.php", "library/DEEC/Fixture.php", "library/Zend/Fixture.php",
@@ -195,6 +195,10 @@ with tempfile.TemporaryDirectory(prefix="dewawi-configuration-http-") as temp:
         if not target.exists():
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(marker)
+    # The real installer now needs its translator and catalogues in the isolated installation.
+    shutil.copyfile(root / "library/DEEC/Translate.php", site / "library/DEEC/Translate.php")
+    for locale in ["de_DE", "en_US"]:
+        shutil.copytree(root / "languages" / locale / "installer", site / "languages" / locale / "installer", dirs_exist_ok=True)
     for manager in ["FileManager", "MediaManager"]:
         for original in (root / "library" / manager).rglob("*.php"):
             target = site / original.relative_to(root)
@@ -328,6 +332,7 @@ php_admin_value session.save_path "{temp}"
                 "configs", "configs/", "CONFIGS/missing.ini", "application/missing.php",
                 "install/config", "install/templates/", "configs//database.ini", "%63onfigs/database.ini",
                 "configs/database.ini/extra", "files/export%2esql", "media/error%2elog?download=1",
+                "%63onfigs/albis.env", "configs//albis.env", "configs/albis.env?download=1", "configs/albis.env/extra", "media/../configs/albis.env",
                 ".git/config?raw=1", "media/../configs/database.ini",
                 "install/database.php", "install/importSQL.php", "install/helper.php", "install/requirements.php",
             ]:
