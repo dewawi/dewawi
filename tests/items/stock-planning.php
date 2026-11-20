@@ -63,25 +63,26 @@ class StockPlanningTestTable extends Items_Model_DbTable_Stockplanning
 }
 
 $service = (new ReflectionClass(Items_Service_StockPlanning::class))->newInstanceWithoutConstructor();
+$day = static fn(int $offset): string => date('Y-m-d', strtotime('+' . $offset . ' days'));
 $events = [
-	['id' => 1, 'type' => 'reservation', 'planningdate' => '2026-11-02', 'dateconfirmed' => 1, 'remaining' => 15],
-	['id' => 2, 'type' => 'incoming', 'planningdate' => '2026-11-05', 'dateconfirmed' => 1, 'remaining' => 30],
-	['id' => 3, 'type' => 'reservation', 'planningdate' => '2026-11-10', 'dateconfirmed' => 1, 'remaining' => 10],
-	['id' => 4, 'type' => 'incoming', 'planningdate' => '2026-11-15', 'dateconfirmed' => 1, 'remaining' => 20],
+	['id' => 1, 'type' => 'reservation', 'planningdate' => $day(2), 'dateconfirmed' => 1, 'remaining' => 15],
+	['id' => 2, 'type' => 'incoming', 'planningdate' => $day(5), 'dateconfirmed' => 1, 'remaining' => 30],
+	['id' => 3, 'type' => 'reservation', 'planningdate' => $day(10), 'dateconfirmed' => 1, 'remaining' => 10],
+	['id' => 4, 'type' => 'incoming', 'planningdate' => $day(15), 'dateconfirmed' => 1, 'remaining' => 20],
 ];
-$availability = $service->calculateAvailability(20, $events, '2026-11-10', 25);
+$availability = $service->calculateAvailability(20, $events, $day(10), 25);
 
 checkPlanning($availability['physical'] === 20.0, 'Physical stock changed during forecast');
 checkPlanning($availability['projectedStock'] === 50.0, 'Confirmed incoming was not added to projected stock');
 checkPlanning($availability['available'] === 25.0, 'Chronological availability is incorrect');
 checkPlanning($availability['shortage'] === 0.0, 'Available request has a shortage');
-checkPlanning($availability['earliestDate'] === '2026-11-05', 'Earliest delivery date is incorrect');
+checkPlanning($availability['earliestDate'] === $day(5), 'Earliest delivery date is incorrect');
 checkPlanning(array_column($availability['timeline'], 'forecast') === [20.0, 5.0, 35.0, 25.0, 45.0], 'Timeline forecast differs from the planning example');
 
 $partial = $service->calculateAvailability(5.25, [
-	['id' => 10, 'type' => 'incoming', 'planningdate' => '2026-11-01', 'dateconfirmed' => 1, 'quantity' => 10.5, 'fulfilled' => 4.25],
-	['id' => 11, 'type' => 'reservation', 'planningdate' => '2026-11-02', 'dateconfirmed' => 1, 'quantity' => 7.75, 'fulfilled' => 2.25],
-], '2026-11-02', 6);
+	['id' => 10, 'type' => 'incoming', 'planningdate' => $day(1), 'dateconfirmed' => 1, 'quantity' => 10.5, 'fulfilled' => 4.25],
+	['id' => 11, 'type' => 'reservation', 'planningdate' => $day(2), 'dateconfirmed' => 1, 'quantity' => 7.75, 'fulfilled' => 2.25],
+], $day(2), 6);
 checkPlanning($partial['openIncoming'] === 6.25, 'Partial receipt remaining quantity is incorrect');
 checkPlanning($partial['futureReservations'] === 5.5, 'Partial fulfillment remaining quantity is incorrect');
 checkPlanning($partial['available'] === 6.0, 'Decimal quantities lost precision');
@@ -99,13 +100,13 @@ checkPlanning($unconfirmed['shortage'] === 3.0, 'Overreservation shortage is inc
 checkPlanning($unconfirmed['earliestDate'] === date('Y-m-d'), 'Current stock was not returned as the earliest delivery date');
 
 $sameDate = $service->calculateAvailability(0, [
-	['id' => 30, 'type' => 'reservation', 'planningdate' => '2026-11-03', 'dateconfirmed' => 1, 'remaining' => 6],
-	['id' => 31, 'type' => 'incoming', 'planningdate' => '2026-11-03', 'dateconfirmed' => 1, 'remaining' => 10],
-], '2026-11-03', 4);
+	['id' => 30, 'type' => 'reservation', 'planningdate' => $day(3), 'dateconfirmed' => 1, 'remaining' => 6],
+	['id' => 31, 'type' => 'incoming', 'planningdate' => $day(3), 'dateconfirmed' => 1, 'remaining' => 10],
+], $day(3), 4);
 checkPlanning($sameDate['available'] === 4.0, 'Same-day incoming was not processed before demand');
-checkPlanning($sameDate['earliestDate'] === '2026-11-03', 'Same-day delivery date is incorrect');
+checkPlanning($sameDate['earliestDate'] === $day(3), 'Same-day delivery date is incorrect');
 
-$otherWarehouse = $service->calculateAvailability(3, [], '2026-11-15', 5);
+$otherWarehouse = $service->calculateAvailability(3, [], $day(15), 5);
 checkPlanning($otherWarehouse['available'] === 3.0 && $otherWarehouse['shortage'] === 2.0, 'Warehouse-specific availability was mixed');
 
 $adapter = new StockPlanningTestAdapter(['host' => 'unused', 'username' => 'unused', 'password' => 'unused', 'dbname' => 'unused']);

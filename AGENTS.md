@@ -50,13 +50,13 @@
 ### Versioning
 
 - Use `MAJOR.MINOR.PATCH` for long-term versioning: patch versions for backward-compatible fixes, minor versions for compatible feature additions, and major versions for incompatible changes.
-- The last published version is `1.1.7`; the next planned release remains `1.1.8`. Preserve this already approved version number.
+- The approved application release is `1.1.8` (release date: `2026-11-20`); the previous release baseline is `1.1.7`. Keep `1.1.8` until another version change is explicitly approved. Local release preparation does not authorize publication, tags or deployments.
 - Distinguish the current development state, the published application version, and the database schema version. An application version alone does not prove which SQL changes have been applied.
 - Change version numbers only with explicit approval. Do not automatically release, tag or deploy.
 
 ### Current transition: 1.1.7 → 1.1.8
 
-- Retain the existing SQL procedure until `1.1.8` is completed under separate release approval.
+- Retain the existing SQL procedure for the `1.1.7 → 1.1.8` upgrade. The numbered migration system starts only with the following transition.
 - Put **all** new migration SQL for this transition only in `install/config/update-1.1.7-1.1.8.sql`; preserve existing statements and append or integrate new changes appropriately.
 - Keep the fresh-install schema in `install/config/structure.sql` consistent with the migration.
 - Do not retroactively split this migration or create per-feature migration files. Do not implement the new migration management system or create `1.1.9` migrations as part of ongoing `1.1.8` work; later implementation requires a separately authorized task.

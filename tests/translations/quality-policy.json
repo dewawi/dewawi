@@ -87,7 +87,7 @@
     {
       "file": "application/layouts/scripts/layout.phtml",
       "kind": "html_text",
-      "text": "Version 1.1.7",
+      "text": "Version 1.1.8",
       "classification": "technical_internal",
       "reason": "Version identifier; Version is usable in both locales. Do not translate the release number.",
       "occurrences": 1

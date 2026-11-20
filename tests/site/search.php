@@ -334,7 +334,11 @@ foreach (["getModuleName() === 'shops'", "getControllerName() === 'search'", "ge
 $sitemapSource = file_get_contents($root . '/application/modules/shops/controllers/SitemapController.php');
 checkSearch(!str_contains($sitemapSource, "'controller' => 'search'"), 'Search URLs are present in the sitemap');
 $layoutSource = file_get_contents($root . '/application/layouts/scripts/site.phtml');
-checkSearch(str_contains($layoutSource, "'search', true") && str_contains($layoutSource, 'placeholder="Was suchen Sie?"'), 'Global search form is missing');
+checkSearch(str_contains($layoutSource, "'search', true") && str_contains($layoutSource, "\$this->escape(\$this->translate('SHOPS_SEARCH_PLACEHOLDER'))"), 'Global search form or escaped translated placeholder is missing');
+foreach (['de_DE' => 'Was suchen Sie?', 'en_US' => 'What are you looking for?'] as $locale => $placeholder) {
+	$shopTexts = require $root . '/languages/' . $locale . '/shops/shops.php';
+	checkSearch(($shopTexts['SHOPS_SEARCH_PLACEHOLDER'] ?? '') === $placeholder, 'Search placeholder translation is missing: ' . $locale);
+}
 $searchViewSource = file_get_contents($root . '/application/modules/shops/views/scripts/search/index.phtml');
 checkSearch(substr_count($searchViewSource, '$this->escape(') >= 8, 'Search output is not consistently escaped');
 $searchSource = file_get_contents($root . '/application/modules/shops/models/Search.php');

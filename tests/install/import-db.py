@@ -5,6 +5,8 @@ import tempfile, subprocess, time, shutil
 work = Path(tempfile.mkdtemp(prefix='dewawi-install-db-'))
 server = None
 try:
+    historical = subprocess.run(['git', 'show', '1.1.7:install/config/structure.sql'], cwd=Path(__file__).resolve().parents[2], check=True, capture_output=True)
+    (work/'structure-1.1.7.sql').write_bytes(historical.stdout)
     init = subprocess.run(['mariadb-install-db', '--no-defaults', '--datadir='+str(work/'data'), '--auth-root-authentication-method=normal', '--skip-test-db'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     if init.returncode:
         raise RuntimeError(init.stdout)

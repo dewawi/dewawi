@@ -105,7 +105,8 @@ check(str_contains($controllerSource, "unset(\$post['roles'])") && str_contains(
 check(substr_count($controllerSource, 'getByIdForUpdate($id)') >= 2, 'Role updates do not lock and revalidate the authorized contact');
 check(str_contains($globalSource, "fieldName.slice(-2) === '[]'") && str_contains($globalSource, "selected.length ? selected : ['']"), 'Multi-checkbox auto-save cannot add and remove roles');
 check(str_contains($migration, 'UNIQUE KEY `clientid_parentid_role`') && str_contains($migration, "IN ('customer', 'supplier', 'prospect', 'partner')"), 'Role migration lacks uniqueness or explicit legacy mapping');
-check(!str_contains($migration, 'category') && !str_contains($migration, 'invoice') && !str_contains($migration, 'purchaseorder'), 'Role migration infers roles from business usage');
+check(preg_match('/INSERT IGNORE INTO `contactrole`.*?;/s', $migration, $roleMigration) === 1, 'Legacy role mapping statement is missing');
+check(!str_contains($roleMigration[0], 'category') && !str_contains($roleMigration[0], 'invoice') && !str_contains($roleMigration[0], 'purchaseorder'), 'Role migration infers roles from business usage');
 check(!str_contains($migration, 'UPDATE `contact`') && !str_contains($migration, 'ALTER TABLE `contact`'), 'Role migration modifies the legacy contact.type field');
 $germanMessages = require $root . '/languages/de_DE/default/messages.php';
 $englishMessages = require $root . '/languages/en_US/default/messages.php';

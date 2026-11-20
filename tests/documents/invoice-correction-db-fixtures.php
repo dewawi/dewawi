@@ -9,7 +9,9 @@ $pdo->exec('CREATE TABLE invoice LIKE integrity_fixture.invoice');
 preg_match('/CREATE TABLE IF NOT EXISTS `emailmessageattachment` .*?ENGINE=InnoDB DEFAULT CHARSET=utf8;/s', $schema, $mailSchema);
 $oldMailSchema = str_replace(["  `invoicecorrectionid` int(11) DEFAULT NULL,\n", ",\n  KEY `invoicecorrectionid` (`invoicecorrectionid`)"], '', $mailSchema[0]);
 $pdo->exec($oldMailSchema);
-$pdo->exec(substr($migration, strpos($migration, '-- Explicit commercial revision links;')));
+preg_match_all('/(?:CREATE TABLE IF NOT EXISTS `(?:documentrevision|invoicecorrection)`|ALTER TABLE `emailmessageattachment`)\s.*?;/s', $migration, $correctionSql);
+integrityCheck(count($correctionSql[0]) === 3, 'Expected revision, correction and email attachment migration statements');
+foreach ($correctionSql[0] as $statement) $pdo->exec($statement);
 foreach (['documentrevision', 'invoicecorrection', 'emailmessageattachment'] as $table) {
 	$freshDefinition = $pdo->query('SHOW CREATE TABLE integrity_fixture.`' . $table . '`')->fetch(PDO::FETCH_NUM)[1];
 	$migratedDefinition = $pdo->query('SHOW CREATE TABLE `' . $table . '`')->fetch(PDO::FETCH_NUM)[1];
