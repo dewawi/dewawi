@@ -2,9 +2,9 @@
 
 require_once dirname(__FILE__) . '/SiteMetadata.php';
 
-class Zend_View_Helper_Breadcrumbs extends Zend_View_Helper_Abstract
+class Zend_View_Helper_ShopBreadcrumbs extends Zend_View_Helper_Abstract
 {
-	public function Breadcrumbs(): string
+	public function ShopBreadcrumbs(): string
 	{
 		$items = $this->getItems();
 		if (count($items) < 2) return '';

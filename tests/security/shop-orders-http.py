@@ -56,6 +56,15 @@ def request(path, data=None, ajax=False):
     except urllib.error.HTTPError as e:
         return e.code, e.read().decode(), e.headers
 
+def check_erp_layout(text, detail=False):
+    check('dw-app-shell' in text and 'dw-topbar__nav' in text, 'Production ERP layout/navigation missing')
+    check(re.search(r'<a class="dw-nav-dropdown__link is-active" href="/shops/order">', text), 'Shop order navigation entry missing or inactive')
+    breadcrumbs = re.search(r'<div class="dw-breadcrumbs" id="breadcrumbs">(.*?)</div>', text, re.S)
+    check(breadcrumbs is not None, 'ERP breadcrumbs missing')
+    check('href="/"' in breadcrumbs[1] and 'href="/shops"' in breadcrumbs[1] and 'href="/shops/order"' in breadcrumbs[1], 'ERP breadcrumb hierarchy/links incorrect')
+    check('breadcrumb-item' not in breadcrumbs[1] and 'BreadcrumbList' not in text, 'Public SEO breadcrumbs leaked into ERP')
+    check(('dw-page-layout--detail' in text) == detail, 'Wrong ERP list/detail layout')
+
 log = (work / 'order-http.log').open('w')
 server = subprocess.Popen(['php', '-S', f'127.0.0.1:{port}', '-t', str(work), str(ROOT / 'tests/security/fixtures/shop-orders-http.php')], env=env, stdout=log, stderr=log)
 try:
@@ -68,6 +77,10 @@ try:
     else:
         raise AssertionError('HTTP fixture did not start')
     check(status == 200, 'Detail failed: ' + (work / 'order-http.log').read_text())
+    check_erp_layout(text, detail=True)
+    status, canonical_detail, _ = request('/shops/order/view/id/' + str(fixtures['new']))
+    check(status == 200, 'Canonical internal order detail failed')
+    check_erp_layout(canonical_detail, detail=True)
     check('Original buyer GmbH' in text and 'Original item title' in text and 'ORIGINAL-SKU' in text, 'Detail reconstructed current master data')
     check('SHOPS_ORDER_' not in text, 'Detail contains untranslated labels')
     check('no-store' in headers.get('Cache-Control', ''), 'Customer order response can be publicly cached')
@@ -93,6 +106,7 @@ try:
     check(status == 200 and 'Historische Bestelldaten fehlen' in legacy and 'name="contactid"' not in legacy, 'Incomplete historical order exposes conversion')
     status, listing, _ = request('/shops/order')
     check(status == 200 and 'Original buyer GmbH' in listing and 'SHOPS_ORDER_' not in listing, 'Internal order list failed: ' + (work / 'order-http.log').read_text())
+    check_erp_layout(listing)
     check('value="41"' in listing and 'value="42"' in listing and 'Other shop' in listing, 'Shop source did not resolve actual tenant shops')
     check('value="43"' not in listing and 'Foreign shop' not in listing and 'Deleted shop' not in listing, 'Shop choices leak foreign/deleted shops')
 

@@ -16,7 +16,7 @@ error_reporting(E_ALL & ~E_DEPRECATED); ini_set('display_errors', '0');
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 if ($path === '/order-browser.html' && is_file(dirname($socket) . '/order-browser.html')) { header('Content-Type: text/html; charset=UTF-8'); readfile(dirname($socket) . '/order-browser.html'); exit; }
 if ($path === '/css/ui.css') { header('Content-Type: text/css'); readfile($root . '/css/ui.css'); exit; }
-$scripts = ['/library/jQuery/jquery-1.12.4.min.js', '/library/jQuery/jquery.cookie.js', '/library/jQuery/datepicker/datepicker.min.js', '/library/jQuery/jquery.autosize.min.js', '/js/global.js'];
+$scripts = ['/library/jQuery/jquery-1.12.4.min.js', '/library/jQuery/formatCurrency/jquery.formatCurrency-1.4.0.min.js', '/library/jQuery/formatCurrency/i18n/jquery.formatCurrency.de-DE.js', '/library/jQuery/jquery.textchange.min.js', '/library/jQuery/jquery.cookie.js', '/library/jQuery/datepicker/datepicker.min.js', '/library/jQuery/datepicker/i18n/datepicker.de-DE.js', '/library/jQuery/jquery.autosize.min.js', '/library/Leaflet/leaflet.js', '/library/Datejs/date.js', '/js/simpletreemenu.js', '/js/global.js', '/js/contacts.js', '/js/calendar-reminders.js'];
 if (in_array($path, $scripts, true)) { header('Content-Type: application/javascript'); readfile($root . $path); exit; }
 $fixtures = json_decode(file_get_contents(dirname($socket) . '/order-fixtures.json'), true);
 $db = new Zend_Db_Adapter_Pdo_Mysql(['host' => 'localhost', 'unix_socket' => $socket, 'username' => 'root', 'password' => '', 'dbname' => 'dewawi_shop_orders_test', 'charset' => 'utf8mb4']);
@@ -39,10 +39,12 @@ $view = new class($translator) extends Zend_View {
 	public function __construct(private DEEC_Translate $translator) { parent::__construct(); }
 	public function translate($key, ...$args) { return $this->translator->t($key); }
 };
-$view->addScriptPath($root . '/application/modules/shops/views/scripts');
 $view->addHelperPath($root . '/application/views/helpers', 'Zend_View_Helper');
+$view->doctype('HTML5');
+$view->language = 'de_DE';
 Zend_Controller_Action_HelperBroker::addPath($root . '/application/controllers/helpers', 'Application_Controller_Action_Helper');
-Zend_Layout::startMvc();
+$layout = Zend_Layout::startMvc(['layoutPath' => $root . '/application/layouts/scripts']);
+$layout->setView($view);
 Zend_Controller_Action_HelperBroker::getStaticHelper('viewRenderer')->setView($view);
 Zend_Controller_Action_HelperBroker::getStaticHelper('redirector')->setExit(false);
 Zend_Controller_Action_HelperBroker::getStaticHelper('json')->suppressExit = true;
@@ -71,6 +73,7 @@ try {
 		if (!$options instanceof Application_Controller_Action_Helper_Options || $options->getActionController() !== $controller || $options->getRequest() !== $request) throw new RuntimeException('Form options lost controller/request binding');
 	}
 	if (Zend_Registry::isRegistered('SiteContext')) throw new RuntimeException('Internal ERP request acquired a SiteContext');
+	if ($front->getRouter()->hasRoute('shop_home')) throw new RuntimeException('Internal ERP request acquired a public home route');
 	if (!$response->isRedirect()) {
 		$body = $view->render('order/' . (in_array($action, ['index', 'search']) ? 'index' : 'view') . '.phtml');
 		$response->setBody($body);
@@ -78,9 +81,10 @@ try {
 			$plugin = new Application_Plugin_ListResponse();
 			$plugin->setResponse($response)->postDispatch($request);
 		} else {
-			$scriptsHtml = '<script>var fixtureErrors=[];window.addEventListener("error",function(e){fixtureErrors.push(e.message)});var baseUrl="",module="shops",controller="order",action=' . json_encode($action) . ',language="de_DE",id=0,cookiePath="/shops/order";</script>';
-			foreach ($scripts as $script) $scriptsHtml .= '<script src="' . $script . '"></script>';
-			$response->setBody('<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/ui.css">' . $scriptsHtml . '</head><body><main><div class="dw-page-header__toolbar">' . $view->Toolbar() . '</div><div id="content">' . $body . '</div></main></body></html>');
+			$view->headScript()->prependScript('var fixtureErrors=[];window.addEventListener("error",function(e){fixtureErrors.push(e.message)});');
+			$layout->content = $body;
+			$response->setBody($layout->render());
+			if ((new ReflectionClass($view->getHelper('Breadcrumbs')))->getFileName() !== $root . '/application/views/helpers/Breadcrumbs.php') throw new RuntimeException('ERP layout resolved public shop breadcrumbs');
 		}
 	}
 } catch (Throwable $e) {

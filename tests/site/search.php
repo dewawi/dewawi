@@ -25,7 +25,6 @@ require_once $root . '/application/modules/shops/models/DbTable/Tag.php';
 require_once $root . '/application/modules/shops/models/DbTable/Inquiryform.php';
 require_once $root . '/application/modules/shops/models/DbTable/Slug.php';
 require_once $root . '/application/modules/shops/models/DbTable/Slugredirect.php';
-require_once $root . '/application/modules/shops/views/helpers/Breadcrumbs.php';
 
 $checks = 0;
 
@@ -300,8 +299,9 @@ $excerpt = $search->excerpt($abbreviationCandidate, ['kaltwassersatz']);
 checkSearch($excerpt === 'Kaltwassersätze versorgen z. B. Prozessanlagen bzw. Produktionshallen und u. a. Prüfstände zuverlässig.', 'Abbreviations split the excerpt into short sentence fragments');
 
 $breadcrumbView = new SearchBreadcrumbView();
+$breadcrumbView->addHelperPath($root . '/application/modules/shops/views/helpers', 'Zend_View_Helper');
 $breadcrumbView->controller = 'search';
-$breadcrumb = (new Zend_View_Helper_Breadcrumbs())->setView($breadcrumbView)->Breadcrumbs();
+$breadcrumb = $breadcrumbView->ShopBreadcrumbs();
 checkSearch(str_contains($breadcrumb, '>Suche</li>') && !str_contains($breadcrumb, '>search</li>'), 'Search breadcrumb is not translated');
 
 checkSearch($search->search("%' OR 1=1 --")['total'] === 0, 'Injection-like input returns unrelated results');

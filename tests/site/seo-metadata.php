@@ -9,6 +9,7 @@ if (PHP_SAPI !== 'cli') {
 
 error_reporting(E_ALL & ~E_DEPRECATED);
 $root = dirname(__DIR__, 2);
+define('BASE_PATH', $root);
 set_include_path($root . '/library' . PATH_SEPARATOR . get_include_path());
 spl_autoload_register(static function(string $class): void {
 	if ($path = stream_resolve_include_path(str_replace('_', '/', $class) . '.php')) require_once $path;
@@ -16,7 +17,6 @@ spl_autoload_register(static function(string $class): void {
 
 require_once $root . '/library/DEEC/Site/Context.php';
 require_once $root . '/application/modules/shops/views/helpers/SiteMetadata.php';
-require_once $root . '/application/modules/shops/views/helpers/Breadcrumbs.php';
 
 $checks = 0;
 
@@ -37,8 +37,8 @@ class SeoMetadataView extends Zend_View
 		parent::__construct();
 		$this->siteContext = $context;
 		$this->doctype('HTML5');
-		$this->setScriptPath($root . '/application/modules/shops/views/scripts');
-		$this->addHelperPath($root . '/application/modules/shops/views/helpers', 'Zend_View_Helper');
+		$this->addHelperPath($root . '/application/views/helpers', 'Zend_View_Helper');
+		$this->addBasePath($root . '/application/modules/shops/views', 'Shops_View');
 		$this->metadataHelper = new Zend_View_Helper_SiteMetadata();
 		$this->metadataHelper->setView($this);
 	}
@@ -157,16 +157,15 @@ $otherView->slugPaths = [
 	'category:2' => '/products/cooling',
 	'item:7' => '/products/cooling/r290-chiller',
 ];
-$breadcrumbs = new Zend_View_Helper_Breadcrumbs();
-$breadcrumbs->setView($otherView);
+$breadcrumbs = $otherView->getHelper('ShopBreadcrumbs');
 $items = $breadcrumbs->getItems();
 checkMetadata(array_column($items, 'title') === ['Home', 'Products', 'Cooling', 'R290 Chiller'], 'Nested product breadcrumbs have the wrong hierarchy');
-$breadcrumbHtml = $breadcrumbs->Breadcrumbs();
+$breadcrumbHtml = $otherView->ShopBreadcrumbs();
 checkMetadata(substr_count($breadcrumbHtml, 'class="breadcrumb-item') === 4, 'Visual breadcrumbs do not use the shared hierarchy');
 checkMetadata(substr_count($breadcrumbHtml, '"@type":"ListItem"') === 4, 'BreadcrumbList does not use the visual breadcrumb data');
 checkMetadata(str_contains($breadcrumbHtml, 'https:\/\/other.example.test\/products\/cooling\/r290-chiller'), 'BreadcrumbList contains a non-canonical product URL');
 $otherView->slugPaths['category:1'] = null;
-checkMetadata(!str_contains($breadcrumbs->Breadcrumbs(), '"@type":"BreadcrumbList"'), 'An incomplete breadcrumb hierarchy emits partial structured data');
+checkMetadata(!str_contains($otherView->ShopBreadcrumbs(), '"@type":"BreadcrumbList"'), 'An incomplete breadcrumb hierarchy emits partial structured data');
 $otherView->slugPaths['category:1'] = '/products';
 
 $otherView->controller = 'page';
@@ -181,6 +180,24 @@ $otherView->slugPaths += [
 	'page:12' => '/company/team/engineering',
 ];
 checkMetadata(array_column($breadcrumbs->getItems(), 'title') === ['Home', 'Company', 'Team', 'Engineering'], 'Nested CMS page breadcrumbs are incomplete');
+checkMetadata((new ReflectionClass($otherView->getHelper('Breadcrumbs')))->getFileName() === $root . '/application/views/helpers/Breadcrumbs.php', 'Shop helper loading replaced ERP breadcrumbs');
+checkMetadata((new ReflectionClass($breadcrumbs))->getFileName() === $root . '/application/modules/shops/views/helpers/ShopBreadcrumbs.php', 'Public breadcrumbs bypass helper resolution');
+
+$layout = new Zend_Layout(['layoutPath' => $root . '/application/layouts/scripts']);
+$layout->setView($otherView);
+$otherView->getHelper('layout')->setLayout($layout);
+$layout->content = '<p>Public page content</p>';
+$otherView->shop = ['copyright' => '', 'footer' => ''];
+$otherView->action = 'index';
+foreach (['index' => 0, 'category' => 3, 'item' => 4] as $controller => $expectedItems) {
+	$otherView->controller = $controller;
+	$otherView->canonicalPath = $controller === 'index' ? '/' : $otherView->slugPaths[$controller . ':' . ($controller === 'category' ? 2 : 7)];
+	$html = $layout->render('site');
+	checkMetadata(str_contains($html, 'Public page content') && str_contains($html, 'dw-site-header'), 'Public layout failed for ' . $controller);
+	checkMetadata(substr_count($html, 'class="breadcrumb-item') === $expectedItems, 'Public layout resolved wrong breadcrumbs for ' . $controller);
+	checkMetadata(substr_count($html, '"@type":"ListItem"') === $expectedItems, 'Public layout lost breadcrumb SEO hierarchy for ' . $controller);
+	if ($expectedItems) checkMetadata(str_contains($html, '<a href="/products">Products</a>') && str_contains($html, '>Cooling<'), 'Public layout lost category breadcrumb ancestry');
+}
 
 resetMetadataPlaceholders();
 $renderView = new SeoMetadataView($context, $root);
