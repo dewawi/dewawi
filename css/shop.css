@@ -1508,3 +1508,48 @@ form .hidden {
 .dw-leasing__notice { font-size: .85rem; }
 .dw-leasing .btn { white-space: normal; max-width: 100%; }
 .dw-leasing [hidden] { display: none !important; }
+
+.dw-checkout-form fieldset {
+	margin: 0 0 1.5rem;
+	min-width: 0;
+}
+
+.dw-checkout-form legend {
+	font-size: 1.25rem;
+	font-weight: 600;
+}
+
+.dw-checkout-form [hidden],
+#checkout-recover[hidden] {
+	display: none !important;
+}
+
+.dw-checkout-form,
+.dw-checkout-summary,
+#success address {
+	overflow-wrap: anywhere;
+}
+
+.dw-checkout-totals {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: .5rem;
+	margin-top: 1rem;
+}
+
+.dw-checkout-totals dd {
+	text-align: right;
+	margin: 0;
+}
+
+.dw-checkout-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .75rem;
+}
+
+@media (max-width: 575.98px) {
+	.dw-checkout-actions .btn {
+		width: 100%;
+	}
+}

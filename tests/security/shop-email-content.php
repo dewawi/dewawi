@@ -47,6 +47,7 @@ function check(bool $condition, string $message): void
 class ShopEmailContentTestView
 {
     public array $formData = [];
+    public ?array $order = ['orderid' => 'TEST-1000', 'snapshot' => null];
     public ?string $downloadUrl = null;
     public ?bool $notificationSent = null;
     public bool $stored = true;
@@ -128,6 +129,9 @@ $checkoutFailureText = 'Ihre Bestellung wurde gespeichert. Leider konnten wir de
 check(substr_count($checkoutFailure, $checkoutFailureText) === 1, 'Checkout failure message is missing or duplicated');
 checkNoTechnicalStatus($checkoutFailure, 'Checkout failure');
 
+$noReceipt = renderSuccess('checkout', null, ['order' => null]);
+check(!str_contains($noReceipt, 'Vielen Dank für Ihre Bestellung!') && !str_contains($noReceipt, 'Wir haben Ihre Bestellung erhalten'), 'Missing receipt claims an order was stored');
+
 foreach (['contact', 'inquiry', 'checkout'] as $type) {
     $english = renderSuccess($type, false, ['locale' => 'en_US']);
     check(str_contains($english, 'Thank you'), $type . ': English success heading missing');
@@ -159,6 +163,8 @@ $bodyMethod->setAccessible(true);
         'inquiry_token' => 'technical-inquiry-token',
         'fax_number' => 'honeypot-value',
         'privacy' => 'privacy-value',
+        'checkout_token' => 'technical-checkout-token',
+        'review_token' => 'technical-review-token',
     ],
     [
         'name' => 'Ada Example',
@@ -167,7 +173,7 @@ $bodyMethod->setAccessible(true);
     ],
     null
 );
-foreach (['technical-inquiry-token', 'honeypot-value', 'privacy-value', 'Inquiry token', 'Fax number', 'Privacy'] as $excluded) {
+foreach (['technical-inquiry-token', 'honeypot-value', 'privacy-value', 'Inquiry token', 'Fax number', 'Privacy', 'technical-checkout-token', 'technical-review-token'] as $excluded) {
     check(!str_contains($body, $excluded), 'Technical field leaked into #USER_DETAILS#: ' . $excluded);
 }
 foreach (['Ada Example', 'Example GmbH', 'ada@example.invalid', '+49 30 123456', 'Custom requirement', 'Customer message'] as $customerValue) {

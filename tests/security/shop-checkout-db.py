@@ -50,6 +50,11 @@ try:
     if http_result.returncode:
         raise SystemExit(http_result.returncode)
 
+    flow_result = subprocess.run(['python3', str(Path(__file__).with_name('shop-checkout-flow.py')), str(work)], text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    print(flow_result.stdout)
+    if flow_result.returncode:
+        raise SystemExit(flow_result.returncode)
+
 finally:
     if server is not None:
         server.terminate()

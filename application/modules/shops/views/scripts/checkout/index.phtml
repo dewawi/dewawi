@@ -1,34 +1,16 @@
-<section id="checkout" class="py-5">
+<section id="checkout-page" class="py-5">
 	<div class="container">
-		<h2><?php echo $this->translate('SHOPS_ORDER_FORM'); ?></h2>
+		<h1><?php echo $this->translate('SHOPS_ORDER_FORM'); ?></h1>
 		<p><a href="<?php echo $this->escape($this->url([], 'cart')); ?>"><?php echo $this->translate('SHOPS_SHOPPING_CART_EDIT'); ?></a></p>
-		<div class="row">
-			<div class="col-md-8 mb-4">
-				<?php if ($this->items) echo $this->CheckoutForm($this->translate('SHOPS_ORDER_FORM')); ?>
+		<?php if ($this->checkoutError) : ?><div class="alert alert-danger" role="alert"><?php echo $this->escape($this->checkoutError); ?></div><?php endif; ?>
+		<?php if ($this->positions) : ?>
+			<div class="row">
+				<div class="col-lg-7 mb-4"><?php echo $this->CheckoutForm($this->translate('SHOPS_ORDER_FORM')); ?></div>
+				<aside class="col-lg-5 mb-4" aria-label="<?php echo $this->escape($this->translate('SHOPS_ORDER_POSITIONS')); ?>">
+					<h2><?php echo $this->translate('SHOPS_SHOPPING_CART'); ?></h2>
+					<div class="cart-wrapper"><?php echo $this->partial('checkout/_summary.phtml', ['order' => $this->orderTotals, 'positions' => $this->positions]); ?></div>
+				</aside>
 			</div>
-			<div class="col-md-4 mb-4">
-				<h2><?php echo $this->translate('SHOPS_SHOPPING_CART'); ?></h2>
-				<div class="cart-wrapper">
-					<?php if ($this->items) : ?>
-						<?php foreach ($this->items as $item) : ?>
-							<div class="cart-item">
-								<strong><?php echo $this->escape($item['title']); ?></strong>
-								<div class="text-muted"><?php echo $this->escape($item['sku']); ?></div>
-								<div><?php echo $this->translate('SHOPS_PRICE'); ?>: <?php echo $item['price']; ?></div>
-								<div><?php echo $this->translate('SHOPS_QUANTITY'); ?>: <?php echo $this->escape($item['quantity'] . ' ' . ($item['uom'] ?? '')); ?></div>
-								<div><?php echo $this->translate('SHOPS_TOTAL'); ?>: <?php echo $item['total']; ?></div>
-							</div>
-						<?php endforeach; ?>
-						<p class="cart-summary"><?php echo $this->translate('SHOPS_TOTAL'); ?>: <?php echo $this->total; ?></p>
-					<?php else : ?>
-						<p><?php echo $this->translate('SHOPS_SHOPPING_CART_EMPTY'); ?></p>
-					<?php endif; ?>
-					<p class="small mt-3"><?php echo $this->translate('SHOPS_CART_NET_NOTICE'); ?>
-						<?php $shippingPage = $this->PageByType('shipping'); ?>
-						<?php if ($shippingPage) : ?><a href="<?php echo $this->escape($this->SlugUrl('page', (int)$shippingPage['id'])); ?>"><?php echo $this->translate('SHOPS_SHIPPING_COSTS'); ?></a><?php endif; ?>
-					</p>
-				</div>
-			</div>
-		</div>
+		<?php else : ?><p><?php echo $this->translate('SHOPS_SHOPPING_CART_EMPTY'); ?></p><?php endif; ?>
 	</div>
 </section>

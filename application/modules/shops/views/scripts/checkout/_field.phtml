@@ -1,0 +1,16 @@
+<?php
+$element = clone $this->element;
+$element->setDecorators(['ViewHelper']);
+$name = $element->getName();
+$id = 'checkout-' . $name;
+$element->setAttrib('id', $id);
+$errors = array_unique($element->getMessages());
+if ($errors) $element->setAttrib('aria-invalid', 'true')->setAttrib('aria-describedby', $id . '-error');
+$checkbox = $element instanceof Zend_Form_Element_Checkbox;
+?>
+<div class="form-group dw-field<?php if ($checkbox) echo ' form-check'; ?>">
+	<?php if ($checkbox) echo $element->setAttrib('class', 'form-check-input'); ?>
+	<label<?php if ($checkbox) echo ' class="form-check-label"'; ?> for="<?php echo $this->escape($id); ?>"><?php echo $this->escape($this->label); ?><?php if ($element->isRequired() || in_array($name, ['shippingname', 'shippingstreet', 'shippingpostcode', 'shippingcity', 'shippingcountry'], true)) : ?> <span data-checkout-required<?php if (!$element->isRequired()) echo ' hidden'; ?>><span aria-hidden="true">*</span><span class="sr-only"><?php echo $this->translate('SHOPS_CHECKOUT_REQUIRED'); ?></span></span><?php endif; ?></label>
+	<?php if (!$checkbox) echo $element; ?>
+	<div class="dw-field__error text-danger" id="<?php echo $this->escape($id); ?>-error"<?php if (!$errors) echo ' hidden'; ?>><?php echo $this->escape($errors ? implode(' ', $errors) : ''); ?></div>
+</div>

@@ -558,7 +558,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					'#MESSAGES_ALL_RIGHTS_RESERVED#' => date('Y') . ' ' . htmlspecialchars($shop['title']),
 					'#ORDER_NUMBER#' => htmlspecialchars($data['orderid']),
 					'#ORDER_DATE#' => htmlspecialchars($data['orderdate']),
-					'#PAYMENT_METHOD#' => htmlspecialchars($translate('SHOPS_PAYMENT_BANK_TRANSFER')),
+					'#PAYMENT_METHOD#' => htmlspecialchars($translate('SHOPS_CHECKOUT_NO_PAYMENT')),
 					'#BILLING_COMPANY#' => htmlspecialchars($formData['billingcompany']),
 					'#BILLING_DEPARTMENT#' => htmlspecialchars($formData['billingdepartment']),
 					'#BILLING_NAME#' => htmlspecialchars($formData['billingname']),
@@ -584,7 +584,8 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$internalKeys = [
 				'csrf', 'csrf_token', '_csrf', 'g-recaptcha-response',
 				'step', 'next', 'back', 'submit', 'controller', 'module', 'action',
-				'subject', 'message', 'inquiry_token', 'fax_number', 'privacy'
+				'subject', 'message', 'inquiry_token', 'fax_number', 'privacy',
+				'checkout_token', 'cart_revision', 'review_token', 'checkout_stage', 'status_only', 'checkout_edit'
 			];
 			$internalPrefixes = ['_', '__']; // e.g. __meta, _internal
 

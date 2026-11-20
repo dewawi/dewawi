@@ -1,0 +1,11 @@
+<?php $snapshot = Shops_Service_OrderSnapshot::decode($this->order['snapshot']); ?>
+<h2 tabindex="-1" id="checkout-review-title"><?php echo $this->translate('SHOPS_CHECKOUT_REVIEW'); ?></h2>
+<p><?php echo $this->translate('SHOPS_CHECKOUT_REVIEW_NOTE'); ?></p>
+<?php echo $this->partial('checkout/_addresses.phtml', ['snapshot' => $snapshot]); ?>
+<?php echo $this->partial('checkout/_summary.phtml', ['order' => $this->order, 'positions' => $this->positions]); ?>
+<p><?php echo $this->translate('SHOPS_CHECKOUT_NO_PAYMENT'); ?></p>
+<input type="hidden" name="review_token" value="<?php echo $this->escape($this->reviewToken); ?>">
+<div class="dw-checkout-actions">
+	<button class="btn btn-secondary" type="submit" name="checkout_edit" value="1" formnovalidate><?php echo $this->translate('SHOPS_CHECKOUT_EDIT'); ?></button>
+	<button class="btn btn-success" type="submit" data-checkout-confirm><?php echo $this->translate('SHOPS_LABEL_ORDER'); ?></button>
+</div>

@@ -141,9 +141,8 @@ $(document).ready(function () {
 	});
 
 	// Add a change event listener to the checkbox
-	$('#differentshippingaddress').change(function () {
-		toggleShippingFields();
-	});
+	$(document).on('change', 'form#checkout [name="differentshippingaddress"]', toggleShippingFields);
+	toggleShippingFields();
 
 	toggleDependentFields();
 
@@ -332,15 +331,16 @@ $(document).ready(function () {
 	if ($initialConsent.length) setTimeout(function () { $initialConsent.trigger('focus'); }, 0);
 
 	enhancePublicForms(document);
+	enhanceCheckout();
 });
 
 function enhancePublicForms(context) {
 	$(context).find('.alert-danger').attr({ role: 'alert', 'aria-live': 'assertive' });
 	$(context).find('.dw-field').each(function () {
 		const $field = $(this);
-		const $control = $field.find('input, select, textarea').first();
+		const $control = $field.find('input:not([type="hidden"]), select, textarea').first();
 		const $error = $field.find('.dw-field__error').first();
-		if (!$control.length || !$error.length) return;
+		if (!$control.length || !$error.length || $error.prop('hidden') || !$error.text().trim()) return;
 
 		const controlId = $control.attr('id');
 		if (!controlId) return;
@@ -351,7 +351,7 @@ function enhancePublicForms(context) {
 		$control.attr({ 'aria-invalid': 'true', 'aria-describedby': describedBy.join(' ') });
 	});
 
-	$(context).find('form#contact, form#checkout').off('submit.dewawiSubmission').on('submit.dewawiSubmission', function (event) {
+	$(context).find('form#contact, form#checkout:not(.dw-checkout-form)').off('submit.dewawiSubmission').on('submit.dewawiSubmission', function (event) {
 		const $form = $(this);
 		if ($form.data('submitting')) {
 			event.preventDefault();
@@ -499,15 +499,125 @@ function selectInquiryVariant(button) {
 	$button.attr('aria-pressed', 'true');
 }
 
-// Function to show or hide shipping fields
 function toggleShippingFields() {
-	if ($('#differentshippingaddress').is(':checked')) {
-		// Show shipping fields if checkbox is checked
-		$('#shipping-container').slideDown();
-	} else {
-		// Hide shipping fields if checkbox is unchecked
-		$('#shipping-container').slideUp();
+	const $form = $('form#checkout');
+	const different = $form.find('[name="differentshippingaddress"]').is(':checked');
+	const $shipping = $form.find('#shipping-container');
+	$shipping.prop('hidden', !different).attr('aria-hidden', String(!different));
+	$shipping.find(':input').prop('disabled', !different);
+	$shipping.find('[data-checkout-required]').prop('hidden', !different);
+	$shipping.find('[name="shippingname"], [name="shippingstreet"], [name="shippingpostcode"], [name="shippingcity"], [name="shippingcountry"]').prop('required', different);
+}
+
+function enhanceCheckout() {
+	const $form = $('form#checkout.dw-checkout-form');
+	if (!$form.length) return;
+	let busy = false;
+	let locked = $();
+	let uncertainPayload = null;
+	let navigating = false;
+	function lock() {
+		busy = true;
+		locked = $form.find(':input:enabled').not(':hidden');
+		locked.prop('disabled', true);
+		$form.attr('aria-busy', 'true');
 	}
+	function unlock() {
+		busy = false;
+		locked.prop('disabled', false);
+		$form.attr('aria-busy', 'false');
+	}
+	function message(text, error = true) {
+		$form.find('#checkout-feedback').text(text).prop('hidden', !text).toggleClass('alert-danger', error).toggleClass('alert-info', !error).trigger('focus');
+	}
+	function edit() {
+		$form.find('#checkout-review').empty().prop('hidden', true);
+		$form.find('[data-checkout-fields]').prop('hidden', false);
+		$form.find('[name="checkout_stage"]').val('preview');
+	}
+	function redirect(response) {
+		if (!response || !response.success || typeof response.redirect !== 'string' || !/^\/(?!\/)/.test(response.redirect)) return false;
+		navigating = true;
+		window.location.assign(response.redirect);
+		return true;
+	}
+	function csrf(response) {
+		if (response && typeof response.csrfToken === 'string') $form.find('[name="csrf_token"]').val(response.csrfToken);
+	}
+	function recover() {
+		$form.find('#checkout-recover').prop('disabled', true).prop('hidden', true);
+		$.ajax({ url: $form.attr('action'), method: 'POST', dataType: 'json', timeout: 20000, data: uncertainPayload + '&status_only=1' }).done(function (response) {
+			csrf(response);
+			if (response && response.stored && redirect(response)) return;
+			if (response && response.success && response.stored === false) {
+				uncertainPayload = null;
+				unlock();
+				message($form.attr('data-retry'));
+			} else recoveryFailed();
+		}).fail(recoveryFailed);
+	}
+	function recoveryFailed() {
+		message($form.attr('data-unknown'));
+		$form.find('#checkout-recover').prop('hidden', false).prop('disabled', false).trigger('focus');
+	}
+	$form.on('click', '[name="checkout_edit"]', function (event) {
+		event.preventDefault();
+		if (busy) return;
+		edit();
+		$form.find('[data-checkout-fields] :input:visible').first().trigger('focus');
+	});
+	$form.on('input change', '[data-checkout-fields] :input', function () {
+		if (busy) return;
+		edit();
+		$(this).removeAttr('aria-invalid aria-describedby').closest('.dw-field').find('.dw-field__error').text('').prop('hidden', true);
+	});
+	$form.on('click', '#checkout-recover', recover);
+	$form.on('submit.checkout', function (event) {
+		event.preventDefault();
+		if (busy || navigating) return;
+		if (!this.checkValidity()) { this.reportValidity(); return; }
+		const final = $form.find('[name="checkout_stage"]').val() === 'confirm';
+		const payload = $form.serialize();
+		$form.find('[aria-invalid]').removeAttr('aria-invalid aria-describedby');
+		$form.find('.dw-field__error').text('').prop('hidden', true);
+		lock();
+		message($form.attr(final ? 'data-saving' : 'data-previewing'), false);
+		function failed(xhr) {
+			const response = xhr.responseJSON;
+			csrf(response);
+			if (final && (!response || response.code === 'SHOPS_CHECKOUT_SAVE_UNCERTAIN')) {
+				uncertainPayload = payload;
+				recoveryFailed();
+				recover();
+				return;
+			}
+			unlock();
+			message((response && response.message) || $form.attr('data-failed'));
+			if (response && response.code === 'SHOPS_FORM_EXPIRED') $form.find(':submit').prop('disabled', true);
+			if (response && ['SHOPS_CART_CHANGED', 'SHOPS_CHECKOUT_REVIEW_CHANGED', 'SHOPS_FORM_INVALID'].includes(response.code)) edit();
+			if (response && response.errors) {
+				Object.keys(response.errors).forEach(function (name) {
+					const $input = $form.find(':input').not('[type="hidden"]').filter(function () { return this.name === name; });
+					const $error = $input.closest('.dw-field').find('.dw-field__error');
+					$error.text(Array.from(new Set(Object.values(response.errors[name]))).join(' ')).prop('hidden', false).attr('role', 'alert');
+					if ($error.length) $input.attr('aria-invalid', 'true').attr('aria-describedby', $error.attr('id'));
+				});
+				$form.find('[aria-invalid="true"]').first().trigger('focus');
+			}
+		}
+		$.ajax({ url: $form.attr('action'), method: 'POST', dataType: 'json', timeout: 20000, data: payload }).done(function (response) {
+			csrf(response);
+			if (redirect(response)) return;
+			if (!final && response && response.success && response.reviewHtml) {
+				$form.find('#checkout-review').html(response.reviewHtml).prop('hidden', false);
+				$form.find('[data-checkout-fields]').prop('hidden', true);
+				$form.find('[name="checkout_stage"]').val('confirm');
+				unlock();
+				message('', false);
+				$form.find('#checkout-review-title').trigger('focus');
+			} else failed({ responseJSON: response });
+		}).fail(failed);
+	});
 }
 
 function submitStep(formElement, currentStep, preview = false) {

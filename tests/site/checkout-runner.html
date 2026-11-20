@@ -1,0 +1,85 @@
+<!doctype html><html><body><iframe style="height:1800px;border:0"></iframe><pre id="metrics"></pre><script>
+(async function () {
+ const frame=document.querySelector('iframe'),query=new URLSearchParams(location.search),width=Number(query.get('width')||390),mode=query.get('mode')||'normal';
+ frame.style.width=width+'px';let checks=0,failures=[];
+ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+ function check(value,message){checks++;if(!value)failures.push(message)}
+ async function until(fn,message){for(let i=0;i<35;i++){if(fn())return;await wait(60)}throw new Error(message)}
+ async function load(path){await new Promise(resolve=>{frame.onload=resolve;frame.src=path});await wait(100)}
+ try {
+  await load('/a/checkout');
+  let w=frame.contentWindow,$=w.jQuery,d=w.document;
+  const config=JSON.parse($('#shop-cart-state').attr('data-config'));
+  await $.ajax({url:config.addUrl,method:'POST',dataType:'json',data:{id:mode==='rejected'?104:103,quantity:'2.5',csrf_token:config.token,revision:config.revision}});
+  await load('/a/checkout');w=frame.contentWindow;$=w.jQuery;d=w.document;
+  let posts=0,confirmPosts=0,statusPosts=0,loseResponse=mode==='network'||mode==='recovery-fail',failRecovery=mode==='recovery-fail';
+  const originalAjax=$.ajax;
+  $.ajax=function(options){
+   if(options.url==='/a/checkout/send'){
+    posts++;
+    const values=new URLSearchParams(options.data);
+    if(values.get('status_only')==='1'){
+     statusPosts++;
+     if(failRecovery){failRecovery=false;const p=$.Deferred();setTimeout(()=>p.reject({status:0}),100);return p.promise()}
+    } else if(values.get('checkout_stage')==='confirm'){
+     confirmPosts++;
+     if(loseResponse){loseResponse=false;const p=$.Deferred();originalAjax(options).done(()=>p.reject({status:0})).fail(xhr=>p.reject(xhr));return p.promise()}
+    }
+   }
+   return originalAjax.apply(this,arguments);
+  };
+  const $form=$('form#checkout');
+  check($form.length===1&&d.querySelectorAll('#checkout').length===1,'Checkout form ID is not unique');
+  check(d.documentElement.scrollWidth<=w.innerWidth,'Checkout overflows viewport');
+  check($form.find('label[for="checkout-billingstreet"]').length===1,'Persistent street label missing');
+  check($form.find('[name="billingstreet"]').attr('autocomplete')==='billing street-address','Address autocomplete missing');
+  check($form.find('#shipping-container').prop('hidden')&&$form.find('[name="shippingname"]').prop('disabled'),'Same address asks for shipping details');
+  $form.trigger('submit');check(posts===0&&$form[0].querySelector(':invalid'),'Native required-field validation missing');
+  const fill={billingname:'Browserkunde',billingcompany:'Browser GmbH',billingstreet:'Browserweg 1',billingpostcode:'10115',billingcity:'Berlin',billingcountry:'DE',email:'invalid',message:'Notiz <img src=x>'};
+  Object.keys(fill).forEach(name=>$form.find('[name="'+name+'"]').val(fill[name]).trigger('input'));
+  $form.find('[name="privacy"][type="checkbox"]').prop('checked',true).trigger('change');
+  $form.trigger('submit');
+  await until(()=>$form.find('[name="email"]').attr('aria-invalid')==='true','Server field error did not appear');
+  check($form.find('[name="email"]').val()==='invalid'&&!$form.find('#checkout-email-error').prop('hidden'),'Error discarded entered values or has no field message');
+  check(d.activeElement.name==='email'&&$form.find('[name="email"]').attr('aria-describedby')==='checkout-email-error','Field error not keyboard accessible');
+  $form.find('[name="email"]').val('browser@example.com').trigger('input');
+  $form.trigger('submit');$form.trigger('submit');
+  await until(()=>$form.find('#checkout-review-title').length&&!$form.find('#checkout-review').prop('hidden'),'Preview did not load');
+  check(posts===2,'Double preview sent duplicate requests');
+  check($form.find('#checkout-review').text().includes('297,50')&&$form.find('#checkout-review').text().includes('47,50'),'Review has incorrect ERP totals');
+  check($form.find('#checkout-review').text().includes('nicht enthalten')&&$form.find('#checkout-review').text().includes('keine Zahlung'),'Shipping or payment communication missing');
+  check(!$form.find('#checkout-review img').length&&$form.find('#checkout-review').text().includes('Notiz <img src=x>'),'Review did not escape customer notes');
+  check(d.activeElement.id==='checkout-review-title','Preview did not receive keyboard focus');
+  $form.find('[name="checkout_edit"]').trigger('click');
+  check(!$form.find('[data-checkout-fields]').prop('hidden')&&d.activeElement.name==='billingname','Back-to-edit lost fields or focus');
+  const $different=$form.find('[name="differentshippingaddress"][type="checkbox"]');
+  $different.prop('checked',true).trigger('change');
+  check(!$form.find('#shipping-container').prop('hidden')&&$form.find('[name="shippingname"]').prop('required')&&$form.find('#shipping-container [data-checkout-required]:visible').length===5,'Different shipping address has no visible required inputs and markers');
+  Object.entries({shippingname:'Empfänger',shippingstreet:'Lieferweg 2',shippingpostcode:'20095',shippingcity:'Hamburg',shippingcountry:'DE'}).forEach(([name,val])=>$form.find('[name="'+name+'"]').val(val).trigger('input'));
+  $form.trigger('submit');await until(()=>$form.find('[name="checkout_stage"]').val()==='confirm','Second review missing');
+  check($form.find('#checkout-review').text().includes('Lieferweg 2')&&$form.find('#checkout-review').text().includes('Browserweg 1'),'Review lost different address');
+  check(d.documentElement.scrollWidth<=w.innerWidth,'Review overflows viewport');
+  $form.trigger('submit');$form.trigger('submit');
+  check($form.attr('aria-busy')==='true'&&$form.find('[data-checkout-confirm]').prop('disabled'),'Final submission has no loading lock');
+  if(mode==='rejected') {
+   await until(()=>!$form.find('[data-checkout-confirm]').prop('disabled')&&$form.find('#checkout-feedback').text().includes('keine gespeicherte Bestellung'),'Failed save did not resolve safely');
+   check(!d.querySelector('#success')&&confirmPosts===1&&statusPosts===1,'Failed save claims success or repeats final submission');
+  } else {
+   if(mode==='recovery-fail'){
+    await until(()=>!$form.find('#checkout-recover').prop('hidden'),'Failed status recovery has no retry control');
+    check($form.find('[data-checkout-confirm]').prop('disabled')&&$form.find('#checkout-feedback').text().includes('keine neue Bestellung'),'Unknown order allows a new write or hides uncertainty');
+    $form.find('#checkout-recover').trigger('click');
+   }
+   await until(()=>frame.contentDocument.querySelector('#success'),'Stored order confirmation did not load');
+   d=frame.contentDocument;
+   check(d.querySelector('#success').textContent.includes('Bestellnummer:')&&d.querySelector('#success').textContent.includes('Wir haben Ihre Bestellung erhalten'),'Confirmed order number or receipt missing');
+   check(confirmPosts===1,'Final request was repeated');
+   if(mode==='network'||mode==='recovery-fail')check(statusPosts===(mode==='network'?1:2),'Recovery did not use a read-only status request');
+   check(d.documentElement.scrollWidth<=frame.contentWindow.innerWidth,'Confirmation overflows viewport');
+   const details=d.querySelector('details');details.open=true;
+   check(details.textContent.includes('Lieferweg 2')&&details.textContent.includes('297,50')&&!details.querySelector('img'),'Confirmation lost immutable details or allowed HTML');
+  }
+ }catch(error){failures.push(String(error.stack||error))}
+ document.querySelector('#metrics').textContent=JSON.stringify({checks,failures,width,mode});
+})();
+</script></body></html>

@@ -87,24 +87,28 @@ $_SERVER['REQUEST_METHOD'] = 'POST';
 $request = new Zend_Controller_Request_Http(); $request->setModuleName('shops')->setControllerName('checkout')->setActionName('send');
 $response = new Zend_Controller_Response_Http();
 $front = Zend_Controller_Front::getInstance(); $front->setRequest($request)->setResponse($response)->addControllerDirectory($root . '/application/modules/shops/controllers', 'shops');
+foreach (['cart' => 'cart', 'checkout' => 'checkout', 'checkout_send' => 'checkout/send', 'shop_home' => ''] as $name => $path) $front->getRouter()->addRoute($name, new Zend_Controller_Router_Route_Static($path));
 $front->getRouter()->addRoute('checkout_success', new Zend_Controller_Router_Route_Static('checkout/success', ['module' => 'shops', 'controller' => 'checkout', 'action' => 'success']));
 Zend_Layout::startMvc();
 Zend_Controller_Action_HelperBroker::getStaticHelper('redirector')->setExit(false);
 Zend_Controller_Action_HelperBroker::getStaticHelper('json')->suppressExit = true;
-$view = new Zend_View(); Zend_Controller_Action_HelperBroker::getStaticHelper('viewRenderer')->setView($view);
+$view = new Zend_View(); $view->setScriptPath($root . '/application/modules/shops/views/scripts')->addHelperPath($root . '/application/modules/shops/views/helpers', 'Zend_View_Helper'); Zend_Controller_Action_HelperBroker::getStaticHelper('viewRenderer')->setView($view);
 $controller = new OrderCheckoutControllerFixture($request, $response);
 $form = new Shops_Form_Checkout(); $form->csrf_token->initCsrfToken();
 $checkoutPost = array_merge($post, ['email' => 'alice@example.com', 'csrf_token' => $form->csrf_token->getHash(), 'checkout_token' => $form->checkout_token->getValue(), 'privacy' => 1, 'module' => 'shops', 'controller' => 'checkout', 'differentshippingaddress' => 0]);
 $cart = new Shops_Model_ShoppingCart(); $cart->addItem(103, 'Stale basket label', 'CHECKOUT', 100, 2);
 $checkoutPost['cart_revision'] = $cart->getRevision();
 // Revalidation must reject a stale checkout and untrusted or revoked cart rows before persistence.
+$_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
 $originalCart = $cart->getItems();
 $cartSession = new Zend_Session_Namespace('shopping_cart_7_41');
-$invalidCheckout = static function(array $overrides = []) use ($request, $response, $controller, $checkoutPost, $db): void {
+$invalidCheckout = static function(array $overrides = []) use ($request, $response, $controller, &$checkoutPost, $db): void {
 	$response->clearBody(); $response->clearHeaders(); $response->setHttpResponseCode(200);
 	$request->setPost(array_replace($checkoutPost, $overrides));
 	$controller->sendAction();
 	$result = json_decode($response->getBody(), true);
+	if (!empty($result['csrfToken'])) $checkoutPost['csrf_token'] = $result['csrfToken'];
+	check(($result['code'] ?? '') !== 'SHOPS_FORM_EXPIRED', 'Regression request lost its CSRF token');
 	check(($result['success'] ?? null) === false && (int)$db->fetchOne('SELECT COUNT(*) FROM shoporder') === 0, 'Invalid checkout stored an order');
 };
 $invalidCheckout(['cart_revision' => $cart->getRevision() - 1]);
@@ -121,6 +125,15 @@ foreach ([['shopenabled' => 0], ['shopid' => 42], ['clientid' => 8], ['deleted' 
 $cartSession->items = [];
 $invalidCheckout();
 $cartSession->items = $originalCart;
+$response->clearBody(); $response->clearHeaders(); $response->setHttpResponseCode(200);
+$checkoutPost['checkout_stage'] = 'preview';
+$request->setPost($checkoutPost); $controller->sendAction();
+$preview = json_decode($response->getBody(), true);
+check(($preview['success'] ?? false) && !empty($preview['reviewHtml']) && (int)$db->fetchOne('SELECT COUNT(*) FROM shoporder') === 0 && $mail->calls === 0, 'Preview saved an order or sent mail');
+$checkoutSession = new Zend_Session_Namespace('ShopsCheckout');
+$checkoutPost['csrf_token'] = $preview['csrfToken'];
+$checkoutPost['checkout_stage'] = 'confirm'; $checkoutPost['review_token'] = $checkoutSession->review['token'];
+unset($_SERVER['HTTP_X_REQUESTED_WITH']);
 $response->clearBody(); $response->clearHeaders(); $response->setHttpResponseCode(200);
 $request->setPost($checkoutPost); $controller->sendAction();
 check($response->isRedirect(), 'Real checkout failed: ' . $response->getBody());

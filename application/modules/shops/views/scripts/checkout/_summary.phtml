@@ -1,0 +1,23 @@
+<?php $currency = Zend_Registry::get('Zend_Currency'); ?>
+<div class="dw-checkout-summary">
+	<?php foreach ($this->positions as $position) : ?>
+		<?php $item = Shops_Service_OrderSnapshot::decode($position['snapshot'] ?? null); ?>
+		<div class="cart-item">
+			<strong><?php echo $this->escape($item['title'] ?? ''); ?></strong>
+			<div class="text-muted"><?php echo $this->escape($item['sku'] ?? ''); ?></div>
+			<div><?php echo $this->translate('SHOPS_ORDER_UNIT_PRICE'); ?>: <?php echo $this->escape($currency->toCurrency($position['price'], ['currency' => 'EUR', 'precision' => round($position['price'], 2) == $position['price'] ? 2 : 4])); ?></div>
+			<div><?php echo $this->translate('SHOPS_QUANTITY'); ?>: <?php echo $this->escape($position['quantity'] . ' ' . ($item['uom'] ?? '')); ?></div>
+			<div><?php echo $this->translate('SHOPS_ORDER_NET'); ?>: <?php echo $this->escape($currency->toCurrency($position['total'], ['currency' => 'EUR'])); ?></div>
+		</div>
+	<?php endforeach; ?>
+	<dl class="dw-checkout-totals">
+		<?php foreach (['total' => 'SHOPS_ORDER_NET', 'taxes' => 'SHOPS_ORDER_TAX', 'grosstotal' => 'SHOPS_ORDER_GROSS'] as $field => $label) : ?>
+			<dt><?php echo $this->translate($label); ?></dt>
+			<dd data-checkout-total="<?php echo $field; ?>"><?php echo isset($this->order[$field]) ? $this->escape($currency->toCurrency($this->order[$field], ['currency' => 'EUR'])) : $this->translate('SHOPS_CHECKOUT_TAX_UNKNOWN'); ?></dd>
+		<?php endforeach; ?>
+	</dl>
+	<p class="small"><?php echo $this->translate('SHOPS_CHECKOUT_SHIPPING_NOTICE'); ?>
+		<?php $shippingPage = $this->PageByType('shipping'); ?>
+		<?php if ($shippingPage) : ?><a href="<?php echo $this->escape($this->SlugUrl('page', (int)$shippingPage['id'])); ?>"><?php echo $this->translate('SHOPS_SHIPPING_COSTS'); ?></a><?php endif; ?>
+	</p>
+</div>

@@ -1,0 +1,15 @@
+<div class="row">
+	<?php foreach (['billing' => 'SHOPS_ORDER_BILLING', 'shipping' => 'SHOPS_ORDER_SHIPPING'] as $type => $label) : ?>
+		<div class="col-sm-6">
+			<h3><?php echo $this->translate($label); ?></h3>
+			<address><?php foreach (['company', 'department', 'name', 'street'] as $field) : ?>
+				<?php if (($this->snapshot[$type][$field] ?? '') !== '') echo nl2br($this->escape($this->snapshot[$type][$field])) . '<br>'; ?>
+			<?php endforeach; ?>
+			<?php echo $this->escape(($this->snapshot[$type]['postcode'] ?? '') . ' ' . ($this->snapshot[$type]['city'] ?? '')); ?><br>
+			<?php echo $this->escape($this->snapshot[$type]['country'] ?? ''); ?><br>
+			<?php echo $this->escape($this->snapshot[$type]['phone'] ?? ''); ?></address>
+		</div>
+	<?php endforeach; ?>
+</div>
+<p><?php echo $this->translate('SHOPS_ORDER_EMAIL'); ?>: <?php echo $this->escape($this->snapshot['email'] ?? ''); ?></p>
+<?php if (!empty($this->snapshot['message'])) : ?><h3><?php echo $this->translate('SHOPS_ORDER_NOTES'); ?></h3><p><?php echo nl2br($this->escape($this->snapshot['message'])); ?></p><?php endif; ?>

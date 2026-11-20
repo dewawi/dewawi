@@ -1,0 +1,40 @@
+<?php $form = $this->checkout; $review = $this->review; ?>
+<form id="checkout" class="dw-checkout-form" action="<?php echo $this->escape($form->getAction()); ?>" method="post"
+	data-saving="<?php echo $this->escape($this->translate('SHOPS_CHECKOUT_SENDING')); ?>"
+	data-previewing="<?php echo $this->escape($this->translate('SHOPS_CHECKOUT_PREVIEWING')); ?>"
+	data-unknown="<?php echo $this->escape($this->translate('SHOPS_CHECKOUT_UNCERTAIN')); ?>"
+	data-retry="<?php echo $this->escape($this->translate('SHOPS_CHECKOUT_RETRY')); ?>"
+	data-failed="<?php echo $this->escape($this->translate('SHOPS_SUBMISSION_UNAVAILABLE')); ?>"
+	data-field-required="<?php echo $this->escape($this->translate('SHOPS_CHECKOUT_FIELD_REQUIRED')); ?>">
+	<?php foreach (['csrf_token', 'checkout_token', 'cart_revision', 'module', 'controller', 'subject'] as $name) echo (clone $form->getElement($name))->setDecorators(['ViewHelper']); ?>
+	<input type="hidden" name="checkout_stage" value="<?php echo $review ? 'confirm' : 'preview'; ?>">
+	<div id="checkout-feedback" class="alert alert-danger" role="alert" tabindex="-1" hidden></div>
+	<div data-checkout-fields<?php if ($review) echo ' hidden'; ?>>
+		<p><?php echo $this->translate('SHOPS_CHECKOUT_REQUIRED_NOTE'); ?></p>
+		<?php foreach (['billing' => 'SHOPS_ORDER_BILLING', 'shipping' => 'SHOPS_ORDER_SHIPPING'] as $prefix => $legend) : ?>
+			<?php if ($prefix === 'shipping') : ?>
+				<?php echo $this->partial('checkout/_field.phtml', ['element' => $form->differentshippingaddress, 'label' => $this->translate('SHOPS_PLACEHOLDER_DIFFERENT_SHIPPING_ADDRESS')]); ?>
+			<?php endif; ?>
+			<fieldset<?php if ($prefix === 'shipping') echo ' id="shipping-container"'; ?>>
+				<legend><?php echo $this->translate($legend); ?></legend>
+				<div class="row">
+					<?php foreach (['name', 'company', 'department', 'street', 'postcode', 'city', 'country', 'phone'] as $field) : ?>
+						<div class="col-sm-<?php echo in_array($field, ['postcode', 'city', 'country', 'phone'], true) ? '6' : '12'; ?>">
+							<?php echo $this->partial('checkout/_field.phtml', ['element' => $form->getElement($prefix . $field), 'label' => $this->translate('SHOPS_PLACEHOLDER_' . strtoupper($prefix . '_' . $field))]); ?>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			</fieldset>
+		<?php endforeach; ?>
+		<fieldset>
+			<legend><?php echo $this->translate('SHOPS_CHECKOUT_CONTACT'); ?></legend>
+			<?php echo $this->partial('checkout/_field.phtml', ['element' => $form->email, 'label' => $this->translate('SHOPS_PLACEHOLDER_EMAIL')]); ?>
+			<?php echo $this->partial('checkout/_field.phtml', ['element' => $form->message, 'label' => $this->translate('SHOPS_ORDER_NOTES')]); ?>
+			<?php echo $this->partial('checkout/_field.phtml', ['element' => $form->privacy, 'label' => $this->translate('SHOPS_LABEL_PRIVACY')]); ?>
+		</fieldset>
+		<button class="btn btn-primary" type="submit"><?php echo $this->translate('SHOPS_CHECKOUT_REVIEW'); ?></button>
+	</div>
+	<div id="checkout-review"<?php if (!$review) echo ' hidden'; ?>><?php if ($review) echo $this->partial('checkout/_review.phtml', $review); ?></div>
+	<button class="btn btn-secondary" id="checkout-recover" type="button" hidden><?php echo $this->translate('SHOPS_CHECKOUT_RECOVER'); ?></button>
+	<p class="mt-3"><a href="<?php echo $this->escape($this->url([], 'checkout')); ?>"><?php echo $this->translate('SHOPS_CHECKOUT_RESTART'); ?></a></p>
+</form>

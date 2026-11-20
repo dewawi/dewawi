@@ -2,13 +2,14 @@
 
 class Shops_Form_Checkout extends Zend_Form
 {
+	public const SHIPPING_FIELDS = ['shippingname', 'shippingcompany', 'shippingdepartment', 'shippingstreet', 'shippingpostcode', 'shippingcity', 'shippingcountry', 'shippingphone'];
 	public function init()
 	{
 		$this->setName('checkout');
 		$this->setAction('/checkout/send');
 
 		// Add CSRF token
-		$csrf = new Zend_Form_Element_Hash('csrf_token');
+		$csrf = new Zend_Form_Element_Hash('csrf_token', ['salt' => 'shops_checkout']);
 		$csrf->setTimeout(600); // Token expires in 10 minutes
 		$this->addElement($csrf);
 
@@ -142,19 +143,6 @@ class Shops_Form_Checkout extends Zend_Form
 			->setAttrib('class', 'form-control')
 			->setAttrib('placeholder', $this->getView()->translate('SHOPS_PLACEHOLDER_SHIPPING_PHONE'));
 
-		// Add shipping elements to the display group
-		$this->addDisplayGroup(
-			array($shippingname, $shippingcompany, $shippingdepartment, $shippingstreet, $shippingpostcode, $shippingcity, $shippingcountry, $shippingphone),
-			'shippingContainer',
-			array(
-				'order' => 11,
-				'decorators' => array(
-					'FormElements', // Includes the form elements
-					array('HtmlTag', array('tag' => 'div', 'id' => 'shipping-container', 'style' => 'display:none')) // Wrap the group in a div without a label
-				)
-			)
-		);
-
 		// Email field (required, with email validation)
 		$email = new Zend_Form_Element_Text('email');
 		$email->removeDecorator('Label')
@@ -209,8 +197,31 @@ class Shops_Form_Checkout extends Zend_Form
 			'email' => 254, 'message' => 10000,
 		] as $field => $maximum) {
 			$this->getElement($field)->setAttrib('maxlength', (string)$maximum)
-				->addValidator('StringLength', true, ['max' => $maximum]);
+				->addFilter('StringTrim')->addValidator('StringLength', true, ['max' => $maximum, 'messages' => $this->getView()->translate('SHOPS_CHECKOUT_TOO_LONG')]);
+		}
+		foreach (['billingname', 'billingstreet', 'billingpostcode', 'billingcity'] as $field) $this->getElement($field)->getValidator('NotEmpty')->setMessage($this->getView()->translate('SHOPS_CHECKOUT_FIELD_REQUIRED'));
+		$this->email->setAttrib('inputmode', 'email')->setAttrib('autocomplete', 'email');
+		foreach (['billing', 'shipping'] as $prefix) {
+			foreach (['name' => 'name', 'company' => 'organization', 'department' => 'organization-title', 'street' => 'street-address', 'postcode' => 'postal-code', 'city' => 'address-level2', 'country' => 'country', 'phone' => 'tel'] as $field => $autocomplete) {
+				$this->getElement($prefix . $field)->setAttrib('autocomplete', $prefix . ' ' . $autocomplete)->setAttrib('class', 'form-control');
+			}
+		}
+		$this->billingphone->setAttrib('inputmode', 'tel');
+		$this->shippingphone->setAttrib('inputmode', 'tel');
+
+	}
+
+	// Zend hash tokens last one form request; renew them for the next checkout step.
+	public function renewCsrfToken(): string
+	{
+		$this->csrf_token->initCsrfToken();
+		return $this->csrf_token->getHash();
+	}
+
+	public function setShippingRequired(bool $required): void
+	{
+		foreach (['shippingname', 'shippingstreet', 'shippingpostcode', 'shippingcity', 'shippingcountry'] as $field) {
+			$this->getElement($field)->setRequired($required)->setAttrib('required', $required ? 'required' : null)->addValidator('NotEmpty', true, ['messages' => $this->getView()->translate('SHOPS_CHECKOUT_FIELD_REQUIRED')]);
 		}
 	}
 }
-
