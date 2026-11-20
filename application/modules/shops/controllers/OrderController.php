@@ -1,277 +1,97 @@
 <?php
 
-class Shops_OrderController extends Zend_Controller_Action
+class Shops_OrderController extends DEEC_Controller_Action
 {
-	protected $_date = null;
-
-	protected $_user = null;
-
-	/**
-	 * FlashMessenger
-	 *
-	 * @var Zend_Controller_Action_Helper_FlashMessenger
-	 */
-	protected $_flashMessenger = null;
+	private Shops_Service_OrderWorkflow $workflow;
 
 	public function init()
 	{
-		$params = $this->_getAllParams();
-
-		$this->_date = date('Y-m-d H:i:s');
-
-		$this->view->id = isset($params['id']) ? $params['id'] : 0;
-		$this->view->action = $params['action'];
-		$this->view->controller = $params['controller'];
-		$this->view->module = $params['module'];
-		$this->view->client = Zend_Registry::get('Client');
-		$this->view->user = $this->_user = Zend_Registry::get('User');
-		$this->view->mainmenu = $this->_helper->MainMenu->getMainMenu();
-
-		$this->_flashMessenger = $this->_helper->getHelper('FlashMessenger');
-
-		//Check if the directory is writable
-		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'item', $this->_flashMessenger);
-		//if($this->view->id) $this->view->dirwritable = $this->_helper->Directory->isWritable($this->view->id, 'media', $this->_flashMessenger);
-
-		$this->cart = new Shops_Model_ShoppingCart();
-
-		// Make the cart accessible in all views
-		$this->view->cart = $this->cart;
+		if (!Zend_Auth::getInstance()->hasIdentity() || !Zend_Registry::isRegistered('User') || !Zend_Registry::isRegistered('Client')) throw new Zend_Controller_Action_Exception('Forbidden', 403);
+		$this->workflow = new Shops_Service_OrderWorkflow();
+		$this->workflow->requirePermission('view');
+		if (!in_array($this->getRequest()->getActionName(), ['index', 'search', 'view', 'edit', 'state', 'createsalesorder'], true)) throw new Zend_Controller_Action_Exception('Not found', 404);
+		parent::init();
+		$this->view->toolbar = null;
+		$this->getResponse()->setHeader('Cache-Control', 'private, no-store', true);
 	}
 
-	public function indexAction()
+	protected function shouldPrepareAttachmentDirectory(): bool { return false; }
+	protected function getDb(): DEEC_Model_DbTable_Entity { return $this->workflow->db(); }
+	protected function getCurrentPermissions(): array
 	{
-		if($this->getRequest()->isPost()) $this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Shops_Form_Order();
-		$toolbar = new Shops_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Shops_Model_Get();
-		$orders = $get->orders($params, $options);
-
-		$this->view->form = $form;
-		$this->view->orders = $orders;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
+		return ['view' => $this->workflow->allowed('view'), 'edit' => $this->workflow->allowed('edit'), 'add' => false, 'delete' => false];
 	}
 
-	public function searchAction()
+	protected function buildIndexView(): void
 	{
-		$type = $this->_getParam('type', 'index');
-
-		$this->_helper->viewRenderer->setRender($type);
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$form = new Shops_Form_Order();
-		$toolbar = new Shops_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Shops_Model_Get();
-		$orders = $get->orders($params, $options);
-
-		$this->view->form = $form;
-		$this->view->orders = $orders;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function selectAction()
-	{
-		$this->_helper->getHelper('layout')->setLayout('plain');
-
-		$form = new Shops_Form_Order();
-		$toolbar = new Shops_Form_Toolbar();
-		$options = $this->_helper->Options->getOptions($toolbar);
-		$params = $this->_helper->Params->getParams($toolbar, $options);
-
-		$get = new Shops_Model_Get();
-		$orders = $get->orders($params, $options);
-
-		$this->view->form = $form;
-		$this->view->orders = $orders;
-		$this->view->options = $options;
-		$this->view->toolbar = $toolbar;
-		$this->view->messages = $this->_flashMessenger->getMessages();
-	}
-
-	public function addAction()
-	{
-		header('Content-type: application/json');
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$request = $this->getRequest();
-		if($request->isPost()) {
-			$form = new Shops_Form_Order();
-			$options = $this->_helper->Options->getOptions($form);
-			$params = $this->_helper->Params->getParams($form, $options);
-			$data = $request->getPost();
-			if($form->isValid($data)) {
-				$orderDb = new Shops_Model_DbTable_Order();
-				$id = $orderDb->addOrder($data);
-				echo Zend_Json::encode($orderDb->getOrder($id));
-			} else {
-				echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-			}
-		}
+		$this->buildListView([
+			'viewKey' => 'orders', 'list' => 'Shops_Model_List_Orders', 'entity' => Shops_Model_Entity_Order::listConfig(),
+			'toolbar' => 'Shops_Form_OrderToolbar', 'toolbarInline' => 'Shops_Form_OrderToolbarInline', 'selectable' => false, 'exportable' => false,
+		]);
 	}
 
 	public function editAction()
 	{
+		if (!$this->getRequest()->isGet()) throw new Zend_Controller_Action_Exception('Method not allowed', 405);
+		return $this->_helper->redirector->gotoSimple('view', 'order', 'shops', ['id' => $this->orderId()]);
+	}
+
+	public function viewAction()
+	{
+		$this->_helper->viewRenderer->setRender('view');
+		$order = $this->workflow->detail($this->orderId());
+		$query = $this->getRequest()->getQuery('contactquery', $order['email'] ?? '');
+		$query = is_string($query) ? mb_substr($query, 0, 100) : '';
+		$session = new Zend_Session_Namespace('ShopOrderWorkflow');
+		if (empty($session->csrf)) $session->csrf = bin2hex(random_bytes(32));
+		$permission = new DEEC_Permission($this->_user);
+		$this->view->assign([
+			'order' => $order, 'csrf' => $session->csrf, 'contactquery' => $query,
+			'contacts' => $this->workflow->contacts($query), 'salesorder' => $this->workflow->salesorder($order),
+			'problems' => Shops_Service_OrderSnapshot::problems($order, $order['positions']),
+			'canConvert' => $this->workflow->allowed('edit') && $this->workflow->allowed('add') && $permission->hasPermission('contacts', 'contact', 'view'),
+			'canCreateContact' => $permission->hasPermission('contacts', 'contact', 'add') && $permission->hasPermission('contacts', 'contact', 'edit'),
+		]);
+		$this->assignMessages();
+	}
+
+	public function stateAction() { return $this->mutate(false); }
+	public function createsalesorderAction() { return $this->mutate(true); }
+
+	private function orderId(): int
+	{
+		$id = filter_var($this->_getParam('id', 0), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+		if (!$id) throw new Zend_Controller_Action_Exception('Not found', 404);
+		return $id;
+	}
+
+	private function mutate(bool $convert)
+	{
+		$id = $this->orderId();
 		$request = $this->getRequest();
-		$id = $this->_getParam('id', 0);
-		$activeTab = $request->getCookie('tab', null);
-
-		$itemDb = new Shops_Model_DbTable_Item();
-		$item = $itemDb->getItem($id);
-
-		if(false) {
-			$this->_helper->redirector->gotoSimple('view', 'item', null, array('id' => $id));
-		} else {
-			$this->_helper->Access->lock($id, $this->_user['id'], $item['locked'], $item['lockedtime']);
-
-			$form = new Shops_Form_Item();
-			$options = $this->_helper->Options->getOptions($form);
-
-			if($request->isPost()) {
-				$this->_helper->viewRenderer->setNoRender();
-				$this->_helper->getHelper('layout')->disableLayout();
-				$data = $request->getPost();
-				$element = key($data);
-				if(isset($form->$element) && $form->isValidPartial($data)) {
-					$data = array_intersect_key($data, $form->getElements());
-					if(array_key_exists('cost', $data)) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['cost'] = Zend_Locale_Format::getNumber($data['cost'],array('precision' => 2,'locale' => $locale));
-						$data['margin'] = $item['price'] - $data['cost'];
-					}
-					if(array_key_exists('price', $data)) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['price'] = Zend_Locale_Format::getNumber($data['price'],array('precision' => 2,'locale' => $locale));
-						$data['margin'] = $data['price'] - $item['cost'];
-					}
-					if(array_key_exists('quantity', $data)) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['quantity'] = Zend_Locale_Format::getNumber($data['quantity'],array('precision' => 2,'locale' => $locale));
-					}
-					if(array_key_exists('margin', $data)) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['margin'] = Zend_Locale_Format::getNumber($data['margin'],array('precision' => 2,'locale' => $locale));
-					}
-					if(array_key_exists('weight', $data)) {
-						$locale = Zend_Registry::get('Zend_Locale');
-						$data['weight'] = Zend_Locale_Format::getNumber($data['weight'],array('precision' => 4,'locale' => $locale));
-					}
-					$itemDb->updateItem($id, $data);
-					echo Zend_Json::encode($itemDb->getItem($id));
-				} else {
-					echo Zend_Json::encode(array('message' => $this->view->translate('MESSAGES_FORM_IS_INVALID')));
-				}
+		$post = (array)$request->getPost();
+		$session = new Zend_Session_Namespace('ShopOrderWorkflow');
+		if (!$request->isPost()) throw new Zend_Controller_Action_Exception('Method not allowed', 405);
+		if (!isset($session->csrf) || !is_string($post['csrf'] ?? null) || !hash_equals($session->csrf, $post['csrf'])) throw new Zend_Controller_Action_Exception('Forbidden', 403);
+		if (array_diff(array_keys($post), ['csrf', $convert ? 'contactid' : 'status'])) throw new Zend_Controller_Action_Exception('Invalid input', 400);
+		try {
+			if ($convert) {
+				$contactId = filter_var($post['contactid'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+				if (!$contactId) throw new DomainException('SHOPS_ORDER_SELECT_CONTACT');
+				$result = $this->workflow->createSalesorder($id, (int)$contactId);
+				$this->_flashMessenger->addMessage($result['created'] ? 'SHOPS_ORDER_CREATED' : 'SHOPS_ORDER_ALREADY_CREATED');
 			} else {
-				if($id > 0) {
-					$currency = $this->_helper->Currency->getCurrency($item['currency']);
-					$item['cost'] = $currency->toCurrency($item['cost']);
-					$item['price'] = $currency->toCurrency($item['price']);
-					$item['margin'] = $currency->toCurrency($item['margin']);
-					$locale = Zend_Registry::get('Zend_Locale');
-					$item['quantity'] = ($item['quantity'] != 0) ? $currency->toCurrency($item['quantity'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['minquantity'] = ($item['minquantity'] != 0) ? $currency->toCurrency($item['minquantity'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['orderquantity'] = ($item['orderquantity'] != 0) ? $currency->toCurrency($item['orderquantity'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['width'] = ($item['width'] != 0) ? $currency->toCurrency($item['width'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['length'] = ($item['length'] != 0) ? $currency->toCurrency($item['length'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['height'] = ($item['height'] != 0) ? $currency->toCurrency($item['height'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['weight'] = ($item['weight'] != 0) ? $currency->toCurrency($item['weight'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['packwidth'] = ($item['packwidth'] != 0) ? $currency->toCurrency($item['packwidth'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['packlength'] = ($item['packlength'] != 0) ? $currency->toCurrency($item['packlength'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['packheight'] = ($item['packheight'] != 0) ? $currency->toCurrency($item['packheight'],array('precision' => 2,'locale' => $locale)) : '';
-					$item['packweight'] = ($item['packweight'] != 0) ? $currency->toCurrency($item['packweight'],array('precision' => 2,'locale' => $locale)) : '';
-					$form->populate($item);
-
-					//Attributes
-					$attributesDb = new Shops_Model_DbTable_Itemattribute();
-					$attributes = $attributesDb->getItemattributesByItemID($item['id']);
-
-					//History
-					$ledgerDb = new Shops_Model_DbTable_Ledger();
-					$ledger = $ledgerDb->getLedgerBySKU($item['sku']);
-
-					//Toolbar
-					$toolbar = new Shops_Form_Toolbar();
-
-					$this->view->form = $form;
-					$this->view->attributes = $attributes;
-					$this->view->ledger = $ledger;
-					$this->view->activeTab = $activeTab;
-					$this->view->toolbar = $toolbar;
-				}
+				if (!is_string($post['status'] ?? null)) throw new DomainException('SHOPS_ORDER_STATUS_INVALID');
+				$this->workflow->changeStatus($id, $post['status']);
+				$this->_flashMessenger->addMessage('MESSAGES_SAVED');
 			}
+		} catch (DomainException $e) {
+			if (in_array($e->getCode(), [403, 404], true)) throw new Zend_Controller_Action_Exception('Not available', $e->getCode());
+			$this->_flashMessenger->addMessage($e->getMessage());
+		} catch (Throwable $e) {
+			error_log('Shop order workflow failed');
+			$this->_flashMessenger->addMessage('SHOPS_ORDER_SAVE_FAILED');
 		}
-		$this->view->messages = array_merge(
-			$this->_helper->flashMessenger->getMessages(),
-			$this->_helper->flashMessenger->getCurrentMessages()
-		);
-		$this->_helper->flashMessenger->clearCurrentMessages();
-	}
-
-	public function copyAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		$id = $this->_getParam('id', 0);
-		$item = new Shops_Model_DbTable_Item();
-		$data = $item->getItem($id);
-		unset($data['id']);
-		$data['quantity'] = 0;
-		$data['inventory'] = 1;
-		$data['title'] = $data['title'].' 2';
-		$data['modified'] = NULL;
-		$data['modifiedby'] = 0;
-		$data['locked'] = 0;
-		$data['lockedtime'] = NULL;
-		echo $itemid = $item->addItem($data);
-
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_COPIED');
-	}
-
-	public function deleteAction()
-	{
-		$this->_helper->viewRenderer->setNoRender();
-		$this->_helper->getHelper('layout')->disableLayout();
-
-		if ($this->getRequest()->isPost()) {
-			$id = $this->_getParam('id', 0);
-			$item = new Shops_Model_DbTable_Item();
-			$item->deleteItem($id);
-		}
-		$this->_flashMessenger->addMessage('MESSAGES_SUCCESFULLY_DELETED');
-	}
-
-	public function lockAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->lock($id, $this->_user['id']);
-	}
-
-	public function unlockAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->unlock($id);
-	}
-
-	public function keepaliveAction()
-	{
-		$id = $this->_getParam('id', 0);
-		$this->_helper->Access->keepalive($id);
-	}
-
-	public function validateAction()
-	{
-		$this->_helper->Validate();
+		return $this->_helper->redirector->gotoSimple('view', 'order', 'shops', ['id' => $id]);
 	}
 }

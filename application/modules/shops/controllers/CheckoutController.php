@@ -6,6 +6,7 @@ class Shops_CheckoutController extends Shops_Controller_Action
 	public function init()
 	{
 		parent::init();
+		if (!$this->_siteContext->hasFeature('checkout')) throw new Zend_Controller_Action_Exception('Not found', 404);
 
 		$this->initSiteCart();
 		$this->checkoutDataSession = new Zend_Session_Namespace('ShopsCheckout');
@@ -126,6 +127,7 @@ class Shops_CheckoutController extends Shops_Controller_Action
 		}
 
 		$itemDb = new Shops_Model_DbTable_Item();
+		$taxDb = new Shops_Model_DbTable_Taxrate();
 		$positions = [];
 		$total = 0.0;
 		foreach($cart as $cartId => $row) {
@@ -139,17 +141,29 @@ class Shops_CheckoutController extends Shops_Controller_Action
 			$item = $itemDb->getItemBySku((string)$row['sku']);
 			$currentPrice = $item && !empty($item['specialprice']) ? (float)$item['specialprice'] : (float)($item['price'] ?? 0);
 			if (!$item || (int)$item['id'] !== (int)$cartId || !is_finite($quantity) || !is_finite($price)
-				|| $quantity <= 0 || $quantity > 100000 || $price < 0 || abs($currentPrice - $price) > 0.0001) {
+				|| $quantity <= 0 || $quantity > 100000 || $price < 0 || $price > 99999999 || abs($currentPrice - $price) > 0.0001
+				|| strtoupper((string)$item['currency']) !== 'EUR') {
 				return $this->_helper->json(['success' => false, 'message' => $this->view->translate('SHOPS_CART_CHANGED')]);
 			}
 
-			$lineTotal = $quantity * $price;
+			$lineTotal = round($quantity * $price, 2);
+			if ($lineTotal > 99999999 || $total + $lineTotal > 99999999) return $this->_helper->json(['success' => false, 'message' => $this->view->translate('SHOPS_CART_CHANGED')]);
 			$total += $lineTotal;
+			$tax = !empty($item['taxid']) ? $taxDb->getTaxRate((int)$item['taxid']) : null;
+			$uom = !empty($item['uomid']) ? Zend_Db_Table::getDefaultAdapter()->fetchOne(Zend_Db_Table::getDefaultAdapter()->select()
+				->from('uom', ['title'])->where('id = ?', (int)$item['uomid'])->where('clientid = ?', (int)$shop['clientid'])->where('deleted = ?', 0)) : null;
+			$cart[$cartId]['title'] = (string)$item['title'];
 			$positions[] = [
 				'itemid' => (int)$item['id'],
 				'total' => $lineTotal,
 				'quantity' => $quantity,
 				'price' => $price,
+				'snapshot' => json_encode([
+					'version' => 1, 'sku' => (string)$item['sku'], 'title' => (string)$item['title'],
+					'description' => (string)($item['description'] ?? ''), 'currency' => 'EUR', 'uom' => $uom ?: null,
+					'taxrate' => $tax && is_numeric($tax['rate']) && (float)$tax['rate'] >= 0 && (float)$tax['rate'] <= 100 ? (float)$tax['rate'] : null,
+					'price_source' => !empty($item['specialprice']) ? 'specialprice' : 'price',
+				], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
 			];
 		}
 
@@ -178,12 +192,13 @@ class Shops_CheckoutController extends Shops_Controller_Action
 		$orderDate = date('Y-m-d');
 
 		try {
-			$result = $orderDb->saveCheckoutOnce((int)$shop['id'], $token, [
+			$orderSnapshot = Shops_Service_OrderSnapshot::build($shop, $data, $positions);
+			$result = $orderDb->saveCheckoutOnce((int)$shop['id'], $token, array_merge([
 				'contactid' => $contactId,
 				'invoiceid' => 0,
 				'orderdate' => $orderDate,
 				'total' => $total,
-			], $positions);
+			], $orderSnapshot), $positions);
 		} catch (Throwable $e) {
 			error_log('Shop checkout could not be stored: ' . $e->getMessage());
 			$this->getResponse()->setHttpResponseCode(500);

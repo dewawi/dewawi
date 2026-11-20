@@ -4,6 +4,11 @@ class Shops_Model_DbTable_Order extends DEEC_Model_DbTable_Entity
 {
 
 	protected $_name = 'shoporder';
+	protected ?string $orderingField = null;
+	public const STATUSES = [
+		'new' => 'SHOPS_ORDER_STATUS_NEW', 'in_progress' => 'SHOPS_ORDER_STATUS_IN_PROGRESS',
+		'transferred' => 'SHOPS_ORDER_STATUS_TRANSFERRED', 'completed' => 'SHOPS_ORDER_STATUS_COMPLETED', 'cancelled' => 'SHOPS_ORDER_STATUS_CANCELLED',
+	];
 
 	protected $_date = null;
 
@@ -81,8 +86,11 @@ class Shops_Model_DbTable_Order extends DEEC_Model_DbTable_Entity
 				$orderposDb->addOrderpos(array_merge($position, [
 					'shopid' => $shopId,
 					'orderid' => $orderNumber,
+					'shoporderid' => $orderId,
 				]));
 			}
+
+			if (!empty($orderData['snapshot'])) $this->recordStatus(array_merge($orderData, ['id' => $orderId, 'clientid' => $this->getClientId(), 'status' => null]), 'new');
 
 			$adapter->commit();
 			$order = $this->getByCheckoutToken($shopId, $token);
@@ -100,6 +108,36 @@ class Shops_Model_DbTable_Order extends DEEC_Model_DbTable_Entity
 			if ($existing) return ['inserted' => false, 'order' => $existing];
 			throw $e;
 		}
+	}
+
+	public function getDetail(int $id): ?array
+	{
+		$order = $this->getById($id);
+		if (!$order) return null;
+		$order['snapshot_data'] = Shops_Service_OrderSnapshot::decode($order['snapshot'] ?? null);
+		$order['positions'] = (new Shops_Model_DbTable_Orderpos())->setClientId($this->getClientId())->getForOrder($order);
+		$order['history'] = $this->getAdapter()->fetchAll($this->getAdapter()->select()->from('shoporderhistory')
+			->where('clientid = ?', $this->getClientId())->where('shopid = ?', $order['shopid'])->where('shoporderid = ?', $id)->order('id ASC'));
+		return $order;
+	}
+
+	public function recordStatus(array $order, string $status): void
+	{
+		if (!isset(self::STATUSES[$status]) || (int)$order['clientid'] !== $this->getClientId()) throw new InvalidArgumentException('SHOPS_ORDER_STATUS_INVALID');
+		if (($order['status'] ?? null) === $status) return;
+		$this->getAdapter()->insert('shoporderhistory', [
+			'shoporderid' => (int)$order['id'], 'shopid' => $order['shopid'], 'clientid' => $this->getClientId(),
+			'oldstatus' => $order['status'], 'newstatus' => $status, 'created' => $this->_date,
+			'createdby' => $this->getUserId(), 'createdbyname' => (string)($this->_user['name'] ?? ''),
+		]);
+		$this->updateById((int)$order['id'], ['status' => $status]);
+	}
+
+	protected function prepareUpdateData(array $data): array
+	{
+		if (array_diff(array_keys($data), ['status', 'contactid', 'salesorderid', 'salesclientid', 'locked', 'lockedtime', 'modified', 'modifiedby'])) throw new DomainException('SHOPS_ORDER_SNAPSHOT_IMMUTABLE');
+		if (isset($data['status']) && !isset(self::STATUSES[$data['status']])) throw new DomainException('SHOPS_ORDER_STATUS_INVALID');
+		return parent::prepareUpdateData($data);
 	}
 
 	public function getOrder($itemid, $orderid)

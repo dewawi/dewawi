@@ -32,17 +32,24 @@ try:
             print((work / 'server.log').read_text())
             raise SystemExit('Isolated MariaDB failed to start')
         if Path(socket).exists():
-            break
+            ready = subprocess.run(['mariadb-admin', '--no-defaults', '--socket=' + socket, '--user=root', 'ping'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if ready.returncode == 0:
+                break
         time.sleep(0.1)
 
-    result = subprocess.run(
-        ['php', str(Path(__file__).with_suffix('.php')), socket],
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-    print(result.stdout)
-    raise SystemExit(result.returncode)
+    for script in [Path(__file__).with_suffix('.php'), Path(__file__).with_name('shop-orders-db.php')]:
+        result = subprocess.run(
+            ['php', str(script), socket], text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        )
+        print(result.stdout)
+        if result.returncode:
+            raise SystemExit(result.returncode)
+
+    http_result = subprocess.run(['python3', str(Path(__file__).with_name('shop-orders-http.py')), str(work)], text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    print(http_result.stdout)
+    if http_result.returncode:
+        raise SystemExit(http_result.returncode)
+
 finally:
     if server is not None:
         server.terminate()

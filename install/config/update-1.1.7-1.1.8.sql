@@ -458,3 +458,37 @@ ALTER TABLE `shop`
 
 ALTER TABLE `item`
   ADD `albiseligible` tinyint(1) NOT NULL DEFAULT 0;
+
+-- Preserve historical orders without inventing unavailable checkout snapshots.
+-- If this upgrade already ran, inspect the schema and apply only the new shoporder/shoporderpos/history additions below.
+ALTER TABLE `shoporder`
+  ADD `snapshot` mediumtext DEFAULT NULL,
+  ADD `customername` varchar(255) DEFAULT NULL,
+  ADD `email` varchar(254) DEFAULT NULL,
+  ADD `currency` varchar(3) DEFAULT NULL,
+  ADD `taxes` decimal(12,4) DEFAULT NULL,
+  ADD `grosstotal` decimal(12,4) DEFAULT NULL,
+  ADD `status` varchar(16) DEFAULT NULL,
+  ADD `salesorderid` int(11) DEFAULT NULL,
+  ADD `salesclientid` int(11) DEFAULT NULL,
+  ADD UNIQUE KEY `salesclientid_salesorderid` (`salesclientid`, `salesorderid`),
+  ADD KEY `clientid_status_shopid_deleted` (`clientid`, `status`, `shopid`(64), `deleted`);
+
+ALTER TABLE `shoporderpos`
+  ADD `shoporderid` int(11) DEFAULT NULL,
+  ADD `snapshot` mediumtext DEFAULT NULL,
+  ADD KEY `clientid_shoporderid` (`clientid`, `shoporderid`);
+
+CREATE TABLE IF NOT EXISTS `shoporderhistory` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `shoporderid` int(11) NOT NULL,
+  `shopid` varchar(255) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `oldstatus` varchar(16) DEFAULT NULL,
+  `newstatus` varchar(16) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `createdbyname` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `clientid_shoporderid` (`clientid`, `shoporderid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -10,6 +10,11 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 		$permission = new DEEC_Permission((array)Zend_Registry::get('User'));
 		$menu = array_filter($menu, static fn($item) => ($item['module'] ?? '') !== 'calendar' || $permission->hasPermission('calendar', 'index', 'view'));
 
+		foreach ($menu as &$item) {
+			if (isset($item['children'])) $item['children'] = array_filter($item['children'], static fn($child) => ($child['module'] ?? '') !== 'shops' || ($child['controller'] ?? '') !== 'order' || $permission->hasPermission('sales', 'salesorder', 'view'));
+		}
+		unset($item);
+
 		//echo $this->renderMobileDrawer($menu);
 		$reminders = Zend_Auth::getInstance()->hasIdentity() && $permission->hasPermission('calendar', 'index', 'view')
 			? $this->view->partial('partials/calendar-reminders.phtml', ['reminderUser' => Zend_Registry::get('User')]) : '';
@@ -133,7 +138,7 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 				'type' => 'group',
 				'label' => 'MENU_SALES',
 				'active' => function () {
-					return in_array($this->view->controller, ['quote', 'salesorder', 'deliveryorder'], true);
+					return in_array($this->view->controller, ['quote', 'salesorder', 'deliveryorder', 'order'], true);
 				},
 				'children' => [
 					[
@@ -147,6 +152,9 @@ class Zend_View_Helper_MainMenu extends Zend_View_Helper_Abstract
 						'module' => 'sales',
 						'controller' => 'salesorder',
 						'action' => 'index',
+					],
+					[
+						'label' => 'MENU_SHOP_ORDERS', 'module' => 'shops', 'controller' => 'order', 'action' => 'index',
 					],
 					[
 						'label' => 'MENU_DELIVERY_ORDERS',

@@ -1028,7 +1028,7 @@ abstract class DEEC_Controller_Action extends Zend_Controller_Action
 		$params = $this->_helper->Params->getParams($toolbar, $options);
 		$params['_export'] = $this->getRequest()->getActionName() === 'export';
 		$list = new $config['list']();
-		$exportable = isset($config['entity']) || !empty($config['exportable']);
+		$exportable = $config['exportable'] ?? isset($config['entity']);
 
 		if($exportable && $this->getRequest()->getActionName() === 'index') {
 			$toolbar->addElement([

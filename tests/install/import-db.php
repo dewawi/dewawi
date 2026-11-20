@@ -67,6 +67,14 @@ check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'path'")->fetch_assoc()['T
 check($db->query("SHOW COLUMNS FROM slugredirect LIKE 'status'")->fetch_assoc()['Default'] === 'redirect', 'Fresh installation has no redirect response status default');
 check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'slugredirect' AND index_name = 'clientid_shopid_pathhash' AND non_unique = 0")->fetch_row()[0] === 3, 'Fresh installation redirect uniqueness is not tenant- and shop-scoped');
 checkCheckoutTokenSchema($db, 'Fresh installation');
+$orderSnapshotColumns = ['snapshot', 'customername', 'email', 'currency', 'taxes', 'grosstotal', 'status', 'salesorderid', 'salesclientid'];
+$orderSnapshotSchema = [];
+foreach ($orderSnapshotColumns as $column) {
+    $orderSnapshotSchema[$column] = $db->query("SHOW COLUMNS FROM shoporder LIKE '$column'")->fetch_assoc();
+    check($orderSnapshotSchema[$column]['Null'] === 'YES' && $orderSnapshotSchema[$column]['Default'] === null, 'Historical order values are not nullable: ' . $column);
+}
+check($db->query("SHOW TABLES LIKE 'shoporderhistory'")->num_rows === 1, 'Order status history missing');
+
 $albisShopColumns = ['albisenabled', 'albisenvironment', 'albisthreshold', 'albisproductgroup', 'albiscontracttype', 'albispaymentmode', 'albisfeenet'];
 $albisSchema = [];
 foreach ($albisShopColumns as $column) {
@@ -167,8 +175,11 @@ $db->query('CREATE TABLE contactperson (id INT PRIMARY KEY, name1 VARCHAR(255) N
 $db->query('CREATE TABLE contact (id INT PRIMARY KEY, type VARCHAR(255), clientid INT NOT NULL, created DATETIME NULL, createdby INT NOT NULL DEFAULT 0, modified DATETIME NULL, modifiedby INT NOT NULL DEFAULT 0, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query('CREATE TABLE shopinquiryform (id INT PRIMARY KEY, shopid INT NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query('CREATE TABLE shopinquirydata (id INT PRIMARY KEY, formid INT NOT NULL, shopid INT NOT NULL, token VARCHAR(255) NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
-$db->query('CREATE TABLE shoporder (id INT PRIMARY KEY, shopid VARCHAR(255) NOT NULL, orderid VARCHAR(255) NOT NULL, clientid INT NOT NULL) ENGINE=InnoDB');
+$db->query('CREATE TABLE shoporder (id INT PRIMARY KEY, shopid VARCHAR(255) NOT NULL, orderid VARCHAR(255) NOT NULL, clientid INT NOT NULL, deleted TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
 $db->query('CREATE TABLE shop (id INT PRIMARY KEY, activated TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
+$db->query('CREATE TABLE shoporderpos LIKE install_success.shoporderpos');
+$db->query('ALTER TABLE shoporderpos DROP INDEX clientid_shoporderid, DROP COLUMN shoporderid, DROP COLUMN snapshot');
+
 $db->query('INSERT INTO shop (id, activated) VALUES (1, 1)');
 $db->query('CREATE TABLE uom LIKE install_success.uom');
 $db->query('CREATE TABLE itemstock (id INT AUTO_INCREMENT PRIMARY KEY, itemid INT NOT NULL, warehouseid INT NOT NULL, quantity DECIMAL(12,4), reserved DECIMAL(12,4), incoming DECIMAL(12,4), clientid INT NOT NULL, UNIQUE KEY (itemid, warehouseid, clientid)) ENGINE=InnoDB');
@@ -217,6 +228,12 @@ check((int)$db->query("SELECT COUNT(*) FROM information_schema.statistics WHERE 
 check((int)$db->query('SELECT COUNT(*) FROM shoporder WHERE token IS NOT NULL AND CHAR_LENGTH(token) = 64')->fetch_row()[0] === 4, 'Checkout migration did not backfill legacy order tokens');
 check($db->query("SELECT GROUP_CONCAT(CONCAT(id, ':', orderid) ORDER BY id) FROM shoporder")->fetch_row()[0] === '1:1000,2:1001,3:1000,4:1000', 'Checkout migration changed or removed an existing order');
 checkCheckoutTokenSchema($db, 'Upgrade');
+foreach ($orderSnapshotColumns as $column) {
+    check($db->query("SHOW COLUMNS FROM shoporder LIKE '$column'")->fetch_assoc() === $orderSnapshotSchema[$column], 'Order upgrade differs from installation for ' . $column);
+}
+check((int)$db->query('SELECT COUNT(*) FROM shoporder WHERE snapshot IS NULL AND status IS NULL AND currency IS NULL AND salesorderid IS NULL')->fetch_row()[0] === 4, 'Order upgrade invented historical data');
+check($db->query("SHOW COLUMNS FROM shoporderpos LIKE 'shoporderid'")->fetch_assoc()['Null'] === 'YES', 'Legacy line relation is not nullable');
+
 foreach ($roleQueries as $query) {
     if (str_starts_with(trim($query['query']), 'INSERT IGNORE INTO `contactrole`')) $db->query($query['query']);
 }

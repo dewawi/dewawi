@@ -71,40 +71,8 @@ class Shops_Model_Get
 
 	public function orders($params, $options)
 	{
-		$ordering = DEEC_List_Ordering::clause($params, [
-			'id',
-			'modified',
-			'created',
-			'shopid',
-			'orderid',
-			'contactid',
-			'invoiceid',
-			'orderdate',
-			'total',
-		]);
-
-		$client = Zend_Registry::get('Client');
-		if($client['parentid']) {
-			$client['id'] = $client['modules']['shops'];
-		}
-
-		$ordersDb = new Shops_Model_DbTable_Order();
-
-		$columns = array('userid');
-
-		$query = '';
-		$queryHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Query');
-		if($params['keyword']) $query = $queryHelper->getQueryKeyword($query, $params['keyword'], $columns);
-		$query = $queryHelper->getQueryClient($query, $client['id']);
-		$query = $queryHelper->getQueryDeleted($query);
-
-		$orders = $ordersDb->fetchAll(
-			$ordersDb->select()
-				->where($query ? $query : 0)
-				->order($ordering)
-				->limit($params['limit'])
-		);
-
-		return $orders;
+		(new Shops_Service_OrderWorkflow())->requirePermission('view');
+		$query = new DEEC_List_Query();
+		return $query->fetch($params, $options, Shops_Model_Entity_Order::listConfig());
 	}
 }

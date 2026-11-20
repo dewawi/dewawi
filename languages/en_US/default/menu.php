@@ -34,4 +34,5 @@
 	'NAV_CLOSE_MENU' => 'Close menu',
 	'NAV_MAIN' => 'Main navigation',
 	'NAV_MENU' => 'Menu',
+	'MENU_SHOP_ORDERS' => 'Shop orders',
 );

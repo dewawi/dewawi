@@ -2867,7 +2867,18 @@ CREATE TABLE IF NOT EXISTS `shoporder` (
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `snapshot` mediumtext DEFAULT NULL,
+  `customername` varchar(255) DEFAULT NULL,
+  `email` varchar(254) DEFAULT NULL,
+  `currency` varchar(3) DEFAULT NULL,
+  `taxes` decimal(12,4) DEFAULT NULL,
+  `grosstotal` decimal(12,4) DEFAULT NULL,
+  `status` varchar(16) DEFAULT NULL,
+  `salesorderid` int(11) DEFAULT NULL,
+  `salesclientid` int(11) DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE KEY `salesclientid_salesorderid` (`salesclientid`, `salesorderid`),
+  KEY `clientid_status_shopid_deleted` (`clientid`, `status`, `shopid`(64), `deleted`),
   UNIQUE KEY `clientid_shopid_token` (`clientid`, `shopid`(64), `token`),
   KEY (shopid),
   KEY (orderid),
@@ -2891,7 +2902,10 @@ CREATE TABLE IF NOT EXISTS `shoporderpos` (
   `locked` int(11) NOT NULL DEFAULT 0,
   `lockedtime` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `shoporderid` int(11) DEFAULT NULL,
+  `snapshot` mediumtext DEFAULT NULL,
   PRIMARY KEY (id),
+  KEY `clientid_shoporderid` (`clientid`, `shoporderid`),
   KEY (shopid),
   KEY (orderid),
   KEY (clientid)
@@ -3472,4 +3486,18 @@ CREATE TABLE IF NOT EXISTS `invoicecorrection` (
   UNIQUE KEY `client_request` (`clientid`,`createdby`,`request_key`),
   CONSTRAINT `invoicecorrection_invoice` FOREIGN KEY (`invoiceid`) REFERENCES `invoice` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `invoicecorrection_previous` FOREIGN KEY (`clientid`,`invoiceid`,`previousid`) REFERENCES `invoicecorrection` (`clientid`,`invoiceid`,`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `shoporderhistory` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `shoporderid` int(11) NOT NULL,
+  `shopid` varchar(255) NOT NULL,
+  `clientid` int(11) NOT NULL,
+  `oldstatus` varchar(16) DEFAULT NULL,
+  `newstatus` varchar(16) NOT NULL,
+  `created` datetime NOT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `createdbyname` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `clientid_shoporderid` (`clientid`, `shoporderid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

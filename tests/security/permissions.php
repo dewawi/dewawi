@@ -286,4 +286,19 @@ foreach (['FileManager', 'MediaManager'] as $manager) {
     }
 }
 
+// Internal shop orders use sales-order rights without exposing storefront actions.
+Zend_Auth::getInstance()->getStorage()->write((object)['id' => 42]);
+Zend_Registry::set('User', ['id' => 42, 'clientid' => 70, 'admin' => 0]);
+foreach ([[], ['view'], ['view', 'edit'], ['view', 'edit', 'add'], ['add']] as $rights) {
+    $adapter->permissions = [['id' => 1, 'userid' => 42, 'clientid' => 70, 'deleted' => 0, 'sales' => json_encode(['salesorder' => $rights])]];
+    foreach (['index', 'view', 'state', 'createsalesorder', 'add', 'copy', 'delete'] as $action) {
+        [$request, $response] = permissionRoute('shops', 'order', $action, in_array($action, ['state', 'createsalesorder']) ? 'POST' : 'GET');
+        $expected = in_array('view', $rights) && in_array($action, ['index', 'view', 'state', 'createsalesorder']);
+        if (in_array($action, ['state', 'createsalesorder'])) $expected = $expected && in_array('edit', $rights);
+        if ($action === 'createsalesorder') $expected = $expected && in_array('add', $rights);
+        check(($response->getHttpResponseCode() === 200) === $expected, 'Shop order ACL does not enforce sales rights: ' . $action);
+        $checks++;
+    }
+}
+
 echo 'PASS: ' . $checks . " module permission, ACL, manager context and compatibility cases\n";

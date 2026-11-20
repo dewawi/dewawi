@@ -37,6 +37,16 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 		}
 
 		$user = Zend_Registry::get('User');
+		if ($module === 'shops' && $controller === 'order') {
+			$permission = new DEEC_Permission((array)$user);
+			$action = $request->getActionName();
+			$allowed = in_array($action, ['index', 'search', 'view', 'edit', 'state', 'createsalesorder'], true)
+				&& $permission->hasPermission('sales', 'salesorder', 'view');
+			if (in_array($action, ['state', 'createsalesorder'], true)) $allowed = $allowed && $permission->hasPermission('sales', 'salesorder', 'edit');
+			if ($action === 'createsalesorder') $allowed = $allowed && $permission->hasPermission('sales', 'salesorder', 'add');
+			if (!$allowed) $this->denyAccess($request);
+			return;
+		}
 
 		if ($module === 'admin' || (in_array($module, ['ebay', 'shops'], true) && $controller === 'log')) {
 			if (!empty($user['admin'])) {
