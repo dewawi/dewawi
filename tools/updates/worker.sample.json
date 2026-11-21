@@ -1,0 +1,7 @@
+{
+    "format": 1,
+    "queue": "/var/lib/dewawi-updates",
+    "database_config": "/etc/dewawi-update-worker/database.ini",
+    "environment": "migration",
+    "operator_ids": []
+}

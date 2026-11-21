@@ -125,6 +125,30 @@ class DewawiMigrationInspector
         }
     }
 
+    public function databaseIdentity(string $installation): string
+    {
+        if (!preg_match('/^[a-f0-9]{32}$/D', $installation)) throw new DewawiMigrationException('invalid_installation');
+        $identity = $this->db->fetchRow('SELECT DATABASE() AS database_name, @@hostname AS server_host, @@port AS server_port, @@server_id AS server_id');
+        return self::digest([$installation, $identity]);
+    }
+
+    public static function digest(array $value): string { return hash('sha256', json_encode($value, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)); }
+
+    public function executionPlan(string $installation): array
+    {
+        $history = $this->history();
+        $this->validateHistory($history);
+        if (!isset($history[self::BASELINE])) throw new DewawiMigrationException('explicit_baseline_registration_required');
+        require_once dirname(__DIR__, 2) . '/library/DEEC/Version.php';
+        $version = dewawiVersion();
+        if ($version === null) throw new DewawiMigrationException('invalid_application_version');
+        $catalog = [];
+        foreach ($this->catalog as $entry) $catalog[] = array_intersect_key($entry, array_flip(['id', 'checksum', 'definition', 'depends', 'transition']));
+        return ['format' => 1, 'installation' => $installation, 'database' => $this->databaseIdentity($installation), 'version' => $version,
+            'baseline' => $history[self::BASELINE]['checksum'], 'history' => self::digest(array_values($history)), 'catalog' => $catalog,
+            'pending' => array_values(array_diff(array_keys($this->catalog), array_keys($history)))];
+    }
+
     public function inspect(): array
     {
         $report = ['baseline' => 'unknown', 'last' => null, 'pending' => null, 'issues' => [], 'migrations' => []];

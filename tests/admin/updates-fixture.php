@@ -84,8 +84,12 @@ try {
     }
     if ($request->getControllerName() !== 'updates' || $request->getModuleName() !== 'admin') throw new Zend_Controller_Action_Exception('Forbidden', 403);
     require $root . '/application/modules/admin/controllers/UpdatesController.php';
-    $instance = new Admin_UpdatesController($request, $response);
-    $instance->indexAction();
+    if (getenv('DEWAWI_UPDATES_PROTOCOL_TEST') === '1') {
+        require_once __DIR__ . '/update-worker-support.php';
+        $instance = new UpdatesProtocolController($request, $response);
+    } else $instance = new Admin_UpdatesController($request, $response);
+    $instance->{$request->getActionName() . 'Action'}();
+    if ($response->isRedirect()) { $response->sendResponse(); exit; }
     $layout->content = $view->render('updates/index.phtml');
     $response->setBody($layout->render());
 } catch (Throwable $error) {

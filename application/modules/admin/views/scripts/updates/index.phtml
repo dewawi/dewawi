@@ -7,7 +7,8 @@ echo $this->Messages();
 ?>
 <div class="dw-system-updates">
     <h2><?php echo $this->escape($this->title); ?></h2>
-    <p><?php echo $label('UPDATES_READ_ONLY'); ?></p>
+    <p><?php echo $label('UPDATES_SCOPE'); ?></p>
+    <?php if ($this->updateApprovalError) : ?><p class="dw-alert dw-alert--danger" role="alert" tabindex="0"><?php echo $label($this->updateApprovalError); ?></p><?php endif; ?>
     <p><a href="#updates-migrations"><?php echo $label('UPDATES_AVAILABLE'); ?></a></p>
     <?php if ($report['issues']) : ?>
     <div class="dw-alert dw-alert--danger" role="alert" tabindex="0" aria-labelledby="updates-blockers">
@@ -55,6 +56,52 @@ echo $this->Messages();
         <h3 id="updates-security"><?php echo $label('UPDATES_SECURITY'); ?></h3>
         <p><?php echo $label('UPDATES_BACKUP_NOTICE'); ?></p>
         <p><?php echo $label('UPDATES_RECOVERY_NOTICE'); ?></p>
-        <p><?php echo $label('UPDATES_EXECUTION_UNAVAILABLE'); ?></p>
+        <p><?php echo $label('UPDATES_EXECUTION_BOUNDARY'); ?></p>
+    </section>
+    <section aria-labelledby="updates-worker">
+        <h3 id="updates-worker"><?php echo $label('UPDATES_WORKER'); ?></h3>
+        <p><a class="dw-btn" href="<?php echo $this->escape($this->url(['module' => 'admin', 'controller' => 'updates', 'action' => 'index'], null, true)); ?>"><?php echo $label('UPDATES_REFRESH'); ?></a></p>
+        <?php $state = $this->workerState; ?>
+        <?php if (!$state) : ?>
+            <p class="dw-alert dw-alert--warning"><?php echo $label('UPDATES_WORKER_UNAVAILABLE'); ?></p>
+        <?php else : ?>
+            <p><?php echo $label($state['available'] ? 'UPDATES_WORKER_ONLINE' : 'UPDATES_WORKER_UNAVAILABLE'); ?></p>
+            <?php if ($state['issues']) : ?><div class="dw-alert dw-alert--warning" role="alert" tabindex="0"><ul><?php foreach ($state['issues'] as $code) : ?><li><?php echo $label('UPDATES_WORKER_CODE_' . strtoupper($code)); ?></li><?php endforeach; ?></ul></div><?php endif; ?>
+            <?php if ($state['job']) : $job = $state['job']; ?>
+                <h4><?php echo $label('UPDATES_JOB'); ?></h4>
+                <dl><dt><?php echo $label('UPDATES_JOB_ID'); ?></dt><dd><code><?php echo $this->escape($job['id']); ?></code></dd>
+                <dt><?php echo $label('UPDATES_STATUS'); ?></dt><dd><?php echo $label('UPDATES_JOB_' . strtoupper($job['status'])); ?></dd>
+                <dt><?php echo $label('UPDATES_RESULT'); ?></dt><dd><?php echo $label('UPDATES_WORKER_CODE_' . strtoupper($job['code'])); ?></dd>
+                <dt><?php echo $label('UPDATES_UPDATED'); ?></dt><dd><?php echo $this->escape(gmdate('Y-m-d H:i:s', $job['at']) . ' UTC'); ?></dd></dl>
+            <?php endif; ?>
+            <?php if ($state['plan']) : $plan = $state['plan']; ?>
+                <h4><?php echo $label('UPDATES_PLAN'); ?></h4>
+                <dl><dt><?php echo $label('UPDATES_RELEASED_VERSION'); ?></dt><dd><?php echo $this->escape($plan['version']); ?></dd>
+                <dt><?php echo $label('UPDATES_PLAN_HASH'); ?></dt><dd><code><?php echo $this->escape($state['digest']); ?></code></dd>
+                <dt><?php echo $label('UPDATES_PENDING'); ?></dt><dd><?php echo count($plan['pending']); ?></dd></dl>
+                <ol><?php foreach ($plan['catalog'] as $entry) : if (!in_array($entry['id'], $plan['pending'], true)) continue; ?>
+                    <li><h4><code><?php echo $this->escape($entry['id']); ?></code></h4>
+                    <dl><dt><?php echo $label('UPDATES_TRANSITION'); ?></dt><dd><?php echo $this->escape($entry['transition']); ?></dd>
+                    <dt><?php echo $label('UPDATES_FILE_HASH'); ?></dt><dd><code><?php echo $this->escape($entry['checksum']); ?></code></dd>
+                    <dt><?php echo $label('UPDATES_DEFINITION_HASH'); ?></dt><dd><code><?php echo $this->escape($entry['definition']); ?></code></dd></dl></li>
+                <?php endforeach; ?></ol>
+            <?php endif; ?>
+            <?php if ($this->updateConfirmation) : $approval = $this->updateConfirmation; ?>
+                <p><?php echo $label('UPDATES_JOB_NOT_APPROVED'); ?></p>
+                <p class="dw-alert dw-alert--warning"><?php echo $label('UPDATES_RELEASE_NOTICE'); ?></p>
+                <form method="post" action="<?php echo $this->escape($this->url(['module' => 'admin', 'controller' => 'updates', 'action' => 'approve'], null, true)); ?>" data-autosave="false">
+                    <input type="hidden" name="csrf" value="<?php echo $this->escape($approval['csrf']); ?>">
+                    <input type="hidden" name="nonce" value="<?php echo $this->escape($approval['nonce']); ?>">
+                    <input type="hidden" name="plan" value="<?php echo $this->escape($state['digest']); ?>">
+                    <p><label><input type="checkbox" name="confirm" value="1" required> <?php echo $label('UPDATES_CONFIRM_PLAN'); ?></label></p>
+                    <button type="submit" class="dw-btn dw-btn--primary"><?php echo $label('UPDATES_APPROVE'); ?></button>
+                </form>
+            <?php endif; ?>
+            <?php if ($state['recent']) : ?>
+                <h4><?php echo $label('UPDATES_RECENT'); ?></h4>
+                <ul><?php foreach ($state['recent'] as $job) : ?><li><code><?php echo $this->escape($job['id']); ?></code>: <?php echo $label('UPDATES_JOB_' . strtoupper($job['status'])); ?> — <?php echo $label('UPDATES_WORKER_CODE_' . strtoupper($job['code'])); ?></li><?php endforeach; ?></ul>
+            <?php endif; ?>
+        <?php endif; ?>
+        <?php if ($this->submittedUpdate && (!$state || !$state['job'] || $this->submittedUpdate['id'] !== $state['job']['id'])) : ?><p role="status"><?php echo $label('UPDATES_SUBMITTED'); ?> <code><?php echo $this->escape($this->submittedUpdate['id']); ?></code></p><?php endif; ?>
     </section>
 </div>

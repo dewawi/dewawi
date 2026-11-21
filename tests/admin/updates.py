@@ -20,7 +20,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-') as directory:
     db_server = web = None
     try:
         source = work/'source'
-        for relative in ['application', 'library/DEEC', 'languages', 'tools/migrations', 'install/config/migrations']:
+        for relative in ['application', 'library/DEEC', 'languages', 'tools/migrations', 'tools/updates', 'install/config/migrations']:
             shutil.copytree(ROOT/relative, source/relative)
         for relative in ['tools/migrate.php', 'install/helper.php', 'install/SqlSplitter.php', 'install/config/config.php', 'configs/application.ini', 'configs/version.php']:
             target = source/relative

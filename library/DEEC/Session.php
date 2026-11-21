@@ -26,6 +26,7 @@ class DEEC_Session
 	{
 		Zend_Session::regenerateId();
 		Zend_Session::namespaceUnset('ClientSwitch');
+		Zend_Session::namespaceUnset('SystemUpdates');
 		Zend_Session::namespaceUnset('FileManager');
 		Zend_Session::namespaceUnset('MediaManager');
 
@@ -48,6 +49,7 @@ class DEEC_Session
 	public static function logout(): void
 	{
 		unset($_SESSION[self::REMEMBER_KEY]);
+		Zend_Session::namespaceUnset('SystemUpdates');
 		Zend_Session::namespaceUnset('ClientSwitch');
 		Zend_Session::namespaceUnset('FileManager');
 		Zend_Session::namespaceUnset('MediaManager');

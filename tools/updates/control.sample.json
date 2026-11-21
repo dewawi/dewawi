@@ -1,0 +1,9 @@
+{
+    "format": 1,
+    "installation": "REPLACE_WITH_32_RANDOM_HEX_CHARACTERS",
+    "database": "REPLACE_WITH_WORKER_IDENTITY_SHA256",
+    "web_uid": 0,
+    "web_gid": 0,
+    "worker_uid": 0,
+    "worker_gid": 0
+}

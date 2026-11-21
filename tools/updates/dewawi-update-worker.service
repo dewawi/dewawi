@@ -1,0 +1,19 @@
+[Unit]
+Description=DEWAWI controlled migration worker
+After=network.target
+
+[Service]
+Type=oneshot
+User=dewawi-update
+Group=dewawi-update
+UMask=0077
+ExecStart=/usr/bin/php /var/www/dewawi/tools/update-worker.php --config=/etc/dewawi-update-worker/worker.json --command=tick
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/dewawi-updates/private /var/lib/dewawi-updates/published
+ReadOnlyPaths=/var/lib/dewawi-updates/inbox /var/lib/dewawi-updates/evidence /etc/dewawi-update-worker /var/www/dewawi
+InaccessiblePaths=/var/www/dewawi/configs/database.ini
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

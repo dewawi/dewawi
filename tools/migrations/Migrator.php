@@ -8,6 +8,7 @@ require_once __DIR__ . '/Inspector.php';
 class DewawiSqlMigrator extends DewawiMigrationInspector
 {
     private $lock;
+    private bool $locked = false;
 
     private static function charset(?string $value): ?string
     {
@@ -78,6 +79,7 @@ class DewawiSqlMigrator extends DewawiMigrationInspector
     {
         $this->lock = 'dewawi-migrate:' . substr(hash('sha256', strtolower($this->db->fetchOne('SELECT DATABASE()'))), 0, 40);
         if ((int)$this->db->fetchOne('SELECT GET_LOCK(?, 0)', [$this->lock]) !== 1) throw new DewawiMigrationException('migration_lock_busy');
+        $this->locked = true;
         try {
             // Autocommit is required to persist the started marker before implicit DDL commits.
             $this->db->query('SET autocommit = 1');
@@ -87,6 +89,7 @@ class DewawiSqlMigrator extends DewawiMigrationInspector
             $this->db->query("SET time_zone = '+00:00'");
             return $action();
         } finally {
+            $this->locked = false;
             $this->db->fetchOne('SELECT RELEASE_LOCK(?)', [$this->lock]);
         }
     }
@@ -152,24 +155,37 @@ class DewawiSqlMigrator extends DewawiMigrationInspector
         return $this->plan();
     }
 
-    public function apply(?string $bundle = null): array
+    public function applyApproved(array $approved, string $installation, callable $precondition): array
+    {
+        if (!$this->locked) throw new DewawiMigrationException('migration_lock_required');
+        if (!hash_equals(self::digest($approved), self::digest($this->executionPlan($installation)))) throw new DewawiMigrationException('approved_plan_changed');
+        $precondition();
+        return $this->apply(null, $precondition);
+    }
+
+    public function apply(?string $bundle = null, ?callable $precondition = null): array
     {
         $plan = $this->plan($bundle);
         if ($plan['baseline'] !== 'completed') throw new DewawiMigrationException('explicit_baseline_registration_required');
         foreach ($plan['pending'] as $id) {
             $entry = $this->catalog[$id];
+            if ($precondition) $precondition();
             $this->start($id, $entry['checksum'], $entry['definition']);
             foreach ($entry['statements'] as $number => $statement) {
                 $this->db->update(self::HISTORY, ['statement_number' => $number + 1], ['migration_id = ?' => $id]);
+                $validated = false;
                 try {
+                    if ($precondition) $precondition();
+                    $validated = true;
                     $this->db->query($statement);
                 } catch (Throwable $error) {
-                    $code = 'sql_error';
-                    if ($error instanceof Zend_Db_Statement_Exception && $error->getPrevious() instanceof PDOException) $code = 'sqlstate_' . preg_replace('/[^A-Z0-9]/', '', (string)$error->getPrevious()->getCode());
+                    $code = $validated ? 'sql_error' : 'precondition_failed';
+                    if ($validated && $error instanceof Zend_Db_Statement_Exception && $error->getPrevious() instanceof PDOException) $code = 'sqlstate_' . preg_replace('/[^A-Z0-9]/', '', (string)$error->getPrevious()->getCode());
                     $this->db->update(self::HISTORY, ['status' => 'failed', 'error_code' => $code], ['migration_id = ?' => $id]);
                     throw new DewawiMigrationException('migration_failed: ' . $id . ' statement ' . ($number + 1) . ' ' . $code);
                 }
             }
+            if ($precondition) $precondition();
             $this->complete($id);
         }
         return $this->plan($bundle);

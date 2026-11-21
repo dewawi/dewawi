@@ -64,11 +64,12 @@ withholds the pending count and last-success summary. Unknown IDs, raw database
 exceptions, SQLSTATE values, SQL contents and private paths are never displayed.
 Descriptions come only from reviewed translation strings for known catalog IDs.
 
-GET and HEAD of `index` are the only allowed operations. Every other action,
-including inherited CRUD/export/search actions, is rejected before base-controller
-initialization; mutation methods on `index` return 405. There are no forms,
-execution buttons, SQL inputs, command parameters or shell calls. Responses are
-private/no-store. DE/EN labels, status text, native anchor navigation, focusable
+GET and HEAD of `index` remain read-only. Optional M2B adds only a protected
+POST `approve` action, which writes an untrusted bounded request to an external
+file queue. It cannot execute SQL or start a process. Without a verified worker
+snapshot and safe queue configuration there is no approval form. Inherited CRUD,
+export/search, baseline/apply/bundle/SQL and repair actions remain rejected.
+Responses are private/no-store. DE/EN status text, native navigation, focusable
 alerts and responsive migration cards support keyboard and narrow-screen use.
 
 Configure operator access manually when the installation owner authorizes it.
@@ -76,37 +77,25 @@ M2A itself does not edit private configuration or any installation database.
 No SQL follow-up is required for this feature. Any missing baseline or failed
 migration still needs the separately authorized M1 verification/recovery process.
 
-## M2B boundary (design only)
+## Controlled execution (M2B)
 
-No worker, queue or update-request table is implemented in M2A. A separately
-authorized M2B must implement this sequence:
+The [M2B operations guide](../updates/README.md) specifies the implemented worker,
+external file queue, mandatory ownership separation, exact-plan approval, root-owned
+per-request backup/restore release, technical write fence, service examples and
+manual recovery procedure. No worker service or private configuration is installed
+implicitly. The ordinary web process has no privileged credentials or shell channel.
 
-1. The system operator reviews a freshly verified plan with explicit immutable
-   migration IDs, dependencies, checksums and installation/database identity.
-2. An explicit, authenticated, CSRF-protected confirmation approves exactly that
-   plan. Bind approval to the operator, plan identity and expiry; changed plans
-   require new approval. A read-only M2A snapshot is insufficient approval.
-3. Require auditable evidence of a suitable backup and demonstrated restorability,
-   plus the agreed maintenance window and control of application writes.
-4. A separate privileged CLI worker consumes only a validated structured approval
-   record. The web process must not have worker credentials, migration privileges
-   or a general shell/SQL channel. It cannot supply shell commands, executables,
-   configuration paths, arbitrary SQL, database credentials or bundle paths. The
-   worker resolves fixed installation configuration and approved catalog IDs
-   locally, and must reject replayed, expired or altered requests.
-5. Before any write the worker invokes M1 under its existing installation lock,
-   rereads central history, checksums, dependencies and the approved plan, and
-   stops on drift, unresolved state or missing prerequisites. Reuse M1's central
-   history and interruption semantics; never add an independent success ledger.
-6. Record approval, start, result and sanitized errors with an auditable request
-   identity. Keep privileged diagnostic details outside the web response.
-7. Started/failed migrations remain blocked for separately authorized manual
-   inspection and recovery. DDL may already be committed. Never resume, override
-   checksums or manufacture successful history automatically.
+M1's shared `executionPlan` exposes only catalog/history metadata and an opaque
+installation/database identity. `applyApproved` requires the M1 lock and identical
+approved/current plans, then uses the existing `apply` implementation. Its optional
+precondition callback rechecks the worker release, write fence and operator before
+each migration, each statement and completion recording. Ordinary M1 CLI commands
+retain their existing interface and do not gain any HTTP execution path.
 
-Choose and review the worker trust boundary, approval persistence/replay control,
-backup evidence, maintenance coordination and audit access in M2B before adding
-execution. M2A does not start that work or grant permission to update a database.
+Worker acceptance/results and external operational releases are audit evidence,
+not a second database-version history. Only `dewawi_schema_migration` records
+migration success. Failed/started states remain blocked; baseline registration,
+checksum overrides and automatic repair are never exposed by M2B.
 
 ## Operator commands
 
@@ -282,6 +271,7 @@ M1's actual database run uses MariaDB, not a separate MySQL server.
 python3 -B tests/install/migrations.py
 python3 -B tests/install/import-db.py
 python3 -B tests/admin/updates.py
+python3 -B tests/admin/update-worker.py
 ```
 
 M2A coverage and concrete results are recorded in

@@ -1,0 +1,10 @@
+[Unit]
+Description=Inspect DEWAWI update approvals
+
+[Timer]
+OnBootSec=30s
+OnUnitInactiveSec=15s
+Unit=dewawi-update-worker.service
+
+[Install]
+WantedBy=timers.target
