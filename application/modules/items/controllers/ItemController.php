@@ -76,6 +76,8 @@ class Items_ItemController extends DEEC_Controller_Action
 		$clientId = (string)(int)$this->view->client['id'];
 		$mediaPath = substr($clientId, 0, 1) . '/' . (strlen($clientId) > 1 ? substr($clientId, 1, 1) : '0') . '/' . $clientId;
 		$shopAssignment = (new Items_Service_ShopAssignment())->getStatus($row);
+		$shipping = $this->shippingView($id);
+		$this->view->headScript()->appendFile($this->view->baseUrl() . '/js/shipping.js');
 		$availability = [];
 		$planningService = new Items_Service_StockPlanning();
 		$warehouseDb = new Application_Model_DbTable_Warehouse();
@@ -103,7 +105,42 @@ class Items_ItemController extends DEEC_Controller_Action
 				'images' => $this->getSubfolders(BASE_PATH . '/media/' . $mediaPath . '/images/'),
 			],
 			'shopAssignment' => $shopAssignment,
+			'shipping' => $shipping,
 		];
+	}
+
+	protected function shouldPrepareAttachmentDirectory(): bool
+	{
+		return $this->getRequest()->getActionName() !== 'shipping' && parent::shouldPrepareAttachmentDirectory();
+	}
+
+	private function shippingView(int $itemId, array $values = [], array $errors = []): array
+	{
+		$translator = Zend_Registry::get('DEEC_Translate');
+		$translator->load('shipping', dirname(__DIR__, 4) . '/languages/' . $translator->getLocale() . '/admin/shipping.php');
+		try { $info = (new Shops_Service_ShippingConfiguration())->itemAssignment($itemId); }
+		catch (DomainException $e) { if (in_array($e->getCode(), [403, 404], true)) return ['shopid' => 0]; throw $e; }
+		$form = new Admin_Form_Shipping('assignments', ['classid' => $info['classes']], true);
+		$form->setValues(array_filter($values ?: $info['values'], 'is_scalar'));
+		if (!(new DEEC_Permission($this->_user))->hasPermission('items', 'item', 'edit')) $form->setMode('readonly');
+		return $info + ['form' => $form, 'errors' => $errors, 'csrf' => Shops_Service_ShippingConfiguration::csrfToken(),
+			'canEdit' => (new DEEC_Permission($this->_user))->hasPermission('items', 'item', 'edit')];
+	}
+
+	public function shippingAction()
+	{
+		$request = $this->getRequest();
+		if (!$request->isPost()) throw new Zend_Controller_Action_Exception('Method not allowed', 405);
+		$post = (array)$request->getPost();
+		if (!Shops_Service_ShippingConfiguration::validCsrf($post['csrf'] ?? null)) throw new Zend_Controller_Action_Exception('Forbidden', 403);
+		unset($post['csrf']);
+		$id = filter_var($this->_getParam('id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+		if (!$id) throw new Zend_Controller_Action_Exception('Not found', 404);
+		$result = (new Shops_Service_ShippingConfiguration())->saveItemAssignment($id, $post);
+		if (!$result['errors']) { $this->_flashMessenger->addMessage('MESSAGES_SAVED'); return $this->_helper->redirector->gotoSimple('edit', 'item', 'items', ['id' => $id]); }
+		$this->getResponse()->setHttpResponseCode(422);
+		$this->view->shipping = $this->shippingView($id, $post, $result['errors']);
+		$this->view->headScript()->appendFile($this->view->baseUrl() . '/js/shipping.js');
 	}
 
 	protected function getCreateData(): array

@@ -127,3 +127,5 @@ echo $this->FileManager();
 		'files' => ['title' => 'TABS_FILES', 'html' => $this->Files(), 'show' => (bool)$this->dirwritable],
 	]
 ]); ?>
+
+<?php echo $this->partial('item/shipping.phtml', ['shipping' => $this->shipping, 'id' => $this->id]); ?>

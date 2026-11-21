@@ -7,6 +7,8 @@ server = None
 try:
     historical = subprocess.run(['git', 'show', '1.1.7:install/config/structure.sql'], cwd=Path(__file__).resolve().parents[2], check=True, capture_output=True)
     (work/'structure-1.1.7.sql').write_bytes(historical.stdout)
+    released = subprocess.run(['git', 'show', '8ab77ce4:install/config/structure.sql'], cwd=Path(__file__).resolve().parents[2], check=True, capture_output=True)
+    (work/'structure-1.1.8.sql').write_bytes(released.stdout)
     init = subprocess.run(['mariadb-install-db', '--no-defaults', '--datadir='+str(work/'data'), '--auth-root-authentication-method=normal', '--skip-test-db'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     if init.returncode:
         raise RuntimeError(init.stdout)

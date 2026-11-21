@@ -34,6 +34,7 @@ class Zend_View_Helper_AdminMenu extends Zend_View_Helper_Abstract
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'currency', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_CURRENCIES'); ?></a></li>
 		</ul>
 		<h4><?php echo $this->view->translate('ADMIN_DELIVERY'); ?></h4>
+		<p><a href="<?php echo $this->view->escape($this->view->url(['module' => 'admin', 'controller' => 'shipping', 'action' => 'index'], null, true)); ?>"><?php echo $this->view->translate('SHIPPING_MANAGEMENT'); ?></a></p>
 		<ul>
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'shippingmethod', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_SHIPPING_METHODS'); ?></a></li>
 			<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'deliverytime', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_DELIVERY_TIMES'); ?></a></li>

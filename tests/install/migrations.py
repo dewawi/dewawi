@@ -58,10 +58,11 @@ with tempfile.TemporaryDirectory(prefix='dewawi-migrations-') as directory:
         (mirror/'install/helper.php').symlink_to(ROOT/'install/helper.php')
         registry_root = mirror/'install/config/migrations'
         baseline_reference = json.loads((ROOT/'tools/migrations/baseline-1.1.8.json').read_text())
+        release_structure = subprocess.run(['git', 'show', '8ab77ce4:install/config/structure.sql'], cwd=ROOT, check=True, capture_output=True, text=True).stdout
         original_tables = list(baseline_reference['tables'])
         check(len(original_tables) == 124, 'Frozen release table count')
         for filename, field in [('structure.sql', 'source_structure_sha256'), ('update-1.1.7-1.1.8.sql', 'source_update_sha256')]:
-            check(hashlib.sha256((ROOT/'install/config'/filename).read_bytes()).hexdigest() == baseline_reference[field], 'Released SQL changed: '+filename)
+            check(hashlib.sha256(release_structure.encode() if filename == 'structure.sql' else (ROOT/'install/config'/filename).read_bytes()).hexdigest() == baseline_reference[field], 'Released SQL changed: '+filename)
 
         def catalog(transitions=None):
             for entry in registry_root.iterdir():
@@ -87,7 +88,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-migrations-') as directory:
                 sql(structure, database)
                 sql((ROOT/'install/config/update-1.1.7-1.1.8.sql').read_text(), database)
             else:
-                sql((ROOT/'install/config/structure.sql').read_text(), database)
+                sql(release_structure, database)
                 sql((ROOT/'install/config/data.sql').read_text(), database)
             config = work/(database+'.ini')
             config.write_text('[test]\nresources.db.adapter = Pdo_Mysql\nresources.db.params.host = localhost\nresources.db.params.unix_socket = "'+db_socket+'"\nresources.db.params.username = root\nresources.db.params.password = ""\nresources.db.params.dbname = '+database+'\n')

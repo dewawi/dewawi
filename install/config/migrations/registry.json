@@ -1,3 +1,11 @@
 {
-    "transitions": []
+    "transitions": [
+        {
+            "from": "1.1.8",
+            "to": "1.1.9",
+            "migrations": [
+                {"file": "001-shop-shipping.sql", "depends": []}
+            ]
+        }
+    ]
 }

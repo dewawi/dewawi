@@ -1,0 +1,26 @@
+<?php
+$models = ['amount' => 'fixed', 'base' => 'additional_packages', 'additional' => 'additional_packages', 'percent' => 'percentage'];
+$errors = $this->fieldErrors ?: [];
+?>
+<?php if ($errors) : ?><div class="dw-alert dw-alert--danger" role="alert"><ul><?php foreach ($errors as $field => $key) : ?><li><a href="#shipping-<?php echo $this->escape($field); ?>"><?php echo $this->escape($this->translate($key)); ?></a></li><?php endforeach; ?></ul></div><?php endif; ?>
+<div class="dw-form-grid">
+<?php foreach ($this->form->getElements() as $name => $element) : ?>
+<div class="dw-field dw-field--col-6"<?php if (isset($models[$name])) echo ' data-shipping-model="' . $models[$name] . '"'; ?>>
+<?php echo $this->form->renderElementWithAttribs($name, isset($errors[$name]) ? ['aria-invalid' => 'true', 'aria-describedby' => 'shipping-error-' . $name] : []); ?>
+<?php if (isset($errors[$name])) : ?><p class="dw-field-error" id="shipping-error-<?php echo $this->escape($name); ?>" role="alert"><?php echo $this->escape($this->translate($errors[$name])); ?></p><?php endif; ?>
+</div>
+<?php endforeach; ?>
+</div>
+<?php if ($this->kind === 'tariffs') : ?>
+<fieldset data-shipping-model="weight" id="shipping-tiers"><legend><?php echo $this->translate('SHIPPING_TIERS'); ?></legend>
+<p><?php echo $this->translate('SHIPPING_TIERS_HELP'); ?></p>
+<div class="dw-table-wrap" tabindex="0" role="region" aria-label="<?php echo $this->translate('SHIPPING_TIERS'); ?>"><table class="dw-table"><thead><tr><th scope="col"><?php echo $this->translate('SHIPPING_UP_TO'); ?></th><th scope="col"><?php echo $this->translate('SHIPPING_AMOUNT'); ?></th><th scope="col"><?php echo $this->translate('SHIPPING_REMOVE'); ?></th></tr></thead><tbody data-shipping-tiers>
+<?php $rows = $this->tiers ?: [['up_to' => '', 'amount' => '']]; foreach (array_slice(array_values($rows), 0, 100) as $i => $tier) : ?>
+<tr><td><input class="dw-input" inputmode="decimal" aria-label="<?php echo $this->translate('SHIPPING_UP_TO'); ?>" name="tiers[<?php echo $i; ?>][up_to]" value="<?php echo $this->escape(is_scalar($tier['up_to'] ?? null) ? $tier['up_to'] : ''); ?>"></td><td><input class="dw-input" inputmode="decimal" aria-label="<?php echo $this->translate('SHIPPING_AMOUNT'); ?>" name="tiers[<?php echo $i; ?>][amount]" value="<?php echo $this->escape(is_scalar($tier['amount'] ?? null) ? $tier['amount'] : ''); ?>"></td><td><button type="button" class="dw-btn" data-shipping-remove><?php echo $this->translate('SHIPPING_REMOVE'); ?></button></td></tr>
+<?php endforeach; ?>
+</tbody></table></div>
+<?php if (isset($errors['tiers'])) : ?><p role="alert"><?php echo $this->escape($this->translate($errors['tiers'])); ?></p><?php endif; ?>
+<button type="button" class="dw-btn" data-shipping-add><?php echo $this->translate('SHIPPING_ADD_TIER'); ?></button>
+</fieldset>
+<p><?php echo $this->translate('SHIPPING_NET_NOTICE'); ?></p>
+<?php endif; ?>

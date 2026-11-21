@@ -1,0 +1,17 @@
+<?php $this->title = $this->translate('SHIPPING_MANAGEMENT'); $this->headTitle($this->title); echo $this->Messages(); ?>
+<div class="dw-shipping-management">
+<h2><?php echo $this->escape($this->title); ?></h2>
+<p><?php echo $this->translate('SHIPPING_SCOPE_NOTICE'); ?></p>
+<form method="get" data-autosave="false" class="dw-shipping-filter">
+<label for="shipping-shop"><?php echo $this->translate('SHIPPING_SHOP'); ?></label>
+<select id="shipping-shop" name="shopid" class="dw-select" required><option value=""><?php echo $this->translate('SHIPPING_SELECT'); ?></option><?php foreach ($this->shops as $shop) : ?><option value="<?php echo (int)$shop['id']; ?>"<?php if ((int)$shop['id'] === $this->shopid) echo ' selected'; ?>><?php echo $this->escape($shop['title'] . ' (#' . $shop['id'] . ')'); ?></option><?php endforeach; ?></select>
+<input type="hidden" name="kind" value="<?php echo $this->escape($this->kind); ?>">
+<label for="shipping-query"><?php echo $this->translate('TOOLBAR_SEARCH'); ?></label><input class="dw-input" id="shipping-query" name="q" value="<?php echo $this->escape($this->query); ?>">
+<label for="shipping-filter-status"><?php echo $this->translate('SHIPPING_ACTIVE'); ?></label><select class="dw-select" id="shipping-filter-status" name="status"><?php foreach (['all' => 'TOOLBAR_ALL', '1' => 'SHIPPING_ENABLED', '0' => 'SHIPPING_DISABLED'] as $value => $key) : ?><option value="<?php echo $value; ?>"<?php if ((string)$value === $this->filterStatus) echo ' selected'; ?>><?php echo $this->translate($key); ?></option><?php endforeach; ?></select>
+<button type="submit" class="dw-btn"><?php echo $this->translate('SHIPPING_OPEN'); ?></button>
+</form>
+<?php if ($this->shopid) : ?>
+<nav class="dw-shipping-tabs" aria-label="<?php echo $this->translate('SHIPPING_MANAGEMENT'); ?>"><?php foreach (['settings', 'classes', 'zones', 'tariffs', 'combinations', 'assignments'] as $kind) : ?><a href="<?php echo $this->escape($this->url(['module' => 'admin', 'controller' => 'shipping', 'action' => 'index', 'shopid' => $this->shopid, 'kind' => $kind], null, true)); ?>"<?php if ($kind === $this->kind) echo ' aria-current="page"'; ?>><?php echo $this->translate('SHIPPING_' . strtoupper($kind)); ?></a><?php endforeach; ?></nav>
+<p><a class="dw-btn dw-btn--primary" href="<?php echo $this->escape($this->url(['module' => 'admin', 'controller' => 'shipping', 'action' => 'edit', 'shopid' => $this->shopid, 'kind' => $this->kind], null, true)); ?>"><?php echo $this->translate('SHIPPING_ADD'); ?></a></p>
+<?php echo $this->shippingList->render(); endif; ?>
+</div>

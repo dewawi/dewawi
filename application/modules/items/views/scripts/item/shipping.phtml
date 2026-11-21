@@ -1,0 +1,13 @@
+<?php $shipping = $this->shipping ?: ['shopid' => 0]; ?>
+<section class="dw-card dw-shipping-management" id="item-shipping" aria-labelledby="item-shipping-title">
+<h2 id="item-shipping-title"><?php echo $this->translate('SHIPPING_ASSIGNMENTS'); ?></h2>
+<p><?php echo $this->translate('SHIPPING_PACKAGING_NOTICE'); ?></p>
+<?php if (empty($shipping['shopid'])) : ?><p><?php echo $this->translate('SHIPPING_ITEM_SCOPE_NOTICE'); ?></p>
+<?php else : ?>
+<form method="post" action="<?php echo $this->escape($this->url(['module' => 'items', 'controller' => 'item', 'action' => 'shipping', 'id' => (int)$this->id], null, true)); ?>" data-autosave="false" data-shipping-form>
+<input type="hidden" name="csrf" value="<?php echo $this->escape($shipping['csrf']); ?>">
+<?php echo $this->partial('shipping/fields.phtml', ['form' => $shipping['form'], 'fieldErrors' => $shipping['errors'], 'kind' => 'assignments', 'tiers' => []]); ?>
+<?php if (!empty($shipping['canEdit'])) : ?><button type="submit" class="dw-btn dw-btn--primary"><?php echo $this->translate('SHIPPING_SAVE'); ?></button><?php else : ?><p><?php echo $this->translate('SHIPPING_READ_ONLY'); ?></p><?php endif; ?><p data-shipping-pending role="status" hidden><?php echo $this->translate('SHIPPING_PENDING'); ?></p>
+</form>
+<?php endif; ?>
+</section>

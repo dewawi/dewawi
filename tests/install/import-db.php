@@ -248,6 +248,10 @@ foreach ($roleQueries as $query) {
 check($db->query('SELECT CONCAT(reserved, ":", incoming) FROM itemstock WHERE id = 1')->fetch_row()[0] === '3.0000:5.0000', 'Repeated stock planning upgrade did not derive open totals');
 
 // Compare the entire published schema upgrade with a fresh installation, including indexes and constraints.
+$db->query('CREATE DATABASE release_reference');
+$db->select_db('release_reference');
+$releaseQueries = []; PMA_splitSqlFile($releaseQueries, file_get_contents($work . '/structure-1.1.8.sql'));
+foreach ($releaseQueries as $query) $db->query($query['query']);
 $db->query('CREATE DATABASE published_upgrade');
 $db->select_db('published_upgrade');
 $publishedQueries = [];
@@ -258,11 +262,11 @@ preg_match('/^  KEY `street` .*$/m', $legacyAddress, $legacyStreet);
 check(count($legacyStreet) === 1, 'Published baseline street index was not inspected');
 $legacyStreet = rtrim(trim($legacyStreet[0]), ',');
 foreach ($roleQueries as $query) $db->query($query['query']);
-$freshTables = $db->query('SHOW TABLES FROM install_success')->fetch_all(MYSQLI_NUM);
+$freshTables = $db->query('SHOW TABLES FROM release_reference')->fetch_all(MYSQLI_NUM);
 check($db->query('SHOW TABLES')->fetch_all(MYSQLI_NUM) === $freshTables, 'Published upgrade and fresh installation have different tables');
 foreach ($freshTables as [$table]) {
     $definitions = [];
-    foreach (['install_success', 'published_upgrade'] as $database) {
+    foreach (['release_reference', 'published_upgrade'] as $database) {
         $definition = $db->query("SHOW CREATE TABLE `$database`.`$table`")->fetch_assoc()['Create Table'];
         // Column order and current auto-increment counters do not affect schema compatibility.
         $lines = array_map(static fn(string $line): string => rtrim(trim($line), ','), explode("\n", preg_replace('/ AUTO_INCREMENT=\d+/', '', $definition)));
@@ -274,7 +278,7 @@ foreach ($freshTables as [$table]) {
         sort($lines);
         $definitions[$database] = $lines;
     }
-    check($definitions['install_success'] === $definitions['published_upgrade'], 'Published upgrade differs from fresh installation: ' . $table);
+    check($definitions['release_reference'] === $definitions['published_upgrade'], 'Published upgrade differs from fresh installation: ' . $table);
 }
 echo 'PASS: published 1.1.7 full upgrade matches fresh installation across ' . count($freshTables) . " tables; inherited street index preserved\n";
 echo "PASS: full installation, schema indexes, upgrade migrations and failure handling on " . $db->server_info . "\n";

@@ -1,0 +1,115 @@
+ALTER TABLE `shop` ADD COLUMN `shippingcurrency` char(3) DEFAULT NULL, ADD COLUMN `pickupenabled` tinyint(1) NOT NULL DEFAULT 0, ADD UNIQUE KEY `shipping_clientid_id` (`clientid`,`id`);
+ALTER TABLE `item` ADD UNIQUE KEY `shipping_clientid_id` (`clientid`,`id`);
+
+CREATE TABLE `shopshippingclass` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) DEFAULT NULL,
+  `combine_same_class` tinyint(1) NOT NULL DEFAULT 0,
+  `required_fields` text DEFAULT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT 0,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `shopid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `clientid_shopid_id` (`clientid`,`shopid`,`id`),
+  CONSTRAINT `shippingclass_shop` FOREIGN KEY (`clientid`,`shopid`) REFERENCES `shop` (`clientid`,`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `shopshippingzone` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) DEFAULT NULL,
+  `countries` text DEFAULT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT 0,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `shopid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `clientid_shopid_id` (`clientid`,`shopid`,`id`),
+  CONSTRAINT `shippingzone_shop` FOREIGN KEY (`clientid`,`shopid`) REFERENCES `shop` (`clientid`,`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `shopshippingtariff` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) DEFAULT NULL,
+  `classid` int(11) DEFAULT NULL,
+  `zoneid` int(11) DEFAULT NULL,
+  `currency` char(3) DEFAULT NULL,
+  `model` varchar(32) DEFAULT NULL,
+  `parameters` text DEFAULT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT 0,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `shopid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `clientid_shopid_id` (`clientid`,`shopid`,`id`),
+  UNIQUE KEY `shippingtariff_assignment` (`clientid`,`shopid`,`classid`,`zoneid`,`currency`),
+  CONSTRAINT `shippingtariff_shop` FOREIGN KEY (`clientid`,`shopid`) REFERENCES `shop` (`clientid`,`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `shippingtariff_class` FOREIGN KEY (`clientid`,`shopid`,`classid`) REFERENCES `shopshippingclass` (`clientid`,`shopid`,`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `shippingtariff_zone` FOREIGN KEY (`clientid`,`shopid`,`zoneid`) REFERENCES `shopshippingzone` (`clientid`,`shopid`,`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `shopitemshipping` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `itemid` int(11) NOT NULL,
+  `classid` int(11) DEFAULT NULL,
+  `packages_per_unit` int(11) NOT NULL DEFAULT 1,
+  `separate` tinyint(1) NOT NULL DEFAULT 1,
+  `active` tinyint(1) NOT NULL DEFAULT 0,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `shopid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `clientid_shopid_id` (`clientid`,`shopid`,`id`),
+  UNIQUE KEY `shippingitem_assignment` (`clientid`,`shopid`,`itemid`),
+  CONSTRAINT `shippingitem_item` FOREIGN KEY (`clientid`,`itemid`) REFERENCES `item` (`clientid`,`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `shippingitem_class` FOREIGN KEY (`clientid`,`shopid`,`classid`) REFERENCES `shopshippingclass` (`clientid`,`shopid`,`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `shippingitem_shop` FOREIGN KEY (`clientid`,`shopid`) REFERENCES `shop` (`clientid`,`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `shopshippingcombination` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `hostclassid` int(11) DEFAULT NULL,
+  `guestclassid` int(11) DEFAULT NULL,
+  `priority` int(11) DEFAULT NULL,
+  `max_guest_packages` int(11) DEFAULT NULL,
+  `max_guest_weight` decimal(12,4) DEFAULT NULL,
+  `max_packlength` decimal(12,4) DEFAULT NULL,
+  `max_packwidth` decimal(12,4) DEFAULT NULL,
+  `max_packheight` decimal(12,4) DEFAULT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT 0,
+  `ordering` int(11) NOT NULL DEFAULT 0,
+  `clientid` int(11) NOT NULL,
+  `shopid` int(11) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `createdby` int(11) NOT NULL DEFAULT 0,
+  `modified` datetime DEFAULT NULL,
+  `modifiedby` int(11) NOT NULL DEFAULT 0,
+  `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `clientid_shopid_id` (`clientid`,`shopid`,`id`),
+  UNIQUE KEY `shippingcombination_pair` (`clientid`,`shopid`,`hostclassid`,`guestclassid`),
+  UNIQUE KEY `shippingcombination_priority` (`clientid`,`shopid`,`priority`),
+  CONSTRAINT `shippingcombination_shop` FOREIGN KEY (`clientid`,`shopid`) REFERENCES `shop` (`clientid`,`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `shippingcombination_host` FOREIGN KEY (`clientid`,`shopid`,`hostclassid`) REFERENCES `shopshippingclass` (`clientid`,`shopid`,`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `shippingcombination_guest` FOREIGN KEY (`clientid`,`shopid`,`guestclassid`) REFERENCES `shopshippingclass` (`clientid`,`shopid`,`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

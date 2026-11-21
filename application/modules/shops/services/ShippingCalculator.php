@@ -184,6 +184,11 @@ class Shops_Service_ShippingCalculator
 		return $group;
 	}
 
+	public function validateConfiguration(array $context, array $data): void
+	{
+		$this->configuration($data, self::id($context['clientid'] ?? null), self::id($context['shopid'] ?? null));
+	}
+
 	private function configuration(array $data, int $clientId, int $shopId): array
 	{
 		$this->fields($data, ['version', 'clientid', 'shopid', 'currency', 'minor_units', 'pickup', 'zones', 'classes', 'assignments', 'tariffs', 'combinations']);

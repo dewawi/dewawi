@@ -2863,3 +2863,15 @@ cursor: default;
     width: 100%;
   }
 }
+
+.dw-shipping-management { min-width: 0; overflow-wrap: anywhere; }
+.dw-shipping-filter, .dw-shipping-tabs { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+.dw-shipping-filter .dw-input, .dw-shipping-filter .dw-select { width: auto; max-width: 100%; min-width: 0; }
+.dw-shipping-management [hidden] { display: none !important; }
+.dw-shipping-management fieldset { min-width: 0; margin: 16px 0; }
+.dw-shipping-management input { max-width: 100%; box-sizing: border-box; }
+@media (max-width: 600px) {
+  .dw-shipping-filter > label, .dw-shipping-filter .dw-select, .dw-shipping-filter .dw-input { width: 100%; }
+  .dw-app-shell__inner.admin .dw-app-header, .dw-app-shell__inner.items .dw-app-header { flex-wrap: wrap; }
+  .dw-app-shell__inner.admin .dw-app-header__meta, .dw-app-shell__inner.items .dw-app-header__meta { min-width: 0; }
+}

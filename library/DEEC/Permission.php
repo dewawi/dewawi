@@ -44,6 +44,7 @@ class DEEC_Permission
 			'upload',
 		],
 		'edit' => [
+			'shipping',
 			'participants',
 			'contacts',
 			'edit',

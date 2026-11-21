@@ -1,9 +1,10 @@
 # Controlled SQL migrations (M1)
 
 This is development infrastructure for transitions starting at **1.1.8 → 1.1.9**.
-It neither releases 1.1.9 nor changes application versions. The published
-`structure.sql`, `update-1.1.7-1.1.8.sql`, installer and old update paths are
-unchanged. No application bootstrap, HTTP, cron or shop entry point calls it.
+It neither releases 1.1.9 nor changes application versions. The frozen 1.1.8
+reference, `update-1.1.7-1.1.8.sql`, installer and old update paths are unchanged.
+C4A.2 adds the first feature migration and synchronizes the development
+`structure.sql`; it does not regenerate the frozen reference. No application bootstrap, HTTP, cron or shop entry point calls it.
 Run it manually with PHP CLI and an explicitly selected database configuration.
 
 ## Operator commands
@@ -133,15 +134,24 @@ stops. Direct import (especially force/continue-on-error clients, removing the
 guard or executing a selected fragment) is **not a supported update path** and
 cannot maintain reliable history. Distribute individual migrations and registry
 with the bundle; the bundle is not a standalone replacement for the catalog.
-M1 generates no real `update-1.1.8-1.1.9.sql` and adds no feature migrations.
+No official `update-1.1.8-1.1.9.sql` has been generated. The development catalog
+now contains `1.1.8-1.1.9/001-shop-shipping.sql`; it is not a release declaration.
 
 ## Fresh installations and future releases
 
-Current fresh installs remain the existing `structure.sql` + `data.sql` importer.
-After that completes, explicitly verify/register the frozen 1.1.8 baseline; then
-the CLI can apply future feature migrations. The normal installer never invokes
-this runner. The existing installer test and M1 tests exercise this path as well
-as the full published 1.1.7 upgrade.
+Fresh installs use the existing `structure.sql` + `data.sql` importer. The
+development snapshot already includes C4A.2 shipping tables and must **not** run
+their CREATE migration again. It has no automatically initialized M1 history.
+The separately approved initialization procedure described below is still
+required before a future snapshot release. Do not infer executed migration IDs
+from table existence or manually insert successful history rows.
+
+Existing complete **1.1.8** installations use explicit baseline registration
+followed by plan/apply. The normal installer never invokes this runner. The
+installer tests exercise the development snapshot and the historical 1.1.7 →
+1.1.8 schema separately. M1 safety tests use the frozen release source from
+`8ab77ce4`; shipping tests compare the actual M1-upgraded schema with a development
+fresh install, excluding the central history table.
 
 For every later feature migration, updating `structure.sql` for the equivalent
 fresh schema is mandatory in the same development block. Keep any required

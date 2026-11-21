@@ -1,0 +1,13 @@
+<?php $this->title = $this->translate('SHIPPING_' . strtoupper($this->kind)); $this->headTitle($this->title); echo $this->Messages(); ?>
+<div class="dw-shipping-management">
+<h2><?php echo $this->escape($this->title); ?> · <?php echo $this->translate('SHIPPING_SHOP'); ?> #<?php echo (int)$this->shopid; ?></h2>
+<p><a href="<?php echo $this->escape($this->url(['module' => 'admin', 'controller' => 'shipping', 'action' => 'index', 'shopid' => $this->shopid, 'kind' => $this->kind === 'settings' ? 'classes' : $this->kind], null, true)); ?>"><?php echo $this->translate('SHIPPING_BACK'); ?></a></p>
+<p><?php echo $this->translate('SHIPPING_EDIT_NOTICE'); ?></p>
+<?php if ($this->kind === 'assignments') : ?><p><?php echo $this->translate('SHIPPING_PACKAGING_NOTICE'); ?></p><?php endif; ?>
+<form method="post" data-autosave="false" data-shipping-form>
+<input type="hidden" name="csrf" value="<?php echo $this->escape($this->csrf); ?>">
+<?php echo $this->partial('shipping/fields.phtml', ['form' => $this->form, 'fieldErrors' => $this->fieldErrors, 'kind' => $this->kind, 'tiers' => $this->tiers]); ?>
+<button type="submit" class="dw-btn dw-btn--primary"><?php echo $this->translate('SHIPPING_SAVE'); ?></button>
+<p data-shipping-pending role="status" hidden><?php echo $this->translate('SHIPPING_PENDING'); ?></p>
+</form>
+</div>

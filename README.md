@@ -52,4 +52,4 @@ Die isolierte Regression läuft mit `python3 tests/security/shop-checkout-db.py`
 
 ## Versandkostenkern
 
-Der noch nicht angebundene Versandkostenkern und der Datenbankentwurf für seine spätere Konfiguration sind in [shop-shipping-review.md](tests/security/shop-shipping-review.md) beschrieben. Die reinen Regressions-Fixtures laufen mit `php tests/security/shop-shipping.php`; es werden keine Datenbank oder SMTP-Dienste benötigt.
+Der reine Versandkostenkern ist in [shop-shipping-review.md](tests/security/shop-shipping-review.md) beschrieben. Die gespeicherte Konfiguration, Verwaltung unter `admin/shipping`, Artikelzuordnung und M1-Upgrade-Anleitung stehen in [shop-shipping-administration.md](tests/security/shop-shipping-administration.md). Es besteht weiterhin keine Checkout-Anbindung. Reine Tests: `php tests/security/shop-shipping.php`; isolierte Persistenz-/HTTP-/Browsertests: `python3 tests/security/shop-shipping-db.py`.

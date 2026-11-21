@@ -1,7 +1,9 @@
 # Versioned SQL catalog
 
-M1 prepares this catalog; `registry.json` intentionally contains no transitions
-and there are no 1.1.9 feature migrations. Application release remains 1.1.8.
+The development catalog now contains `1.1.8-1.1.9/001-shop-shipping.sql`.
+Application release remains 1.1.8. This feature migration does not publish 1.1.9
+or initialize migration history on a fresh development snapshot; see the operator
+workflow below.
 
 Use `FROM-TO/NNN-description.sql`, starting with
 `1.1.8-1.1.9/001-description.sql`. Each transition starts at `001`; numbers are
