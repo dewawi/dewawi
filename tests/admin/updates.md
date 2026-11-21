@@ -1,5 +1,7 @@
 # M2A verification
 
+Historical M2A results from `090c0128`. M2C supersedes the per-user allowlist policy described here; see [current administrator-access verification](update-access.md).
+
 Verified locally on 2026-11-21 with PHP 8.3.6, MariaDB 10.11.14 and headless
 Chromium. All database and HTTP tests below use temporary instances and synthetic
 fixtures. No application database configuration, customer data or production

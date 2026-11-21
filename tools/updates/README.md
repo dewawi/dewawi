@@ -10,7 +10,7 @@ explicit CLI operator procedure, including historical data-backfill review.
 
 1. A separately operated CLI worker publishes a locked M1 plan and a 60-second
    heartbeat. The snapshot has a random token and expires after 15 minutes.
-2. An explicitly allowlisted, active admin reviews the application version,
+2. An authenticated, active, undeleted admin reviews the application version,
    registered history and exact ordered pending IDs, file/definition SHA-256 values
    and plan hash. The server compares current read-only M1 state before accepting
    a POST with CSRF, one-use nonce and explicit confirmation. Tokens also bind the
@@ -125,16 +125,33 @@ URLs, environment variables visible through phpinfo, inbox files or public resul
 Configure the existing protected `configs/database.ini` environment section:
 
 ```ini
-systemUpdates.operatorUserIds[] = "REVIEWED_PERSISTED_ACCOUNT_ID"
 systemUpdates.queuePath = "/var/lib/dewawi-updates"
 ```
 
-Replace the account placeholder with a numeric active admin ID. Independently
-list the same reviewed numeric IDs as integers in private `worker.json`'s
-`operator_ids`. Worker allowlist/account validation is additional to the existing
-web authorization. Changes/revocation must be reflected in both protected lists.
-Tenant permissions, sharing and SaaS entitlements never grant operator authority.
-Protect operator accounts from ordinary delegated tenant account management.
+Since M2C, every authenticated, active, undeleted `user.admin = 1` account may
+review and confirm an installation-wide plan, irrespective of its tenant. Web
+checks require an identical authenticated/current user ID. Administrators from
+other tenants deliberately receive the same update capability; parent/child
+sharing and SaaS module permissions do not constrain this admin capability.
+Ordinary users remain denied. Both the menu and System dashboard card use the
+same permission gate.
+
+There is **no user allowlist** in either the INI or worker JSON. The worker checks
+the captured approving user's actual database row for `admin = 1`, `activated = 1`
+and `deleted = 0`, independently of the web session. Revocation after approval
+blocks both not-yet-captured and already-captured queued requests, and the existing
+per-statement checks also detect revocation during execution. The root release
+must still match that exact actor/request/plan; removing allowlists does not remove
+external operational authorization, backup/restore checks or the write fence.
+
+For existing M2A/M2B setups, the obsolete `systemUpdates.operatorUserIds[]` entry
+is ignored by web authorization and can be removed. Remove `operator_ids` from an
+existing private `worker.json`: the strict worker format now contains only
+`format`, `queue`, `database_config` and `environment`, as shown in the sample.
+An obsolete extra field fails configuration validation; it never acts as a user
+grant or a filter. No new user configuration replaces these lists. Do not move
+queue paths or private DB credentials into user profiles or database settings.
+No private installation files are changed automatically by this code update.
 
 Verify **under the actual service accounts** that the web user cannot read
 `database.ini`, `worker.json`, `private` or `evidence`, cannot modify `control.json`,

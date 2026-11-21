@@ -53,8 +53,6 @@ Zend_Registry::set('Client', ['id' => $user['clientid'], 'modules' => ['admin' =
 if ($role !== 'guest') Zend_Auth::getInstance()->getStorage()->write((object)['id' => $role === 'mismatch' ? 99 : $user['id']]);
 else Zend_Auth::getInstance()->clearIdentity();
 $options = (new Zend_Config_Ini($root . '/configs/operator.ini', 'production'))->toArray();
-if ($role === 'unconfigured') unset($options['systemUpdates']);
-if ($role === 'badconfig') $options['systemUpdates']['operatorUserIds'][] = 'invalid';
 $app = new Zend_Application('production', $options + ['config' => $root . '/configs/application.ini']);
 $locale = ($_GET['locale'] ?? '') === 'en_US' ? 'en_US' : 'de_DE';
 Zend_Registry::set('Config', ['language' => $locale]);
@@ -78,6 +76,14 @@ $front->addControllerDirectory($root . '/application/controllers', 'default')->a
 $front->getRouter()->addDefaultRoutes();
 try {
     if ($path === '/fixture-menu') { $view->AdminMenu(); exit; }
+    if ($path === '/fixture-dashboard') {
+        $request->setModuleName('admin')->setControllerName('index')->setActionName('index')->setParams(['module' => 'admin', 'controller' => 'index', 'action' => 'index']);
+        require $root . '/application/modules/admin/controllers/IndexController.php';
+        (new Admin_IndexController($request, $response))->indexAction();
+        $layout->content = $view->render('index/index.phtml');
+        $response->setBody($layout->render())->sendResponse();
+        exit;
+    }
     if (empty($_GET['direct'])) {
         require $root . '/application/plugins/Acl.php';
         $acl = new Application_Plugin_Acl(); $acl->setResponse($response); $acl->routeShutdown($request);

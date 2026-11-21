@@ -31,7 +31,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-') as directory:
                 (source/'library'/entry.name).symlink_to(entry)
         for name in ['css', 'js', 'images']:
             (source/name).symlink_to(ROOT/name)
-        (source/'configs/operator.ini').write_text('[production]\nsystemUpdates.operatorUserIds[] = 42\n')
+        (source/'configs/operator.ini').write_text('[production]\n')
         (work/'sessions').mkdir()
         states = {name: 'updates_'+name for name in ['missing', 'empty', 'baseline', 'completed', 'started', 'failed', 'checksum', 'definition', 'baselinechecksum', 'unknown', 'gap', 'invalidstatus', 'ambiguous', 'invaliddate', 'badtable']}
         (work/'states.json').write_text(json.dumps(states))
@@ -169,15 +169,22 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-') as directory:
                 check(status == 200 and 'UPDATES_' not in body and 'APP_VERSION_' not in body, 'Broken or untranslated overview: '+state+' '+locale)
                 check(not any(secret in body for secret in ['fixture-secret', 'PRIVATE_', 'CREATE TABLE', 'SELECT *', str(work), 'sqlstate_42000']), 'SQL, secret or private path leaked')
                 check('Prüfung erforderlich' in body if locale == 'de_DE' else 'Verification required' in body, 'Verification limitation not shown')
-        for role in ['tenantadmin', 'reader', 'guest', 'unconfigured', 'badconfig', 'inactive', 'deleted', 'mismatch']:
+        for role in ['reader', 'guest', 'inactive', 'deleted', 'mismatch']:
             for direct in ['', '&direct=1']:
                 for tenant in [7, 8, 9]:
                     status, body, _ = request('/admin/updates/index?role='+role+'&tenant='+str(tenant)+direct)
                     check(status in [302, 403] and history not in body and migration not in body, 'Unauthorized direct/global access: '+role)
             check('/admin/updates' not in request('/fixture-menu?role='+role)[1], 'Unauthorized update menu: '+role)
-        for tenant in [7, 8, 9]:
-            check(request('/admin/updates/index?state=completed&tenant='+str(tenant))[0] == 200, 'Explicit operator is tied to selected tenant')
-        check('/admin/updates' in request('/fixture-menu')[1], 'Operator menu link missing')
+        for role in ['operator', 'tenantadmin']:
+            for tenant in [7, 8, 9]:
+                query = '?role='+role+'&tenant='+str(tenant)
+                check(request('/admin/updates/index?state=completed&role='+role+'&tenant='+str(tenant))[0] == 200, 'Active administrator denied in selected tenant')
+                menu = request('/fixture-menu'+query)[1]
+                dashboard = request('/fixture-dashboard'+query)[1]
+                check('/admin/updates' in menu and 'UPDATES_' not in menu, 'Administrator menu entry missing')
+                check(dashboard.count('href="/admin/updates"') == 2, 'Sidebar and System dashboard entry disagree')
+        for role in ['reader', 'guest', 'inactive', 'deleted', 'mismatch']:
+            check('/admin/updates' not in request('/fixture-dashboard?role='+role)[1], 'Dashboard exposed updates to an unauthorized account')
         for method in ['POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']:
             status, _, headers = request(method=method)
             check(status == 405 and headers.get('Allow') == 'GET, HEAD', 'Mutation method available: '+method)
@@ -202,7 +209,8 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-') as directory:
         for locale in ['de_DE', 'en_US']:
             for width in [1280, 390, 320]:
                 script = r'''
-const f=document.querySelector('iframe');f.onload=()=>{setTimeout(()=>{
+const f=document.querySelector('#overview'),dashboard=document.querySelector('#dashboard');
+Promise.all([f,dashboard].map(frame=>new Promise(resolve=>frame.onload=resolve))).then(()=>{setTimeout(()=>{
  const d=f.contentDocument,w=f.contentWindow,failures=[];let checks=0;
  const check=(v,m)=>{checks++;if(!v)failures.push(m)};
  check(d.documentElement.scrollWidth<=w.innerWidth,'Horizontal overflow');
@@ -214,10 +222,16 @@ const f=document.querySelector('iframe');f.onload=()=>{setTimeout(()=>{
  check(w.location.hash==='#updates-migrations','Native anchor navigation failed');
  check(!d.querySelector('.dw-system-updates form,.dw-system-updates button'),'Execution control present');
  check(d.querySelectorAll('.dw-system-updates__migrations > li').length===2,'Baseline or shipping catalog missing');
+ const dd=dashboard.contentDocument,dw=dashboard.contentWindow;
+ check(dd.documentElement.scrollWidth<=dw.innerWidth,'Dashboard horizontal overflow');
+ check(!dd.body.textContent.includes('UPDATES_'),'Dashboard translation missing');
+ const entry=dd.querySelector('.dw-dashboard a[href="/admin/updates"]');
+ check(!!entry&&dd.querySelectorAll('a[href="/admin/updates"]').length===2,'Dashboard and menu disagree');
+ if(entry){entry.focus();check(dd.activeElement===entry,'Dashboard update link cannot receive keyboard focus');check(entry.closest('.dw-dashboard-card').querySelector('h3').textContent.trim()==='System','Updates outside System card')}
  document.querySelector('#metrics').textContent=JSON.stringify({checks,failures});
-},250)};
+},250)});
 '''
-                (work/'browser.html').write_text('<!doctype html><iframe src="'+origin+'/admin/updates/index?locale='+locale+'" style="width:'+str(width)+'px;height:2200px;border:0"></iframe><pre id="metrics"></pre><script>'+script+'</script>')
+                (work/'browser.html').write_text('<!doctype html><iframe id="overview" src="'+origin+'/admin/updates/index?role=tenantadmin&locale='+locale+'" style="width:'+str(width)+'px;height:2200px;border:0"></iframe><iframe id="dashboard" src="'+origin+'/fixture-dashboard?role=tenantadmin&locale='+locale+'" style="width:'+str(width)+'px;height:2200px;border:0"></iframe><pre id="metrics"></pre><script>'+script+'</script>')
                 with tempfile.TemporaryDirectory(prefix='dewawi-updates-chromium-') as profile:
                     result = subprocess.run([chrome, '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--user-data-dir='+profile, '--window-size=1400,2400', '--virtual-time-budget=5000', '--dump-dom', origin+'/browser.html'], capture_output=True, text=True, timeout=30)
                 metrics = re.findall(r'<pre id="metrics">(.*?)</pre>', result.stdout, re.S)

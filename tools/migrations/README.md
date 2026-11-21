@@ -17,27 +17,21 @@ identifier is currently shipped, so none is inferred from Git, timestamps or dat
 Missing, malformed or output-producing version files display an unknown version;
 there is no hardcoded fallback.
 
-`User.admin` is tenant administration, not installation operator authority. Access
-therefore requires an active, undeleted, authenticated admin account **and** its
-persisted user ID in the explicit installation allowlist. Add this setting to the
-appropriate environment section of the protected, untracked
-`configs/database.ini`, replacing the placeholder with the reviewed account ID:
+Since M2C, every authenticated, active, undeleted account with `user.admin = 1`
+may open the update overview and confirm a concrete plan. The authenticated user
+ID must match the current account. No INI or JSON user allowlist is required.
+Administrators from any tenant, including selected parent/child contexts, therefore
+receive this **installation-wide** authority. Ordinary users, inactive/deleted
+admins and mismatched identities are denied. The left menu and central System
+card use the same gate as the ACL and controller.
 
-```ini
-[production]
-; Existing database settings remain here.
-systemUpdates.operatorUserIds[] = "REPLACE_WITH_PERSISTED_ACCOUNT_ID"
-```
-
-Use one numeric ID per entry. Missing settings, scalar settings, malformed lists,
-inactive/deleted accounts or mismatched identities deny access. The default is
-no operators. Manage this grant through the installation's protected filesystem,
-never through the tenant Config table, user forms or permission JSON. Protect the
-operator account from delegation to ordinary tenant administrators. The selected
-tenant and parent/child sharing neither grant nor revoke this installation-wide
-authority. The menu, ACL and controller independently use the same gate. Both ACL
-and controller reject ungranted admins; the controller also checks requests that
-bypass the routing ACL.
+Execution still requires the separate worker and per-request root-controlled
+backup/restore and maintenance release. The worker independently checks the actual
+approving account in the database before execution and again at each precondition
+check; revoking admin/active status or deleting the account blocks queued work.
+`systemUpdates.queuePath` and private migration credentials remain protected
+technical installation settings. See the [M2B operations guide](../updates/README.md)
+for setup and removal of obsolete allowlist settings.
 
 The overview loads `Inspector.php`, the common M1 catalog/history reader. The
 CLI migrator inherits the same catalog, SQL splitter and history validation;
@@ -72,8 +66,8 @@ export/search, baseline/apply/bundle/SQL and repair actions remain rejected.
 Responses are private/no-store. DE/EN status text, native navigation, focusable
 alerts and responsive migration cards support keyboard and narrow-screen use.
 
-Configure operator access manually when the installation owner authorizes it.
-M2A itself does not edit private configuration or any installation database.
+No per-user configuration is necessary for administrator access. The implementation
+does not edit private configuration or any installation database.
 No SQL follow-up is required for this feature. Any missing baseline or failed
 migration still needs the separately authorized M1 verification/recovery process.
 

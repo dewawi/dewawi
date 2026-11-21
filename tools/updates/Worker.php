@@ -8,14 +8,11 @@ class DewawiUpdateWorker
 {
     private DewawiUpdateFiles $files;
     private Zend_Db_Adapter_Abstract $db;
-    private array $operators;
     private array $recent = [];
 
-    public function __construct(DewawiUpdateFiles $files, Zend_Db_Adapter_Abstract $db, array $operators)
+    public function __construct(DewawiUpdateFiles $files, Zend_Db_Adapter_Abstract $db)
     {
-        if (!$operators || !array_is_list($operators)) throw new RuntimeException('worker_configuration');
-        foreach ($operators as $id) if (!is_int($id) || $id < 1) throw new RuntimeException('worker_configuration');
-        $this->files = $files; $this->db = $db; $this->operators = $operators;
+        $this->files = $files; $this->db = $db;
     }
 
     public function identity(): string { return $this->migrator()->databaseIdentity($this->files->policy['installation']); }
@@ -56,7 +53,7 @@ class DewawiUpdateWorker
     {
         if (!DewawiUpdateFiles::keys($request, ['format', 'id', 'operator', 'token', 'digest', 'created_at', 'expires_at']) || $request['format'] !== 1
             || !DewawiUpdateFiles::hex($request['id']) || !DewawiUpdateFiles::hex($request['token']) || !DewawiUpdateFiles::hex($request['digest'], 64)
-            || !is_int($request['operator']) || !in_array($request['operator'], $this->operators, true)
+            || !is_int($request['operator']) || $request['operator'] < 1
             || !is_int($request['created_at']) || !is_int($request['expires_at']) || $request['created_at'] > time() || $request['created_at'] < $state['created_at']
             || $request['expires_at'] > $state['expires_at'] || $request['expires_at'] <= time() || $request['expires_at'] > $request['created_at'] + 900
             || $request['token'] !== $state['token'] || $request['digest'] !== $state['digest'] || !$state['plan'] || !$state['plan']['pending']) throw new RuntimeException('request_invalid');
@@ -97,7 +94,7 @@ class DewawiUpdateWorker
     private function operator(int $id): void
     {
         $user = $this->db->fetchRow('SELECT id, admin, activated, deleted FROM user WHERE id = ?', [$id]);
-        if (!$user || (int)$user['admin'] !== 1 || (int)$user['activated'] !== 1 || (int)$user['deleted'] !== 0 || !in_array($id, $this->operators, true)) throw new RuntimeException('operator_denied');
+        if (!$user || (int)$user['admin'] !== 1 || (int)$user['activated'] !== 1 || (int)$user['deleted'] !== 0) throw new RuntimeException('operator_denied');
     }
 
     public function tick(bool $publishOnly = false): array

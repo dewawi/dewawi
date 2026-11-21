@@ -55,6 +55,7 @@ $cards = [
 		'title' => 'ADMIN_SYSTEM',
 		'text' => 'ADMIN_DASHBOARD_SYSTEM_DESCRIPTION',
 		'links' => [
+			...(DEEC_SystemOperator::allowed() ? [['label' => 'UPDATES_TITLE', 'controller' => 'updates']] : []),
 			['label' => 'ADMIN_INFO', 'controller' => 'info'],
 			['label' => 'ADMIN_MODULES', 'controller' => 'module'],
 		],

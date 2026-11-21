@@ -48,8 +48,8 @@ try {
     };
     $private($args['config']);
     $config = json_decode(file_get_contents($args['config']), true, 32, JSON_THROW_ON_ERROR);
-    if (!is_array($config) || !DewawiUpdateFiles::keys($config, ['format', 'queue', 'database_config', 'environment', 'operator_ids']) || $config['format'] !== 1
-        || !is_string($config['queue']) || !is_string($config['database_config']) || !is_string($config['environment']) || !is_array($config['operator_ids'])) throw new RuntimeException('worker_configuration');
+    if (!is_array($config) || !DewawiUpdateFiles::keys($config, ['format', 'queue', 'database_config', 'environment']) || $config['format'] !== 1
+        || !is_string($config['queue']) || !is_string($config['database_config']) || !is_string($config['environment'])) throw new RuntimeException('worker_configuration');
     $files = new DewawiUpdateFiles($config['queue'], 'worker');
     $private($config['database_config']);
     $database = (new Zend_Config_Ini($config['database_config'], $config['environment']))->resources->db->toArray();
@@ -57,7 +57,7 @@ try {
     $params = array_intersect_key($database['params'] ?? [], array_flip(['host', 'port', 'unix_socket', 'username', 'password', 'dbname', 'charset']));
     if (empty($params['dbname']) || empty($params['username'])) throw new RuntimeException('worker_configuration');
     $params['charset'] = 'utf8mb4'; $params['driver_options'] = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_PERSISTENT => false];
-    $worker = new DewawiUpdateWorker($files, new Zend_Db_Adapter_Pdo_Mysql($params), $config['operator_ids']);
+    $worker = new DewawiUpdateWorker($files, new Zend_Db_Adapter_Pdo_Mysql($params));
     $result = $command === 'identity' ? ['database' => $worker->identity()] : $worker->tick($command === 'publish');
     // Detailed plans/results are in the protected queue, never in process logs.
     echo json_encode(['ok' => true] + ($command === 'identity' ? $result : ['issues' => $result['issues'], 'job' => $result['job']]), JSON_THROW_ON_ERROR) . "\n";

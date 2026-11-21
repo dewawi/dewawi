@@ -30,7 +30,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
         for entry in (ROOT/'library').iterdir():
             if entry.name != 'DEEC': (source/'library'/entry.name).symlink_to(entry)
         for name in ['css', 'js', 'images']: (source/name).symlink_to(ROOT/name)
-        (source/'configs/operator.ini').write_text('[production]\nsystemUpdates.operatorUserIds[] = 42\n')
+        (source/'configs/operator.ini').write_text('[production]\n')
         (work/'sessions').mkdir()
         env = dict(os.environ, DEWAWI_UPDATES_TEST_WORK=str(work), DEWAWI_UPDATES_PROTOCOL_TEST='1')
         subprocess.run(['mariadb-install-db', '--no-defaults', '--datadir='+str(work/'data'), '--auth-root-authentication-method=normal', '--skip-test-db'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -45,7 +45,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
         else: raise RuntimeError('Isolated MariaDB did not become ready: '+(work/'db.log').read_text())
         release = subprocess.check_output(['git', 'show', '8ab77ce4:install/config/structure.sql'], cwd=ROOT, text=True)
         sql('CREATE DATABASE template'); sql(release, 'template')
-        sql("INSERT INTO user (id,password,clientid,admin,activated,deleted) VALUES (42,'fixture',7,1,1,0)", 'template')
+        sql("INSERT INTO user (id,password,clientid,admin,activated,deleted) VALUES (42,'fixture',7,1,1,0),(43,'fixture',8,1,1,0),(44,'fixture',9,0,1,0)", 'template')
         private = work/'baseline.ini'; private.write_text('[test]\nresources.db.adapter=Pdo_Mysql\nresources.db.params.host=localhost\nresources.db.params.unix_socket="'+db_socket+'"\nresources.db.params.username=root\nresources.db.params.password=""\nresources.db.params.dbname=template\n'); private.chmod(0o600)
         subprocess.run(['php', str(source/'tools/migrate.php'), '--config='+str(private), '--environment=test', '--command=baseline'], check=True, capture_output=True)
         sql("CREATE USER overview@localhost IDENTIFIED BY 'fixture-secret'; CREATE USER executor@localhost IDENTIFIED BY 'private-worker-secret'; GRANT READ_ONLY ADMIN ON *.* TO executor@localhost")
@@ -113,8 +113,8 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
             status,body,_=request('/admin/updates/index'+query,agent=agent)
             check(status==200,'Overview failed')
             values=Inputs(body).values; check(set(values)=={'csrf','nonce','plan'},'No live plan approval form: '+body[-2000:]); values['confirm']='1'; return values
-        def approve(agent=None):
-            values=form(agent); status,body,_=request('/admin/updates/approve',values,agent)
+        def approve(agent=None,query=''):
+            values=form(agent,query); status,body,_=request('/admin/updates/approve'+query,values,agent)
             check(status==302,'Approval failed: '+str(status)+' '+body[-2000:])
             req=json.loads((work/'queue/inbox/request.json').read_text()); return req,values
         def release_request(req,change=None):
@@ -130,7 +130,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
                 if sql("SELECT COUNT(*) FROM dewawi_schema_migration WHERE status='started'",database)=='1': return
                 time.sleep(.05)
             raise AssertionError('No durable SQL start marker')
-        for role in ['tenantadmin','reader','guest','unconfigured','inactive','deleted','mismatch']:
+        for role in ['reader','guest','inactive','deleted','mismatch']:
             for tenant in [7,8,9]:
                 check(request('/admin/updates/approve?role='+role+'&tenant='+str(tenant)+'&direct=1',{'csrf':'forged'})[0]==403,'Unauthorized direct actor queued a job')
         for tenant in [7,8,9]: check(request('/admin/updates/index?tenant='+str(tenant))[0]==200,'Installation operator tied to tenant')
@@ -149,6 +149,12 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
         check((work/('queue/private/'+req['id']+'.plan.json')).is_file() and (work/('queue/private/'+req['id']+'.release.json')).is_file(),'Approved plan or external evidence not retained')
         before=sql('SELECT * FROM dewawi_schema_migration ORDER BY migration_id',database); driver(); driver(); check(sql('SELECT * FROM dewawi_schema_migration ORDER BY migration_id',database)==before,'Repeated worker ran completed SQL')
         check(request('/admin/updates/index')[0]==200,'Completed result page failed')
+        for tenant in [7,8,9]:
+            new_case(); req,_=approve(query='?role=tenantadmin&tenant='+str(tenant))
+            check(req['operator']==43, 'Approving administrator identity was replaced')
+            check(driver()['job']['status']=='waiting' and count_history()==1, 'Administrator approval bypassed external evidence')
+            release_request(req)
+            check(driver()['job']['status']=='completed' and count_history()==2, 'Worker rejected a valid administrator without an allowlist')
         new_case(full=True); req,_=approve(); driver(); release_request(req); check(driver()['job']['status']=='completed','Real shipping migration did not complete in isolated DB')
         check(sql("SHOW TABLES LIKE 'shopshippingclass'",database)=='shopshippingclass','Shipping tables absent')
         new_case(); first=client(); second=client(); a=form(first); b=form(second)
@@ -158,7 +164,14 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
         for mutation,code in [(lambda p:p.update(database='c'*64),'evidence_invalid'),(lambda p:p['restore'].update(confirmed_by=''),'evidence_invalid'),(lambda p:p['backup'].update(scope='unknown'),'evidence_invalid'),(lambda p:p.update(request_sha256='0'*64),'evidence_invalid'),(lambda p:p['maintenance'].update(privileged_writers_stopped=False),'evidence_invalid'),(lambda p:p.update(expires_at=int(time.time())-1),'evidence_invalid'),(lambda p:p['backup'].update(taken_at=int(time.time())-7200),'evidence_invalid')]:
             new_case(); req,_=approve(); driver(); release_request(req,mutation); r=driver(); check(r['job']['status']=='rejected' and r['job']['code']==code and count_history()==1,'Invalid external evidence executed')
         new_case(); req,_=approve(); driver(); release_request(req); sql('SET GLOBAL read_only=0'); check(driver()['job']['code']=='maintenance_required' and count_history()==1,'Lost technical write fence accepted')
-        new_case(); req,_=approve(); driver(); release_request(req); sql('UPDATE user SET admin=0 WHERE id=42',database); check(driver()['job']['code']=='operator_denied','Worker trusted web actor without own account check')
+        for change in ['admin=0','activated=0','deleted=1']:
+            new_case(); req,_=approve(); driver(); release_request(req); sql('UPDATE user SET '+change+' WHERE id=42',database)
+            result=driver(); check(result['job']['code']=='operator_denied' and count_history()==1,'Worker trusted revoked web actor: '+change)
+        new_case(); req,_=approve(); sql('UPDATE user SET admin=0 WHERE id=42',database)
+        check(driver()['job']['code']=='operator_denied' and count_history()==1,'Uncaptured approval survived admin revocation')
+        for actor in [44,999]:
+            new_case(); req,_=approve(); req['operator']=actor; write(work/'queue/inbox/request.json',req)
+            check(driver()['job']['code']=='operator_denied' and count_history()==1,'Worker trusted a non-admin or unknown stored account')
         new_case(); req,_=approve(); driver(); release_request(req); policy['database']='c'*64; write(work/'queue/control.json',policy,0o644); check(driver()['job']['code']=='database_identity' and count_history()==1,'Wrong installation database accepted')
         for change in ['file','catalog','history','expired']:
             new_case(); req,_=approve(); driver(); release_request(req)
@@ -171,7 +184,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
             r=driver(); check(r['job']['status']=='rejected' and count_history()==1,'Changed/expired plan executed: '+change)
         for field in ['operator','id','extra']:
             new_case(); req,_=approve()
-            if field=='operator':req['operator']=43
+            if field=='operator':req['operator']=0
             elif field=='id':req['id']='../../private'
             else:req['sql']='CREATE TABLE forged'
             write(work/'queue/inbox/request.json',req); r=driver(); check('request_invalid' in r['issues'] and count_history()==1,'Tampered input accepted: '+field)

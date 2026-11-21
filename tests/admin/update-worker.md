@@ -1,5 +1,7 @@
 # M2B verification and activation prerequisites
 
+Historical M2B results from `ba9df0c8`. M2C removes both user allowlists; current authorization checks and results are in [update-access.md](update-access.md). The OS isolation limitations below still apply.
+
 Checked locally on 2026-11-21 with PHP 8.3.6, MariaDB 10.11.14 and headless
 Chromium. No customer database, production configuration or production service
 was used. Application version remains 1.1.8.

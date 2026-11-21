@@ -23,7 +23,7 @@ $db = new class(['host' => 'localhost', 'unix_socket' => $work . '/mysql.sock', 
     }
 };
 $files = new UpdatesProtocolFiles($work . '/queue', 'worker');
-$worker = new DewawiUpdateWorker($files, $db, [42]);
+$worker = new DewawiUpdateWorker($files, $db);
 try {
     if (($argv[1] ?? '') === 'production-policy') { new DewawiUpdateFiles($work . '/queue', 'worker'); throw new LogicException('Production accepted emulated ownership'); }
     if (($argv[1] ?? '') === 'identity') $result = ['database' => $worker->identity()];
