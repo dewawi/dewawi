@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- M1: Kontrollierter CLI-Migrationsrunner für künftige Übergänge ab 1.1.8 → 1.1.9
+  mit expliziter 1.1.8-Schema-Basisprüfung, zentraler Historie, Prüfsummen,
+  Datenbanksperre und gemeinsamem Ausführungsweg für konsolidierte Updates.
+  Keine Feature-Migrationen oder Änderung veröffentlichter SQL-Dateien;
+  Anwendungsversion bleibt 1.1.8. Bedienung, Fehlerbehandlung und offene
+  Freigabeschritte: [Migrationsdokumentation](tools/migrations/README.md).
+
 ## 1.1.8 – 20.11.2026
 
 ### Description

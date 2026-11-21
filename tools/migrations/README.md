@@ -1,0 +1,181 @@
+# Controlled SQL migrations (M1)
+
+This is development infrastructure for transitions starting at **1.1.8 → 1.1.9**.
+It neither releases 1.1.9 nor changes application versions. The published
+`structure.sql`, `update-1.1.7-1.1.8.sql`, installer and old update paths are
+unchanged. No application bootstrap, HTTP, cron or shop entry point calls it.
+Run it manually with PHP CLI and an explicitly selected database configuration.
+
+## Operator commands
+
+Copy [database.sample.ini](database.sample.ini) to a private location outside the
+web root; restrict filesystem access and choose the existing Zend INI section.
+Use a dedicated connection without persistent connections, proxies that multiplex
+connections, or external transactions. Connection errors and SQL errors never
+print passwords, connection parameters, raw SQL or exception traces.
+
+```sh
+php tools/migrate.php --help
+php tools/migrate.php --config=/private/migration.ini --environment=migration
+php tools/migrate.php --config=/private/migration.ini --environment=migration --command=plan
+php tools/migrate.php --config=/private/migration.ini --environment=migration --command=baseline
+php tools/migrate.php --config=/private/migration.ini --environment=migration --command=apply
+```
+
+Default `status` and `plan` are equivalent read-only inspections. They create no
+tables or history rows. They show the baseline, existing history and pending IDs.
+An invalid schema, changed checksum, missing migration, dependency gap or
+unresolved execution exits nonzero. For unresolved rows the error names the
+migration, status and statement number; inspect its timestamps and SQLSTATE in the
+central table using an authorized read-only SQL session. Plan verifies file
+syntax restrictions and ordering, not whether arbitrary SQL will succeed on a
+particular future schema; it never executes migration statements for validation.
+
+`baseline` is an explicit write command. It first validates all 124 required
+tables, their engines/collations, column types/nullability/defaults/extra/generated
+expressions, ordered index definitions including prefixes and uniqueness, and
+ordered foreign keys with update/delete rules and the referenced database. Only
+then does it create the installation-wide InnoDB table `dewawi_schema_migration`
+and register
+`baseline/1.1.8`. The table has no client/tenant key. A second valid invocation
+does nothing. `apply` requires the registered baseline; it never registers it
+implicitly. History creation/registration requires CREATE/INSERT/UPDATE plus
+schema visibility; migration privileges depend on the reviewed SQL.
+
+The frozen [baseline-1.1.8.json](baseline-1.1.8.json) was extracted from the released
+fresh schema on isolated MariaDB 10.11.14. It records the source SQL hashes.
+It is independent of later changes to `structure.sql`. Do not regenerate or edit
+this reference when developing 1.1.9. Integer display widths, `utf8mb3` aliases,
+MariaDB quoted defaults, column order and current AUTO_INCREMENT counters are
+normalized/ignored. Required named indexes must match; additional indexes,
+columns and tables are retained, including the legitimate historical
+`address.street` index. Baseline validation performs no ALTER or data repair.
+The released schema contains no views, triggers, routines, events or CHECK
+constraints to register. Local extras are not a certification of custom code.
+
+An application version label proves nothing about the actual schema. Existing
+installations must complete the old version transitions in order before baseline
+registration. A partially applied 1.1.7 → 1.1.8 update is rejected if any required
+schema element is missing or changed. Review and apply only missing historical
+steps after checking the actual state and the authorized backup/restore process;
+never rerun the non-idempotent update wholesale. Schema inspection cannot prove
+that historical data backfills were performed. The operator must verify those
+separately against the old upgrade SQL. The baseline row certifies the checked
+schema, **not** execution of every old SQL statement. No historical SQL file is
+silently entered as a successful migration.
+
+## History, locking and partial failure
+
+Each row stores the full ID, SHA-256 of the exact SQL bytes, a second checksum of
+ID/file checksum/dependencies, `started_at`/`completed_at` UTC timestamps, status,
+current statement number and sanitized SQLSTATE error code. Baseline checksums
+refer to the frozen reference file. Completed history must form an unbroken
+prefix of the catalog, and executed definitions must still be present unchanged.
+Malformed history or unresolved rows block further commands.
+
+All database commands take a zero-wait MySQL/MariaDB `GET_LOCK` named by database
+identity. The same connection holds it throughout validation and execution;
+another updater/baseline/status command fails immediately with
+`migration_lock_busy`. This coordinates cooperating CLI processes on the same
+database server; it does not block application SQL or a separate multi-primary
+server. Use one authoritative database server and the normal maintenance window
+to control application writes. The lock is released in `finally`; losing the
+connection also releases it. No HTTP updater is installed, and both PHP files
+return 404 before loading any configuration when called outside CLI.
+
+Before running any migration SQL, `started` is committed in the InnoDB history
+table with autocommit enabled. The statement number is persisted before each
+statement. Only a complete successful run becomes `completed`. SQL failures are
+marked `failed`; a killed process or lost connection can leave `started` instead.
+Both states block retry and later migrations. There is no automatic rollback,
+resume, retry, mark-completed, checksum override, baseline override or repair
+command. Earlier DDL and DML may remain committed. Even an interruption after the
+last SQL statement but before completion recording requires manual review.
+
+For a failure/interruption:
+
+1. Stop competing updater/application writes. Preserve database and history,
+   the exact deployed catalog/bundle, and the error and statement number.
+2. Check authorized backups/restorability and compare the **actual** schema and
+   affected data with every statement of that migration. The statement number
+   indicates attempted execution, not proof of completion or rollback.
+3. Restore the consistent pre-run database/history backup where feasible, then
+   rerun only after the cause is corrected. Otherwise obtain a separately reviewed
+   recovery plan for the exact partial state. Any manual completion/history
+   reconciliation must be explicitly authorized and audited outside this tool;
+   never just delete a started/failed row and retry or falsify success.
+4. Re-run status/plan after the reviewed recovery. Keep successful migrations
+   immutable and retain the incident evidence.
+
+## Consolidated release updates
+
+The catalog convention is in
+[install/config/migrations/README.md](../../install/config/migrations/README.md).
+When an actual transition exists, generate its deterministic consolidated SQL
+without a database connection:
+
+```sh
+php tools/migrate.php --command=bundle --transition=1.1.8-1.1.9 --output=/private/update-1.1.8-1.1.9.sql
+php tools/migrate.php --config=/private/migration.ini --environment=migration --command=plan --bundle=/private/update-1.1.8-1.1.9.sql
+php tools/migrate.php --config=/private/migration.ini --environment=migration --command=apply --bundle=/private/update-1.1.8-1.1.9.sql
+```
+
+Generation refuses to overwrite a file. The bundle includes each exact SQL file,
+ID, file checksum and definition checksum. Applying a bundle requires byte-for-byte
+equality with the local catalog's generated bundle, including all metadata.
+The CLI then uses the same per-migration execution and history as ordinary apply;
+it does not send the whole bundle to the server. It applies only that transition,
+requires all earlier dependencies to be completed, and skips already completed
+IDs. Switching execution paths cannot run the migration twice.
+
+The SQL starts with a deliberate SIGNAL guard so an ordinary direct SQL import
+stops. Direct import (especially force/continue-on-error clients, removing the
+guard or executing a selected fragment) is **not a supported update path** and
+cannot maintain reliable history. Distribute individual migrations and registry
+with the bundle; the bundle is not a standalone replacement for the catalog.
+M1 generates no real `update-1.1.8-1.1.9.sql` and adds no feature migrations.
+
+## Fresh installations and future releases
+
+Current fresh installs remain the existing `structure.sql` + `data.sql` importer.
+After that completes, explicitly verify/register the frozen 1.1.8 baseline; then
+the CLI can apply future feature migrations. The normal installer never invokes
+this runner. The existing installer test and M1 tests exercise this path as well
+as the full published 1.1.7 upgrade.
+
+For every later feature migration, updating `structure.sql` for the equivalent
+fresh schema is mandatory in the same development block. Keep any required
+initial-data changes in sync too. Test both the complete prior-release upgrade
+and fresh installation, including schema equality, tenant/data invariants and
+already/partially applied states. Keep the frozen 1.1.8 reference unchanged.
+
+Before shipping 1.1.9, explicitly decide and implement the verified initialization
+of history for a fresh **1.1.9 snapshot**. It must compare the actual final schema
+and initial-data requirements with the approved release reference before entering
+the covered immutable IDs/checksums, using the same lock and central history.
+Do not run CREATE migrations over an already updated fresh snapshot or infer
+completion from a version string/table existence. M1 supports the currently
+released 1.1.8 fresh schema; it intentionally does not assert that future feature
+migrations were executed by an installer that does not yet exist.
+
+Before release, also approve the actual version change, finalize/catalog the real
+migrations, compare fresh/upgrade schemas, generate the consolidated file using
+this tool, run both update paths on target database versions, verify backups and
+historical data backfills, and review custom installation differences. MySQL
+compatibility is designed around shared INFORMATION_SCHEMA/GET_LOCK/DDL APIs;
+M1's actual database run uses MariaDB, not a separate MySQL server.
+
+## Regression tests
+
+```sh
+python3 -B tests/install/migrations.py
+python3 -B tests/install/import-db.py
+```
+
+The M1 runner creates its own temporary data directory, Unix socket, synthetic
+databases and loopback HTTP server. MariaDB has networking disabled. It never
+reads application database settings. Fixtures cover baseline/fresh/full historical
+upgrade, partial schema, checksums/dependencies/order, repeated apply, shared
+bundle history, failed/partial SQL, process interruption and concurrent commands,
+invalid history, credential-safe errors and PHP HTTP guards. Synthetic migrations
+are generated only inside its temporary source copy and are removed with it.
