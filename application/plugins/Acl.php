@@ -37,6 +37,10 @@ class Application_Plugin_Acl extends Zend_Controller_Plugin_Abstract
 		}
 
 		$user = Zend_Registry::get('User');
+		if ($module === 'admin' && $controller === 'updates') {
+			if (!DEEC_SystemOperator::allowed()) $this->denyAccess($request);
+			return;
+		}
 		if ($module === 'shops' && $controller === 'order') {
 			$permission = new DEEC_Permission((array)$user);
 			$action = $request->getActionName();

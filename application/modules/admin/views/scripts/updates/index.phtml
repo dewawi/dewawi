@@ -1,0 +1,60 @@
+<?php
+$this->title = $this->translate('UPDATES_TITLE');
+$this->headTitle($this->title);
+$report = $this->updateReport;
+$label = function(string $key): string { return $this->escape($this->translate($key)); };
+echo $this->Messages();
+?>
+<div class="dw-system-updates">
+    <h2><?php echo $this->escape($this->title); ?></h2>
+    <p><?php echo $label('UPDATES_READ_ONLY'); ?></p>
+    <p><a href="#updates-migrations"><?php echo $label('UPDATES_AVAILABLE'); ?></a></p>
+    <?php if ($report['issues']) : ?>
+    <div class="dw-alert dw-alert--danger" role="alert" tabindex="0" aria-labelledby="updates-blockers">
+        <div><h3 id="updates-blockers"><?php echo $label('UPDATES_BLOCKERS'); ?></h3>
+        <ul><?php foreach ($report['issues'] as $issue) : ?><li><?php echo $label('UPDATES_ISSUE_' . strtoupper($issue)); ?></li><?php endforeach; ?></ul></div>
+    </div>
+    <?php endif; ?>
+    <section aria-labelledby="updates-application">
+        <h3 id="updates-application"><?php echo $label('UPDATES_APPLICATION'); ?></h3>
+        <dl>
+            <dt><?php echo $label('UPDATES_RELEASED_VERSION'); ?></dt>
+            <dd><?php echo $this->escape($this->applicationVersion ?? $this->translate('APP_VERSION_UNKNOWN')); ?></dd>
+        </dl>
+    </section>
+    <section aria-labelledby="updates-database">
+        <h3 id="updates-database"><?php echo $label('UPDATES_DATABASE'); ?></h3>
+        <dl>
+            <dt><?php echo $label('UPDATES_BASELINE'); ?></dt><dd><?php echo $label('UPDATES_BASELINE_' . strtoupper($report['baseline'])); ?></dd>
+            <dt><?php echo $label('UPDATES_LAST'); ?></dt><dd><?php echo $report['last'] ? $this->escape($report['last']['id'] . ' · ' . $report['last']['completed'] . ' UTC') : $label($report['pending'] === null ? 'UPDATES_STATUS_UNKNOWN' : 'UPDATES_NONE'); ?></dd>
+            <dt><?php echo $label('UPDATES_PENDING'); ?></dt><dd><?php echo $report['pending'] === null ? $label('UPDATES_STATUS_UNKNOWN') : (int)$report['pending']; ?></dd>
+        </dl>
+        <p class="dw-alert dw-alert--warning"><?php echo $label('UPDATES_VERIFICATION_REQUIRED'); ?></p>
+    </section>
+    <section aria-labelledby="updates-migrations">
+        <h3 id="updates-migrations" tabindex="-1"><?php echo $label('UPDATES_AVAILABLE'); ?></h3>
+        <p><?php echo $label('UPDATES_CATALOG_NOTICE'); ?></p>
+        <?php if (!$report['migrations']) : ?><p><?php echo $label('UPDATES_STATUS_UNKNOWN'); ?></p><?php endif; ?>
+        <ul class="dw-system-updates__migrations">
+        <?php foreach ($report['migrations'] as $migration) : ?>
+            <li>
+                <h4><code><?php echo $this->escape($migration['id']); ?></code></h4>
+                <p><?php echo $label($migration['id'] === 'baseline/1.1.8' ? 'UPDATES_DESCRIPTION_BASELINE' : ($migration['id'] === '1.1.8-1.1.9/001-shop-shipping.sql' ? 'UPDATES_DESCRIPTION_SHIPPING' : 'UPDATES_NO_DESCRIPTION')); ?></p>
+                <dl>
+                    <dt><?php echo $label('UPDATES_TRANSITION'); ?></dt><dd><?php echo $migration['transition'] ? $this->escape($migration['transition']) : $label('UPDATES_BASELINE'); ?></dd>
+                    <dt><?php echo $label('UPDATES_STATUS'); ?></dt><dd><?php echo $label('UPDATES_STATUS_' . strtoupper($migration['status'])); ?></dd>
+                    <dt><?php echo $label('UPDATES_STARTED'); ?></dt><dd><?php echo $migration['started'] ? $this->escape($migration['started'] . ' UTC') : '—'; ?></dd>
+                    <dt><?php echo $label('UPDATES_COMPLETED'); ?></dt><dd><?php echo $migration['completed'] ? $this->escape($migration['completed'] . ' UTC') : '—'; ?></dd>
+                    <dt><?php echo $label('UPDATES_CHECKSUM'); ?></dt><dd><?php echo $label('UPDATES_CHECKSUM_' . strtoupper($migration['checksum'])); ?></dd>
+                </dl>
+            </li>
+        <?php endforeach; ?>
+        </ul>
+    </section>
+    <section aria-labelledby="updates-security">
+        <h3 id="updates-security"><?php echo $label('UPDATES_SECURITY'); ?></h3>
+        <p><?php echo $label('UPDATES_BACKUP_NOTICE'); ?></p>
+        <p><?php echo $label('UPDATES_RECOVERY_NOTICE'); ?></p>
+        <p><?php echo $label('UPDATES_EXECUTION_UNAVAILABLE'); ?></p>
+    </section>
+</div>

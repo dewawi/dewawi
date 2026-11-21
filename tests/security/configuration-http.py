@@ -176,7 +176,7 @@ with tempfile.TemporaryDirectory(prefix="dewawi-configuration-http-") as temp:
     (site / "media/linked.png").symlink_to(site / "media/header/logo.png")
     (site / "index.php").write_text(front)
     for relative in [
-        "index.php", "helper.php", "introduction.php", "requirements.php", "config/config.php",
+        "index.php", "helper.php", "SqlSplitter.php", "introduction.php", "requirements.php", "config/config.php",
         "templates/header.php", "templates/footer.php", "templates/introduction.php", "templates/requirements.php",
     ]:
         target = site / "install" / relative
@@ -197,6 +197,9 @@ with tempfile.TemporaryDirectory(prefix="dewawi-configuration-http-") as temp:
             target.write_bytes(marker)
     # The real installer now needs its translator and catalogues in the isolated installation.
     shutil.copyfile(root / "library/DEEC/Translate.php", site / "library/DEEC/Translate.php")
+    shutil.copyfile(root / "library/DEEC/Version.php", site / "library/DEEC/Version.php")
+    shutil.copyfile(root / "configs/version.php", site / "configs/version.php")
+    private += ["configs/version.php", "library/DEEC/Version.php", "install/SqlSplitter.php"]
     for locale in ["de_DE", "en_US"]:
         shutil.copytree(root / "languages" / locale / "installer", site / "languages" / locale / "installer", dirs_exist_ok=True)
     for manager in ["FileManager", "MediaManager"]:

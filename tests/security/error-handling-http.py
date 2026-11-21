@@ -175,7 +175,7 @@ with tempfile.TemporaryDirectory(prefix="dewawi-errors-http-") as temp:
         shutil.copyfile(site / "configs/database.ini", temp / case / "configs/database.ini")
         (temp / case / "configs" / ("application.ini" if case == "config" else "database.ini")).write_text('[broken]\nvalue = "unterminated\n')
 
-    for relative in ["index.php", "helper.php", "database.php", "importSQL.php", "introduction.php", "requirements.php", "config/config.php", "templates/header.php", "templates/footer.php", "templates/introduction.php", "templates/requirements.php", "templates/database.php", "templates/importSQL.php"]:
+    for relative in ["index.php", "helper.php", "SqlSplitter.php", "database.php", "importSQL.php", "introduction.php", "requirements.php", "config/config.php", "templates/header.php", "templates/footer.php", "templates/introduction.php", "templates/requirements.php", "templates/database.php", "templates/importSQL.php"]:
         target = temp / "installer/install" / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(root / "install" / relative, target)

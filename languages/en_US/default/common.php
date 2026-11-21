@@ -1,4 +1,6 @@
 <?php return array(
+	'APP_VERSION' => 'Version',
+	'APP_VERSION_UNKNOWN' => 'Unknown – verification required',
 	'LIST_NO_ENTRIES_FOUND' => 'No entries found',
 	'LIST_RECORDS' => 'Records',
 	'LIST_TOTAL_VALUE' => 'Total value',

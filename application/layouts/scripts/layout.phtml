@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 3) . '/library/DEEC/Version.php';
 $this->headTitle()->setSeparator(' - ');
 $this->headTitle('DEWAWI');
 echo $this->doctype();
@@ -215,7 +216,7 @@ $currentDate = $date->get(Zend_Date::WEEKDAY) . ', '
 				</p>
 
 				<?php if ($this->module == 'admin') : ?>
-					<p>Version 1.1.8</p>
+					<p><?php echo $this->escape($this->translate('APP_VERSION') . ' ' . (dewawiVersion() ?? $this->translate('APP_VERSION_UNKNOWN'))); ?></p>
 				<?php endif; ?>
 			</div>
 		</footer>

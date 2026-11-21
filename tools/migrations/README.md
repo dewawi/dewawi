@@ -7,6 +7,107 @@ C4A.2 adds the first feature migration and synchronizes the development
 `structure.sql`; it does not regenerate the frozen reference. No application bootstrap, HTTP, cron or shop entry point calls it.
 Run it manually with PHP CLI and an explicitly selected database configuration.
 
+## Read-only system overview (M2A)
+
+`Administration → System → Updates` (`/admin/updates/index`) displays the
+released version from the Git-versioned `configs/version.php`, shared with the
+ERP footer and installer. The released version remains **1.1.8**, independently
+of development transitions and registered database migrations. No reliable build
+identifier is currently shipped, so none is inferred from Git, timestamps or dates.
+Missing, malformed or output-producing version files display an unknown version;
+there is no hardcoded fallback.
+
+`User.admin` is tenant administration, not installation operator authority. Access
+therefore requires an active, undeleted, authenticated admin account **and** its
+persisted user ID in the explicit installation allowlist. Add this setting to the
+appropriate environment section of the protected, untracked
+`configs/database.ini`, replacing the placeholder with the reviewed account ID:
+
+```ini
+[production]
+; Existing database settings remain here.
+systemUpdates.operatorUserIds[] = "REPLACE_WITH_PERSISTED_ACCOUNT_ID"
+```
+
+Use one numeric ID per entry. Missing settings, scalar settings, malformed lists,
+inactive/deleted accounts or mismatched identities deny access. The default is
+no operators. Manage this grant through the installation's protected filesystem,
+never through the tenant Config table, user forms or permission JSON. Protect the
+operator account from delegation to ordinary tenant administrators. The selected
+tenant and parent/child sharing neither grant nor revoke this installation-wide
+authority. The menu, ACL and controller independently use the same gate. Both ACL
+and controller reject ungranted admins; the controller also checks requests that
+bypass the routing ACL.
+
+The overview loads `Inspector.php`, the common M1 catalog/history reader. The
+CLI migrator inherits the same catalog, SQL splitter and history validation;
+the web process never includes the CLI migrator or runner. The installer SQL
+splitter is extracted without changing its API or parsing behavior, so inspection
+does not install the installer's error handlers. The shared inspector has no
+baseline registration, SQL execution, lock/session mutation or history repair API.
+It reads only catalog files and the current database's central
+`dewawi_schema_migration` metadata/history. It does not initialize a missing table.
+No second schema-version store or SQL migration is introduced.
+
+This is an **unlocked snapshot**, not an approved execution plan or a live schema
+certificate. Only the central history table's engine/columns/primary key,
+registered row state, statement counts, ordered dependencies, and file/definition
+checksums are checked. Full application-schema inspection and lock acquisition
+remain in the separate CLI run. The page always says verification is required.
+The shared row validation also rejects invalid/zero history timestamps instead
+of displaying them as successful completion.
+It cannot prove current schema integrity or past data backfills, even when every
+registered checksum matches. Concurrent CLI changes can invalidate the displayed
+snapshot immediately. An empty history never certifies the baseline; existing
+shipping tables never certify migration 001. An invalid or unreadable history
+withholds the pending count and last-success summary. Unknown IDs, raw database
+exceptions, SQLSTATE values, SQL contents and private paths are never displayed.
+Descriptions come only from reviewed translation strings for known catalog IDs.
+
+GET and HEAD of `index` are the only allowed operations. Every other action,
+including inherited CRUD/export/search actions, is rejected before base-controller
+initialization; mutation methods on `index` return 405. There are no forms,
+execution buttons, SQL inputs, command parameters or shell calls. Responses are
+private/no-store. DE/EN labels, status text, native anchor navigation, focusable
+alerts and responsive migration cards support keyboard and narrow-screen use.
+
+Configure operator access manually when the installation owner authorizes it.
+M2A itself does not edit private configuration or any installation database.
+No SQL follow-up is required for this feature. Any missing baseline or failed
+migration still needs the separately authorized M1 verification/recovery process.
+
+## M2B boundary (design only)
+
+No worker, queue or update-request table is implemented in M2A. A separately
+authorized M2B must implement this sequence:
+
+1. The system operator reviews a freshly verified plan with explicit immutable
+   migration IDs, dependencies, checksums and installation/database identity.
+2. An explicit, authenticated, CSRF-protected confirmation approves exactly that
+   plan. Bind approval to the operator, plan identity and expiry; changed plans
+   require new approval. A read-only M2A snapshot is insufficient approval.
+3. Require auditable evidence of a suitable backup and demonstrated restorability,
+   plus the agreed maintenance window and control of application writes.
+4. A separate privileged CLI worker consumes only a validated structured approval
+   record. The web process must not have worker credentials, migration privileges
+   or a general shell/SQL channel. It cannot supply shell commands, executables,
+   configuration paths, arbitrary SQL, database credentials or bundle paths. The
+   worker resolves fixed installation configuration and approved catalog IDs
+   locally, and must reject replayed, expired or altered requests.
+5. Before any write the worker invokes M1 under its existing installation lock,
+   rereads central history, checksums, dependencies and the approved plan, and
+   stops on drift, unresolved state or missing prerequisites. Reuse M1's central
+   history and interruption semantics; never add an independent success ledger.
+6. Record approval, start, result and sanitized errors with an auditable request
+   identity. Keep privileged diagnostic details outside the web response.
+7. Started/failed migrations remain blocked for separately authorized manual
+   inspection and recovery. DDL may already be committed. Never resume, override
+   checksums or manufacture successful history automatically.
+
+Choose and review the worker trust boundary, approval persistence/replay control,
+backup evidence, maintenance coordination and audit access in M2B before adding
+execution. M2A does not start that work or grant permission to update a database.
+
 ## Operator commands
 
 Copy [database.sample.ini](database.sample.ini) to a private location outside the
@@ -180,7 +281,11 @@ M1's actual database run uses MariaDB, not a separate MySQL server.
 ```sh
 python3 -B tests/install/migrations.py
 python3 -B tests/install/import-db.py
+python3 -B tests/admin/updates.py
 ```
+
+M2A coverage and concrete results are recorded in
+[tests/admin/updates.md](../../tests/admin/updates.md).
 
 The M1 runner creates its own temporary data directory, Unix socket, synthetic
 databases and loopback HTTP server. MariaDB has networking disabled. It never

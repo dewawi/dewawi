@@ -52,10 +52,11 @@ with tempfile.TemporaryDirectory(prefix='dewawi-migrations-') as directory:
         mirror = work/'source'
         for relative in ['tools/migrations', 'install/config/migrations']:
             (mirror/relative).mkdir(parents=True)
-        for relative in ['tools/migrate.php', 'tools/migrations/Migrator.php', 'tools/migrations/baseline-1.1.8.json']:
+        for relative in ['tools/migrate.php', 'tools/migrations/Migrator.php', 'tools/migrations/Inspector.php', 'tools/migrations/baseline-1.1.8.json']:
             shutil.copyfile(ROOT/relative, mirror/relative)
         (mirror/'library').symlink_to(ROOT/'library', target_is_directory=True)
         (mirror/'install/helper.php').symlink_to(ROOT/'install/helper.php')
+        (mirror/'install/SqlSplitter.php').symlink_to(ROOT/'install/SqlSplitter.php')
         registry_root = mirror/'install/config/migrations'
         baseline_reference = json.loads((ROOT/'tools/migrations/baseline-1.1.8.json').read_text())
         release_structure = subprocess.run(['git', 'show', '8ab77ce4:install/config/structure.sql'], cwd=ROOT, check=True, capture_output=True, text=True).stdout

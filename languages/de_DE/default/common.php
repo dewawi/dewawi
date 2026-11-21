@@ -1,4 +1,6 @@
 <?php return array(
+	'APP_VERSION' => 'Version',
+	'APP_VERSION_UNKNOWN' => 'Unbekannt – Prüfung erforderlich',
 	//Language
 	'LANGUAGES_DE_DE' => 'Deutsch',
 	'LANGUAGES_EN_US' => 'Englisch',

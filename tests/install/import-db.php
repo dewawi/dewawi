@@ -16,7 +16,7 @@ $db = new mysqli('localhost', 'root', '');
 $db->set_charset('utf8mb4');
 mkdir($work . '/install/config', 0700, true);
 mkdir($work . '/install/templates', 0700);
-foreach (['importSQL.php', 'helper.php', 'templates/importSQL.php'] as $file) {
+foreach (['importSQL.php', 'helper.php', 'SqlSplitter.php', 'templates/importSQL.php'] as $file) {
     copy($root . '/install/' . $file, $work . '/install/' . $file);
 }
 foreach (['library', 'languages'] as $directory) {

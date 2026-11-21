@@ -1,4 +1,5 @@
 <?php return [
+	'INSTALL_VERSION_UNKNOWN' => 'Unbekannt – Versionsdatei prüfen',
 	'INSTALL_DATABASE_CONNECTION' => 'Datenbankverbindung',
 	'INSTALL_DATABASE_INTRO' => 'Für die Datenbankverbindung benötigen Sie die Zugangsdaten Ihres Hosting-Anbieters. Wenn Ihnen diese nicht vorliegen, wenden Sie sich vor dem Fortfahren an Ihren Anbieter.',
 	'INSTALL_DATABASE_DETAILS' => 'Geben Sie hier die Zugangsdaten für Ihre Datenbank ein.',

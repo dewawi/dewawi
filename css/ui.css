@@ -2875,3 +2875,16 @@ cursor: default;
   .dw-app-shell__inner.admin .dw-app-header, .dw-app-shell__inner.items .dw-app-header { flex-wrap: wrap; }
   .dw-app-shell__inner.admin .dw-app-header__meta, .dw-app-shell__inner.items .dw-app-header__meta { min-width: 0; }
 }
+
+.dw-system-updates { min-width: 0; overflow-wrap: anywhere; }
+.dw-system-updates section { margin-block: 24px; }
+.dw-system-updates dl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 8px 16px; }
+.dw-system-updates dt { font-weight: 600; }
+.dw-system-updates dd { min-width: 0; margin: 0; }
+.dw-system-updates__migrations { list-style: none; padding: 0; }
+.dw-system-updates__migrations > li { padding-block: 12px; border-top: 1px solid var(--dw-color-border); }
+.dw-system-updates :focus-visible { outline: 2px solid var(--dw-color-primary); outline-offset: 3px; }
+@media (max-width: 600px) {
+  .dw-system-updates dl { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .dw-system-updates dd { margin-bottom: 8px; }
+}

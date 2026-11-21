@@ -1,4 +1,5 @@
 <?php return [
+	'INSTALL_VERSION_UNKNOWN' => 'Unknown – check version file',
 	'INSTALL_DATABASE_CONNECTION' => 'Database connection',
 	'INSTALL_DATABASE_INTRO' => 'We need some information on the database. In all likelihood, these items were supplied to you by your Web Host. If you do not have this information, then you will need to contact them before you can continue.',
 	'INSTALL_DATABASE_DETAILS' => 'Below you should enter your database connection details.',

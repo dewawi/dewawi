@@ -61,6 +61,7 @@ class Zend_View_Helper_AdminMenu extends Zend_View_Helper_Abstract
 		<?php if($this->view->user['admin']) : ?>
 			<h4><?php echo $this->view->translate('ADMIN_SYSTEM'); ?></h4>
 			<ul>
+				<?php if (DEEC_SystemOperator::allowed()) : ?><li><a href="<?php echo $this->view->escape($this->view->url(['module' => 'admin', 'controller' => 'updates', 'action' => 'index'], null, true)); ?>"><?php echo $this->view->translate('UPDATES_TITLE'); ?></a></li><?php endif; ?>
 				<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'info', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_INFO'); ?></a></li>
 				<li><a href="<?php echo $this->view->url(array('module'=>'admin', 'controller'=>'module', 'action'=>'index', 'type'=>null, 'id'=>null)); ?>"><?php echo $this->view->translate('ADMIN_MODULES'); ?></a></li>
 			</ul>

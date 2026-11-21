@@ -1,4 +1,5 @@
 <?php
+	require_once dirname(__DIR__, 2) . '/library/DEEC/Version.php';
 	$config['header'] = "DEWAWI Setup Wizard";
 	$config['applicationPath'] = "../";
 	$config['database_file'] = "configs/database.ini";
@@ -6,7 +7,7 @@
 	// INTRODUCTION
 	$introduction = array();
 	$introduction["product"] = "DEWAWI";
-	$introduction["productVersion"] = "1.1.8";
+	$introduction["productVersion"] = dewawiVersion() ?? installerText('INSTALL_VERSION_UNKNOWN');
 	$introduction["company"] = "DEWAWI Open Source";
 
 	// SERVER REQUIREMENTS
