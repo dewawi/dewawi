@@ -36,6 +36,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-') as directory:
         states = {name: 'updates_'+name for name in ['missing', 'empty', 'baseline', 'completed', 'started', 'failed', 'checksum', 'definition', 'baselinechecksum', 'unknown', 'gap', 'invalidstatus', 'ambiguous', 'invaliddate', 'badtable']}
         (work/'states.json').write_text(json.dumps(states))
         env = dict(os.environ, DEWAWI_UPDATES_TEST_WORK=str(work))
+        env.pop('DEWAWI_GOBD_REPORT_DIR', None)
         subprocess.run(['mariadb-install-db', '--no-defaults', '--datadir='+str(work/'data'), '--auth-root-authentication-method=normal', '--skip-test-db'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         db_socket = str(work/'mysql.sock')
         db_server = subprocess.Popen(['mariadbd', '--no-defaults', '--datadir='+str(work/'data'), '--socket='+db_socket, '--skip-networking', '--pid-file='+str(work/'pid'), '--log-error='+str(work/'db.log'), '--innodb-buffer-pool-size=32M', '--innodb-log-file-size=8M'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

@@ -2,16 +2,21 @@
 $label = function(string $key): string { return $this->escape($this->translate($key)); };
 $url = function(string $action): string { return $this->escape($this->url(['module' => 'admin', 'controller' => 'updates', 'action' => $action], null, true)); };
 $h = $this->hostingState;
+$setup = $this->hostingSetup;
 $csrf = $this->escape($this->hostingCsrf ?? '');
 ?>
 <section aria-labelledby="updates-hosting">
     <h3 id="updates-hosting"><?php echo $label('UPDATES_HOST_TITLE'); ?></h3>
     <p><?php echo $label('UPDATES_HOST_BOUNDARY'); ?></p>
+    <p role="status"><?php echo $label('UPDATES_HOST_SETUP_' . strtoupper($setup['status'])); ?></p>
+    <?php if ($setup['source']) : ?><p><?php echo $label('UPDATES_HOST_SOURCE_' . strtoupper($setup['source'])); ?></p><?php endif; ?>
+    <?php if ($setup['code']) : ?><p class="dw-alert dw-alert--warning"><?php echo $label('UPDATES_HOST_CODE_' . strtoupper($setup['code'])); ?></p><?php endif; ?>
     <?php if (!$h) : ?>
-        <p class="dw-alert dw-alert--warning"><?php echo $label('UPDATES_HOST_SETUP'); ?></p>
+        <?php if (in_array($setup['status'], ['blocked', 'unavailable'], true)) : ?><p class="dw-alert dw-alert--warning"><?php echo $label('UPDATES_HOST_SETUP'); ?></p><?php endif; ?>
         <?php if ($this->hostingCsrf) : ?>
         <form method="post" action="<?php echo $url('initialize'); ?>" data-autosave="false">
             <input type="hidden" name="csrf" value="<?php echo $csrf; ?>">
+            <p><label><input type="checkbox" name="confirm" value="1" required> <?php echo $label('UPDATES_HOST_CONFIRM_INITIALIZE'); ?></label></p>
             <p><label><?php echo $label('UPDATES_HOST_PASSWORD'); ?> <input type="password" name="password" autocomplete="current-password" required></label></p>
             <button type="submit" class="dw-btn"><?php echo $label('UPDATES_HOST_INITIALIZE'); ?></button>
         </form>

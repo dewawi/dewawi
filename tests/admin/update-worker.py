@@ -33,6 +33,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
         (source/'configs/operator.ini').write_text('[production]\nsystemUpdates.mode=worker\n')
         (work/'sessions').mkdir()
         env = dict(os.environ, DEWAWI_UPDATES_TEST_WORK=str(work), DEWAWI_UPDATES_PROTOCOL_TEST='1')
+        env.pop('DEWAWI_GOBD_REPORT_DIR', None)
         subprocess.run(['mariadb-install-db', '--no-defaults', '--datadir='+str(work/'data'), '--auth-root-authentication-method=normal', '--skip-test-db'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         db_socket = str(work/'mysql.sock')
         server = subprocess.Popen(['mariadbd', '--no-defaults', '--datadir='+str(work/'data'), '--socket='+db_socket, '--skip-networking', '--pid-file='+str(work/'pid'), '--log-error='+str(work/'db.log'), '--innodb-buffer-pool-size=32M', '--innodb-log-file-size=8M'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -130,6 +131,9 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
                 if sql("SELECT COUNT(*) FROM dewawi_schema_migration WHERE status='started'",database)=='1': return
                 time.sleep(.05)
             raise AssertionError('No durable SQL start marker')
+        if '--storage-only' in sys.argv:
+            runpy.run_path(str(ROOT/'tests/admin/update-hosting.py'))['run'](globals(), True)
+            raise SystemExit(0)
         if '--hosting-only' in sys.argv:
             runpy.run_path(str(ROOT/'tests/admin/update-hosting.py'))['run'](globals())
             raise SystemExit(0)

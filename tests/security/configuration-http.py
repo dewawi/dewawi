@@ -133,6 +133,7 @@ with tempfile.TemporaryDirectory(prefix="dewawi-configuration-http-") as temp:
     site.mkdir()
     private = [
         "configs/application.ini", "configs/database.ini", "configs/magento.ini", "configs/albis.env", "configs/albis.env.bak",
+        "configs/update-storage.json", "configs/update-storage.ready.json",
         "application/Bootstrap.php", "languages/de_DE/default/default.php",
         "logs/cron.log", "logs/extensionless", "session/sess_fixture", "templates/private.phtml",
         "tests/security/fixture.php", "tests/security/file-access.php", "tests/security/url-download.php", "library/DEEC/UrlDownload.php", "library/DEEC/Fixture.php", "library/Zend/Fixture.php",

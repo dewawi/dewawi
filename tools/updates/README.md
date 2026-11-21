@@ -5,6 +5,9 @@ in [HOSTING.md](HOSTING.md). It needs no new Linux account, root-owned queue,
 global database read-only flag, systemd or CLI access. Its explicit HTTP execution
 uses M1 with a cooperative maintenance fence and mandatory operational evidence.
 Web and migration have the same OS/DB authority; this has no OS isolation.
+M2F can initialize its private directory through the UI using an existing verified
+GoBD report area, with a pinned installation-specific locator. Explicit M2E paths
+remain supported; unavailable safe storage results in a documented manual fallback.
 
 **B: separate CLI worker** below remains the stricter optional mode. Its ownership,
 root-release, private credentials and global read-only requirements are unchanged.

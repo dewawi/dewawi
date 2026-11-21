@@ -26,9 +26,11 @@ class Admin_UpdatesController extends DEEC_Controller_AdminAction
     private function hosting(bool $initializing = false): ?DewawiHostingUpdates
     {
         $options = $this->options();
-        if (DEEC_UpdateMaintenance::mode($options) !== 'shared' || empty($options['statePath'])) return null;
+        $selection = DEEC_UpdateMaintenance::storage($options, dirname(APPLICATION_PATH), $initializing);
+        if (!$selection) return null;
+        if (!$initializing && $selection['record'] && !$selection['ready']) throw new RuntimeException('storage_incomplete');
         require_once dirname(APPLICATION_PATH) . '/tools/updates/Hosting.php';
-        return new DewawiHostingUpdates($options['statePath'], Zend_Db_Table::getDefaultAdapter(), dirname(APPLICATION_PATH) . '/install/config/migrations', $initializing);
+        return new DewawiHostingUpdates($selection['path'], Zend_Db_Table::getDefaultAdapter(), dirname(APPLICATION_PATH) . '/install/config/migrations', $initializing, $selection);
     }
 
     protected function queue(): ?Admin_Service_SystemUpdates
@@ -63,6 +65,7 @@ class Admin_UpdatesController extends DEEC_Controller_AdminAction
         $version = dewawiVersion();
         if ($version === null) $report['issues'][] = 'version_invalid';
         $state = $confirmation = $hostingState = $hostingCsrf = null;
+        $hostingSetup = ['status' => 'unavailable', 'source' => null, 'code' => null];
         $hostingMode = DEEC_UpdateMaintenance::mode($this->options()) === 'shared';
         set_error_handler(static function(int $severity): bool {
             if (!(error_reporting() & $severity)) return false;
@@ -73,14 +76,27 @@ class Admin_UpdatesController extends DEEC_Controller_AdminAction
             if ($queue && isset($inspector)) { $state = $queue->state($inspector); $confirmation = $queue->confirmation($state); }
             if ($hostingMode) {
                 require_once dirname(APPLICATION_PATH) . '/tools/updates/Hosting.php';
-                if (!empty($this->options()['statePath'])) $hostingCsrf = DewawiHostingUpdates::csrf();
-                $hosting = $this->hosting();
-                if ($hosting) $hostingState = $hosting->status();
+                $selection = DEEC_UpdateMaintenance::storage($this->options(), dirname(APPLICATION_PATH), true);
+                if ($selection) {
+                    $hostingCsrf = DewawiHostingUpdates::csrf();
+                    $hostingSetup = ['status' => 'available', 'source' => $selection['source'], 'code' => null];
+                    if (($selection['record'] && !$selection['ready']) || (is_dir($selection['path']) && iterator_count(new FilesystemIterator($selection['path'])) > 0)) $hostingSetup['status'] = 'incomplete';
+                    if ((!$selection['record'] || $selection['ready']) && is_file($selection['path'] . '/control.json')) {
+                        $hostingState = $this->hosting()->status(); $hostingSetup['status'] = 'initialized';
+                    }
+                }
             }
-        } catch (Throwable $error) { $state = null; }
+        } catch (Throwable $error) {
+            $state = null;
+            $pinned = @lstat(dirname(APPLICATION_PATH) . '/configs/update-storage.json') !== false || @lstat(dirname(APPLICATION_PATH) . '/configs/update-storage.ready.json') !== false;
+            $hostingSetup = ['status' => $hostingSetup['source'] === null && !$pinned ? 'unavailable' : 'blocked', 'source' => $hostingSetup['source'],
+                'code' => class_exists('DewawiHostingUpdates', false) && in_array($error->getMessage(), DewawiHostingUpdates::CODES, true) ? $error->getMessage() : 'configuration'];
+            $hostingCsrf = null;
+        }
         finally { restore_error_handler(); }
         $this->view->assign(['applicationVersion' => $version, 'updateReport' => $report, 'workerState' => $state, 'updateConfirmation' => $confirmation,
             'hostingMode' => $hostingMode, 'hostingState' => $hostingState, 'hostingCsrf' => $hostingCsrf,
+            'hostingSetup' => $hostingSetup,
             'submittedUpdate' => Admin_Service_SystemUpdates::session()->submitted]);
         $this->assignMessages();
     }
@@ -126,9 +142,13 @@ class Admin_UpdatesController extends DEEC_Controller_AdminAction
             $keys = ['csrf'];
             if (in_array($action, ['initialize', 'maintenance', 'approve', 'execute', 'finish'], true)) $keys[] = 'password';
             if ($action === 'approve') $keys = array_merge($keys, ['nonce', 'plan', 'confirm']);
+            if ($action === 'initialize') $keys[] = 'confirm';
             if ($action === 'execute') $keys[] = 'request';
             $h->authorize($post, $keys, in_array('password', $keys, true));
-            if ($action === 'initialize') $h->initialize();
+            if ($action === 'initialize') {
+                if ($post['confirm'] !== '1') throw new RuntimeException('confirmation');
+                $h->initialize();
+            }
             elseif ($action === 'maintenance') $h->begin();
             elseif ($action === 'prepare') $h->prepare();
             elseif ($action === 'approve') $h->approve($post);

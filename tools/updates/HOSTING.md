@@ -51,7 +51,100 @@ load-balanced deployments and uncoordinated writers are unsupported in A and mus
 use an appropriate separately reviewed operating alternative. The fixed
 single-local-host control scope is an operating contract, not topology detection.
 
-## One-time setup without CLI or root
+## Automatic setup through the UI (M2F)
+
+Open Administration → System → Updates. The page distinguishes available,
+initialized, incomplete, unavailable and blocked storage. GET does not create a
+directory, locator, identity or migration row. Initialization requires a current
+active administrator, CSRF, password reauthentication and explicit confirmation.
+
+An existing explicit `systemUpdates.statePath` takes priority before automatic
+selection. Existing M2E directories/control/evidence remain in place; there is no
+automatic conversion or move. A valid repeated initialization preserves the
+existing control and lock. Damaged/missing locks, identity conflicts, unsafe paths
+or unresolved initialization data are not repaired automatically.
+
+There is no general private application data root in the current installation
+model. Session/cache/archive directories are inside the repository/web tree and
+cannot be reused. The one automatic provider is the **already configured**
+`DEWAWI_GOBD_REPORT_DIR`, used by the existing GoBD exporter for private reports.
+No HOME, PHP temporary directory, sibling named private or list of guessed paths
+is searched. Do not configure a fake GoBD directory just to enable updates.
+
+Automatic setup requires all of the following:
+
+- An existing canonical provider directory, mode 0700, readable/writable by the
+  actual PHP account, with safe ancestors and no symlinks. Its name proves nothing.
+- Provider and derived child outside the repository and all known public roots.
+  Web setup uses the canonical `DOCUMENT_ROOT`; declare other public document roots
+  or public alias targets in the private `systemUpdates.documentRoots[]` list.
+  Operators must supply the complete deployment boundary; PHP cannot discover
+  arbitrary Apache/nginx aliases or unrelated virtual hosts automatically.
+- Durable local storage, not `/tmp`, `/var/tmp`, `/run`, `/dev/shm` or PHP's temporary
+  directory. Automatic selection reads Linux `/proc/self/mountinfo` and accepts
+  only ext2/ext3/ext4, XFS, Btrfs and ZFS. Unknown, network, overlay and memory
+  filesystems, or unavailable mount information, cause a controlled refusal.
+- The existing canonical configs directory must be writable and on a recognized
+  local filesystem. After authorization, private probe files test exclusive flock,
+  atomic publication/rename and file/directory fsync in both relevant directories;
+  only those probe files are removed. Existing reports are never modified.
+- The provider must remain retained storage: exempt the update child from any
+  external report cleanup policy. Back up the technical binding and state together.
+
+The fixed child name is `dewawi-updates-` plus the first 32 hex characters of
+SHA-256 of the canonical installation root. Two distinct installations get distinct
+children. This hash is not an application/database schema version.
+
+Only after confirmation, immutable mode-0600 `configs/update-storage.json` pins
+the chosen path, known public roots, installation-root hash and proposed control
+identity. This is small technical installation configuration, replacing the manual
+path entry; all actual update state, plans, jobs, evidence and history remain in
+the private external directory. The technical locator is Git-ignored and protected
+by the existing configs HTTP denial, like other private installation configuration.
+It contains no DB credentials or SQL and is not a second migration history.
+
+The claim is durable **before** directory creation. Initialization creates the
+0700 child and 0600 gate/control with that exact claimed ID/database fingerprint.
+`configs/update-storage.ready.json` records completion and binds the locator hash.
+Both records are immutable: competing processes cannot replace the winner's path
+or identity. A confirmed retry can finish a claim interrupted before completion
+only while the state contains no jobs/maintenance/unknown files, retaining its pin.
+An already initialized directory is reused without overwriting any state file.
+
+Every normal web entry, pre-bootstrap maintenance guard, technical CLI and optional
+hosting consumer uses this same locator resolver. There is no provider search on
+ordinary requests. Changed/absent GoBD or HOME environment variables cannot move
+an initialized installation; CLI uses the public-root facts saved by web setup.
+For initial automatic CLI setup without a web DOCUMENT_ROOT, the public roots must
+be configured explicitly. No CLI is required for normal browser setup.
+
+Missing, unreadable, corrupt, linked or conflicting locator/ready/control files,
+lost initialized directories and changed database identities block reuse and
+reinitialization. Ordinary requests fail closed when the binding is incomplete or
+unsafe; authorized update routes remain available to explain the fault. No new
+folder is selected as recovery. Do not delete either technical record, change the
+private path, copy the locator to another code root or switch modes to bypass a
+pending state. Restore configuration and complete private state as one reviewed
+set; a DB restore never authorizes resetting file state or migration history.
+A restore to the same server/database identity is not intrinsically detectable
+from that identity fingerprint. Preserve all file state and review actual restored
+M1/schema/data state under the existing recovery procedure; never infer a new
+installation or regenerate its identity from a restore.
+
+These checks do not replace hosting/storage acceptance or the existing independent
+backup/restore, historical-data and writer-exclusion evidence. Drain requests and
+jobs started before first setup as part of that writer review; initialization
+itself runs no migration and does not certify a maintenance window.
+
+## Manual fallback and existing M2E configuration
+
+If no approved GoBD provider exists or a technical prerequisite cannot be proven,
+the UI refuses automatic setup and explains the one-time hosting measure below.
+It never relaxes checks or switches to mode B. Existing explicit M2E paths retain
+their original validation/operating contract and do not require a GoBD provider
+or a new locator in configs. Their path remains technical installation authority;
+do not change it to abandon an existing state. An explicit path conflicting with
+an already pinned automatic binding is rejected, not treated as a migration.
 
 1. Use the hosting panel/SFTP to configure the installation's **private**
    `configs/database.ini` in its existing environment section:
@@ -255,3 +348,4 @@ installed by this implementation. Accept real hosting limits, filesystem durabil
 all writer paths and independently verified backup/restoration before enabling it.
 
 Concrete results and remaining acceptance limits: [M2E test report](../../tests/admin/update-hosting.md).
+Automatic setup results: [M2F test report](../../tests/admin/update-storage.md).

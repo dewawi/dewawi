@@ -1,4 +1,6 @@
 /configs/database.ini
+/configs/update-storage.json
+/configs/update-storage.ready.json
 /configs/magento.ini
 /configs/albis.env
 /cache/*

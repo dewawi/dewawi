@@ -10,32 +10,76 @@ class DewawiHostingUpdates
     private Zend_Db_Adapter_Abstract $db;
     private array $control;
     private string $catalog;
-    public const CODES = ['configuration', 'busy', 'maintenance', 'evidence', 'rights', 'authentication', 'confirmation', 'plan_changed', 'expired', 'manual_review', 'alternative', 'verification', 'state_io'];
+    private string $path;
+    private ?array $selection;
+    public const CODES = ['configuration', 'busy', 'maintenance', 'evidence', 'rights', 'authentication', 'confirmation', 'plan_changed', 'expired', 'manual_review', 'alternative', 'verification', 'state_io', 'storage_unavailable', 'storage_conflict', 'storage_incomplete'];
 
-    public function __construct(string $path, Zend_Db_Adapter_Abstract $db, string $catalog, bool $initializing = false)
+    public function __construct(string $path, Zend_Db_Adapter_Abstract $db, string $catalog, bool $initializing = false, ?array $selection = null)
     {
         if (!$db->getConnection() instanceof PDO || $db->getConnection()->getAttribute(PDO::ATTR_PERSISTENT)) throw new RuntimeException('configuration');
-        if ($initializing && !is_dir($path)) {
-            DewawiUpdateFiles::outside(dirname($path));
-            if (!mkdir($path, 0700)) throw new RuntimeException('configuration');
-        }
-        $this->files = new DEEC_UpdateMaintenance($path); $this->db = $db; $this->catalog = $catalog;
+        $this->db = $db; $this->catalog = $catalog; $this->path = $path; $this->selection = $selection;
         if ($initializing) return;
+        $this->files = new DEEC_UpdateMaintenance($path);
+        $this->files->bytes('gate.lock');
         $this->control = $this->files->read('control.json');
-        if (!DewawiUpdateFiles::keys($this->control, ['format', 'installation', 'database', 'topology']) || $this->control['format'] !== 1
-            || !DewawiUpdateFiles::hex($this->control['installation']) || !DewawiUpdateFiles::hex($this->control['database'], 64)
-            || $this->control['topology'] !== 'single-local-host') throw new RuntimeException('configuration');
+        $this->validateControl();
+    }
+
+    private function validateControl(): void
+    {
+        if (!DEEC_UpdateMaintenance::validControl($this->control)) throw new RuntimeException('configuration');
+        if ($this->selection && $this->selection['record'] && $this->selection['record']['control'] !== $this->control) throw new RuntimeException('storage_conflict');
+        if ((new DewawiMigrationInspector($this->db, $this->catalog))->databaseIdentity($this->control['installation']) !== $this->control['database']) throw new RuntimeException('plan_changed');
     }
 
     public static function session(): Zend_Session_Namespace { return new Zend_Session_Namespace('HostingUpdates'); }
 
     public function initialize(): void
     {
-        if (!$this->files->exists('gate.lock')) $this->files->write('gate.lock', []);
+        if ($this->selection && $this->selection['record']) {
+            $this->control = $this->selection['record']['control']; $this->validateControl();
+        }
+        if ($this->selection && $this->selection['source'] === 'automatic' && !$this->selection['ready']) {
+            (new DEEC_UpdateMaintenance($this->selection['record']['base'] ?? $this->selection['base']))->capabilities();
+            DEEC_UpdateMaintenance::probeDirectory($this->selection['root'] . '/configs', fileowner($this->selection['record']['base'] ?? $this->selection['base']));
+            if (!$this->selection['record']) {
+                $installation = bin2hex(random_bytes(16));
+                $control = ['format' => 1, 'installation' => $installation,
+                    'database' => (new DewawiMigrationInspector($this->db, $this->catalog))->databaseIdentity($installation), 'topology' => 'single-local-host'];
+                $this->selection['record'] = DEEC_UpdateMaintenance::claim($this->selection, $control);
+                $this->control = $this->selection['record']['control']; $this->validateControl();
+            }
+        }
+        if (!is_dir($this->path)) {
+            DewawiUpdateFiles::outside(dirname($this->path));
+            if (!@mkdir($this->path, 0700) && !is_dir($this->path)) throw new RuntimeException('configuration');
+        }
+        $this->files = new DEEC_UpdateMaintenance($this->path);
+        if ($this->files->exists('control.json') && !$this->files->exists('gate.lock')) throw new RuntimeException('manual_review');
+        if (!$this->files->exists('control.json')) {
+            foreach (new FilesystemIterator($this->path) as $file) if ($file->getFilename() !== 'gate.lock') throw new RuntimeException('manual_review');
+        }
+        if (!$this->files->exists('gate.lock')) {
+            try { $this->files->write('gate.lock', []); }
+            catch (Throwable $e) { if ($e->getMessage() !== 'record_exists') throw $e; }
+        }
         $this->files->exclusive(function(): void {
-            $installation = bin2hex(random_bytes(16));
-            $i = new DewawiMigrationInspector($this->db, $this->catalog);
-            $this->files->write('control.json', ['format' => 1, 'installation' => $installation, 'database' => $i->databaseIdentity($installation), 'topology' => 'single-local-host']);
+            if ($this->files->exists('control.json')) $this->control = $this->files->read('control.json');
+            else {
+                if ($this->selection && $this->selection['record']) $this->control = $this->selection['record']['control'];
+                else {
+                    $installation = bin2hex(random_bytes(16));
+                    $this->control = ['format' => 1, 'installation' => $installation,
+                        'database' => (new DewawiMigrationInspector($this->db, $this->catalog))->databaseIdentity($installation), 'topology' => 'single-local-host'];
+                }
+                $this->validateControl();
+                $this->files->write('control.json', $this->control);
+            }
+            $this->validateControl();
+            if ($this->selection && $this->selection['record'] && $this->selection['ready'] !== true) {
+                foreach (new FilesystemIterator($this->path) as $file) if (!in_array($file->getFilename(), ['gate.lock', 'control.json'], true)) throw new RuntimeException('manual_review');
+                DEEC_UpdateMaintenance::completeSelection($this->selection);
+            }
         });
     }
 

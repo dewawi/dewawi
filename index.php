@@ -83,7 +83,7 @@ try {
 		$path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 		$base = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/index.php'), '/.');
 		$updateRoute = PHP_SAPI !== 'cli' && preg_match('~^' . preg_quote($base, '~') . '/(?:index\.php/)?admin/updates(?:/(?:index|initialize|maintenance|prepare|approve|execute|finish))?/?$~D', $path ?? '');
-		DEEC_UpdateMaintenance::enter($application->getOption('systemUpdates') ?? [], (bool)$updateRoute);
+		DEEC_UpdateMaintenance::enter($application->getOption('systemUpdates') ?? [], (bool)$updateRoute, BASE_PATH);
 	} catch (Throwable $maintenanceError) {
 		while (ob_get_level() > $startupBufferLevel) ob_end_clean();
 		if (PHP_SAPI === 'cli') fwrite(STDERR, "Maintenance unavailable\n");

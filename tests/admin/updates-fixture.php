@@ -29,12 +29,13 @@ $states = json_decode(file_get_contents($work . '/states.json'), true, 512, JSON
 $state = PHP_SAPI === 'cli' ? ($argv[1] ?? 'missing') : ($_GET['state'] ?? 'missing');
 if (!is_string($state) || !isset($states[$state])) { http_response_code(404); exit; }
 $options = (new Zend_Config_Ini($root . '/configs/operator.ini', 'production'))->toArray();
-$hostingTest = ($options['systemUpdates']['mode'] ?? '') === 'shared' && !empty($options['systemUpdates']['statePath']);
+$hostingTest = ($options['systemUpdates']['mode'] ?? 'shared') === 'shared'
+    && (!empty($options['systemUpdates']['statePath']) || is_file($root . '/configs/update-storage.json') || getenv('DEWAWI_GOBD_REPORT_DIR'));
 $fixturePath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 $fixtureAsset = $fixturePath === '/browser.html' || (preg_match('~^/(css|js|library|images)/~', $fixturePath) && preg_match('~\.(css|js|png|svg|gif|ico)$~', $fixturePath));
 if ($hostingTest && !$fixtureAsset) {
     require_once $root . '/library/DEEC/UpdateMaintenance.php';
-    try { DEEC_UpdateMaintenance::enter($options['systemUpdates'], str_starts_with(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/admin/updates/')); }
+    try { DEEC_UpdateMaintenance::enter($options['systemUpdates'] ?? [], str_starts_with(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/admin/updates/'), $root); }
     catch (Throwable $e) { http_response_code(503); echo 'Maintenance unavailable'; exit; }
 }
 $db = new Zend_Db_Adapter_Pdo_Mysql($hostingTest ? $options['resources']['db']['params'] : ['host' => 'localhost', 'unix_socket' => $work . '/mysql.sock', 'username' => 'overview', 'password' => 'fixture-secret', 'dbname' => $states[$state], 'charset' => 'utf8mb4']);

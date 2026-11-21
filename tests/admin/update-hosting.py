@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import re
+import runpy
 import socket
 import shutil
 import subprocess
@@ -30,7 +31,7 @@ class Forms(HTMLParser):
         if tag == 'form': self.current = None
 
 
-def run(c):
+def run(c, storage_only=False):
     check, sql, request, work, source = c['check'], c['sql'], c['request'], c['work'], c['source']
     start = c['checks']
     sql("CREATE USER hosting@localhost IDENTIFIED BY 'hosting-fixture'; CREATE USER hostingread@localhost IDENTIFIED BY 'hosting-fixture'")
@@ -43,9 +44,10 @@ def run(c):
     def write(p, value):
         c['write'](p, value, 0o600)
 
-    def restart(limit=0):
+    def restart(limit=0, disabled=False):
         c['web'].terminate(); c['web'].wait(timeout=10)
-        c['web'] = subprocess.Popen(['php', '-d', 'opcache.enable=0', '-d', 'max_execution_time='+str(limit), '-S', '127.0.0.1:'+str(c['port']), '-t', str(source), str(c['ROOT']/'tests/admin/updates-fixture.php')], env=c['env'], stdout=c['log'], stderr=c['log'])
+        flags=['-d','disable_functions=exec,shell_exec,system,passthru,proc_open,popen'] if disabled else []
+        c['web'] = subprocess.Popen(['php', '-d', 'opcache.enable=0', '-d', 'max_execution_time='+str(limit)]+flags+['-S', '127.0.0.1:'+str(c['port']), '-t', str(source), str(c['ROOT']/'tests/admin/updates-fixture.php')], env=c['env'], stdout=c['log'], stderr=c['log'])
         for _ in range(100):
             try: request(); return
             except Exception: time.sleep(.03)
@@ -134,6 +136,10 @@ def run(c):
     def count():
         return int(sql('SELECT COUNT(*) FROM dewawi_schema_migration', c['database'])) if sql("SHOW TABLES LIKE 'dewawi_schema_migration'", c['database']) else 0
 
+    if storage_only:
+        runpy.run_path(str(c['ROOT']/'tests/admin/update-storage.py'))['run'](c, locals())
+        return
+
     fresh(full=True, baseline=False)
     # Hosting-panel configuration plus explicit HTTP initialization needs no CLI.
     (state_dir/'control.json').unlink(); (state_dir/'gate.lock').unlink()
@@ -200,7 +206,7 @@ def run(c):
     check(not list(state_dir.glob('*.accepted.json')),'Persistent PDO session settings could leak')
 
     for failure in ['rights','backup','restore','writers','identity','pin','history','catalog','evidence','expired','admin','inactive','deleted','no-maintenance']:
-        fresh(); post('maintenance'); e = evidence()
+        fresh(); post('maintenance'); prepare_fields = fields('prepare'); e = evidence()
         if failure == 'rights': configure('hostingread'); post('prepare', expected=409); check(count()==1,'DDL without rights'); continue
         if failure in ['backup','restore','writers','identity','pin']:
             if failure in ['backup','restore']: e[failure]['sha256']='0'*64
@@ -208,7 +214,7 @@ def run(c):
             if failure == 'identity': e['database']='0'*64
             if failure == 'pin':
                 p=state_dir/'control.json'; control=json.loads(p.read_text()); control['database']='0'*64; write(p,control)
-            write(state_dir/'evidence.json', e); post('prepare',expected=409); check(count()==1,'Invalid prerequisites mutated DB'); continue
+            write(state_dir/'evidence.json', e); post('prepare',prepare_fields,expected=409); check(count()==1,'Invalid prerequisites mutated DB'); continue
         post('prepare'); post('approve'); execution = fields('execute')
         if failure == 'history': sql('UPDATE dewawi_schema_migration SET completed_at=DATE_ADD(completed_at, INTERVAL 1 SECOND)',c['database'])
         if failure == 'catalog':
@@ -293,6 +299,7 @@ def run(c):
             check(result.returncode==0 and metrics and json.loads(html.unescape(metrics[-1]))==[],'Hosting browser '+locale+' '+str(width)+': '+str(metrics))
     body=get(); check(not any(s in body for s in ['hosting-fixture',password,str(work),'SELECT *','CREATE TABLE']),'Hosting response leaked secrets')
     print('PASS: '+str(c['checks']-start)+' M2E same-account setup, MariaDB, HTTP, evidence, maintenance, timeout/kill/replay and DE/EN Chromium checks')
+    runpy.run_path(str(c['ROOT']/'tests/admin/update-storage.py'))['run'](c, locals())
 
 
 if __name__ == '__main__':
