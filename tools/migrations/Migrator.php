@@ -56,7 +56,7 @@ class DewawiSqlMigrator extends DewawiMigrationInspector
         return $schema;
     }
 
-    public function verifyBaseline(): void
+    public function verifyBaseline(): array
     {
         $reference = json_decode(file_get_contents($this->reference), true, 512, JSON_THROW_ON_ERROR);
         $actual = self::schema($this->db);
@@ -73,6 +73,7 @@ class DewawiSqlMigrator extends DewawiMigrationInspector
             }
         }
         if ($errors) throw new DewawiMigrationException('incomplete_1.1.8_schema: ' . implode(', ', array_slice($errors, 0, 20)));
+        return $actual;
     }
 
     public function locked(callable $action)
@@ -142,15 +143,32 @@ class DewawiSqlMigrator extends DewawiMigrationInspector
         if ($changed !== 1) throw new DewawiMigrationException('completion_not_recorded: ' . $id);
     }
 
-    public function baseline(): array
+    public function baselinePlan(string $installation): array
+    {
+        if (!$this->locked) throw new DewawiMigrationException('migration_lock_required');
+        $plan = $this->executionPlan($installation, 'baseline');
+        $plan['schema'] = self::digest($this->verifyBaseline());
+        return $plan;
+    }
+
+    public function registerApprovedBaseline(array $approved, string $installation, callable $precondition): array
+    {
+        if (!hash_equals(self::digest($approved), self::digest($this->baselinePlan($installation)))) throw new DewawiMigrationException('approved_plan_changed');
+        return $this->baseline($precondition);
+    }
+
+    public function baseline(?callable $precondition = null): array
     {
         $history = $this->history();
         $this->validateHistory($history);
         if (isset($history[self::BASELINE])) return $this->plan();
         $this->verifyBaseline();
+        if ($precondition) $precondition();
         $this->createHistory();
+        if ($precondition) $precondition();
         $checksum = hash_file('sha256', $this->reference);
         $this->start(self::BASELINE, $checksum, $checksum);
+        if ($precondition) $precondition();
         $this->complete(self::BASELINE);
         return $this->plan();
     }

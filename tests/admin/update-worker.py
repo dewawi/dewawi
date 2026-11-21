@@ -2,7 +2,7 @@
 """M2B protocol/real DB tests. Ownership is explicitly emulated on single-UID hosts."""
 from pathlib import Path
 from html.parser import HTMLParser
-import concurrent.futures, hashlib, html, http.cookiejar, json, os, re, shutil, signal, socket, subprocess, sys, tempfile, time
+import concurrent.futures, hashlib, html, http.cookiejar, json, os, re, runpy, shutil, signal, socket, subprocess, sys, tempfile, time
 import urllib.error, urllib.parse, urllib.request
 ROOT = Path(__file__).resolve().parents[2]
 checks = 0
@@ -59,10 +59,10 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
             else:
                 write(registry, {'transitions':[{'from':'1.1.8','to':'1.1.9','migrations':[{'file':'001-test.sql','depends':[]}]}]})
                 (registry.parent/'1.1.8-1.1.9/001-test.sql').write_text(content)
-        def driver(command='tick', success=True, asynchronous=False, paused=False):
+        def driver(command='tick', success=True, asynchronous=False, paused=False, before_complete=False):
             args = ['php', str(ROOT/'tests/admin/update-worker-driver.php'), command]
             if asynchronous:
-                p = subprocess.Popen(args, env=dict(env, DEWAWI_TEST_BEFORE_START='1') if paused else env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True); children.append(p); return p
+                p = subprocess.Popen(args, env=dict(env, DEWAWI_TEST_BEFORE_START='1' if paused else '0', DEWAWI_TEST_BEFORE_COMPLETE='1' if before_complete else '0'), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True); children.append(p); return p
             r = subprocess.run(args, env=env, capture_output=True, text=True)
             check((r.returncode == 0) == success, 'Worker outcome: '+r.stdout+r.stderr)
             return json.loads(r.stdout) if success else r
@@ -87,7 +87,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
             policy['database'] = driver('identity')['database']; write(q/'control.json',policy,0o644)
             sql('SET GLOBAL read_only=1')
             state = driver('publish')
-            check(bool(state['plan']) == baseline, 'Missing baseline or valid published plan')
+            check(bool(state['plan']) == (baseline or full), 'Incomplete baseline or valid published plan')
             return state
         state = new_case()
         check(driver('production-policy',False).returncode != 0, 'Production policy accepted emulated ownership')
@@ -191,7 +191,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
         new_case(); req,_=approve(); target=work/'queue/inbox/request.json'; target.rename(work/'saved-request.json'); target.symlink_to(work/'saved-request.json'); check(driver()['issues']==['request_invalid'],'Symlink inbox accepted')
         new_case(); req,_=approve(); driver(); release_request(req); proof=work/('queue/evidence/'+req['id']+'.json'); proof.rename(work/'saved-proof.json'); proof.symlink_to(work/'saved-proof.json'); check(driver()['job']['status']=='rejected','Symlink backup evidence accepted')
         new_case(); (work/'queue/published').chmod(0o2770); check(driver('publish',False).returncode!=0,'Writable result directory accepted')
-        new_case(baseline=False); check('baseline_required' in driver('publish')['issues'] and 'name="csrf"' not in request()[1],'Missing baseline offered execution')
+        new_case(baseline=False); check('baseline_incomplete' in driver('publish')['issues'] and 'name="csrf"' not in request()[1],'Incomplete unregistered schema offered registration')
         for history_status in ['started','failed']:
             new_case(); sql("UPDATE dewawi_schema_migration SET status='"+history_status+"',completed_at=NULL",database); check(driver('publish')['plan'] is None,'Unresolved M1 history offered a plan')
         new_case('CREATE TABLE first_committed (id int); INSERT INTO missing_table VALUES (1);')
@@ -222,14 +222,18 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
         sql('SET GLOBAL read_only=0'); output,errors=running.communicate(timeout=10)
         check(running.returncode==0 and json.loads(output)['job']['status']=='failed' and not sql("SHOW TABLES LIKE 'after_fence'",database),'Lost write fence allowed later SQL')
         check(sql("SELECT error_code FROM dewawi_schema_migration WHERE status='failed'",database)=='precondition_failed','Lost prerequisite not durably recorded')
+        runpy.run_path(str(ROOT/'tests/admin/update-baseline.py'))['run'](globals())
         new_case(); chrome=shutil.which('chromium') or shutil.which('google-chrome'); check(bool(chrome),'Chromium unavailable')
-        for locale in ['de_DE','en_US']:
-            for width in [1280,390,320]:
-                script=r'''const f=document.querySelector('iframe');f.onload=()=>setTimeout(()=>{const d=f.contentDocument,w=f.contentWindow,failures=[];let checks=0;const check=(v,m)=>{checks++;if(!v)failures.push(m)};check(d.documentElement.scrollWidth<=w.innerWidth,'Horizontal overflow');check(!d.body.textContent.includes('UPDATES_'),'Missing translation');const form=d.querySelector('.dw-system-updates form');check(form&&form.getAttribute('data-autosave')==='false','Approval auto-saves or missing');const c=form.querySelector('[name="confirm"]');check(!form.checkValidity(),'No explicit confirmation required');c.focus();check(d.activeElement===c,'Confirmation cannot focus');c.checked=true;check(form.checkValidity(),'Cannot confirm');check(form.querySelector('[name="plan"]').value.length===64,'No exact plan hash');document.querySelector('#metrics').textContent=JSON.stringify({checks,failures});},250);'''
-                (work/'browser.html').write_text('<!doctype html><iframe src="'+origin+'/admin/updates/index?locale='+locale+'" style="width:'+str(width)+'px;height:2300px;border:0"></iframe><pre id="metrics"></pre><script>'+script+'</script>')
-                with tempfile.TemporaryDirectory(prefix='dewawi-m2b-chrome-') as profile:
-                    r=subprocess.run([chrome,'--headless','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--user-data-dir='+profile,'--window-size=1400,2500','--virtual-time-budget=5000','--dump-dom',origin+'/browser.html'],capture_output=True,text=True,timeout=30)
-                metrics=re.findall(r'<pre id="metrics">(.*?)</pre>',r.stdout,re.S); check(r.returncode==0 and metrics and metrics[-1],'Browser incomplete'); data=json.loads(html.unescape(metrics[-1])); check(not data['failures'],str(width)+' '+locale+': '+str(data['failures']));checks+=data['checks']
+        for baseline_browser in [False,True]:
+            new_case(full=baseline_browser,baseline=not baseline_browser)
+            for locale in ['de_DE','en_US']:
+                for width in [1280,390,320]:
+                    script=r'''const f=document.querySelector('iframe');f.onload=()=>setTimeout(()=>{const d=f.contentDocument,w=f.contentWindow,failures=[];let checks=0;const check=(v,m)=>{checks++;if(!v)failures.push(m)};check(d.documentElement.scrollWidth<=w.innerWidth,'Horizontal overflow');check(!d.body.textContent.includes('UPDATES_'),'Missing translation');const form=d.querySelector('.dw-system-updates form');check(form&&form.getAttribute('data-autosave')==='false','Approval auto-saves or missing');const c=form.querySelector('[name="confirm"]');check(!form.checkValidity(),'No explicit confirmation required');c.focus();check(d.activeElement===c,'Confirmation cannot focus');c.checked=true;check(form.checkValidity(),'Cannot confirm');check(form.querySelector('[name="plan"]').value.length===64,'No exact plan hash');check(!!d.querySelector('#updates-baseline-registration')===EXPECT_BASELINE,'Wrong operation shown');check(form.querySelector('button[type=submit]').textContent.trim()===EXPECTED_BUTTON,'Ambiguous operation confirmation');document.querySelector('#metrics').textContent=JSON.stringify({checks,failures});},250);'''
+                    script=script.replace('EXPECT_BASELINE','true' if baseline_browser else 'false').replace('EXPECTED_BUTTON',json.dumps(('Basisregistrierung an den Worker freigeben' if locale=='de_DE' else 'Approve baseline registration for the worker') if baseline_browser else ('Diesen Plan an den Worker freigeben' if locale=='de_DE' else 'Approve this plan for the worker')))
+                    (work/'browser.html').write_text('<!doctype html><iframe src="'+origin+'/admin/updates/index?locale='+locale+'" style="width:'+str(width)+'px;height:2300px;border:0"></iframe><pre id="metrics"></pre><script>'+script+'</script>')
+                    with tempfile.TemporaryDirectory(prefix='dewawi-m2b-chrome-') as profile:
+                        r=subprocess.run([chrome,'--headless','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--user-data-dir='+profile,'--window-size=1400,2500','--virtual-time-budget=5000','--dump-dom',origin+'/browser.html'],capture_output=True,text=True,timeout=30)
+                    metrics=re.findall(r'<pre id="metrics">(.*?)</pre>',r.stdout,re.S); check(r.returncode==0 and metrics and metrics[-1],'Browser incomplete'); data=json.loads(html.unescape(metrics[-1])); check(not data['failures'],str(width)+' '+locale+': '+str(data['failures']));checks+=data['checks']
         state=json.loads((work/'queue/published/current.json').read_text()); state['heartbeat_until']=int(time.time())-1; write(work/'queue/published/current.json',state); check('name="csrf"' not in request()[1],'Offline worker offered approval')
         for method in ['POST','PUT','DELETE']:
             check(request(method=method)[0]==405,'Index mutation accepted')
@@ -238,7 +242,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
         for locale in ['de_DE','en_US']:
             status,body,_=request('/admin/updates/index?locale='+locale)
             check(status==200 and not any(x in body for x in ['private-worker-secret','CREATE TABLE','SELECT *',str(work),'sqlstate_']),'Secret/SQL/path output')
-        print(f'PASS: {checks} M2B protocol, MariaDB, HTTP, replay, failure/recovery and Chromium checks')
+        print(f'PASS: {checks} M2B/M2C/M2D protocol, MariaDB, HTTP, replay, failure/recovery and Chromium checks')
         print('LIMIT: UID ownership emulated explicitly; production rejects this single-UID deployment. Real multi-user OS isolation requires deployment-host acceptance.')
     finally:
         for child in children:

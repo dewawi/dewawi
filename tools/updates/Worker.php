@@ -24,7 +24,11 @@ class DewawiUpdateWorker
 
     private function plan(DewawiSqlMigrator $migrator): array
     {
-        $plan = $migrator->executionPlan($this->files->policy['installation']);
+        try { $plan = $migrator->executionPlan($this->files->policy['installation']); }
+        catch (DewawiMigrationException $error) {
+            if ($error->getMessage() !== 'explicit_baseline_registration_required') throw $error;
+            $plan = $migrator->baselinePlan($this->files->policy['installation']);
+        }
         if (!hash_equals($this->files->policy['database'], $plan['database'])) throw new RuntimeException('database_identity');
         return $plan;
     }
@@ -39,10 +43,10 @@ class DewawiUpdateWorker
         return $state;
     }
 
-    private function result(string $id, string $status, string $code, ?array $request = null): array
+    private function result(string $id, string $status, string $code, ?array $request = null, string $operation = 'migrate'): array
     {
         $result = ['id' => $id, 'status' => $status, 'code' => $code, 'at' => time(), 'operator' => $request['operator'] ?? null,
-            'digest' => $request['digest'] ?? null];
+            'digest' => $request['digest'] ?? null, 'operation' => $operation];
         $this->files->write('private/' . $id . '.result.json', $result, true);
         $this->files->write('published/' . $id . '.result.json', $result, true);
         $this->recent[] = $result;
@@ -59,7 +63,7 @@ class DewawiUpdateWorker
             || $request['token'] !== $state['token'] || $request['digest'] !== $state['digest'] || !$state['plan'] || !$state['plan']['pending']) throw new RuntimeException('request_invalid');
     }
 
-    private function evidence(array $request, array $plan): string
+    private function evidence(array $request, array $plan): array
     {
         $name = 'evidence/' . $request['id'] . '.json';
         if (!$this->files->exists($name)) throw new RuntimeException('evidence_required');
@@ -81,7 +85,20 @@ class DewawiUpdateWorker
             || $restore['tested_at'] < $backup['taken_at'] || $restore['tested_at'] > $now
             || !self::reference($maintenance['reference']) || !is_int($maintenance['since']) || !is_int($maintenance['until'])
             || $maintenance['since'] > $backup['taken_at'] || $maintenance['until'] < $e['expires_at'] || $maintenance['privileged_writers_stopped'] !== true) throw new RuntimeException('evidence_invalid');
-        return hash('sha256', $bytes);
+        $proof = ['operational' => hash('sha256', $bytes)];
+        if (($plan['operation'] ?? 'migrate') === 'baseline') {
+            $name = 'evidence/' . $request['id'] . '.historical.json';
+            if (!$this->files->exists($name)) throw new RuntimeException('historical_required');
+            $bytes = $this->files->bytes($name); $h = json_decode($bytes, true, 32, JSON_THROW_ON_ERROR);
+            if (!is_array($h) || !DewawiUpdateFiles::keys($h, ['format', 'request', 'request_sha256', 'plan', 'installation', 'database', 'operator', 'scope', 'baseline_sha256', 'reference', 'report_sha256', 'confirmed_by', 'checked_at'])
+                || $h['format'] !== 1 || $h['request'] !== $request['id'] || $h['operator'] !== $request['operator'] || $h['request_sha256'] !== $e['request_sha256']
+                || $h['plan'] !== $request['digest'] || $h['installation'] !== $plan['installation'] || $h['database'] !== $plan['database']
+                || $h['scope'] !== 'historical-data-through-1.1.8' || $h['baseline_sha256'] !== $plan['baseline']
+                || !self::reference($h['reference']) || !self::reference($h['confirmed_by']) || !DewawiUpdateFiles::hex($h['report_sha256'], 64)
+                || !is_int($h['checked_at']) || $h['checked_at'] < $maintenance['since'] || $h['checked_at'] > $now) throw new RuntimeException('historical_invalid');
+            $proof['historical'] = hash('sha256', $bytes);
+        }
+        return $proof;
     }
 
     private static function reference($value): bool { return is_string($value) && preg_match('/^[A-Za-z0-9][A-Za-z0-9 .:_-]{0,159}$/D', $value); }
@@ -112,7 +129,10 @@ class DewawiUpdateWorker
                 if (!DewawiUpdateFiles::hex($id) || $name !== $id . '.request.json') throw new RuntimeException('queue_unsafe');
                 $request = $this->files->read('private/' . $name);
                 if (!$this->files->exists('private/' . $id . '.result.json')) {
-                    if ($this->files->exists('private/' . $id . '.accepted.json') || $this->files->exists('private/token-' . $request['token'] . '.json')) $this->result($id, 'manual_review', 'interrupted', $request);
+                    if ($this->files->exists('private/' . $id . '.accepted.json') || $this->files->exists('private/token-' . $request['token'] . '.json')) {
+                        $plan = $this->files->read('private/' . $id . '.plan.json');
+                        $this->result($id, 'manual_review', 'interrupted', $request, $plan['operation'] ?? 'migrate');
+                    }
                     else $waiting[] = $request;
                 } else {
                     $final = $this->files->read('private/' . $id . '.result.json');
@@ -146,50 +166,61 @@ class DewawiUpdateWorker
             if ($waiting) {
                 $request = $waiting[0];
                 if (!$state) return $this->publish(null, ['manual_review']);
-                if ($publishOnly) return $this->publish($state['plan'], ['evidence_required'], ['id' => $request['id'], 'status' => 'waiting', 'code' => 'evidence_required', 'at' => time(), 'operator' => $request['operator'], 'digest' => $request['digest']], $state);
+                if ($publishOnly) return $this->publish($state['plan'], ['evidence_required'], ['id' => $request['id'], 'status' => 'waiting', 'code' => 'evidence_required', 'at' => time(), 'operator' => $request['operator'], 'digest' => $request['digest'], 'operation' => $state['plan']['operation'] ?? 'migrate'], $state);
                 try {
                     $this->request($request, $state);
                     $migrator = $this->migrator();
                     return $migrator->locked(function() use ($migrator, $request, $state): array {
                         $this->operator($request['operator']);
                         $plan = $this->plan($migrator);
+                        $operation = $plan['operation'] ?? 'migrate';
                         if (!hash_equals($request['digest'], DewawiSqlMigrator::digest($plan))) throw new RuntimeException('plan_changed');
                         $archived = 'private/' . $request['id'] . '.plan.json';
                         if (!$this->files->exists($archived)) $this->files->write($archived, $plan, true);
                         elseif (!hash_equals($request['digest'], DewawiSqlMigrator::digest($this->files->read($archived)))) throw new RuntimeException('plan_changed');
                         $proof = $this->evidence($request, $plan);
                         $guard = function() use ($request, $plan, $proof): void {
-                            if (!hash_equals($proof, $this->evidence($request, $plan)) || !hash_equals($plan['database'], $this->identity())) throw new RuntimeException('evidence_invalid');
+                            if (!hash_equals(DewawiSqlMigrator::digest($proof), DewawiSqlMigrator::digest($this->evidence($request, $plan))) || !hash_equals($plan['database'], $this->identity())) throw new RuntimeException('evidence_invalid');
                             $this->fence();
                             $this->operator($request['operator']);
                         };
                         $guard();
                         $release = $this->files->bytes('evidence/' . $request['id'] . '.json');
-                        if (!hash_equals($proof, hash('sha256', $release))) throw new RuntimeException('evidence_invalid');
-                        $this->files->write('private/' . $request['id'] . '.release.json', ['source_sha256' => $proof, 'evidence' => json_decode($release, true, 32, JSON_THROW_ON_ERROR)], true);
+                        if (!hash_equals($proof['operational'], hash('sha256', $release))) throw new RuntimeException('evidence_invalid');
+                        $archive = ['source_sha256' => $proof['operational'], 'evidence' => json_decode($release, true, 32, JSON_THROW_ON_ERROR)];
+                        if (isset($proof['historical'])) {
+                            $historical = $this->files->bytes('evidence/' . $request['id'] . '.historical.json');
+                            if (!hash_equals($proof['historical'], hash('sha256', $historical))) throw new RuntimeException('historical_invalid');
+                            $archive['historical'] = ['source_sha256' => $proof['historical'], 'evidence' => json_decode($historical, true, 32, JSON_THROW_ON_ERROR)];
+                        }
+                        $this->files->write('private/' . $request['id'] . '.release.json', $archive, true);
                         $this->files->write('private/token-' . $request['token'] . '.json', ['request' => $request['id']], true);
-                        $accepted = ['id' => $request['id'], 'status' => 'running', 'code' => 'running', 'at' => time(), 'operator' => $request['operator'], 'digest' => $request['digest']];
+                        $accepted = ['id' => $request['id'], 'status' => 'running', 'code' => 'running', 'at' => time(), 'operator' => $request['operator'], 'digest' => $request['digest'], 'operation' => $operation];
                         $this->files->write('private/' . $request['id'] . '.accepted.json', $accepted, true);
                         $this->files->write('published/' . $request['id'] . '.accepted.json', $accepted, true);
                         $this->publish($plan, [], $accepted, $state);
                         $status = $code = 'completed';
                         try {
-                            $migrator->applyApproved($plan, $plan['installation'], $guard);
+                            if ($operation === 'baseline') {
+                                $migrator->registerApprovedBaseline($plan, $plan['installation'], $guard);
+                                $code = 'baseline_registered';
+                            } else $migrator->applyApproved($plan, $plan['installation'], $guard);
                         } catch (Throwable $error) {
                             $this->files->write('private/' . $request['id'] . '.diagnostic.json', ['reason' => $error instanceof DewawiMigrationException ? $error->getMessage() : 'execution_precondition_or_io_failure', 'at' => time()], true);
                             $failed = $error instanceof DewawiMigrationException && str_starts_with($error->getMessage(), 'migration_failed:');
-                            $status = $failed ? 'failed' : 'manual_review'; $code = $failed ? 'migration_failed' : 'interrupted';
+                            $status = $failed ? 'failed' : 'manual_review'; $code = $operation === 'baseline' ? 'baseline_registration_failed' : ($failed ? 'migration_failed' : 'interrupted');
                         }
-                        $result = $this->result($request['id'], $status, $code, $request);
-                        return $this->publish(null, $result['status'] === 'completed' ? [] : ['manual_review'], $result);
+                        $result = $this->result($request['id'], $status, $code, $request, $operation);
+                        $next = $operation === 'baseline' && $status === 'completed' ? $this->plan($migrator) : null;
+                        return $this->publish($next, $result['status'] === 'completed' ? [] : ['manual_review'], $result);
                     });
                 } catch (Throwable $error) {
                     if ($this->files->exists('private/' . $request['id'] . '.accepted.json') || $this->files->exists('private/token-' . $request['token'] . '.json')) throw $error;
                     $code = self::safeCode($error);
-                    if ($code === 'evidence_required' || $code === 'migration_lock_busy') {
-                        return $this->publish($state['plan'], [$code], ['id' => $request['id'], 'status' => 'waiting', 'code' => $code, 'at' => time(), 'operator' => $request['operator'], 'digest' => $request['digest']], $state);
+                    if (in_array($code, ['evidence_required', 'historical_required', 'migration_lock_busy'], true)) {
+                        return $this->publish($state['plan'], [$code], ['id' => $request['id'], 'status' => 'waiting', 'code' => $code, 'at' => time(), 'operator' => $request['operator'], 'digest' => $request['digest'], 'operation' => $state['plan']['operation'] ?? 'migrate'], $state);
                     }
-                    $result = $this->result($request['id'], 'rejected', $code, $request);
+                    $result = $this->result($request['id'], 'rejected', $code, $request, $state['plan']['operation'] ?? 'migrate');
                     return $this->publish(null, [$code], $result);
                 }
             }
@@ -209,7 +240,8 @@ class DewawiUpdateWorker
     {
         $code = explode(':', $error->getMessage(), 2)[0];
         if ($code === 'explicit_baseline_registration_required') return 'baseline_required';
-        if (in_array($code, ['request_invalid', 'evidence_required', 'evidence_invalid', 'database_identity', 'plan_changed', 'maintenance_required', 'migration_lock_busy', 'queue_unsafe', 'operator_denied'], true)) return $code;
+        if ($code === 'incomplete_1.1.8_schema') return 'baseline_incomplete';
+        if (in_array($code, ['request_invalid', 'evidence_required', 'evidence_invalid', 'historical_required', 'historical_invalid', 'database_identity', 'plan_changed', 'maintenance_required', 'migration_lock_busy', 'queue_unsafe', 'operator_denied'], true)) return $code;
         return 'verification_failed';
     }
 }

@@ -134,19 +134,27 @@ class DewawiMigrationInspector
 
     public static function digest(array $value): string { return hash('sha256', json_encode($value, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)); }
 
-    public function executionPlan(string $installation): array
+    public function executionPlan(string $installation, string $operation = 'migrate'): array
     {
         $history = $this->history();
         $this->validateHistory($history);
-        if (!isset($history[self::BASELINE])) throw new DewawiMigrationException('explicit_baseline_registration_required');
+        if (!in_array($operation, ['migrate', 'baseline'], true)) throw new DewawiMigrationException('invalid_operation');
+        if ($operation === 'migrate' && !isset($history[self::BASELINE])) throw new DewawiMigrationException('explicit_baseline_registration_required');
+        if ($operation === 'baseline' && isset($history[self::BASELINE])) throw new DewawiMigrationException('baseline_already_registered');
         require_once dirname(__DIR__, 2) . '/library/DEEC/Version.php';
         $version = dewawiVersion();
         if ($version === null) throw new DewawiMigrationException('invalid_application_version');
         $catalog = [];
         foreach ($this->catalog as $entry) $catalog[] = array_intersect_key($entry, array_flip(['id', 'checksum', 'definition', 'depends', 'transition']));
-        return ['format' => 1, 'installation' => $installation, 'database' => $this->databaseIdentity($installation), 'version' => $version,
-            'baseline' => $history[self::BASELINE]['checksum'], 'history' => self::digest(array_values($history)), 'catalog' => $catalog,
+        $plan = ['format' => 1, 'installation' => $installation, 'database' => $this->databaseIdentity($installation), 'version' => $version,
+            'baseline' => $history[self::BASELINE]['checksum'] ?? hash_file('sha256', $this->reference), 'history' => self::digest(array_values($history)), 'catalog' => $catalog,
             'pending' => array_values(array_diff(array_keys($this->catalog), array_keys($history)))];
+        if ($operation === 'baseline') {
+            $plan['operation'] = 'baseline';
+            $plan['history_table'] = $this->historyExists;
+            $plan['pending'] = [self::BASELINE];
+        }
+        return $plan;
     }
 
     public function inspect(): array

@@ -68,8 +68,9 @@ alerts and responsive migration cards support keyboard and narrow-screen use.
 
 No per-user configuration is necessary for administrator access. The implementation
 does not edit private configuration or any installation database.
-No SQL follow-up is required for this feature. Any missing baseline or failed
-migration still needs the separately authorized M1 verification/recovery process.
+No SQL migration is required for this feature. Since M2D, a missing baseline can
+be checked/registered through its own UI approval and CLI-worker operation; failed
+or ambiguous history still needs the separately authorized recovery process.
 
 ## Controlled execution (M2B)
 
@@ -88,8 +89,27 @@ retain their existing interface and do not gain any HTTP execution path.
 
 Worker acceptance/results and external operational releases are audit evidence,
 not a second database-version history. Only `dewawi_schema_migration` records
-migration success. Failed/started states remain blocked; baseline registration,
-checksum overrides and automatic repair are never exposed by M2B.
+migration success. Failed/started states remain blocked. M2D adds only the separately approved
+baseline-registration worker operation described below; checksum overrides and
+automatic repair remain unavailable.
+
+## Baseline operation (M2D)
+
+Normal administrators use **Check and register database baseline** in the update
+UI. The CLI worker's `baselinePlan` reuses `verifyBaseline`, checks actual schema
+under lock and binds its normalized fingerprint plus reference/catalog/history
+metadata. `registerApprovedBaseline` repeats that comparison, then calls M1's
+existing `baseline` with the worker's preconditions. Missing schema never becomes
+a registered basis. Successful registration publishes only the next pending
+feature plan; it cannot execute shipping automatically.
+
+Historical data/backfills need separate independent root-controlled evidence in
+`evidence/REQUEST.historical.json`, in addition to backup/restore/maintenance
+release. Both sources are bound to the same request/plan/identity and preserved
+unchanged with the worker audit. See the [M2D operations procedure](../updates/README.md#first-baseline-registration-through-the-ui-m2d).
+No browser request writes schema/history, runs a shell or automatically registers
+anything. Existing diagnostic/emergency CLI commands below remain available to
+separately authorized technical operators with the normal operational safeguards.
 
 ## Operator commands
 

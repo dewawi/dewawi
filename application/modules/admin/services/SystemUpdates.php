@@ -4,7 +4,7 @@ require_once dirname(__DIR__, 4) . '/tools/updates/Files.php';
 
 class Admin_Service_SystemUpdates
 {
-    public const CODES = ['running', 'completed', 'interrupted', 'migration_failed', 'request_invalid', 'evidence_required', 'evidence_invalid', 'database_identity', 'plan_changed', 'maintenance_required', 'migration_lock_busy', 'queue_unsafe', 'operator_denied', 'baseline_required', 'verification_failed', 'manual_review'];
+    public const CODES = ['running', 'completed', 'interrupted', 'migration_failed', 'request_invalid', 'evidence_required', 'evidence_invalid', 'database_identity', 'plan_changed', 'maintenance_required', 'migration_lock_busy', 'queue_unsafe', 'operator_denied', 'baseline_required', 'verification_failed', 'manual_review', 'baseline_incomplete', 'historical_required', 'historical_invalid', 'baseline_registered', 'baseline_registration_failed'];
     private DewawiUpdateFiles $files;
 
     public function __construct(DewawiUpdateFiles $files) { $this->files = $files; }
@@ -17,7 +17,13 @@ class Admin_Service_SystemUpdates
         $state['available'] = $state['heartbeat_until'] >= time() && $state['expires_at'] > time();
         if ($state['plan'] !== null) {
             try {
-                $actual = $inspector->executionPlan($this->files->policy['installation']);
+                $operation = $state['plan']['operation'] ?? 'migrate';
+                $actual = $inspector->executionPlan($this->files->policy['installation'], $operation);
+                if ($operation === 'baseline') {
+                    if (!DewawiUpdateFiles::hex($state['plan']['schema'] ?? null, 64)) throw new RuntimeException('plan_changed');
+                    // HTTP only compares metadata; the worker repeats the full schema check under lock.
+                    $actual['schema'] = $state['plan']['schema'];
+                }
                 if ($actual['database'] !== $state['database'] || !hash_equals(DewawiMigrationInspector::digest($actual), $state['digest'])) throw new RuntimeException('plan_changed');
                 $state['plan'] = $actual;
             } catch (Throwable $error) { $state['available'] = false; $state['plan'] = null; $state['issues'][] = 'plan_changed'; }
@@ -31,8 +37,8 @@ class Admin_Service_SystemUpdates
     public static function job($job): ?array
     {
         if (!is_array($job) || !DewawiUpdateFiles::hex($job['id'] ?? null) || !in_array($job['status'] ?? null, ['waiting', 'running', 'completed', 'failed', 'manual_review', 'rejected'], true)
-            || !is_int($job['at'] ?? null) || !in_array($job['code'] ?? null, self::CODES, true)) return null;
-        return array_intersect_key($job, array_flip(['id', 'status', 'code', 'at']));
+            || !is_int($job['at'] ?? null) || !in_array($job['code'] ?? null, self::CODES, true) || !in_array($job['operation'] ?? 'migrate', ['migrate', 'baseline'], true)) return null;
+        return array_intersect_key($job, array_flip(['id', 'status', 'code', 'at', 'operation'])) + ['operation' => 'migrate'];
     }
 
     public static function session(): Zend_Session_Namespace { return new Zend_Session_Namespace('SystemUpdates'); }

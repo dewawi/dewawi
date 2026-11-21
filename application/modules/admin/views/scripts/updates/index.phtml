@@ -32,6 +32,13 @@ echo $this->Messages();
         </dl>
         <p class="dw-alert dw-alert--warning"><?php echo $label('UPDATES_VERIFICATION_REQUIRED'); ?></p>
     </section>
+    <?php if ($report['baseline'] !== 'completed') : ?>
+    <section aria-labelledby="updates-baseline-registration">
+        <h3 id="updates-baseline-registration"><?php echo $label('UPDATES_OPERATION_BASELINE'); ?></h3>
+        <p><?php echo $label('UPDATES_BASELINE_PROCESS'); ?></p>
+        <p class="dw-alert dw-alert--warning"><?php echo $label('UPDATES_HISTORICAL_NOTICE'); ?></p>
+    </section>
+    <?php endif; ?>
     <section aria-labelledby="updates-migrations">
         <h3 id="updates-migrations" tabindex="-1"><?php echo $label('UPDATES_AVAILABLE'); ?></h3>
         <p><?php echo $label('UPDATES_CATALOG_NOTICE'); ?></p>
@@ -70,21 +77,31 @@ echo $this->Messages();
             <?php if ($state['job']) : $job = $state['job']; ?>
                 <h4><?php echo $label('UPDATES_JOB'); ?></h4>
                 <dl><dt><?php echo $label('UPDATES_JOB_ID'); ?></dt><dd><code><?php echo $this->escape($job['id']); ?></code></dd>
+                <dt><?php echo $label('UPDATES_OPERATION'); ?></dt><dd><?php echo $label('UPDATES_OPERATION_' . strtoupper($job['operation'])); ?></dd>
                 <dt><?php echo $label('UPDATES_STATUS'); ?></dt><dd><?php echo $label('UPDATES_JOB_' . strtoupper($job['status'])); ?></dd>
                 <dt><?php echo $label('UPDATES_RESULT'); ?></dt><dd><?php echo $label('UPDATES_WORKER_CODE_' . strtoupper($job['code'])); ?></dd>
                 <dt><?php echo $label('UPDATES_UPDATED'); ?></dt><dd><?php echo $this->escape(gmdate('Y-m-d H:i:s', $job['at']) . ' UTC'); ?></dd></dl>
             <?php endif; ?>
+            <?php $isBaseline = $state['plan'] && ($state['plan']['operation'] ?? 'migrate') === 'baseline'; ?>
             <?php if ($state['plan']) : $plan = $state['plan']; ?>
-                <h4><?php echo $label('UPDATES_PLAN'); ?></h4>
+                <h4><?php echo $label($isBaseline ? 'UPDATES_OPERATION_BASELINE' : 'UPDATES_PLAN'); ?></h4>
                 <dl><dt><?php echo $label('UPDATES_RELEASED_VERSION'); ?></dt><dd><?php echo $this->escape($plan['version']); ?></dd>
                 <dt><?php echo $label('UPDATES_PLAN_HASH'); ?></dt><dd><code><?php echo $this->escape($state['digest']); ?></code></dd>
-                <dt><?php echo $label('UPDATES_PENDING'); ?></dt><dd><?php echo count($plan['pending']); ?></dd></dl>
+                <dt><?php echo $label($isBaseline ? 'UPDATES_REGISTRATION_COUNT' : 'UPDATES_PENDING'); ?></dt><dd><?php echo count($plan['pending']); ?></dd></dl>
+                <?php if ($isBaseline) : ?>
+                    <p><?php echo $label('UPDATES_SCHEMA_VERIFIED'); ?> <?php echo $this->escape(gmdate('Y-m-d H:i:s', $state['created_at']) . ' UTC'); ?></p>
+                    <dl><dt><?php echo $label('UPDATES_BASELINE'); ?></dt><dd><code>baseline/1.1.8</code></dd>
+                    <dt><?php echo $label('UPDATES_REFERENCE_HASH'); ?></dt><dd><code><?php echo $this->escape($plan['baseline']); ?></code></dd>
+                    <dt><?php echo $label('UPDATES_SCHEMA_HASH'); ?></dt><dd><code><?php echo $this->escape($plan['schema']); ?></code></dd></dl>
+                    <p class="dw-alert dw-alert--warning"><?php echo $label('UPDATES_HISTORICAL_NOTICE'); ?></p>
+                <?php else : ?>
                 <ol><?php foreach ($plan['catalog'] as $entry) : if (!in_array($entry['id'], $plan['pending'], true)) continue; ?>
                     <li><h4><code><?php echo $this->escape($entry['id']); ?></code></h4>
                     <dl><dt><?php echo $label('UPDATES_TRANSITION'); ?></dt><dd><?php echo $this->escape($entry['transition']); ?></dd>
                     <dt><?php echo $label('UPDATES_FILE_HASH'); ?></dt><dd><code><?php echo $this->escape($entry['checksum']); ?></code></dd>
                     <dt><?php echo $label('UPDATES_DEFINITION_HASH'); ?></dt><dd><code><?php echo $this->escape($entry['definition']); ?></code></dd></dl></li>
                 <?php endforeach; ?></ol>
+                <?php endif; ?>
             <?php endif; ?>
             <?php if ($this->updateConfirmation) : $approval = $this->updateConfirmation; ?>
                 <p><?php echo $label('UPDATES_JOB_NOT_APPROVED'); ?></p>
@@ -93,13 +110,13 @@ echo $this->Messages();
                     <input type="hidden" name="csrf" value="<?php echo $this->escape($approval['csrf']); ?>">
                     <input type="hidden" name="nonce" value="<?php echo $this->escape($approval['nonce']); ?>">
                     <input type="hidden" name="plan" value="<?php echo $this->escape($state['digest']); ?>">
-                    <p><label><input type="checkbox" name="confirm" value="1" required> <?php echo $label('UPDATES_CONFIRM_PLAN'); ?></label></p>
-                    <button type="submit" class="dw-btn dw-btn--primary"><?php echo $label('UPDATES_APPROVE'); ?></button>
+                    <p><label><input type="checkbox" name="confirm" value="1" required> <?php echo $label($isBaseline ? 'UPDATES_CONFIRM_BASELINE' : 'UPDATES_CONFIRM_PLAN'); ?></label></p>
+                    <button type="submit" class="dw-btn dw-btn--primary"><?php echo $label($isBaseline ? 'UPDATES_APPROVE_BASELINE' : 'UPDATES_APPROVE'); ?></button>
                 </form>
             <?php endif; ?>
             <?php if ($state['recent']) : ?>
                 <h4><?php echo $label('UPDATES_RECENT'); ?></h4>
-                <ul><?php foreach ($state['recent'] as $job) : ?><li><code><?php echo $this->escape($job['id']); ?></code>: <?php echo $label('UPDATES_JOB_' . strtoupper($job['status'])); ?> — <?php echo $label('UPDATES_WORKER_CODE_' . strtoupper($job['code'])); ?></li><?php endforeach; ?></ul>
+                <ul><?php foreach ($state['recent'] as $job) : ?><li><code><?php echo $this->escape($job['id']); ?></code>: <?php echo $label('UPDATES_OPERATION_' . strtoupper($job['operation'])); ?> — <?php echo $label('UPDATES_JOB_' . strtoupper($job['status'])); ?> — <?php echo $label('UPDATES_WORKER_CODE_' . strtoupper($job['code'])); ?></li><?php endforeach; ?></ul>
             <?php endif; ?>
         <?php endif; ?>
         <?php if ($this->submittedUpdate && (!$state || !$state['job'] || $this->submittedUpdate['id'] !== $state['job']['id'])) : ?><p role="status"><?php echo $label('UPDATES_SUBMITTED'); ?> <code><?php echo $this->escape($this->submittedUpdate['id']); ?></code></p><?php endif; ?>

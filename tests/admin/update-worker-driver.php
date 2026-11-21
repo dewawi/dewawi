@@ -21,6 +21,14 @@ $db = new class(['host' => 'localhost', 'unix_socket' => $work . '/mysql.sock', 
         }
         return parent::insert($table, $bind);
     }
+    public function update($table, array $bind, $where = '')
+    {
+        if (getenv('DEWAWI_TEST_BEFORE_COMPLETE') === '1' && $table === 'dewawi_schema_migration' && ($bind['status'] ?? null) === 'completed') {
+            file_put_contents(getenv('DEWAWI_UPDATES_TEST_WORK') . '/before-complete.signal', 'paused');
+            sleep(30);
+        }
+        return parent::update($table, $bind, $where);
+    }
 };
 $files = new UpdatesProtocolFiles($work . '/queue', 'worker');
 $worker = new DewawiUpdateWorker($files, $db);

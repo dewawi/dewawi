@@ -1,10 +1,13 @@
-# Controlled system updates (M2B)
+# Controlled system updates (M2B–M2D)
 
 M2B adds approval submission to `/admin/updates/index`. Application version stays
 **1.1.8**. No service, account, credential, database privilege, production migration
 or private installation setting is installed/changed by this implementation.
-M1 remains the only migration engine. Baseline registration remains a separate
-explicit CLI operator procedure, including historical data-backfill review.
+M1 remains the only migration engine. Since M2D, the UI also prepares and confirms
+a separate baseline-registration operation executed by this worker, including an
+independent historical data-backfill audit. Normal administrators do not need to
+run tools/migrate.php manually. That tool remains available for separately
+authorized technical diagnosis/emergency work; its CLI interface is unchanged.
 
 ## Trust boundary and workflow
 
@@ -31,7 +34,7 @@ explicit CLI operator procedure, including historical data-backfill review.
    state, compares the complete plan, verifies the external release and actual
    `@@GLOBAL.read_only = 1`, and independently checks the persisted operator account.
    It durably consumes the plan token and records acceptance before invoking
-   `M1::applyApproved`. Evidence, its lease, database identity, account status and
+   the matching M1 entry point (`applyApproved` or `registerApprovedBaseline`). Evidence, its lease, database identity, account status and
    the write fence are checked again before each SQL statement. The approved
    catalog bytes are held in memory; deployment must remain frozen throughout.
 7. M1 records `started` and each statement number before execution and preserves
@@ -113,7 +116,8 @@ root-owned `control.json`. The worker cannot change this pin.
 
 Copy [M1's database template](../migrations/database.sample.ini) to the private
 `database.ini`. Use a dedicated DB account with SELECT for M1 schema/history and
-operator checks, INSERT/UPDATE on the existing central history table, and **only**
+operator checks, CREATE plus INSERT/UPDATE for the central history table (including
+its first creation), and **only**
 the SQL rights needed by the reviewed catalog. Current shipping migration 001
 needs CREATE/ALTER/INDEX/REFERENCES; no generic SUPER privilege is necessary on
 MariaDB 10.11 when a DBA grants `READ_ONLY ADMIN` for the maintenance bypass.
@@ -245,6 +249,104 @@ partial JSON. This is a controlled server-operator step; no HTTP endpoint create
 or edits evidence. Preserve superseded evidence outside the live queue under the
 incident/change record; do not overwrite release evidence during a run.
 
+## First baseline registration through the UI (M2D)
+
+When validated M1 history has no `baseline/1.1.8`, worker publication selects the
+separate **Check and register database baseline** operation. Under the existing
+M1 lock it runs `verifyBaseline` against the actual schema: every required frozen
+1.1.8 table, engine/collation, column, named index and foreign key must match.
+Missing/changed requirements block the plan. No table/column is repaired or
+assumed present. Additional objects remain subject to M1's existing compatibility
+rules. The plan includes the frozen-reference SHA-256, normalized actual-schema
+SHA-256, history-table presence, history/catalog checksums, database identity and
+only the baseline registration in its `pending` list. Application version is not
+evidence that these checks passed.
+
+HTTP only validates inexpensive current metadata against that worker snapshot;
+it never loads the CLI migrator or performs the full schema scan. The UI displays
+the worker check time, operation and hashes, explains the historical-audit
+prerequisite and requires a distinct explicit registration confirmation. The same
+CSRF/one-use/session/account controls and external operational release apply.
+Worker preflight repeats the actual schema check and compares the entire plan
+under lock before accepting or writing. A changed schema, including compatible
+extra objects, or a changed empty-history-table state requires a new plan/approval.
+
+**Schema matching cannot certify historical DML/backfills.** In addition to the
+ordinary root-owned `evidence/REQUEST.json` backup/restore/maintenance release,
+require an independently reviewed data-audit report for the actual installation.
+It must document installation provenance, the relevant historical upgrade path
+through 1.1.8, each required data backfill and the concrete checks/results against
+actual data. Never attest merely because tables exist, the label says 1.1.8 or an
+old migration file exists. Unresolved historical data means no registration.
+
+The external server authority verifies that report and installs a separate
+root:dewawi-update, 0640 `evidence/REQUEST.historical.json`, with the same atomic,
+fsynced/no-overwrite publication procedure as other evidence:
+
+```json
+{
+  "format": 1,
+  "request": "32_HEX_CAPTURED_REQUEST_ID",
+  "request_sha256": "SHA256_OF_EXACT_PRIVATE_REQUEST_BYTES",
+  "plan": "64_HEX_APPROVED_BASELINE_PLAN_HASH",
+  "installation": "32_HEX_INSTALLATION_ID",
+  "database": "64_HEX_PINNED_DATABASE_FINGERPRINT",
+  "operator": 123,
+  "scope": "historical-data-through-1.1.8",
+  "baseline_sha256": "64_HEX_FROZEN_REFERENCE_HASH_FROM_PLAN",
+  "reference": "historical-data-audit-ticket-id",
+  "report_sha256": "64_HEX_ACTUAL_INDEPENDENT_AUDIT_REPORT_HASH",
+  "confirmed_by": "independent-data-reviewer",
+  "checked_at": 0
+}
+```
+
+Use the captured actor ID and real Unix UTC review time. The audit must be checked
+within the current fenced maintenance period (`checked_at >= maintenance.since`)
+and not in the future. Both evidence files must name this exact request, captured
+bytes, plan, installation and database. Ordinary operational evidence still owns
+the expiry, backup/restore and maintenance lease; it is not replaced by the data
+audit. Missing historical evidence leaves an unaccepted request waiting; invalid
+or mismatched evidence rejects it. The worker independently checks root ownership,
+mode, exact schema, binding, audit reference/confirmer, report-hash format and
+review time. It does not independently inspect the report artifact or perform
+business-specific backfill checks: the external authority must actually verify
+them before attesting. Neither the web process nor the worker can create this
+root-controlled file. This is a separate prerequisite, not a browser checkbox.
+
+The accepted request, baseline plan and both exact evidence snapshots/hashes are
+preserved in private records; public acceptance/results identify `operation =
+baseline`. M1's existing `baseline` API is the sole writer of the central history:
+it creates/validates that table and persists the baseline's started/completed
+markers with the frozen-reference checksum. It never executes historical update
+SQL or a feature migration. The durable worker acceptance precedes first history
+creation, when no central start row can yet exist. Preconditions are rechecked
+before creation, start and completion. A failure/interruption at any of these
+points is unresolved and requires manual review, including a created but empty
+history table; worker restart never guesses success or retries registration.
+
+After success, the worker publishes the normal next plan immediately. M1 reports
+the registered baseline and shipping migration 001 as pending. A new web
+confirmation and a new per-request operational release are mandatory before that
+migration executes. No feature SQL is automatically run. An already registered
+baseline offers only the normal migration plan, never another registration.
+Direct technical CLI baseline calls retain their existing idempotence for
+separately authorized operator work; no manual history-row editing is introduced.
+
+A development fresh-install snapshot may already contain shipping schema without
+feature history. Registering the frozen baseline does **not** certify those
+feature IDs or authorize replaying their CREATE statements. Retain M1's existing
+snapshot/provenance limitation: obtain a separately reviewed initialization or
+recovery procedure before approving a conflicting feature migration. M2D never
+infers completed feature history from table existence.
+
+No additional worker JSON settings, SQL migration files, frozen reference changes
+or application-version changes are required. The DBA must ensure the dedicated
+worker can create the previously absent history table and insert/update its rows
+under the read-only maintenance fence. Existing installations with table-specific
+grants may need that separately authorized privilege setup; no grants are applied
+by this implementation. Real OS-account/service acceptance remains mandatory.
+
 ## Running and observing the worker
 
 ```sh
@@ -270,7 +372,7 @@ the ten most recent retained results. It uses native GET/POST, no auto-save or
 background shell. Stale heartbeat or changed M1 state removes the approval form.
 An offline worker's last state is retained; a `running` record plus lost heartbeat
 is a reason to investigate, never proof of success. Final public records contain
-only request ID, operator ID, plan digest, timestamp and sanitized status/reason.
+only request ID, operator ID, plan digest, operation, timestamp and sanitized status/reason.
 Private diagnostics and M1 history retain the migration/statement/SQLSTATE evidence
 without putting SQL contents or credentials in HTTP responses or process output.
 
@@ -315,4 +417,5 @@ unsafe queue. No production bypass/test mode exists.
 **Actual multi-user OS denial tests and systemd service execution remain mandatory
 on the deployment/test server before activation.** The local protocol tests are
 not certification of that untested boundary. No production setup has been enabled.
-See the concrete [M2B test report](../../tests/admin/update-worker.md).
+See the current [M2D test report](../../tests/admin/update-baseline.md) and the
+historical [M2B test report](../../tests/admin/update-worker.md).
