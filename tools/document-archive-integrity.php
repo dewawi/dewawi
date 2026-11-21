@@ -1,6 +1,8 @@
 <?php
 
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+require_once dirname(__DIR__) . '/library/DEEC/UpdateMaintenance.php';
+DEEC_UpdateMaintenance::protectInstallation(dirname(__DIR__));
 
 require_once dirname(__DIR__) . '/tests/documents/document-recovery.php';
 

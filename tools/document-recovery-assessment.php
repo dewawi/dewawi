@@ -1,6 +1,8 @@
 <?php
 
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+require_once dirname(__DIR__) . '/library/DEEC/UpdateMaintenance.php';
+DEEC_UpdateMaintenance::protectInstallation(dirname(__DIR__));
 require_once dirname(__DIR__) . '/tests/documents/document-recovery.php';
 set_include_path(dirname(__DIR__) . '/library' . PATH_SEPARATOR . get_include_path());
 spl_autoload_register(static function(string $class): void { if ($path = stream_resolve_include_path(str_replace('_', '/', $class) . '.php')) require_once $path; });

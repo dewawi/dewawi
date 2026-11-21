@@ -6,8 +6,10 @@ class Admin_UpdatesController extends DEEC_Controller_AdminAction
     {
         if (!DEEC_SystemOperator::allowed()) throw new Zend_Controller_Action_Exception('Forbidden', 403);
         $action = $this->getRequest()->getActionName();
-        if (!in_array($action, ['index', 'approve'], true)) throw new Zend_Controller_Action_Exception('Not found', 404);
-        $methods = $action === 'approve' ? ['POST'] : ['GET', 'HEAD'];
+        $options = $this->options();
+        $shared = DEEC_UpdateMaintenance::mode($options) === 'shared';
+        if (!in_array($action, $shared ? ['index', 'initialize', 'approve', 'maintenance', 'prepare', 'execute', 'finish'] : ['index', 'approve'], true)) throw new Zend_Controller_Action_Exception('Not found', 404);
+        $methods = $action !== 'index' ? ['POST'] : ['GET', 'HEAD'];
         if (!in_array($this->getRequest()->getMethod(), $methods, true)) {
             $this->getResponse()->setHeader('Allow', implode(', ', $methods), true);
             throw new Zend_Controller_Action_Exception('Method not allowed', 405);
@@ -19,9 +21,20 @@ class Admin_UpdatesController extends DEEC_Controller_AdminAction
 
     protected function shouldPrepareAttachmentDirectory(): bool { return false; }
 
+    private function options(): array { return Zend_Controller_Front::getInstance()->getParam('bootstrap')->getOption('systemUpdates') ?? []; }
+
+    private function hosting(bool $initializing = false): ?DewawiHostingUpdates
+    {
+        $options = $this->options();
+        if (DEEC_UpdateMaintenance::mode($options) !== 'shared' || empty($options['statePath'])) return null;
+        require_once dirname(APPLICATION_PATH) . '/tools/updates/Hosting.php';
+        return new DewawiHostingUpdates($options['statePath'], Zend_Db_Table::getDefaultAdapter(), dirname(APPLICATION_PATH) . '/install/config/migrations', $initializing);
+    }
+
     protected function queue(): ?Admin_Service_SystemUpdates
     {
-        $options = Zend_Controller_Front::getInstance()->getParam('bootstrap')->getOption('systemUpdates');
+        $options = $this->options();
+        if (DEEC_UpdateMaintenance::mode($options) !== 'worker') return null;
         if (empty($options['queuePath']) || !is_string($options['queuePath'])) return null;
         return new Admin_Service_SystemUpdates(new DewawiUpdateFiles($options['queuePath'], 'web'));
     }
@@ -49,7 +62,8 @@ class Admin_UpdatesController extends DEEC_Controller_AdminAction
         }
         $version = dewawiVersion();
         if ($version === null) $report['issues'][] = 'version_invalid';
-        $state = $confirmation = null;
+        $state = $confirmation = $hostingState = $hostingCsrf = null;
+        $hostingMode = DEEC_UpdateMaintenance::mode($this->options()) === 'shared';
         set_error_handler(static function(int $severity): bool {
             if (!(error_reporting() & $severity)) return false;
             throw new ErrorException('update_queue_unavailable');
@@ -57,15 +71,23 @@ class Admin_UpdatesController extends DEEC_Controller_AdminAction
         try {
             $queue = $this->queue();
             if ($queue && isset($inspector)) { $state = $queue->state($inspector); $confirmation = $queue->confirmation($state); }
+            if ($hostingMode) {
+                require_once dirname(APPLICATION_PATH) . '/tools/updates/Hosting.php';
+                if (!empty($this->options()['statePath'])) $hostingCsrf = DewawiHostingUpdates::csrf();
+                $hosting = $this->hosting();
+                if ($hosting) $hostingState = $hosting->status();
+            }
         } catch (Throwable $error) { $state = null; }
         finally { restore_error_handler(); }
         $this->view->assign(['applicationVersion' => $version, 'updateReport' => $report, 'workerState' => $state, 'updateConfirmation' => $confirmation,
+            'hostingMode' => $hostingMode, 'hostingState' => $hostingState, 'hostingCsrf' => $hostingCsrf,
             'submittedUpdate' => Admin_Service_SystemUpdates::session()->submitted]);
         $this->assignMessages();
     }
 
     public function approveAction()
     {
+        if (DEEC_UpdateMaintenance::mode($this->options()) === 'shared') return $this->hostingAction('approve');
         set_error_handler(static function(int $severity): bool {
             if (!(error_reporting() & $severity)) return false;
             throw new ErrorException('update_queue_unavailable');
@@ -79,6 +101,44 @@ class Admin_UpdatesController extends DEEC_Controller_AdminAction
             $forbidden = $error instanceof Zend_Controller_Action_Exception && $error->getCode() === 403;
             $this->getResponse()->setHttpResponseCode($forbidden ? 403 : 409);
             $this->view->updateApprovalError = $forbidden ? 'UPDATES_CONFIRM_INVALID' : 'UPDATES_APPROVAL_FAILED';
+            $this->_helper->viewRenderer->setRender('index');
+            $this->indexAction();
+        } finally { restore_error_handler(); }
+    }
+
+    public function maintenanceAction() { return $this->hostingAction('maintenance'); }
+    public function initializeAction() { return $this->hostingAction('initialize'); }
+    public function prepareAction() { return $this->hostingAction('prepare'); }
+    public function executeAction() { return $this->hostingAction('execute'); }
+    public function finishAction() { return $this->hostingAction('finish'); }
+
+    private function hostingAction(string $action)
+    {
+        require_once dirname(APPLICATION_PATH) . '/tools/updates/Hosting.php';
+        set_error_handler(static function(int $severity): bool {
+            if (!(error_reporting() & $severity)) return false;
+            throw new ErrorException('configuration');
+        });
+        try {
+            $h = $this->hosting($action === 'initialize');
+            if (!$h) throw new RuntimeException('configuration');
+            $post = (array)$this->getRequest()->getPost();
+            $keys = ['csrf'];
+            if (in_array($action, ['initialize', 'maintenance', 'approve', 'execute', 'finish'], true)) $keys[] = 'password';
+            if ($action === 'approve') $keys = array_merge($keys, ['nonce', 'plan', 'confirm']);
+            if ($action === 'execute') $keys[] = 'request';
+            $h->authorize($post, $keys, in_array('password', $keys, true));
+            if ($action === 'initialize') $h->initialize();
+            elseif ($action === 'maintenance') $h->begin();
+            elseif ($action === 'prepare') $h->prepare();
+            elseif ($action === 'approve') $h->approve($post);
+            elseif ($action === 'execute') $h->execute(is_string($post['request']) ? $post['request'] : '');
+            elseif ($action === 'finish') $h->finish();
+            return $this->_helper->redirector->gotoSimple('index', 'updates', 'admin');
+        } catch (Throwable $error) {
+            $code = in_array($error->getMessage(), DewawiHostingUpdates::CODES, true) ? $error->getMessage() : 'verification';
+            $this->getResponse()->setHttpResponseCode(in_array($code, ['confirmation', 'authentication'], true) ? 403 : 409);
+            $this->view->updateApprovalError = 'UPDATES_HOST_CODE_' . strtoupper($code);
             $this->_helper->viewRenderer->setRender('index');
             $this->indexAction();
         } finally { restore_error_handler(); }

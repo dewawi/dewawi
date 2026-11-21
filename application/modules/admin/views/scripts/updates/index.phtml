@@ -35,8 +35,8 @@ echo $this->Messages();
     <?php if ($report['baseline'] !== 'completed') : ?>
     <section aria-labelledby="updates-baseline-registration">
         <h3 id="updates-baseline-registration"><?php echo $label('UPDATES_OPERATION_BASELINE'); ?></h3>
-        <p><?php echo $label('UPDATES_BASELINE_PROCESS'); ?></p>
-        <p class="dw-alert dw-alert--warning"><?php echo $label('UPDATES_HISTORICAL_NOTICE'); ?></p>
+        <p><?php echo $label($this->hostingMode ? 'UPDATES_HOST_BASELINE_PROCESS' : 'UPDATES_BASELINE_PROCESS'); ?></p>
+        <p class="dw-alert dw-alert--warning"><?php echo $label($this->hostingMode ? 'UPDATES_HOST_HISTORICAL' : 'UPDATES_HISTORICAL_NOTICE'); ?></p>
     </section>
     <?php endif; ?>
     <section aria-labelledby="updates-migrations">
@@ -63,8 +63,9 @@ echo $this->Messages();
         <h3 id="updates-security"><?php echo $label('UPDATES_SECURITY'); ?></h3>
         <p><?php echo $label('UPDATES_BACKUP_NOTICE'); ?></p>
         <p><?php echo $label('UPDATES_RECOVERY_NOTICE'); ?></p>
-        <p><?php echo $label('UPDATES_EXECUTION_BOUNDARY'); ?></p>
+        <p><?php echo $label($this->hostingMode ? 'UPDATES_HOST_BOUNDARY' : 'UPDATES_EXECUTION_BOUNDARY'); ?></p>
     </section>
+    <?php if ($this->hostingMode) : echo $this->render('updates/hosting.phtml'); else : ?>
     <section aria-labelledby="updates-worker">
         <h3 id="updates-worker"><?php echo $label('UPDATES_WORKER'); ?></h3>
         <p><a class="dw-btn" href="<?php echo $this->escape($this->url(['module' => 'admin', 'controller' => 'updates', 'action' => 'index'], null, true)); ?>"><?php echo $label('UPDATES_REFRESH'); ?></a></p>
@@ -121,4 +122,5 @@ echo $this->Messages();
         <?php endif; ?>
         <?php if ($this->submittedUpdate && (!$state || !$state['job'] || $this->submittedUpdate['id'] !== $state['job']['id'])) : ?><p role="status"><?php echo $label('UPDATES_SUBMITTED'); ?> <code><?php echo $this->escape($this->submittedUpdate['id']); ?></code></p><?php endif; ?>
     </section>
+    <?php endif; ?>
 </div>

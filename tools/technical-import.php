@@ -2,6 +2,8 @@
 
 // Explicit private CLI: no application DB configuration, route, upload, or default writes.
 if(PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+require_once dirname(__DIR__) . '/library/DEEC/UpdateMaintenance.php';
+DEEC_UpdateMaintenance::protectInstallation(dirname(__DIR__));
 $root = dirname(__DIR__);
 set_include_path($root.'/library'.PATH_SEPARATOR.get_include_path());
 spl_autoload_register(static function(string $class) use ($root): void {

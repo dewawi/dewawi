@@ -77,6 +77,20 @@ try {
 		))
 	);
 
+	// Hold a shared lease through bootstrap, dispatch and cron work, including GET writers.
+	require_once __DIR__ . '/library/DEEC/UpdateMaintenance.php';
+	try {
+		$path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+		$base = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/index.php'), '/.');
+		$updateRoute = PHP_SAPI !== 'cli' && preg_match('~^' . preg_quote($base, '~') . '/(?:index\.php/)?admin/updates(?:/(?:index|initialize|maintenance|prepare|approve|execute|finish))?/?$~D', $path ?? '');
+		DEEC_UpdateMaintenance::enter($application->getOption('systemUpdates') ?? [], (bool)$updateRoute);
+	} catch (Throwable $maintenanceError) {
+		while (ob_get_level() > $startupBufferLevel) ob_end_clean();
+		if (PHP_SAPI === 'cli') fwrite(STDERR, "Maintenance unavailable\n");
+		else { http_response_code(503); header('Cache-Control: no-store'); header('Retry-After: 60'); echo 'Maintenance unavailable'; }
+		exit(1);
+	}
+
 	// Cronjobs initialize configuration without dispatching the web application.
 	if (!defined('_CRONJOB_') || !_CRONJOB_) $application->bootstrap();
 	ob_end_flush();

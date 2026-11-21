@@ -1,10 +1,10 @@
 <?php
 
-if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+if (PHP_SAPI !== 'cli' && !(class_exists('DewawiHostingUpdates', false) && DEEC_UpdateMaintenance::exclusiveHeld())) { http_response_code(404); exit; }
 
 require_once __DIR__ . '/Inspector.php';
 
-// Writes and full schema verification remain restricted to PHP CLI.
+// Execution belongs to CLI or the explicitly authorized hosting maintenance boundary.
 class DewawiSqlMigrator extends DewawiMigrationInspector
 {
     private $lock;
@@ -173,19 +173,19 @@ class DewawiSqlMigrator extends DewawiMigrationInspector
         return $this->plan();
     }
 
-    public function applyApproved(array $approved, string $installation, callable $precondition): array
+    public function applyApproved(array $approved, string $installation, callable $precondition, bool $single = false): array
     {
         if (!$this->locked) throw new DewawiMigrationException('migration_lock_required');
         if (!hash_equals(self::digest($approved), self::digest($this->executionPlan($installation)))) throw new DewawiMigrationException('approved_plan_changed');
         $precondition();
-        return $this->apply(null, $precondition);
+        return $this->apply(null, $precondition, $single ? 1 : null);
     }
 
-    public function apply(?string $bundle = null, ?callable $precondition = null): array
+    public function apply(?string $bundle = null, ?callable $precondition = null, ?int $limit = null): array
     {
         $plan = $this->plan($bundle);
         if ($plan['baseline'] !== 'completed') throw new DewawiMigrationException('explicit_baseline_registration_required');
-        foreach ($plan['pending'] as $id) {
+        foreach ($limit === null ? $plan['pending'] : array_slice($plan['pending'], 0, $limit) as $id) {
             $entry = $this->catalog[$id];
             if ($precondition) $precondition();
             $this->start($id, $entry['checksum'], $entry['definition']);

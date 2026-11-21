@@ -1,0 +1,74 @@
+<?php
+$label = function(string $key): string { return $this->escape($this->translate($key)); };
+$url = function(string $action): string { return $this->escape($this->url(['module' => 'admin', 'controller' => 'updates', 'action' => $action], null, true)); };
+$h = $this->hostingState;
+$csrf = $this->escape($this->hostingCsrf ?? '');
+?>
+<section aria-labelledby="updates-hosting">
+    <h3 id="updates-hosting"><?php echo $label('UPDATES_HOST_TITLE'); ?></h3>
+    <p><?php echo $label('UPDATES_HOST_BOUNDARY'); ?></p>
+    <?php if (!$h) : ?>
+        <p class="dw-alert dw-alert--warning"><?php echo $label('UPDATES_HOST_SETUP'); ?></p>
+        <?php if ($this->hostingCsrf) : ?>
+        <form method="post" action="<?php echo $url('initialize'); ?>" data-autosave="false">
+            <input type="hidden" name="csrf" value="<?php echo $csrf; ?>">
+            <p><label><?php echo $label('UPDATES_HOST_PASSWORD'); ?> <input type="password" name="password" autocomplete="current-password" required></label></p>
+            <button type="submit" class="dw-btn"><?php echo $label('UPDATES_HOST_INITIALIZE'); ?></button>
+        </form>
+        <?php endif; ?>
+    <?php else : ?>
+        <p><?php echo $label($h['maintenance'] ? 'UPDATES_HOST_MAINTENANCE_ON' : 'UPDATES_HOST_MAINTENANCE_OFF'); ?></p>
+        <p><?php echo $label($h['evidence'] ? 'UPDATES_HOST_EVIDENCE_PRESENT' : 'UPDATES_HOST_CODE_EVIDENCE'); ?></p>
+        <?php if (!$h['rights']) : ?><p class="dw-alert dw-alert--warning"><?php echo $label('UPDATES_HOST_CODE_RIGHTS'); ?></p><?php endif; ?>
+        <p><?php echo $label('UPDATES_HOST_RUNTIME'); ?></p>
+        <p><?php echo $label($h['http_available'] ? 'UPDATES_HOST_HTTP_AVAILABLE' : 'UPDATES_HOST_CODE_ALTERNATIVE'); ?></p>
+        <?php if (!$h['maintenance']) : ?>
+            <form method="post" action="<?php echo $url('maintenance'); ?>" data-autosave="false">
+                <input type="hidden" name="csrf" value="<?php echo $csrf; ?>">
+                <p><label><?php echo $label('UPDATES_HOST_PASSWORD'); ?> <input type="password" name="password" autocomplete="current-password" required></label></p>
+                <button type="submit" class="dw-btn"><?php echo $label('UPDATES_HOST_BEGIN'); ?></button>
+            </form>
+        <?php else : ?>
+            <form method="post" action="<?php echo $url('prepare'); ?>" data-autosave="false">
+                <input type="hidden" name="csrf" value="<?php echo $csrf; ?>">
+                <button type="submit" class="dw-btn"><?php echo $label('UPDATES_HOST_PREPARE'); ?></button>
+            </form>
+            <?php if ($h['plan']) : $p = $h['plan']; $a = $h['approval']; ?>
+                <h4><?php echo $label($p['selected'] === 'baseline/1.1.8' ? 'UPDATES_OPERATION_BASELINE' : 'UPDATES_PLAN'); ?></h4>
+                <dl><dt><?php echo $label('UPDATES_HOST_SELECTED'); ?></dt><dd><code><?php echo $this->escape($p['selected']); ?></code></dd>
+                <dt><?php echo $label('UPDATES_PLAN_HASH'); ?></dt><dd><code><?php echo $this->escape($a['digest']); ?></code></dd>
+                <?php foreach ($p['m1']['catalog'] as $entry) : if ($entry['id'] !== $p['selected']) continue; ?>
+                <dt><?php echo $label('UPDATES_FILE_HASH'); ?></dt><dd><code><?php echo $this->escape($entry['checksum']); ?></code></dd>
+                <dt><?php echo $label('UPDATES_DEFINITION_HASH'); ?></dt><dd><code><?php echo $this->escape($entry['definition']); ?></code></dd>
+                <?php endforeach; ?>
+                <dt><?php echo $label('UPDATES_REFERENCE_HASH'); ?></dt><dd><code><?php echo $this->escape($p['m1']['baseline']); ?></code></dd>
+                <?php if (isset($p['m1']['schema'])) : ?><dt><?php echo $label('UPDATES_SCHEMA_HASH'); ?></dt><dd><code><?php echo $this->escape($p['m1']['schema']); ?></code></dd><?php endif; ?>
+                <dt><?php echo $label('UPDATES_HOST_EVIDENCE_HASH'); ?></dt><dd><code><?php echo $this->escape($p['evidence_sha256']); ?></code></dd></dl>
+                <form method="post" action="<?php echo $url('approve'); ?>" data-autosave="false">
+                    <input type="hidden" name="csrf" value="<?php echo $csrf; ?>">
+                    <input type="hidden" name="nonce" value="<?php echo $this->escape($a['nonce']); ?>">
+                    <input type="hidden" name="plan" value="<?php echo $this->escape($a['digest']); ?>">
+                    <p><label><input type="checkbox" name="confirm" value="1" required> <?php echo $label($p['selected'] === 'baseline/1.1.8' ? 'UPDATES_HOST_CONFIRM_BASELINE' : 'UPDATES_HOST_CONFIRM'); ?></label></p>
+                    <p><label><?php echo $label('UPDATES_HOST_PASSWORD'); ?> <input type="password" name="password" autocomplete="current-password" required></label></p>
+                    <button type="submit" class="dw-btn dw-btn--primary"><?php echo $label('UPDATES_HOST_APPROVE'); ?></button>
+                </form>
+            <?php endif; ?>
+            <?php if ($h['pending']) : ?>
+                <form method="post" action="<?php echo $url('execute'); ?>" data-autosave="false">
+                    <input type="hidden" name="csrf" value="<?php echo $csrf; ?>">
+                    <input type="hidden" name="request" value="<?php echo $this->escape($h['pending']); ?>">
+                    <p><label><?php echo $label('UPDATES_HOST_PASSWORD'); ?> <input type="password" name="password" autocomplete="current-password" required></label></p>
+                    <button type="submit" class="dw-btn dw-btn--primary"><?php echo $label('UPDATES_HOST_EXECUTE'); ?></button>
+                </form>
+            <?php endif; ?>
+            <form method="post" action="<?php echo $url('finish'); ?>" data-autosave="false">
+                <input type="hidden" name="csrf" value="<?php echo $csrf; ?>">
+                <p><label><?php echo $label('UPDATES_HOST_PASSWORD'); ?> <input type="password" name="password" autocomplete="current-password" required></label></p>
+                <button type="submit" class="dw-btn"><?php echo $label('UPDATES_HOST_FINISH'); ?></button>
+            </form>
+        <?php endif; ?>
+        <h4><?php echo $label('UPDATES_RECENT'); ?></h4>
+        <ul><?php foreach ($h['jobs'] as $job) : ?><li><code><?php echo $this->escape($job['id']); ?></code> · <code><?php echo $this->escape($job['selected']); ?></code> · <?php echo $label('UPDATES_HOST_STATUS_' . strtoupper($job['status'])); ?>
+            <?php if (!empty($job['code'])) : ?> · <?php echo $label('UPDATES_HOST_CODE_' . strtoupper($job['code'])); ?><?php endif; ?></li><?php endforeach; ?></ul>
+    <?php endif; ?>
+</section>

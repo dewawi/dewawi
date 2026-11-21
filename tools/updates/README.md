@@ -1,4 +1,19 @@
-# Controlled system updates (M2B–M2D)
+# System update operating modes (M2E)
+
+The regular hosting-compatible mode is now **A: shared PHP account**, documented
+in [HOSTING.md](HOSTING.md). It needs no new Linux account, root-owned queue,
+global database read-only flag, systemd or CLI access. Its explicit HTTP execution
+uses M1 with a cooperative maintenance fence and mandatory operational evidence.
+Web and migration have the same OS/DB authority; this has no OS isolation.
+
+**B: separate CLI worker** below remains the stricter optional mode. Its ownership,
+root-release, private credentials and global read-only requirements are unchanged.
+Set `systemUpdates.mode = worker` to select it explicitly. For compatibility,
+existing `queuePath` installations without an explicit mode still select B.
+Without either setting, A is displayed but cannot execute until privately set up.
+Never switch modes or queues to bypass an unfinished request or M1 state.
+
+# Variant B: controlled separate worker (M2B–M2D)
 
 M2B adds approval submission to `/admin/updates/index`. Application version stays
 **1.1.8**. No service, account, credential, database privilege, production migration

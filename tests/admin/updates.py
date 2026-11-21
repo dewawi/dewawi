@@ -146,7 +146,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-') as directory:
             sock.bind(('127.0.0.1', 0)); port = sock.getsockname()[1]
         origin = 'http://127.0.0.1:'+str(port)
         log = (work/'http.log').open('w')
-        web = subprocess.Popen(['php', '-S', '127.0.0.1:'+str(port), '-t', str(work), str(ROOT/'tests/admin/updates-fixture.php')], env=env, stdout=log, stderr=log)
+        web = subprocess.Popen(['php', '-d', 'opcache.enable=0', '-S', '127.0.0.1:'+str(port), '-t', str(work), str(ROOT/'tests/admin/updates-fixture.php')], env=env, stdout=log, stderr=log)
 
         def request(path='/admin/updates/index', method='GET'):
             try:
@@ -196,7 +196,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-') as directory:
             if content is None: version_file.unlink()
             else: version_file.write_bytes(content)
             status, body, _ = request()
-            check(status == 200 and 'Version 1.1.8' not in body and 'zentrale Anwendungsversion fehlt' in body, 'Missing/invalid version not safely shown in ERP')
+            check(status == 200 and 'Version 1.1.8' not in body and 'zentrale Anwendungsversion fehlt' in body, 'Missing/invalid version not safely shown in ERP: '+str(status)+' '+body)
         version_file.write_bytes(version)
         for content in [b'broken', b'{"transitions":[{"from":"1.1.8","to":"1.1.9","migrations":[{"file":"001-shop-shipping.sql","depends":[["PRIVATE_"]]}]}]}']:
             registry.write_bytes(content)

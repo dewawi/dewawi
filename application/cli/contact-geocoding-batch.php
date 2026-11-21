@@ -1,6 +1,8 @@
 <?php
 
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+require_once dirname(__DIR__, 2) . '/library/DEEC/UpdateMaintenance.php';
+DEEC_UpdateMaintenance::protectInstallation(dirname(__DIR__, 2));
 ini_set('display_errors', '0');
 ini_set('log_errors', '0');
 error_reporting(E_ALL & ~E_DEPRECATED);

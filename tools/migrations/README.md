@@ -4,8 +4,10 @@ This is development infrastructure for transitions starting at **1.1.8 → 1.1.9
 It neither releases 1.1.9 nor changes application versions. The frozen 1.1.8
 reference, `update-1.1.7-1.1.8.sql`, installer and old update paths are unchanged.
 C4A.2 adds the first feature migration and synchronizes the development
-`structure.sql`; it does not regenerate the frozen reference. No application bootstrap, HTTP, cron or shop entry point calls it.
-Run it manually with PHP CLI and an explicitly selected database configuration.
+`structure.sql`; it does not regenerate the frozen reference. No ordinary
+application bootstrap, cron, shop or API call runs migrations. Use explicitly
+authorized update actions in [hosting mode A](../updates/HOSTING.md), the separate
+B worker, or the technical CLI with an explicitly selected database configuration.
 
 ## Read-only system overview (M2A)
 
@@ -25,7 +27,7 @@ receive this **installation-wide** authority. Ordinary users, inactive/deleted
 admins and mismatched identities are denied. The left menu and central System
 card use the same gate as the ACL and controller.
 
-Execution still requires the separate worker and per-request root-controlled
+In mode B, execution requires the separate worker and per-request root-controlled
 backup/restore and maintenance release. The worker independently checks the actual
 approving account in the database before execution and again at each precondition
 check; revoking admin/active status or deleting the account blocks queued work.
@@ -35,7 +37,7 @@ for setup and removal of obsolete allowlist settings.
 
 The overview loads `Inspector.php`, the common M1 catalog/history reader. The
 CLI migrator inherits the same catalog, SQL splitter and history validation;
-the web process never includes the CLI migrator or runner. The installer SQL
+ordinary overview GET/HEAD never include the migrator or runner. The installer SQL
 splitter is extracted without changing its API or parsing behavior, so inspection
 does not install the installer's error handlers. The shared inspector has no
 baseline registration, SQL execution, lock/session mutation or history repair API.
@@ -47,7 +49,8 @@ This is an **unlocked snapshot**, not an approved execution plan or a live schem
 certificate. Only the central history table's engine/columns/primary key,
 registered row state, statement counts, ordered dependencies, and file/definition
 checksums are checked. Full application-schema inspection and lock acquisition
-remain in the separate CLI run. The page always says verification is required.
+belong to explicit locked preparation/execution in A or the separate CLI in B.
+The page always says verification is required.
 The shared row validation also rejects invalid/zero history timestamps instead
 of displaying them as successful completion.
 It cannot prove current schema integrity or past data backfills, even when every
@@ -58,7 +61,7 @@ withholds the pending count and last-success summary. Unknown IDs, raw database
 exceptions, SQLSTATE values, SQL contents and private paths are never displayed.
 Descriptions come only from reviewed translation strings for known catalog IDs.
 
-GET and HEAD of `index` remain read-only. Optional M2B adds only a protected
+GET and HEAD of `index` remain read-only. In optional mode B, M2B adds a protected
 POST `approve` action, which writes an untrusted bounded request to an external
 file queue. It cannot execute SQL or start a process. Without a verified worker
 snapshot and safe queue configuration there is no approval form. Inherited CRUD,
@@ -67,7 +70,7 @@ Responses are private/no-store. DE/EN status text, native navigation, focusable
 alerts and responsive migration cards support keyboard and narrow-screen use.
 
 No per-user configuration is necessary for administrator access. The implementation
-does not edit private configuration or any installation database.
+does not edit private INI configuration or change an installation database on GET.
 No SQL migration is required for this feature. Since M2D, a missing baseline can
 be checked/registered through its own UI approval and CLI-worker operation; failed
 or ambiguous history still needs the separately authorized recovery process.
@@ -112,6 +115,18 @@ anything. Existing diagnostic/emergency CLI commands below remain available to
 separately authorized technical operators with the normal operational safeguards.
 
 ## Operator commands
+
+M2E adds [hosting mode A](../updates/HOSTING.md): explicit authorized HTTP or
+same-account CLI execution reuses this engine, executing only the next approved
+feature step. The standalone migrator URL remains denied. Normal GET, ERP, shop,
+API and cron requests never run migrations. CLI `baseline`, `apply` and bundle
+interfaces remain compatible; default calls still apply the complete M1 plan.
+The separate worker retains its original guards and CLI-only boundary.
+
+When hosting mode A is configured, technical installation CLI entry points also
+take the cooperative shared maintenance lease, including `migrate.php`. Use the
+documented `update-hosting.php` consumer for an approved request during maintenance;
+do not bypass its fence with an emergency CLI command.
 
 Copy [database.sample.ini](database.sample.ini) to a private location outside the
 web root; restrict filesystem access and choose the existing Zend INI section.

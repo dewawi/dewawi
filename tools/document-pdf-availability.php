@@ -1,6 +1,8 @@
 <?php
 
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+require_once dirname(__DIR__) . '/library/DEEC/UpdateMaintenance.php';
+DEEC_UpdateMaintenance::protectInstallation(dirname(__DIR__));
 require_once __DIR__ . '/document-historical-recovery.php';
 
 function availabilityScope(Zend_Db_Adapter_Abstract $db, string $scope, int $client): array

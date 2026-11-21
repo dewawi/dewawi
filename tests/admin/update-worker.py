@@ -30,7 +30,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
         for entry in (ROOT/'library').iterdir():
             if entry.name != 'DEEC': (source/'library'/entry.name).symlink_to(entry)
         for name in ['css', 'js', 'images']: (source/name).symlink_to(ROOT/name)
-        (source/'configs/operator.ini').write_text('[production]\n')
+        (source/'configs/operator.ini').write_text('[production]\nsystemUpdates.mode=worker\n')
         (work/'sessions').mkdir()
         env = dict(os.environ, DEWAWI_UPDATES_TEST_WORK=str(work), DEWAWI_UPDATES_PROTOCOL_TEST='1')
         subprocess.run(['mariadb-install-db', '--no-defaults', '--datadir='+str(work/'data'), '--auth-root-authentication-method=normal', '--skip-test-db'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -95,7 +95,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
         check(missing_config.returncode != 0 and str(work) not in missing_config.stderr and 'private-worker-secret' not in missing_config.stderr, 'Missing private config leaked or ran')
         with socket.socket() as sock: sock.bind(('127.0.0.1',0)); port=sock.getsockname()[1]
         origin='http://127.0.0.1:'+str(port); log=(work/'http.log').open('w')
-        web=subprocess.Popen(['php','-S','127.0.0.1:'+str(port),'-t',str(source),str(ROOT/'tests/admin/updates-fixture.php')],env=env,stdout=log,stderr=log)
+        web=subprocess.Popen(['php','-d','opcache.enable=0','-S','127.0.0.1:'+str(port),'-t',str(source),str(ROOT/'tests/admin/updates-fixture.php')],env=env,stdout=log,stderr=log)
         class StopRedirect(urllib.request.HTTPRedirectHandler):
             def redirect_request(self,*args,**kwargs): return None
         def client(): return urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()),StopRedirect())
@@ -130,6 +130,9 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
                 if sql("SELECT COUNT(*) FROM dewawi_schema_migration WHERE status='started'",database)=='1': return
                 time.sleep(.05)
             raise AssertionError('No durable SQL start marker')
+        if '--hosting-only' in sys.argv:
+            runpy.run_path(str(ROOT/'tests/admin/update-hosting.py'))['run'](globals())
+            raise SystemExit(0)
         for role in ['reader','guest','inactive','deleted','mismatch']:
             for tenant in [7,8,9]:
                 check(request('/admin/updates/approve?role='+role+'&tenant='+str(tenant)+'&direct=1',{'csrf':'forged'})[0]==403,'Unauthorized direct actor queued a job')
@@ -244,10 +247,11 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
             check(status==200 and not any(x in body for x in ['private-worker-secret','CREATE TABLE','SELECT *',str(work),'sqlstate_']),'Secret/SQL/path output')
         print(f'PASS: {checks} M2B/M2C/M2D protocol, MariaDB, HTTP, replay, failure/recovery and Chromium checks')
         print('LIMIT: UID ownership emulated explicitly; production rejects this single-UID deployment. Real multi-user OS isolation requires deployment-host acceptance.')
+        runpy.run_path(str(ROOT/'tests/admin/update-hosting.py'))['run'](globals())
     finally:
         for child in children:
             if child.poll() is None: child.kill(); child.wait()
         if web:
             web.terminate();web.wait(timeout=10)
-            if sys.exc_info()[0]:log.flush(); print((work/'http.log').read_text()[-7000:])
+            if sys.exc_info()[0] and not (isinstance(sys.exc_info()[1], SystemExit) and sys.exc_info()[1].code == 0):log.flush(); print((work/'http.log').read_text()[-7000:])
         if server:server.terminate();server.wait(timeout=20)
