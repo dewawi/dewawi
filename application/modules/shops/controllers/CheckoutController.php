@@ -41,6 +41,9 @@ class Shops_CheckoutController extends Shops_Controller_Action
 		$checkout->shippingcountry->addMultiOptions($countries)->setValue('DE');
 		foreach (['billingcountry', 'shippingcountry'] as $field) $checkout->getElement($field)->setRegisterInArrayValidator(false)
 			->addValidator('InArray', true, ['haystack' => array_keys($countries), 'messages' => $this->view->translate('SHOPS_CHECKOUT_COUNTRY_INVALID')]);
+		$methods = ['delivery' => $this->view->translate('SHOPS_SHIPPING_DELIVERY')];
+		if (!empty($this->_site['shippingcurrency']) && !empty($this->_site['pickupenabled'])) $methods['pickup'] = $this->view->translate('SHOPS_SHIPPING_PICKUP');
+		$checkout->addElement('select', 'shippingmethod', ['multiOptions' => $methods, 'value' => 'delivery', 'class' => 'form-control']);
 		return $checkout;
 	}
 
@@ -55,7 +58,7 @@ class Shops_CheckoutController extends Shops_Controller_Action
 		$this->view->checkoutReview = $review;
 		$current = $this->cartPositions($this->cart->getItems());
 		$this->view->positions = $current['positions'] ?? [];
-		$this->view->orderTotals = $current && $current['positions'] ? Shops_Service_OrderSnapshot::build($this->_site, [], $current['positions']) : null;
+		$this->view->orderTotals = $review['order'] ?? ($current && $current['positions'] ? $this->orderSnapshot($checkout->getValues(), $current['positions']) : null);
 		$this->assignMessages();
 	}
 
@@ -118,18 +121,22 @@ class Shops_CheckoutController extends Shops_Controller_Action
 		$cart = $current['cart'];
 		$shop = $this->_site;
 		try {
-			$orderSnapshot = Shops_Service_OrderSnapshot::build($shop, $data, $positions);
+			$orderSnapshot = $this->orderSnapshot($data, $positions);
 		} catch (Throwable $e) {
 			error_log('Shop checkout summary unavailable: ' . $e->getMessage());
 			return $this->checkoutFailure('SHOPS_SUBMISSION_UNAVAILABLE', 503, $checkout);
 		}
 		$fingerprint = hash('sha256', json_encode([$token, $cartRevision, $orderSnapshot, $positions], JSON_THROW_ON_ERROR));
+		$freight = Shops_Service_OrderSnapshot::decode($orderSnapshot['snapshot'])['freight'];
+		$canOrder = $freight['status'] === 'calculated' || !empty($freight['legacy']);
 		if (!in_array($post['checkout_stage'] ?? 'preview', ['preview', 'confirm'], true)) return $this->checkoutFailure('SHOPS_FORM_INVALID', 422, $checkout);
 		if (($post['checkout_stage'] ?? 'preview') === 'preview') {
 			$review = ['token' => bin2hex(random_bytes(32)), 'fingerprint' => $fingerprint, 'checkoutToken' => $token];
 			$this->checkoutDataSession->review = $review;
-			$reviewData = ['order' => $orderSnapshot, 'positions' => $positions, 'reviewToken' => $review['token']];
-			if ($request->isXmlHttpRequest()) return $this->_helper->json(['success' => true, 'reviewHtml' => $this->view->partial('checkout/_review.phtml', $reviewData), 'csrfToken' => $checkout->renewCsrfToken()]);
+			$reviewData = ['order' => $orderSnapshot, 'positions' => $positions, 'reviewToken' => $review['token'],
+				'canRequestShipping' => $this->_siteContext->hasFeature('contact') || $this->_siteContext->hasFeature('inquiry')];
+			if ($request->isXmlHttpRequest()) return $this->_helper->json(['success' => true, 'reviewHtml' => $this->view->partial('checkout/_review.phtml', $reviewData),
+				'summaryHtml' => $this->view->partial('checkout/_summary.phtml', $reviewData), 'csrfToken' => $checkout->renewCsrfToken()]);
 			return $this->renderCheckout($checkout, $data, $reviewData);
 		}
 		$review = $this->checkoutDataSession->review ?? [];
@@ -137,6 +144,11 @@ class Shops_CheckoutController extends Shops_Controller_Action
 			|| !hash_equals($review['token'], $post['review_token']) || !hash_equals($review['fingerprint'], $fingerprint)) {
 			return $this->checkoutFailure('SHOPS_CHECKOUT_REVIEW_CHANGED', 409, $checkout);
 		}
+		if (!empty($post['checkout_quote'])) {
+			if ($canOrder || $freight['status'] !== 'quote_required') return $this->checkoutFailure('SHOPS_FORM_INVALID', 422, $checkout);
+			return $this->sendShippingInquiry($orderSnapshot, $positions, $data, $token, $checkout);
+		}
+		if (!$canOrder) return $this->checkoutFailure($freight['status'] === 'unavailable' ? 'SHOPS_SHIPPING_UNAVAILABLE' : 'SHOPS_SHIPPING_QUOTE_REQUIRED', 409, $checkout);
 		try {
 			$rate = $this->consumeSubmissionLimit('checkout', 10, 3600);
 		} catch (Throwable $e) {
@@ -153,8 +165,12 @@ class Shops_CheckoutController extends Shops_Controller_Action
 		try {
 			$result = $orderDb->saveCheckoutOnce((int)$shop['id'], $token, array_merge([
 				'contactid' => $contactId, 'invoiceid' => 0, 'orderdate' => $orderDate, 'total' => $total,
-			], $orderSnapshot), $positions);
+			], $orderSnapshot), $positions, function() use ($data, $positions, $orderSnapshot): void {
+				$current = $this->cartPositions($this->cart->getItems());
+				if (!$current || $current['positions'] !== $positions || $this->orderSnapshot($data, $current['positions']) !== $orderSnapshot) throw new DomainException('SHOPS_CHECKOUT_REVIEW_CHANGED');
+			});
 		} catch (Throwable $e) {
+			if ($e instanceof DomainException && $e->getMessage() === 'SHOPS_CHECKOUT_REVIEW_CHANGED') return $this->checkoutFailure('SHOPS_CHECKOUT_REVIEW_CHANGED', 409, $checkout);
 			error_log('Shop checkout could not be stored: ' . $e->getMessage());
 			return $this->checkoutFailure('SHOPS_CHECKOUT_SAVE_UNCERTAIN', 503, $checkout);
 		}
@@ -208,6 +224,52 @@ class Shops_CheckoutController extends Shops_Controller_Action
 
 		$this->checkoutDataSession->receipt = ['token' => $token, 'notificationSent' => $this->checkoutDataSession->notificationSent ?? null];
 		return $this->checkoutSuccess();
+	}
+
+	private function orderSnapshot(array $data, array $positions): array
+	{
+		$country = $data[!empty($data['differentshippingaddress']) ? 'shippingcountry' : 'billingcountry'] ?? '';
+		$selection = array_map(static fn($position) => array_intersect_key($position, array_flip(['itemid', 'quantity'])), $positions);
+		$freight = (new Shops_Service_ShippingConfiguration())->calculateCheckout($selection, ['country' => $country, 'method' => ($data['shippingmethod'] ?? '') ?: 'delivery']);
+		return Shops_Service_OrderSnapshot::build($this->_site, $data, $positions, $freight);
+	}
+
+	private function sendShippingInquiry(array $order, array $positions, array $data, string $token, Shops_Form_Checkout $checkout)
+	{
+		if (!$this->_siteContext->hasFeature('contact') && !$this->_siteContext->hasFeature('inquiry')) return $this->checkoutFailure('SHOPS_SHIPPING_QUOTE_CONTACT', 409, $checkout);
+		$snapshot = Shops_Service_OrderSnapshot::decode($order['snapshot']);
+		$message = $this->view->translate('SHOPS_SHIPPING_QUOTE_REQUIRED') . "\n" . $data['message'];
+		foreach (['billing', 'shipping'] as $type) $message .= "\n" . $this->view->translate($type === 'billing' ? 'SHOPS_ORDER_BILLING' : 'SHOPS_ORDER_SHIPPING') . ': ' . implode(', ', $snapshot[$type]);
+		foreach ($positions as $position) {
+			$item = Shops_Service_OrderSnapshot::decode($position['snapshot']);
+			$message .= "\n" . $position['quantity'] . ' × ' . $item['sku'] . ' – ' . $item['title'];
+		}
+		$values = ['name' => $data['billingname'], 'email' => $data['email'], 'phone' => $data['billingphone'],
+			'subject' => $this->view->translate('SHOPS_SHIPPING_QUOTE_REQUEST'), 'message' => $message, 'privacy' => 1];
+		try {
+			$rate = $this->consumeSubmissionLimit('contact', 5, 900);
+			if (!$rate['allowed']) { $this->setRateLimitResponse((int)$rate['retryAfter']); return $this->checkoutFailure('SHOPS_RATE_LIMIT', 429, $checkout); }
+			$stored = (new Shops_Model_DbTable_Inquirydata())->saveOnce(0, hash('sha256', 'shipping:' . $token . ':' . $this->checkoutDataSession->review['fingerprint']), $values + [
+				'origin' => 'shipping_quote', 'source_path' => parse_url($this->view->url([], 'checkout'), PHP_URL_PATH),
+				'_shipping' => $snapshot['freight'], '_order' => $order, '_positions' => $positions,
+			]);
+		} catch (Throwable $e) {
+			error_log('Shop shipping inquiry unavailable: ' . $e->getMessage());
+			return $this->checkoutFailure('SHOPS_SUBMISSION_UNAVAILABLE', 503, $checkout);
+		}
+		$session = new Zend_Session_Namespace('ShopsContact');
+		$session->context = $this->_siteContext->getClientId() . ':' . $this->_siteContext->getSiteId();
+		$session->formData = $values; $session->stored = true; $session->duplicate = !$stored['inserted']; $session->notificationSent = null;
+		if ($stored['inserted']) {
+			try {
+				$this->getRequest()->setPost($values);
+				$result = $this->_helper->Email->sendEmail('shops', 'contact', 'contact');
+				$session->notificationSent = !empty($result['customerAccepted']);
+				if (($result['internalAccepted'] ?? null) === false) error_log('Stored shipping inquiry internal notification was not accepted by SMTP');
+			} catch (Throwable $e) { $session->notificationSent = false; error_log('Stored shipping inquiry notification failed: ' . $e->getMessage()); }
+		}
+		if ($this->getRequest()->isXmlHttpRequest()) return $this->_helper->json(['success' => true, 'redirect' => $this->view->url([], 'contact_success')]);
+		return $this->_helper->redirector->gotoRoute([], 'contact_success', true);
 	}
 
 	private function cartPositions(array $cart): ?array

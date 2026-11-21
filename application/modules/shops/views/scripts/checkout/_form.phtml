@@ -26,6 +26,7 @@
 				</div>
 			</fieldset>
 		<?php endforeach; ?>
+		<?php echo $this->partial('checkout/_field.phtml', ['element' => $form->shippingmethod, 'label' => $this->translate('SHOPS_SHIPPING_METHOD')]); ?>
 		<fieldset>
 			<legend><?php echo $this->translate('SHOPS_CHECKOUT_CONTACT'); ?></legend>
 			<?php echo $this->partial('checkout/_field.phtml', ['element' => $form->email, 'label' => $this->translate('SHOPS_PLACEHOLDER_EMAIL')]); ?>

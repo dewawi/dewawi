@@ -7,5 +7,12 @@
 <input type="hidden" name="review_token" value="<?php echo $this->escape($this->reviewToken); ?>">
 <div class="dw-checkout-actions">
 	<button class="btn btn-secondary" type="submit" name="checkout_edit" value="1" formnovalidate><?php echo $this->translate('SHOPS_CHECKOUT_EDIT'); ?></button>
-	<button class="btn btn-success" type="submit" data-checkout-confirm><?php echo $this->translate('SHOPS_LABEL_ORDER'); ?></button>
+	<?php $freight = $snapshot['freight'] ?? null; ?>
+	<?php if (!$freight || $freight['status'] === 'calculated' || !empty($freight['legacy'])) : ?>
+		<button class="btn btn-success" type="submit" data-checkout-confirm><?php echo $this->translate('SHOPS_LABEL_ORDER'); ?></button>
+	<?php elseif ($freight['status'] === 'quote_required' && $this->canRequestShipping) : ?>
+		<button class="btn btn-primary" type="submit" name="checkout_quote" value="1"><?php echo $this->translate('SHOPS_SHIPPING_QUOTE_REQUEST'); ?></button>
+	<?php elseif ($freight['status'] === 'quote_required') : ?>
+		<p><?php echo $this->translate('SHOPS_SHIPPING_QUOTE_CONTACT'); ?></p>
+	<?php endif; ?>
 </div>

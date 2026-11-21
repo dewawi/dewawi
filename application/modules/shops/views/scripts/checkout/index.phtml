@@ -8,7 +8,8 @@
 				<div class="col-lg-7 mb-4"><?php echo $this->CheckoutForm($this->translate('SHOPS_ORDER_FORM')); ?></div>
 				<aside class="col-lg-5 mb-4" aria-label="<?php echo $this->escape($this->translate('SHOPS_ORDER_POSITIONS')); ?>">
 					<h2><?php echo $this->translate('SHOPS_SHOPPING_CART'); ?></h2>
-					<div class="cart-wrapper"><?php echo $this->partial('checkout/_summary.phtml', ['order' => $this->orderTotals, 'positions' => $this->positions]); ?></div>
+					<p data-checkout-recheck hidden><?php echo $this->translate('SHOPS_SHIPPING_RECHECK'); ?></p>
+					<div class="cart-wrapper" data-checkout-summary><?php echo $this->partial('checkout/_summary.phtml', ['order' => $this->orderTotals, 'positions' => $this->positions]); ?></div>
 				</aside>
 			</div>
 		<?php else : ?><p><?php echo $this->translate('SHOPS_SHOPPING_CART_EMPTY'); ?></p><?php endif; ?>

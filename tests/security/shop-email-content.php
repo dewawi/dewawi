@@ -210,4 +210,16 @@ foreach (['SHOPS_FORM_EXPIRED', 'SHOPS_SUBMISSION_TOO_LARGE', 'SHOPS_RATE_LIMIT'
     check(!empty($german[$key]) && !empty($english[$key]) && $german[$key] !== $english[$key], 'Public submission error is not translated: ' . $key);
 }
 
+foreach (['de_DE', 'en_US'] as $locale) {
+    Zend_Registry::set('Shop', array_merge(Zend_Registry::get('Shop'), ['language' => $locale]));
+    $formData = ['subject' => 'Order', 'message' => 'Saved note', 'differentshippingaddress' => 0];
+    foreach (['name', 'company', 'department', 'street', 'city', 'postcode', 'country', 'phone'] as $field) $formData['billing' . $field] = 'Saved ' . $field;
+    $freight = ['goods_net' => '100.00', 'label' => 'Delivery <img src=x>', 'net' => '12.00'];
+    $order = ['currency' => 'EUR', 'total' => 112, 'taxes' => 21.28, 'grosstotal' => 133.28, 'snapshot' => json_encode(['version' => 2, 'freight' => $freight])];
+    [$body] = $bodyMethod->invoke(new Application_Controller_Action_Helper_Email(), 'shops', 'checkout', $formData,
+        ['subject' => 'Order', 'message' => 'Saved note', 'orderid' => 123, 'orderdate' => '2026-11-21', '__shop_order' => $order], []);
+    check(str_contains($body, $locale === 'de_DE' ? '133,28' : '133.28') && str_contains($body, $locale === 'de_DE' ? '12,00' : '12.00'), 'Email shipping or gross total missing');
+    check(str_contains($body, $locale === 'de_DE' ? 'Versandkosten netto' : 'Shipping net amount') && !str_contains($body, 'SHOPS_'), 'Email shipping labels are untranslated');
+    check(!str_contains($body, '<img') && str_contains($body, '&lt;img'), 'Snapshot shipping method is not escaped in mail');
+}
 echo "OK ({$checks} checks)\n";

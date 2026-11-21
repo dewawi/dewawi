@@ -36,6 +36,19 @@ if (PHP_SAPI === 'cli') {
 		foreach ([[103, 11], [104, 11], [105, null], [106, 12]] as [$id, $tax]) $db->insert('item', ['id' => $id, 'clientid' => 7, 'shopid' => 41, 'catid' => 0, 'shopenabled' => 1, 'title' => 'Wärmepumpe <img src=x onerror=alert(1)>', 'sku' => 'ITEM-' . $id, 'price' => 500, 'specialprice' => 100, 'currency' => 'EUR', 'taxid' => $tax]);
 		$db->query("CREATE TRIGGER reject_checkout_fixture BEFORE INSERT ON shoporderpos FOR EACH ROW BEGIN IF NEW.itemid = 104 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fixture position failure'; END IF; END");
 		mkdir(dirname($socket) . '/checkout-flow-sessions', 0700);
+	} elseif (($argv[2] ?? '') === 'shipping-init') {
+		$db->insert('client', ['id' => 7, 'country' => 'DE']);
+		$db->insert('currency', ['clientid' => 7, 'code' => 'EUR', 'name' => 'Euro', 'symbol' => '€']);
+		$db->update('shop', ['shippingcurrency' => 'EUR', 'pickupenabled' => 1, 'contactenabled' => 1], 'id = 41');
+		$db->insert('shopshippingclass', ['id' => 1, 'clientid' => 7, 'shopid' => 41, 'title' => 'Parcel', 'active' => 1, 'combine_same_class' => 1, 'required_fields' => '["packweight"]']);
+		$db->insert('shopshippingzone', ['id' => 1, 'clientid' => 7, 'shopid' => 41, 'title' => 'Germany', 'active' => 1, 'countries' => '["DE"]']);
+		$db->insert('shopshippingtariff', ['id' => 1, 'clientid' => 7, 'shopid' => 41, 'classid' => 1, 'zoneid' => 1, 'title' => 'Parcel', 'active' => 1, 'model' => 'fixed', 'currency' => 'EUR', 'parameters' => '{"amount":"12.00"}']);
+		foreach ([103,105,106] as $id) $db->insert('shopitemshipping', ['clientid' => 7, 'shopid' => 41, 'itemid' => $id, 'classid' => 1, 'active' => 1, 'packages_per_unit' => 1, 'separate' => 0]);
+		$db->update('item', ['packweight' => 5], 'shopid = 41');
+	} elseif (($argv[2] ?? '') === 'shipping-tariff') {
+		$db->update('shopshippingtariff', ['model' => $argv[3] === 'manual' ? 'manual' : 'fixed', 'parameters' => $argv[3] === 'manual' ? '{}' : json_encode(['amount' => $argv[3]])], 'id = 1');
+	} elseif (($argv[2] ?? '') === 'pickup') {
+		$db->update('shop', ['pickupenabled' => (int)$argv[3]], 'id = 41');
 	} elseif (($argv[2] ?? '') === 'tax-change') {
 		$db->update('taxrate', ['rate' => (float)$argv[3]], 'id = 11');
 	} elseif (($argv[2] ?? '') === 'price-change') {
@@ -43,7 +56,8 @@ if (PHP_SAPI === 'cli') {
 	} else {
 		echo json_encode(['orders' => $db->fetchAll('SELECT id, orderid, shopid, clientid, token, total, taxes, grosstotal, snapshot FROM shoporder'),
 			'positions' => (int)$db->fetchOne('SELECT COUNT(*) FROM shoporderpos'), 'history' => (int)$db->fetchOne('SELECT COUNT(*) FROM shoporderhistory'),
-			'mails' => is_file(dirname($socket) . '/checkout-mails.log') ? count(file(dirname($socket) . '/checkout-mails.log')) : 0]);
+			'mails' => is_file(dirname($socket) . '/checkout-mails.log') ? count(file(dirname($socket) . '/checkout-mails.log')) : 0,
+			'inquiries' => $db->fetchAll('SELECT data FROM shopinquirydata')]);
 	}
 	exit;
 }
@@ -51,6 +65,7 @@ $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $assets = ['/_assets/jquery.min.js' => '/tmp/dewawi-jquery-3.7.1.min.js', '/_assets/bootstrap.min.css' => '/tmp/dewawi-bootstrap-4.6.2.min.css', '/js/shops.js' => $root . '/js/shops.js', '/css/shop.css' => $root . '/css/shop.css'];
 if (isset($assets[$path])) { header('Content-Type: ' . (str_ends_with($path, '.css') ? 'text/css' : 'application/javascript')); readfile($assets[$path]); exit; }
 if ($path === '/_checkout-runner') { header('Content-Type: text/html; charset=UTF-8'); readfile($root . '/tests/site/checkout-runner.html'); exit; }
+if ($path === '/_shipping-runner') { header('Content-Type: text/html; charset=UTF-8'); readfile($root . '/tests/site/checkout-shipping-runner.html'); exit; }
 $site = str_starts_with($path, '/b/') ? 42 : (str_starts_with($path, '/c/') ? 43 : 41);
 $client = $site === 43 ? 8 : 7;
 $base = $site === 42 ? '/b' : ($site === 43 ? '/c' : '/a');
@@ -58,11 +73,14 @@ Zend_Registry::set('Client', ['id' => $client, 'parentid' => 0]);
 Zend_Registry::set('User', ['id' => 0]);
 $shop = $db->fetchRow($db->select()->from('shop')->where('id = ?', $site)->where('clientid = ?', $client));
 Zend_Registry::set('Shop', $shop);
-Zend_Registry::set('SiteContext', new DEEC_Site_Context($shop, [], ['cart', 'checkout']));
-Zend_Registry::set('Zend_Locale', new Zend_Locale('de_DE'));
-Zend_Registry::set('Zend_Currency', new Zend_Currency('EUR', 'de_DE'));
-$tr = new DEEC_Translate('de_DE'); $tr->loadModule('shops'); Zend_Registry::set('DEEC_Translate', $tr);
 Zend_Session::setOptions(['save_path' => dirname($socket) . '/checkout-flow-sessions', 'use_cookies' => true]);
+$languageSession = new Zend_Session_Namespace('FixtureLocale');
+if (isset($_GET['lang'])) $languageSession->locale = $_GET['lang'] === 'en' ? 'en_US' : 'de_DE';
+$locale = $languageSession->locale ?? 'de_DE';
+Zend_Registry::set('SiteContext', new DEEC_Site_Context($shop, [], !empty($shop['contactenabled']) ? ['cart', 'checkout', 'contact'] : ['cart', 'checkout']));
+Zend_Registry::set('Zend_Locale', new Zend_Locale($locale));
+Zend_Registry::set('Zend_Currency', new Zend_Currency('EUR', $locale));
+$tr = new DEEC_Translate($locale); $tr->loadModule('shops'); Zend_Registry::set('DEEC_Translate', $tr);
 if (($_SERVER['HTTP_X_FIXTURE_LEGACY_RECEIPT'] ?? '') === '1') {
 	$legacy = new Zend_Session_Namespace('ShopsCheckout'); unset($legacy->receipt);
 }
@@ -83,7 +101,7 @@ class CheckoutFlowLimiter extends Zend_Controller_Action_Helper_Abstract {
 		if (!$controller instanceof Shops_Controller_Action) return;
 		$property = new ReflectionProperty(Shops_Controller_Action::class, 'submissionLimiter');
 		$property->setAccessible(true);
-		$property->setValue($controller, new DEEC_Site_SubmissionLimiter(dirname(getenv('DEWAWI_CHECKOUT_TEST_SOCKET')) . '/checkout-rate'));
+		$property->setValue($controller, new DEEC_Site_SubmissionLimiter(dirname(getenv('DEWAWI_CHECKOUT_TEST_SOCKET')) . (!empty(Zend_Registry::get('Shop')['shippingcurrency']) ? '/shipping-checkout-rate' : '/checkout-rate')));
 	}
 }
 Zend_Controller_Action_HelperBroker::addHelper(new CheckoutFlowLimiter());
@@ -92,6 +110,7 @@ $front = Zend_Controller_Front::getInstance();
 $front->setControllerDirectory(['shops' => $root . '/application/modules/shops/controllers'])->setBaseUrl($base)->throwExceptions(true);
 $front->getRouter()->removeDefaultRoutes();
 foreach (['checkout' => ['checkout', 'index'], 'checkout_send' => ['checkout/send', 'send'], 'checkout_success' => ['checkout/success', 'success'], 'shop_home' => ['', 'index']] as $name => [$route, $action]) $front->getRouter()->addRoute($name, new Zend_Controller_Router_Route_Static($route, ['module' => 'shops', 'controller' => 'checkout', 'action' => $action]));
+$front->getRouter()->addRoute('contact_success', new Zend_Controller_Router_Route_Static('contact/success', ['module' => 'shops', 'controller' => 'contact', 'action' => 'success']));
 foreach (['index', 'add', 'update', 'clear', 'remove', 'count'] as $action) $front->getRouter()->addRoute($action === 'index' ? 'cart' : 'cart_' . $action, new Zend_Controller_Router_Route_Static($action === 'index' ? 'cart' : 'cart/' . $action, ['module' => 'shops', 'controller' => 'cart', 'action' => $action]));
 $view = new Zend_View();
 $view->setScriptPath($root . '/application/modules/shops/views/scripts')->addHelperPath($root . '/application/views/helpers', 'Zend_View_Helper')->addHelperPath($root . '/application/modules/shops/views/helpers', 'Zend_View_Helper');

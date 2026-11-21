@@ -150,6 +150,8 @@ class Shops_Service_OrderWorkflow
 				foreach (['department', 'street', 'postcode', 'city', 'country'] as $field) $data[$prefix . $field] = $address[$field];
 			}
 			$data['shippingphone'] = $snapshot['shipping']['phone'];
+			$freight = $snapshot['freight'] ?? null;
+			if (($freight['status'] ?? '') === 'calculated') $data['shippingmethod'] = $freight['label'];
 			if (empty($data['templateid']) || empty($data['language']) || (int)$data['state'] !== 100) throw new DomainException('SHOPS_ORDER_DEFAULTS_MISSING');
 			$salesDb = (new Sales_Model_DbTable_Salesorder())->setClientId($this->owner('sales'));
 			$salesId = $salesDb->create($data);
@@ -163,6 +165,12 @@ class Shops_Service_OrderWorkflow
 					'price' => $position['price'], 'quantity' => $position['quantity'], 'taxrate' => $row['taxrate'],
 					'currency' => $order['currency'], 'uom' => $row['uom'],
 				]);
+			}
+			if (($freight['status'] ?? '') === 'calculated') {
+				// ERP freight uses an ordinary document position without an invented stock item or SKU.
+				$posDb->addPosition(['parentid' => $salesId, 'possetid' => 0, 'itemid' => null, 'sku' => null,
+					'title' => $freight['label'], 'description' => '', 'price' => $freight['net'], 'quantity' => 1,
+					'taxrate' => $freight['taxrate'], 'currency' => $freight['currency'], 'uom' => null]);
 			}
 			$calculation = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->direct($salesId, 'sales', 'salesorder', $this->owner('sales'))['row'];
 			foreach (['subtotal' => 'total', 'taxes' => 'taxes', 'total' => 'grosstotal'] as $calculated => $stored) {

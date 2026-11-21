@@ -141,6 +141,11 @@ check($fields['application']['value'] === 'Cooling', 'Configured option label wa
 check($fields['cooling_power']['label'] === 'Cooling power', 'Dependent technical field definition was not resolved');
 check($fields['custom_field']['value'] === 'Retained value', 'Unknown dynamic field was omitted');
 check(!isset($fields['origin'], $fields['source_path']), 'Inquiry metadata was duplicated among form fields');
+$shipping = (new Contacts_Service_InquiryView())->build(['formid' => 0, 'data' => json_encode([
+	'origin' => 'shipping_quote', 'message' => 'Parcel inquiry', '_shipping' => ['status' => 'quote_required'],
+	'_order' => ['snapshot' => '{}'], '_positions' => [['itemid' => 123]],
+])]);
+check(array_column($shipping['fields'], 'name') === ['message'] && $shipping['data']['_shipping']['status'] === 'quote_required', 'Shipping inquiry exposes internal calculation fields or drops stored evidence');
 
 $list = new Contacts_Model_List_Inquiries();
 $item = (object)[

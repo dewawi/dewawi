@@ -78,6 +78,12 @@ class Shops_Model_DbTable_Order
     }
 }
 
+class Shops_Model_DbTable_Orderpos
+{
+    public function setClientId(int $clientId): self { return $this; }
+    public function getForOrder(array $order): array { return []; }
+}
+
 class DEEC_Email
 {
     public static array $behaviors = [];
@@ -146,7 +152,7 @@ $viewRenderer->view = new class {
     public function translate(string $message): string { return $message; }
 };
 
-function sendShopEmail(string $customerEmail, string $internalEmail, array $behaviors, string $controller = 'contact', int $orderId = 0, array $overrides = [], ?array $site = null): array
+function sendShopEmail(string $customerEmail, string $internalEmail, array $behaviors, string $controller = 'contact', int $orderId = 0, array $overrides = [], ?array $site = null, ?string $requestController = null): array
 {
     Zend_Registry::set('Shop', [
         'id' => 41,
@@ -183,7 +189,7 @@ function sendShopEmail(string $customerEmail, string $internalEmail, array $beha
     $_SERVER['REQUEST_METHOD'] = 'POST';
     $_POST = [];
     $request = new Zend_Controller_Request_Http();
-    $request->setModuleName('shops')->setControllerName($controller)->setActionName('send')->setPost($post);
+    $request->setModuleName('shops')->setControllerName($requestController ?? $controller)->setActionName('send')->setPost($post);
     if ($controller === 'checkout') $request->setParams(['documentid' => 9999, 'campaignid' => 9999, 'messageid' => 9999, 'contactid' => 9999]);
     Zend_Controller_Front::getInstance()->setRequest($request);
 
@@ -262,6 +268,25 @@ foreach ([
     } catch (RuntimeException $e) {
         check(!DEEC_Email::$messages && !Shops_Model_DbTable_Emailmessage::$inserted, 'Rejected order context sent or stored mail');
     }
+}
+Zend_Registry::getInstance()->offsetUnset('SiteContext');
+
+$result = sendShopEmail('customer@example.invalid', 'shop@example.invalid', [true, true], 'contact', 0,
+    ['documentid' => 999, 'campaignid' => 999, 'contactid' => 999, 'messageid' => 999], null, 'checkout');
+foreach (DEEC_Email::$messages as $message) {
+    check(empty($message['cc']) && empty($message['bcc']) && empty($message['replyTo']) && !$message['attachments'], 'Freight inquiry leaked public checkout routing into contact notifications');
+}
+foreach (Shops_Model_DbTable_Emailmessage::$rows as $row) {
+    check($row['documentid'] === 0 && $row['contactid'] === 0 && $row['campaignid'] === null && $row['controller'] === 'contact', 'Freight inquiry forged document or contact linkage');
+}
+
+Shops_Model_DbTable_Order::$order += ['currency' => 'EUR', 'total' => 112, 'taxes' => 21.28, 'grosstotal' => 133.28,
+    'snapshot' => json_encode(['version' => 2, 'freight' => ['goods_net' => '100.00', 'label' => 'Delivery', 'net' => '12.00']])];
+$result = sendShopEmail('customer@example.invalid', 'shop@example.invalid', [true, true], 'checkout', 77,
+    ['__shop_order' => ['total' => 0, 'grosstotal' => 0], 'shipping_net' => 0]);
+check($result['sent'] === 2 && count(DEEC_Email::$messages) === 2, 'Snapshot totals interrupted customer/internal mail');
+foreach (DEEC_Email::$messages as $message) {
+    check(str_contains($message['body'], '133.28') && str_contains($message['body'], '12.00'), 'Notification totals came from browser data instead of persisted order');
 }
 Zend_Registry::getInstance()->offsetUnset('SiteContext');
 

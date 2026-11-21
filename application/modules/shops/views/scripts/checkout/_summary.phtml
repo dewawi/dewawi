@@ -10,13 +10,14 @@
 			<div><?php echo $this->translate('SHOPS_ORDER_NET'); ?>: <?php echo $this->escape($currency->toCurrency($position['total'], ['currency' => 'EUR'])); ?></div>
 		</div>
 	<?php endforeach; ?>
+	<?php echo $this->partial('checkout/_shipping.phtml', ['order' => $this->order]); ?>
 	<dl class="dw-checkout-totals">
 		<?php foreach (['total' => 'SHOPS_ORDER_NET', 'taxes' => 'SHOPS_ORDER_TAX', 'grosstotal' => 'SHOPS_ORDER_GROSS'] as $field => $label) : ?>
 			<dt><?php echo $this->translate($label); ?></dt>
 			<dd data-checkout-total="<?php echo $field; ?>"><?php echo isset($this->order[$field]) ? $this->escape($currency->toCurrency($this->order[$field], ['currency' => 'EUR'])) : $this->translate('SHOPS_CHECKOUT_TAX_UNKNOWN'); ?></dd>
 		<?php endforeach; ?>
 	</dl>
-	<p class="small"><?php echo $this->translate('SHOPS_CHECKOUT_SHIPPING_NOTICE'); ?>
+	<p class="small">
 		<?php $shippingPage = $this->PageByType('shipping'); ?>
 		<?php if ($shippingPage) : ?><a href="<?php echo $this->escape($this->SlugUrl('page', (int)$shippingPage['id'])); ?>"><?php echo $this->translate('SHOPS_SHIPPING_COSTS'); ?></a><?php endif; ?>
 	</p>

@@ -66,12 +66,12 @@ echo $this->Messages();
 				</tbody>
 			</table>
 		</div>
+		<?php echo $this->partial('checkout/_shipping.phtml', ['order' => $order]); ?>
 		<dl class="view">
 			<?php foreach (['total' => 'SHOPS_ORDER_NET', 'taxes' => 'SHOPS_ORDER_TAX', 'grosstotal' => 'SHOPS_ORDER_GROSS'] as $field => $label) : ?>
 				<dt><?php echo $t($label); ?></dt><dd><?php echo $money($order[$field]); ?></dd>
 			<?php endforeach; ?>
 		</dl>
-		<p><?php echo $t($snapshot ? 'SHOPS_CHECKOUT_SHIPPING_NOTICE' : 'SHOPS_ORDER_SHIPPING_UNKNOWN'); ?></p>
 		<h3><?php echo $t('SHOPS_ORDER_NOTES'); ?></h3>
 		<p><?php echo nl2br($text($snapshot['message'] ?? $unknown)); ?></p>
 		<?php if ($this->salesorder) : ?>

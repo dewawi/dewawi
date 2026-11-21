@@ -45,7 +45,7 @@ class Shops_Model_DbTable_Order extends DEEC_Model_DbTable_Entity
 		return $row ? $row->toArray() : null;
 	}
 
-	public function saveCheckoutOnce(int $shopId, string $token, array $data, array $positions): array
+	public function saveCheckoutOnce(int $shopId, string $token, array $data, array $positions, ?callable $verify = null): array
 	{
 		$token = strtolower(trim($token));
 		if ($shopId <= 0 || !preg_match('/^[a-f0-9]{32,64}$/D', $token) || !$positions) {
@@ -65,6 +65,12 @@ class Shops_Model_DbTable_Order extends DEEC_Model_DbTable_Entity
 		$adapter->beginTransaction();
 
 		try {
+			if ($verify !== null) {
+				// Shipping administration locks this same shop before changing tariffs or assignments.
+				$shop = $adapter->fetchRow($adapter->select()->from('shop', ['id'])->where('id = ?', $shopId)->where('clientid = ?', $this->getClientId())->where('deleted = 0')->forUpdate());
+				if (!$shop) throw new DomainException('SHOPS_CHECKOUT_REVIEW_CHANGED');
+				$verify();
+			}
 			$incrementDb = (new Shops_Model_DbTable_Increment())->setClientId($this->getClientId());
 			$orderNumber = $incrementDb->reserveIncrement('shoporderid');
 

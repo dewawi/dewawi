@@ -10,6 +10,8 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 		}
 
 		$data = $request->getPost();
+		unset($data['__shop_order']);
+		$checkoutOrigin = $module === 'shops' && ($controller === 'checkout' || $request->getControllerName() === 'checkout');
 		$verifiedOrderId = 0;
 		if ($shopOrderId !== 0) {
 			if ($shopOrderId <= 0 || $module !== 'shops' || $controller !== 'checkout' || !Zend_Registry::isRegistered('SiteContext') || !is_string($data['checkout_token'] ?? null)) throw new RuntimeException('Invalid shop order notification context');
@@ -19,8 +21,16 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$order = (new Shops_Model_DbTable_Order())->setClientId((int)$context->getClientId())->getByCheckoutToken((int)$context->getSiteId(), $data['checkout_token']);
 			if (!$order || (int)$order['id'] !== $shopOrderId || strcasecmp((string)$order['email'], trim((string)($data['email'] ?? ''))) !== 0) throw new RuntimeException('Shop order notification is not available');
 			$verifiedOrderId = $shopOrderId;
+			if (Shops_Service_OrderSnapshot::decode($order['snapshot'] ?? null)) {
+				$data['__shop_order'] = $order;
+				$items = [];
+				foreach ((new Shops_Model_DbTable_Orderpos())->setClientId((int)$context->getClientId())->getForOrder($order) as $position) {
+					$row = Shops_Service_OrderSnapshot::decode($position['snapshot']);
+					$items[] = ['title' => $row['title'], 'sku' => $row['sku'], 'price' => $position['price'], 'quantity' => $position['quantity']];
+				}
+			}
 		}
-		if ($module === 'shops' && $controller === 'checkout') {
+		if ($checkoutOrigin) {
 			// Checkout recipients and attachment routing must never come from public form input.
 			$data = array_diff_key($data, array_flip(['cc', 'bcc', 'replyto', 'files', '__attach_paths']));
 		}
@@ -49,7 +59,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			$contactid = $request->getParam('contactid', 0);
 			$documentid = $request->getParam('documentid', 0);
 			$campaignid = $request->getParam('campaignid', 0);
-			if ($module === 'shops' && $controller === 'checkout') {
+			if ($checkoutOrigin) {
 				$messageid = $contactid = $campaignid = 0;
 				$documentid = $verifiedOrderId;
 			}
@@ -119,7 +129,7 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					$formData = $form->getValues();
 				}
 
-				if ($module === 'shops' && $controller === 'checkout') $formData = array_diff_key($formData, array_flip(['cc', 'bcc', 'replyto', 'files', '__attach_paths']));
+				if ($checkoutOrigin) $formData = array_diff_key($formData, array_flip(['cc', 'bcc', 'replyto', 'files', '__attach_paths']));
 				if($form->isValid($data) || true) {
 					// Get SMTP settings
 					list($smtpConfig, $fromEmail, $fromName) = $this->getEmailConfig($module);
@@ -655,6 +665,22 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 			);
 
 			$subject = preg_replace_callback('/t#t(.*?)t#t/', static fn($matches) => $translate($matches[1]), $template['subject']);
+			if ($controller === 'checkout' && isset($data['__shop_order'])) {
+				$order = $data['__shop_order'];
+				$freight = Shops_Service_OrderSnapshot::decode($order['snapshot'])['freight'] ?? null;
+				$currency = new Zend_Currency($order['currency'], $locale ?: 'en_US');
+				$summary = '<dl>';
+				$rows = [];
+				if ($freight) $rows = ['SHOPS_SHIPPING_GOODS' => $freight['goods_net'], 'SHOPS_SHIPPING_METHOD' => $freight['label'], 'SHOPS_SHIPPING_NET' => $freight['net']];
+				$rows += ['SHOPS_ORDER_NET' => $order['total'], 'SHOPS_ORDER_TAX' => $order['taxes'], 'SHOPS_ORDER_GROSS' => $order['grosstotal']];
+				foreach ($rows as $key => $value) {
+					$content = $key === 'SHOPS_SHIPPING_METHOD' ? $value : ($value === null ? $translate('SHOPS_CHECKOUT_TAX_UNKNOWN') : $currency->toCurrency($value));
+					$summary .= '<dt>' . htmlspecialchars($translate($key)) . '</dt><dd>' . htmlspecialchars((string)$content) . '</dd>';
+				}
+				$summary .= '</dl>';
+				if (!$freight || !empty($freight['legacy'])) $summary .= '<p>' . htmlspecialchars($translate('SHOPS_CHECKOUT_SHIPPING_NOTICE')) . '</p>';
+				$body = stripos($body, '</body>') === false ? $body . $summary : str_ireplace('</body>', $summary . '</body>', $body);
+			}
 			return [$body, $subject];
 		} else {
 			$body = $data['body'];

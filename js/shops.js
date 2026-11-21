@@ -534,6 +534,8 @@ function enhanceCheckout() {
 		$form.find('#checkout-review').empty().prop('hidden', true);
 		$form.find('[data-checkout-fields]').prop('hidden', false);
 		$form.find('[name="checkout_stage"]').val('preview');
+		$('[data-checkout-summary]').find('.dw-checkout-totals, [data-checkout-shipping-status]').prop('hidden', true);
+		$('[data-checkout-recheck]').prop('hidden', false);
 	}
 	function redirect(response) {
 		if (!response || !response.success || typeof response.redirect !== 'string' || !/^\/(?!\/)/.test(response.redirect)) return false;
@@ -576,8 +578,10 @@ function enhanceCheckout() {
 		event.preventDefault();
 		if (busy || navigating) return;
 		if (!this.checkValidity()) { this.reportValidity(); return; }
-		const final = $form.find('[name="checkout_stage"]').val() === 'confirm';
-		const payload = $form.serialize();
+		const submitter = event.originalEvent && event.originalEvent.submitter;
+		const quote = submitter && submitter.name === 'checkout_quote';
+		const final = !quote && $form.find('[name="checkout_stage"]').val() === 'confirm';
+		const payload = $form.serialize() + (quote ? '&checkout_quote=1' : '');
 		$form.find('[aria-invalid]').removeAttr('aria-invalid aria-describedby');
 		$form.find('.dw-field__error').text('').prop('hidden', true);
 		lock();
@@ -594,7 +598,7 @@ function enhanceCheckout() {
 			unlock();
 			message((response && response.message) || $form.attr('data-failed'));
 			if (response && response.code === 'SHOPS_FORM_EXPIRED') $form.find(':submit').prop('disabled', true);
-			if (response && ['SHOPS_CART_CHANGED', 'SHOPS_CHECKOUT_REVIEW_CHANGED', 'SHOPS_FORM_INVALID'].includes(response.code)) edit();
+			if (response && ['SHOPS_CART_CHANGED', 'SHOPS_CHECKOUT_REVIEW_CHANGED', 'SHOPS_FORM_INVALID', 'SHOPS_SHIPPING_UNAVAILABLE', 'SHOPS_SHIPPING_QUOTE_REQUIRED'].includes(response.code)) edit();
 			if (response && response.errors) {
 				Object.keys(response.errors).forEach(function (name) {
 					const $input = $form.find(':input').not('[type="hidden"]').filter(function () { return this.name === name; });
@@ -609,6 +613,8 @@ function enhanceCheckout() {
 			csrf(response);
 			if (redirect(response)) return;
 			if (!final && response && response.success && response.reviewHtml) {
+				if (response.summaryHtml) $('[data-checkout-summary]').html(response.summaryHtml);
+				$('[data-checkout-recheck]').prop('hidden', true);
 				$form.find('#checkout-review').html(response.reviewHtml).prop('hidden', false);
 				$form.find('[data-checkout-fields]').prop('hidden', true);
 				$form.find('[name="checkout_stage"]').val('confirm');

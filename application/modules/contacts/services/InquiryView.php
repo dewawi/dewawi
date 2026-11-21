@@ -26,7 +26,7 @@ class Contacts_Service_InquiryView
 		$fields = [];
 
 		foreach ($data as $name => $value) {
-			if (in_array($name, ['origin', 'source_path', '_quote'], true)) continue;
+			if (in_array($name, ['origin', 'source_path', '_quote', '_shipping', '_order', '_positions'], true)) continue;
 
 			if($name === '_selection') {
 				$fields[] = ['name' => 'selection_review', 'label' => 'CONTACT_SELECTION_REVIEW', 'value' => !empty($value['eligible']) ? 'CONTACT_SELECTION_ALLOWED' : 'CONTACT_SELECTION_MANUAL', 'value_args' => [implode(', ', (array)($value['reasons'] ?? []))], 'translate_value' => true];

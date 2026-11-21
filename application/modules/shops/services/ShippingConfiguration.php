@@ -48,10 +48,10 @@ class Shops_Service_ShippingConfiguration
 		return $this->records($shopId, $kind);
 	}
 
-	private function records(int $shopId, string $kind, bool $active = false): array
+	private function records(int $shopId, string $kind, bool $active = false, ?int $owner = null): array
 	{
 		if (!isset(self::TABLES[$kind])) throw new DomainException('Not found', 404);
-		$query = $this->db->select()->from(self::TABLES[$kind])->where('clientid = ?', $this->owner())->where('shopid = ?', $shopId)->where('deleted = 0')->order(['ordering ASC', 'id ASC']);
+		$query = $this->db->select()->from(self::TABLES[$kind])->where('clientid = ?', $owner ?? $this->owner())->where('shopid = ?', $shopId)->where('deleted = 0')->order(['ordering ASC', 'id ASC']);
 		if ($active) $query->where('active = 1');
 		return $this->db->fetchAll($query);
 	}
@@ -97,16 +97,17 @@ class Shops_Service_ShippingConfiguration
 		return $row;
 	}
 
-	/** Read one locked configuration snapshot. Authorization is checked by each public entry point. */
-	private function load(array $shop): array
+	/** Entry points enforce authorization; final checkout and administration serialize on the shop row. */
+	private function load(array $shop, ?int $owner = null): array
 	{
+		$owner = $owner ?? $this->owner();
 		$shopId = (int)$shop['id'];
-		if ($shop['shippingcurrency']) $this->currency($shop['shippingcurrency']);
-		$config = ['version' => 1, 'clientid' => $this->owner(), 'shopid' => $shopId, 'currency' => $shop['shippingcurrency'], 'minor_units' => 2, 'pickup' => (bool)$this->flag($shop['pickupenabled'], 'pickup')];
+		if ($shop['shippingcurrency']) $this->currency($shop['shippingcurrency'], $owner);
+		$config = ['version' => 1, 'clientid' => $owner, 'shopid' => $shopId, 'currency' => $shop['shippingcurrency'], 'minor_units' => 2, 'pickup' => (bool)$this->flag($shop['pickupenabled'], 'pickup')];
 		foreach (self::TABLES as $kind => $table) {
 			$config[$kind] = [];
-			foreach ($this->records($shopId, $kind, true) as $row) {
-				$base = ['id' => (int)$row['id'], 'clientid' => $this->owner(), 'shopid' => $shopId];
+			foreach ($this->records($shopId, $kind, true, $owner) as $row) {
+				$base = ['id' => (int)$row['id'], 'clientid' => $owner, 'shopid' => $shopId];
 				switch ($kind) {
 					case 'classes': $value = ['title' => $row['title'], 'combine_same_class' => (bool)$this->flag($row['combine_same_class'], 'combine_same_class'), 'required_fields' => json_decode($row['required_fields'], true, 512, JSON_THROW_ON_ERROR)]; break;
 					case 'zones': $value = ['countries' => json_decode($row['countries'], true, 512, JSON_THROW_ON_ERROR)]; break;
@@ -114,7 +115,7 @@ class Shops_Service_ShippingConfiguration
 						if ($row['currency'] !== $shop['shippingcurrency']) throw new DomainException('SHIPPING_CURRENCY_MISMATCH');
 						$value = ['classid' => $row['classid'], 'zoneid' => $row['zoneid'], 'model' => $row['model']] + json_decode($row['parameters'], true, 512, JSON_THROW_ON_ERROR); break;
 					case 'assignments':
-						$item = $this->db->fetchRow($this->db->select()->from('item', ['id', 'shopid'])->where('clientid = ?', $this->owner())->where('id = ?', $row['itemid'])->where('deleted = 0'));
+						$item = $this->db->fetchRow($this->db->select()->from('item', ['id', 'shopid'])->where('clientid = ?', $owner)->where('id = ?', $row['itemid'])->where('deleted = 0'));
 						if (!$item || (int)$item['shopid'] !== $shopId) continue 2;
 						$value = ['itemid' => $row['itemid'], 'classid' => $row['classid'], 'packages_per_unit' => $row['packages_per_unit'], 'separate' => (bool)$this->flag($row['separate'], 'separate')]; break;
 					case 'combinations':
@@ -125,6 +126,32 @@ class Shops_Service_ShippingConfiguration
 			}
 		}
 		return $config;
+	}
+
+	/** Public read access is bound to the router's trusted site, never to caller-supplied shop IDs. */
+	public function calculateCheckout(array $selection, array $destination): array
+	{
+		$context = Zend_Registry::isRegistered('SiteContext') ? Zend_Registry::get('SiteContext') : null;
+		if (!$context instanceof DEEC_Site_Context || !$context->hasFeature('checkout') || !$context->hasFeature('cart')
+			|| $context->getClientId() <= 0 || $context->getSiteId() <= 0) throw new DomainException('Forbidden', 403);
+		$owner = $context->getClientId(); $shopId = $context->getSiteId();
+		$shop = $this->db->fetchRow($this->db->select()->from('shop')->where('id = ?', $shopId)->where('clientid = ?', $owner)->where('deleted = 0')->where('checkoutenabled = 1'));
+		if (!$shop) throw new DomainException('Not found', 404);
+		$base = ['version' => 1, 'status' => 'quote_required', 'price_basis' => 'net', 'net' => null, 'currency' => null,
+			'clientid' => $owner, 'shopid' => $shopId, 'destination' => $destination, 'groups' => [], 'reasons' => []];
+		if (!$shop['shippingcurrency']) return $base + ['legacy' => true];
+		try {
+			$config = $this->load($shop, $owner);
+			$ids = array_column($selection, 'itemid');
+			$items = $this->db->fetchAll($this->db->select()->from('item')->where('clientid = ?', $owner)->where('shopid = ?', $shopId)->where('deleted = 0')->where('shopenabled = 1')->where('id IN (?)', $ids ?: [0]));
+			$result = (new Shops_Service_ShippingCalculator())->calculate(['clientid' => $owner, 'shopid' => $shopId], $config, $items, $selection, $destination);
+			$result['configuration_hash'] = hash('sha256', json_encode($config, JSON_THROW_ON_ERROR));
+			$result['origin_country'] = $this->db->fetchOne($this->db->select()->from('client', ['country'])->where('id = ?', $owner)->where('deleted = 0')) ?: null;
+			return $result;
+		} catch (JsonException | DomainException $e) {
+			$base['reasons'] = ['invalid_configuration'];
+			return $base;
+		}
 	}
 
 	public function calculate(int $shopId, array $selection, array $destination): array
@@ -260,9 +287,9 @@ class Shops_Service_ShippingConfiguration
 		return (string)$value;
 	}
 	private function reference($value, string $field): ?int { $value = $this->number($value, $field, 0, false); return $value === null || (int)$value === 0 ? null : (int)$value; }
-	private function currency($value): string
+	private function currency($value, ?int $owner = null): string
 	{
-		if (!is_string($value) || !preg_match('/^[A-Z]{3}$/D', $value) || $this->minorUnits($value) !== 2 || !$this->db->fetchOne($this->db->select()->from('currency', ['code'])->where('clientid = ?', $this->owner())->where('code = ?', $value)->where('deleted = 0'))) throw new DomainException('currency:SHIPPING_INVALID_CURRENCY');
+		if (!is_string($value) || !preg_match('/^[A-Z]{3}$/D', $value) || $this->minorUnits($value) !== 2 || !$this->db->fetchOne($this->db->select()->from('currency', ['code'])->where('clientid = ?', $owner ?? $this->owner())->where('code = ?', $value)->where('deleted = 0'))) throw new DomainException('currency:SHIPPING_INVALID_CURRENCY');
 		return $value;
 	}
 
