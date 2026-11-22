@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise real error responses and logs with isolated PHP/Zend fixtures and no database."""
+"""Exercise real error responses and logs with isolated PHP/Zend and empty database fixtures."""
 import base64
 import http.client
 import json
@@ -158,6 +158,11 @@ with tempfile.TemporaryDirectory(prefix="dewawi-errors-http-") as temp:
     (site / "library/Zend").symlink_to(root / "library/Zend", target_is_directory=True)
     shutil.copyfile(root / "configs/application.ini", site / "configs/application.ini")
     shutil.copyfile(root / "configs/database.sample.ini", site / "configs/database.ini")
+    db_socket = os.environ.get('DEWAWI_CONFIGURATION_SOCKET')
+    if not db_socket:
+        raise RuntimeError('Use tests/admin/update-worker.py --configuration-only for an isolated database')
+    with (site / 'configs/database.ini').open('a') as private:
+        private.write('\nresources.db.params.unix_socket="'+db_socket+'"\nresources.db.params.username=root\nresources.db.params.password=""\n')
 
     def fixture(source):
         return source.replace("ROOT_PATH", json.dumps(str(root))).replace("SENSITIVE", json.dumps(secret))

@@ -132,7 +132,7 @@ class DEEC_UpdateMaintenance
         try { self::writeAt($path, $record); }
         catch (Throwable $e) {
             if ($e->getMessage() !== 'record_exists') throw $e;
-            $record = self::storage([], $selection['root'])['record'];
+            $record = self::storage(['mode' => 'shared'], $selection['root'])['record'];
             if (($record['path'] ?? null) !== $selection['path'] || ($record['root'] ?? null) !== hash('sha256', $selection['root'])) throw new RuntimeException('storage_conflict');
         }
         return $record;
@@ -169,8 +169,10 @@ class DEEC_UpdateMaintenance
 
     public static function mode(array $options): string
     {
-        $mode = $options['mode'] ?? (empty($options['queuePath']) ? 'shared' : 'worker');
-        if (!in_array($mode, ['shared', 'worker'], true)) throw new RuntimeException('configuration');
+        $legacy = array_key_exists('statePath', $options)
+            || self::present(dirname(__DIR__, 2) . '/configs/update-storage.json') || self::present(dirname(__DIR__, 2) . '/configs/update-storage.ready.json');
+        $mode = $options['mode'] ?? (!empty($options['queuePath']) ? 'worker' : ($legacy ? 'shared' : 'database'));
+        if (!in_array($mode, ['shared', 'worker', 'database'], true)) throw new RuntimeException('configuration');
         return $mode;
     }
 
@@ -275,9 +277,21 @@ class DEEC_UpdateMaintenance
         $this->sync();
     }
 
-    public static function enter(array $options, bool $updateRoute = false, ?string $root = null): void
+    public static function enter(array $options, bool $updateRoute = false, ?string $root = null, array $database = []): void
     {
         try {
+            if (self::mode($options) !== 'database' && $database) {
+                require_once __DIR__ . '/UpdateDatabase.php';
+                $params = $database['params']; $params['persistent'] = false; $params['driver_options'][PDO::ATTR_PERSISTENT] = false;
+                if ((new DEEC_UpdateDatabase(Zend_Db::factory($database['adapter'], $params)))->exists()) throw new RuntimeException('configuration');
+            }
+            if (self::mode($options) === 'database') {
+                $base = getenv('DEWAWI_GOBD_REPORT_DIR');
+                if ($base && self::present($base . '/dewawi-updates-' . substr(hash('sha256', $root ?? dirname(__DIR__, 2)), 0, 32))) throw new RuntimeException('storage_conflict');
+                require_once __DIR__ . '/UpdateDatabase.php';
+                DEEC_UpdateDatabase::enter($database, $updateRoute);
+                return;
+            }
             $selection = self::storage($options, $root ?? dirname(__DIR__, 2));
             if (!$selection) return;
             if ($selection['source'] === 'automatic' && !$selection['ready'] && !$updateRoute) throw new RuntimeException('storage_incomplete');
@@ -295,8 +309,8 @@ class DEEC_UpdateMaintenance
 
     public static function dispatchAllowed(Zend_Controller_Request_Abstract $request): bool
     {
-        return (!self::$blocked && (!self::$active || !self::$active->maintenance())) || ($request->getModuleName() === 'admin' && $request->getControllerName() === 'updates'
-            && in_array($request->getActionName(), ['index', 'initialize', 'maintenance', 'prepare', 'approve', 'execute', 'finish'], true));
+        return (!self::$blocked && (!self::$active || !self::$active->maintenance()) && (!class_exists('DEEC_UpdateDatabase', false) || !DEEC_UpdateDatabase::maintenance())) || ($request->getModuleName() === 'admin' && $request->getControllerName() === 'updates'
+            && in_array($request->getActionName(), ['index', 'initialize', 'maintenance', 'prepare', 'approve', 'execute', 'finish', 'check', 'run', 'cancel'], true));
     }
 
     public static function protectInstallation(string $root): void
@@ -310,13 +324,15 @@ class DEEC_UpdateMaintenance
             throw new RuntimeException('configuration');
         });
         try {
+            require_once $root . '/library/Zend/Loader/Autoloader.php';
+            Zend_Loader_Autoloader::getInstance();
             require_once $root . '/library/Zend/Config.php';
             require_once $root . '/library/Zend/Config/Ini.php';
             $all = new Zend_Config_Ini($root . '/configs/database.ini');
             $environment = getenv('APPLICATION_ENV') ?: 'production';
             $config = $all->get($environment) ?? ($environment === 'development' ? $all->get('production') : null);
             if (!$config) throw new RuntimeException('configuration');
-            self::enter($config->get('systemUpdates') ? $config->systemUpdates->toArray() : [], false, $root);
+            self::enter($config->get('systemUpdates') ? $config->systemUpdates->toArray() : [], false, $root, $config->resources->db->toArray());
         } catch (Throwable $e) { fwrite(STDERR, "Maintenance unavailable\n"); exit(1); }
         finally { restore_error_handler(); set_include_path($includePath); }
     }

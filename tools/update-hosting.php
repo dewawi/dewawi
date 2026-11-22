@@ -10,13 +10,21 @@ try {
     $config = (new Zend_Config_Ini($args['config'], $args['environment']))->toArray();
     $options = $config['systemUpdates'] ?? [];
     require_once __DIR__ . '/updates/Hosting.php';
-    $selection = DEEC_UpdateMaintenance::storage($options, $root, $args['command'] === 'init');
-    if (!$selection) throw new RuntimeException();
     $settings = $config['resources']['db'];
     if (strtolower($settings['adapter']) !== 'pdo_mysql') throw new RuntimeException();
     $params = array_intersect_key($settings['params'], array_flip(['host', 'port', 'unix_socket', 'username', 'password', 'dbname', 'charset']));
     $params['driver_options'] = [PDO::ATTR_PERSISTENT => false, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
     $db = Zend_Db::factory('Pdo_Mysql', $params);
+    if (DEEC_UpdateMaintenance::mode($options) !== 'database' && (new DEEC_UpdateDatabase($db))->exists()) throw new RuntimeException();
+    if (DEEC_UpdateMaintenance::mode($options) === 'database') {
+        if ($args['command'] !== 'execute') throw new RuntimeException();
+        require_once __DIR__ . '/updates/Database.php';
+        (new DewawiDatabaseUpdates($db, $root, $options))->execute($args['request'] ?? '', [], true);
+        echo "Execution finished; inspect retained result and M1 history\n";
+        exit;
+    }
+    $selection = DEEC_UpdateMaintenance::storage($options, $root, $args['command'] === 'init');
+    if (!$selection) throw new RuntimeException();
     if ($args['command'] === 'init') {
         (new DewawiHostingUpdates($selection['path'], $db, $root . '/install/config/migrations', true, $selection))->initialize();
         echo "Hosting update state initialized; no migration executed\n";

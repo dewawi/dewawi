@@ -5,7 +5,7 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
-// Run the real entry point with isolated configuration and no database connection.
+// Run the real entry point with isolated configuration and an empty disposable database.
 $root = dirname(__DIR__, 2);
 if (isset($argv[1])) {
     define('BASE_PATH', $argv[1]);
@@ -29,6 +29,17 @@ if (isset($argv[1])) {
     exit;
 }
 
+if (!getenv('DEWAWI_CONFIGURATION_SOCKET')) {
+    $process = proc_open(['python3', '-B', $root . '/tests/admin/update-worker.py', '--configuration-only'], [1 => STDOUT, 2 => STDERR], $pipes);
+    exit(proc_close($process));
+}
+
+function configurationDatabase(string $database): string
+{
+    $database = str_replace(['%%host%%', '%%database%%'], ['localhost', 'dewawi'], $database);
+    return $database . "\nresources.db.params.unix_socket = \"" . getenv('DEWAWI_CONFIGURATION_SOCKET') . "\"\nresources.db.params.username = root\nresources.db.params.password = \"\"\n";
+}
+
 $temp = sys_get_temp_dir() . '/dewawi-configuration-' . bin2hex(random_bytes(8));
 mkdir($temp . '/configs', 0700, true);
 copy($root . '/configs/application.ini', $temp . '/configs/application.ini');
@@ -36,7 +47,7 @@ $checks = 0;
 try {
     foreach (['configs/database.sample.ini', 'install/config/database_template.ini'] as $template) {
         foreach ([false, true] as $override) {
-            $database = file_get_contents($root . '/' . $template);
+            $database = configurationDatabase(file_get_contents($root . '/' . $template));
             $database .= "\n[staging : production]\nresources.db.params.dbname = staging_fixture\n";
             if ($override) $database .= "\n[development : production]\nresources.db.params.dbname = development_fixture\n";
             file_put_contents($temp . '/configs/database.ini', $database);
@@ -48,7 +59,7 @@ try {
                 $errors = stream_get_contents($pipes[2]);
                 fclose($pipes[1]);
                 fclose($pipes[2]);
-                if (proc_close($process) !== 0) throw new RuntimeException('Entry point failed: ' . $errors . $output);
+                if (proc_close($process) !== 0) throw new RuntimeException('Entry point failed (' . $template . ', ' . $environment . '): ' . $errors . $output);
                 $result = json_decode($output, true, 512, JSON_THROW_ON_ERROR);
                 $debug = $environment === 'development';
                 $expected = $environment === 'staging' ? 'staging' : ($debug ? 'development' : 'production');
@@ -63,7 +74,7 @@ try {
             }
         }
 
-		$database = file_get_contents($root . '/' . $template);
+		$database = configurationDatabase(file_get_contents($root . '/' . $template));
 		file_put_contents($temp . '/configs/database.ini', $database);
 		$pipes = [];
 		$process = proc_open([PHP_BINARY, '-d', 'display_errors=1', __FILE__, $temp, 'staging'], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);

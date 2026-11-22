@@ -1,6 +1,7 @@
 <?php
 
-if (PHP_SAPI !== 'cli' && !(class_exists('DewawiHostingUpdates', false) && DEEC_UpdateMaintenance::exclusiveHeld())) { http_response_code(404); exit; }
+if (PHP_SAPI !== 'cli' && !((class_exists('DewawiHostingUpdates', false) && DEEC_UpdateMaintenance::exclusiveHeld())
+    || (class_exists('DewawiDatabaseUpdates', false) && DEEC_UpdateDatabase::exclusiveHeld()))) { http_response_code(404); exit; }
 
 require_once __DIR__ . '/Inspector.php';
 

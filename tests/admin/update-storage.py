@@ -26,7 +26,7 @@ def run(c, h):
         (source/'tools/update-hosting.php').write_bytes((c['ROOT']/'tools/update-hosting.php').read_bytes())
         for file in [h['config'], source/'configs/operator.ini']:
             text='\n'.join(line for line in file.read_text().splitlines() if not line.startswith(('systemUpdates.statePath','systemUpdates.mode')))+'\n'
-            file.write_text(text)
+            file.write_text(text+'systemUpdates.mode=shared\n')
         h['restart'](disabled=True)
         locator = source/'configs/update-storage.json'; ready = source/'configs/update-storage.ready.json'
         state = reports/('dewawi-updates-'+hashlib.sha256(str(source).encode()).hexdigest()[:32])
@@ -45,7 +45,7 @@ def run(c, h):
         for locale in ['de_DE','en_US']:
             for width in [1280,390,320]:
                 submit=locale=='en_US' and width==320
-                script='''const f=document.querySelector('iframe');let sent=false;f.onload=()=>setTimeout(()=>{try{const d=f.contentDocument,w=f.contentWindow,failures=[];if(d.documentElement.scrollWidth>w.innerWidth)failures.push('overflow');if(d.body.textContent.includes('UPDATES_'))failures.push('translation');if(sent){if(!d.querySelector('form[action$="/maintenance"]'))failures.push('setup incomplete')}else{const form=d.querySelector('form[action$="/initialize"]');if(!form||form.dataset.autosave!=='false')throw Error('No native setup form');const checkbox=form.querySelector('[name=confirm]');checkbox.focus();if(d.activeElement!==checkbox||form.checkValidity())failures.push('confirmation');checkbox.checked=true;form.querySelector('[name=password]').value=PASSWORD;if(!form.checkValidity())failures.push('password');if(SUBMIT){sent=true;form.requestSubmit();return}}document.querySelector('#metrics').textContent=JSON.stringify(failures)}catch(e){document.querySelector('#metrics').textContent=JSON.stringify([String(e)])}},300);'''
+                script='''const f=document.querySelector('iframe');let sent=false;f.onload=()=>setTimeout(()=>{try{const d=f.contentDocument,w=f.contentWindow,failures=[];d.querySelectorAll('details').forEach(x=>x.open=true);if(d.documentElement.scrollWidth>w.innerWidth)failures.push('overflow');if(d.body.textContent.includes('UPDATES_'))failures.push('translation');if(sent){if(!d.querySelector('form[action$="/maintenance"]'))failures.push('setup incomplete')}else{const form=d.querySelector('form[action$="/initialize"]');if(!form||form.dataset.autosave!=='false')throw Error('No native setup form');const checkbox=form.querySelector('[name=confirm]');checkbox.focus();if(d.activeElement!==checkbox||form.checkValidity())failures.push('confirmation');checkbox.checked=true;form.querySelector('[name=password]').value=PASSWORD;if(!form.checkValidity())failures.push('password');if(SUBMIT){sent=true;form.requestSubmit();return}}document.querySelector('#metrics').textContent=JSON.stringify(failures)}catch(e){document.querySelector('#metrics').textContent=JSON.stringify([String(e)])}},300);'''
                 script=script.replace('PASSWORD',json.dumps(h['password'])).replace('SUBMIT','true' if submit else 'false')
                 (work/'browser.html').write_text('<iframe style="width:'+str(width)+'px;height:2200px" src="/admin/updates/index?locale='+locale+'"></iframe><pre id="metrics"></pre><script>'+script+'</script>')
                 with tempfile.TemporaryDirectory(prefix='dewawi-m2f-chrome-') as profile:

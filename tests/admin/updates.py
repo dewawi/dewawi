@@ -31,7 +31,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-') as directory:
                 (source/'library'/entry.name).symlink_to(entry)
         for name in ['css', 'js', 'images']:
             (source/name).symlink_to(ROOT/name)
-        (source/'configs/operator.ini').write_text('[production]\n')
+        (source/'configs/operator.ini').write_text('[production]\nsystemUpdates.mode=shared\n')
         (work/'sessions').mkdir()
         states = {name: 'updates_'+name for name in ['missing', 'empty', 'baseline', 'completed', 'started', 'failed', 'checksum', 'definition', 'baselinechecksum', 'unknown', 'gap', 'invalidstatus', 'ambiguous', 'invaliddate', 'badtable']}
         (work/'states.json').write_text(json.dumps(states))
@@ -218,7 +218,7 @@ Promise.all([f,dashboard].map(frame=>new Promise(resolve=>frame.onload=resolve))
  check(!d.body.textContent.includes('UPDATES_'),'Missing translations');
  check(d.querySelector('.dw-app-shell'),'ERP layout missing');
  check(d.querySelector('[role="alert"]'),'Blockers not accessible');
- const alert=d.querySelector('[role="alert"]');alert.focus();check(d.activeElement===alert,'Blocker cannot receive keyboard focus');
+ d.querySelectorAll('details').forEach(x=>x.open=true);const alert=d.querySelector('[role="alert"]');alert.focus();check(d.activeElement===alert,'Blocker cannot receive keyboard focus');
  const link=d.querySelector('a[href="#updates-migrations"]');link.focus();check(d.activeElement===link,'Migration navigation cannot receive focus');link.click();
  check(w.location.hash==='#updates-migrations','Native anchor navigation failed');
  check(!d.querySelector('.dw-system-updates form,.dw-system-updates button'),'Execution control present');

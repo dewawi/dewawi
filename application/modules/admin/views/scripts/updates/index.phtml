@@ -4,7 +4,11 @@ $this->headTitle($this->title);
 $report = $this->updateReport;
 $label = function(string $key): string { return $this->escape($this->translate($key)); };
 echo $this->Messages();
+if ($this->databaseMode) { echo $this->render('updates/database.phtml'); return; }
 ?>
+<?php echo $this->render('updates/summary.phtml'); ?>
+<p><a class="dw-btn dw-btn--primary" href="#updates-technical" onclick="document.getElementById('updates-technical').open = true"><?php echo $label('UPDATES_DB_CHECK'); ?></a></p>
+<details id="updates-technical"><summary><?php echo $label('UPDATES_DB_DETAILS'); ?></summary>
 <div class="dw-system-updates">
     <h2><?php echo $this->escape($this->title); ?></h2>
     <p><?php echo $label('UPDATES_SCOPE'); ?></p>
@@ -124,3 +128,4 @@ echo $this->Messages();
     </section>
     <?php endif; ?>
 </div>
+</details>

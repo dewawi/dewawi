@@ -1,0 +1,47 @@
+<?php
+$label = function(string $key): string { return $this->escape($this->translate($key)); };
+$url = function(string $action): string { return $this->escape($this->url(['module' => 'admin', 'controller' => 'updates', 'action' => $action], null, true)); };
+$s = $this->databaseState; $job = $s['job'] ?? null;
+echo $this->render('updates/summary.phtml');
+?>
+<div class="dw-system-updates">
+<?php if ($this->updateApprovalError) : ?><p class="dw-alert dw-alert--danger" role="alert"><?php echo $label($this->updateApprovalError); ?></p><?php endif; ?>
+<?php if ($s) : ?>
+    <?php if ($s['maintenance']) : ?><p role="status"><?php echo $label('UPDATES_DB_MAINTENANCE'); ?></p><?php endif; ?>
+    <?php if ($job) : $baseline = ($job['plan']['operation'] ?? '') === 'baseline'; ?>
+        <p><?php echo $label($baseline ? 'UPDATES_DB_REGISTER_NOTICE' : 'UPDATES_DB_NEXT'); ?></p>
+        <?php if (!$baseline) : ?><p><strong><?php echo $this->escape($this->migrationNames[$job['plan']['pending'][0]] ?? $this->translate('UPDATES_STATUS_UNKNOWN')); ?></strong></p><?php endif; ?>
+        <p class="dw-alert dw-alert--warning"><?php echo $label('UPDATES_DB_BACKUP_NOTICE'); ?></p>
+        <?php if (!$job['http']) : ?><p class="dw-alert dw-alert--warning"><?php echo $label('UPDATES_DB_ERROR_ALTERNATIVE'); ?></p><?php endif; ?>
+        <form method="post" action="<?php echo $url('run'); ?>" data-autosave="false">
+            <input type="hidden" name="csrf" value="<?php echo $this->escape($this->databaseCsrf); ?>">
+            <input type="hidden" name="job" value="<?php echo $this->escape($job['id']); ?>">
+            <p><label><?php echo $label('UPDATES_DB_BACKUP'); ?> <input type="text" name="backup" maxlength="160" required></label></p>
+            <p><label><?php echo $label('UPDATES_DB_RESTORE'); ?> <input type="text" name="restore" maxlength="160" required></label></p>
+            <p><label><input type="checkbox" name="writers" value="1" required> <?php echo $label('UPDATES_DB_WRITERS'); ?></label></p>
+            <?php if ($baseline) : ?><p><label><input type="checkbox" name="historical" value="1" required> <?php echo $label('UPDATES_DB_HISTORICAL'); ?></label></p>
+                <p><label><?php echo $label('UPDATES_DB_HISTORICAL_REFERENCE'); ?> <input type="text" name="historical_reference" maxlength="160" required></label></p>
+            <?php else : ?><input type="hidden" name="historical" value="0"><input type="hidden" name="historical_reference" value=""><?php endif; ?>
+            <p><label><input type="checkbox" name="confirm" value="1" required> <?php echo $label('UPDATES_DB_CONFIRM'); ?></label></p>
+            <button type="submit" class="dw-btn dw-btn--primary"><?php echo $label($job['http'] ? 'UPDATES_DB_EXECUTE' : 'UPDATES_DB_APPROVE'); ?></button>
+        </form>
+    <?php else : ?>
+        <form method="post" action="<?php echo $url('check'); ?>" data-autosave="false">
+            <input type="hidden" name="csrf" value="<?php echo $this->escape($this->databaseCsrf); ?>">
+            <button type="submit" class="dw-btn dw-btn--primary"><?php echo $label('UPDATES_DB_CHECK'); ?></button>
+        </form>
+    <?php endif; ?>
+    <?php if ($s['maintenance']) : ?>
+        <form method="post" action="<?php echo $url('cancel'); ?>" data-autosave="false">
+            <input type="hidden" name="csrf" value="<?php echo $this->escape($this->databaseCsrf); ?>">
+            <button type="submit" class="dw-btn"><?php echo $label('UPDATES_DB_CANCEL'); ?></button>
+        </form>
+    <?php endif; ?>
+<?php endif; ?>
+<details><summary><?php echo $label('UPDATES_DB_DETAILS'); ?></summary>
+    <ul><?php foreach ($this->updateReport['issues'] as $issue) : ?><li><?php echo $label('UPDATES_ISSUE_' . strtoupper($issue)); ?></li><?php endforeach; ?></ul>
+    <?php if ($job) : ?><p><?php echo $label('UPDATES_DB_NEXT'); ?> <code><?php echo $this->escape($job['plan']['pending'][0]); ?></code></p><p><code><?php echo $this->escape($job['id']); ?></code></p><?php endif; ?>
+    <?php if ($job && !$job['http']) : ?><pre style="white-space:pre-wrap;overflow-wrap:anywhere">php tools/update-hosting.php --config=… --environment=production --command=execute --request=<?php echo $this->escape($job['id']); ?></pre><?php endif; ?>
+    <ul><?php foreach ($this->updateReport['migrations'] as $migration) : ?><li><code><?php echo $this->escape($migration['id']); ?></code> — <?php echo $label('UPDATES_STATUS_' . strtoupper($migration['status'])); ?> — <?php echo $label('UPDATES_CHECKSUM_' . strtoupper($migration['checksum'])); ?></li><?php endforeach; ?></ul>
+</details>
+</div>

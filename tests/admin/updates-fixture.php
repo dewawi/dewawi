@@ -29,16 +29,17 @@ $states = json_decode(file_get_contents($work . '/states.json'), true, 512, JSON
 $state = PHP_SAPI === 'cli' ? ($argv[1] ?? 'missing') : ($_GET['state'] ?? 'missing');
 if (!is_string($state) || !isset($states[$state])) { http_response_code(404); exit; }
 $options = (new Zend_Config_Ini($root . '/configs/operator.ini', 'production'))->toArray();
+$databaseTest = ($options['systemUpdates']['mode'] ?? '') === 'database';
 $hostingTest = ($options['systemUpdates']['mode'] ?? 'shared') === 'shared'
     && (!empty($options['systemUpdates']['statePath']) || is_file($root . '/configs/update-storage.json') || getenv('DEWAWI_GOBD_REPORT_DIR'));
 $fixturePath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 $fixtureAsset = $fixturePath === '/browser.html' || (preg_match('~^/(css|js|library|images)/~', $fixturePath) && preg_match('~\.(css|js|png|svg|gif|ico)$~', $fixturePath));
-if ($hostingTest && !$fixtureAsset) {
+if (($hostingTest || $databaseTest) && !$fixtureAsset) {
     require_once $root . '/library/DEEC/UpdateMaintenance.php';
-    try { DEEC_UpdateMaintenance::enter($options['systemUpdates'] ?? [], str_starts_with(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/admin/updates/'), $root); }
+    try { DEEC_UpdateMaintenance::enter($options['systemUpdates'] ?? [], $fixturePath === '/admin/updates' || str_starts_with($fixturePath, '/admin/updates/'), $root, $options['resources']['db'] ?? []); }
     catch (Throwable $e) { http_response_code(503); echo 'Maintenance unavailable'; exit; }
 }
-$db = new Zend_Db_Adapter_Pdo_Mysql($hostingTest ? $options['resources']['db']['params'] : ['host' => 'localhost', 'unix_socket' => $work . '/mysql.sock', 'username' => 'overview', 'password' => 'fixture-secret', 'dbname' => $states[$state], 'charset' => 'utf8mb4']);
+$db = new Zend_Db_Adapter_Pdo_Mysql(($hostingTest || $databaseTest) ? $options['resources']['db']['params'] : ['host' => 'localhost', 'unix_socket' => $work . '/mysql.sock', 'username' => 'overview', 'password' => 'fixture-secret', 'dbname' => $states[$state], 'charset' => 'utf8mb4']);
 Zend_Db_Table::setDefaultAdapter($db);
 if (PHP_SAPI === 'cli') {
     require $root . '/tools/migrations/Inspector.php';
@@ -46,7 +47,7 @@ if (PHP_SAPI === 'cli') {
     exit;
 }
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-if ($hostingTest && $path === '/ordinary-write') { $db->query('INSERT INTO tenant_fixture VALUES (99, 999)'); echo 'Written'; exit; }
+if (($hostingTest || $databaseTest) && $path === '/ordinary-write') { $db->query('INSERT INTO tenant_fixture VALUES (99, 999)'); echo 'Written'; exit; }
 if ($path === '/browser.html') { readfile($work . '/browser.html'); exit; }
 if (preg_match('~^/(css|js|library|images)/~', $path) && preg_match('~\.(css|js|png|svg|gif|ico)$~', $path)) {
     $asset = realpath($root . $path);
@@ -100,7 +101,7 @@ try {
     }
     if ($request->getControllerName() !== 'updates' || $request->getModuleName() !== 'admin') throw new Zend_Controller_Action_Exception('Forbidden', 403);
     require $root . '/application/modules/admin/controllers/UpdatesController.php';
-    if (!$hostingTest && getenv('DEWAWI_UPDATES_PROTOCOL_TEST') === '1') {
+    if (!$hostingTest && !$databaseTest && getenv('DEWAWI_UPDATES_PROTOCOL_TEST') === '1') {
         require_once __DIR__ . '/update-worker-support.php';
         $instance = new UpdatesProtocolController($request, $response);
     } else $instance = new Admin_UpdatesController($request, $response);

@@ -7,8 +7,13 @@ class Admin_UpdatesController extends DEEC_Controller_AdminAction
         if (!DEEC_SystemOperator::allowed()) throw new Zend_Controller_Action_Exception('Forbidden', 403);
         $action = $this->getRequest()->getActionName();
         $options = $this->options();
-        $shared = DEEC_UpdateMaintenance::mode($options) === 'shared';
-        if (!in_array($action, $shared ? ['index', 'initialize', 'approve', 'maintenance', 'prepare', 'execute', 'finish'] : ['index', 'approve'], true)) throw new Zend_Controller_Action_Exception('Not found', 404);
+        $mode = DEEC_UpdateMaintenance::mode($options);
+        if ($mode !== 'database') {
+            require_once dirname(APPLICATION_PATH) . '/library/DEEC/UpdateDatabase.php';
+            if ((new DEEC_UpdateDatabase(Zend_Db_Table::getDefaultAdapter()))->exists()) throw new Zend_Controller_Action_Exception('Conflicting update storage', 409);
+        }
+        $actions = $mode === 'database' ? ['index', 'check', 'run', 'cancel'] : ($mode === 'shared' ? ['index', 'initialize', 'approve', 'maintenance', 'prepare', 'execute', 'finish'] : ['index', 'approve']);
+        if (!in_array($action, $actions, true)) throw new Zend_Controller_Action_Exception('Not found', 404);
         $methods = $action !== 'index' ? ['POST'] : ['GET', 'HEAD'];
         if (!in_array($this->getRequest()->getMethod(), $methods, true)) {
             $this->getResponse()->setHeader('Allow', implode(', ', $methods), true);
@@ -64,6 +69,19 @@ class Admin_UpdatesController extends DEEC_Controller_AdminAction
         }
         $version = dewawiVersion();
         if ($version === null) $report['issues'][] = 'version_invalid';
+        $names = [];
+        $labels = ['baseline/1.1.8' => 'UPDATES_DB_REGISTER', '1.1.8-1.1.9/001-shop-shipping.sql' => 'UPDATES_DB_SHIPPING', '1.1.8-1.1.9/002-shop-shipping-tax.sql' => 'UPDATES_DB_SHIPPING_TAX'];
+        foreach ($report['migrations'] as $migration) $names[$migration['id']] = isset($labels[$migration['id']]) ? $this->view->translate($labels[$migration['id']]) : ucwords(str_replace('-', ' ', preg_replace('/^[0-9]+-/', '', basename($migration['id'], '.sql'))));
+        $this->view->migrationNames = $names;
+        $databaseMode = DEEC_UpdateMaintenance::mode($this->options()) === 'database';
+        $this->view->databaseMode = $databaseMode;
+        if ($databaseMode) {
+            require_once dirname(APPLICATION_PATH) . '/tools/updates/Database.php';
+            $this->view->assign(['applicationVersion' => $version, 'updateReport' => $report, 'databaseCsrf' => DewawiDatabaseUpdates::csrf(), 'databaseState' => null]);
+            try { $this->view->databaseState = $this->database()->status(); }
+            catch (Throwable $e) { $this->view->updateApprovalError = $this->databaseError($e); }
+            $this->assignMessages(); return;
+        }
         $state = $confirmation = $hostingState = $hostingCsrf = null;
         $hostingSetup = ['status' => 'unavailable', 'source' => null, 'code' => null];
         $hostingMode = DEEC_UpdateMaintenance::mode($this->options()) === 'shared';
@@ -127,6 +145,44 @@ class Admin_UpdatesController extends DEEC_Controller_AdminAction
     public function prepareAction() { return $this->hostingAction('prepare'); }
     public function executeAction() { return $this->hostingAction('execute'); }
     public function finishAction() { return $this->hostingAction('finish'); }
+
+    private function database(): DewawiDatabaseUpdates
+    {
+        require_once dirname(APPLICATION_PATH) . '/tools/updates/Database.php';
+        return new DewawiDatabaseUpdates(Zend_Db_Table::getDefaultAdapter(), dirname(APPLICATION_PATH), $this->options());
+    }
+
+    private function databaseError(Throwable $error): string
+    {
+        $code = in_array($error->getMessage(), ['authentication', 'confirmation', 'evidence', 'alternative', 'legacy', 'manual_review', 'plan_changed', 'ambiguous'], true) ? $error->getMessage() : 'verification';
+        return 'UPDATES_DB_ERROR_' . strtoupper($code);
+    }
+
+    public function checkAction() { return $this->databaseAction('check'); }
+    public function runAction() { return $this->databaseAction('run'); }
+    public function cancelAction() { return $this->databaseAction('cancel'); }
+
+    private function databaseAction(string $action)
+    {
+        set_error_handler(static function(int $severity): bool {
+            if (!(error_reporting() & $severity)) return false;
+            throw new ErrorException('update_database_unavailable');
+        });
+        try {
+            $service = $this->database(); $post = (array)$this->getRequest()->getPost();
+            $keys = $action === 'run' ? ['csrf', 'job', 'confirm', 'backup', 'restore', 'writers', 'historical', 'historical_reference'] : ['csrf'];
+            $service->authorize($post, $keys);
+            if ($action === 'check') $service->check();
+            elseif ($action === 'cancel') $service->finish();
+            elseif (!is_string($post['job'])) throw new RuntimeException('confirmation');
+            else $service->execute($post['job'], array_intersect_key($post, array_flip(['confirm', 'backup', 'restore', 'writers', 'historical', 'historical_reference'])));
+            return $this->_helper->redirector->gotoSimple('index', 'updates', 'admin');
+        } catch (Throwable $error) {
+            $this->getResponse()->setHttpResponseCode(in_array($error->getMessage(), ['authentication', 'confirmation'], true) ? 403 : 409);
+            $this->view->updateApprovalError = $this->databaseError($error);
+            $this->_helper->viewRenderer->setRender('index'); $this->indexAction();
+        } finally { restore_error_handler(); }
+    }
 
     private function hostingAction(string $action)
     {

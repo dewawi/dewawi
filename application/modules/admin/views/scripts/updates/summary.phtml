@@ -1,0 +1,17 @@
+<?php
+$label = function(string $key): string { return $this->escape($this->translate($key)); };
+?>
+<div class="dw-system-updates">
+    <h2><?php echo $label('UPDATES_TITLE'); ?></h2>
+    <p><?php echo $label('UPDATES_SCOPE'); ?></p>
+    <p><?php echo $label('UPDATES_RELEASED_VERSION'); ?>: <strong><?php echo $this->escape($this->applicationVersion ?? $this->translate('APP_VERSION_UNKNOWN')); ?></strong></p>
+    <h3><?php echo $label('UPDATES_AVAILABLE'); ?></h3>
+    <ul>
+    <?php foreach ($this->updateReport['migrations'] as $migration) :
+        $name = $this->migrationNames[$migration['id']];
+        $status = $migration['status'] === 'completed' ? 'UPDATES_DB_SUCCESS' : ($migration['status'] === 'pending' ? 'UPDATES_DB_PENDING' : (in_array($migration['status'], ['started', 'failed'], true) ? 'UPDATES_DB_FAILED' : 'UPDATES_STATUS_UNKNOWN')); ?>
+        <li><?php echo $this->escape($name); ?> — <strong><?php echo $label($status); ?></strong></li>
+    <?php endforeach; ?>
+    </ul>
+    <?php if (!$this->updateReport['migrations']) : ?><p><?php echo $label('UPDATES_STATUS_UNKNOWN'); ?></p><?php endif; ?>
+</div>

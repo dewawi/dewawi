@@ -67,7 +67,7 @@ class DewawiMigrationInspector
             if ($statement === '') continue;
             // No session/transaction/lock manipulation or stored programs in versioned files.
             // Comments are retained for execution; the prefix check uses the stripped copy only.
-            if (!preg_match('/^(?:CREATE\s+(?:TABLE|(?:UNIQUE\s+)?INDEX)|ALTER\s+TABLE|DROP\s+(?:TABLE|INDEX)|INSERT\s+INTO|UPDATE|DELETE\s+FROM|RENAME\s+TABLE)\b/i', $statement) || stripos($sql, self::HISTORY) !== false) throw new DewawiMigrationException('unsupported_migration_statement');
+            if (!preg_match('/^(?:CREATE\s+(?:TABLE|(?:UNIQUE\s+)?INDEX)|ALTER\s+TABLE|DROP\s+(?:TABLE|INDEX)|INSERT\s+INTO|UPDATE|DELETE\s+FROM|RENAME\s+TABLE)\b/i', $statement) || stripos($sql, self::HISTORY) !== false || stripos($sql, 'dewawi_system_update') !== false) throw new DewawiMigrationException('unsupported_migration_statement');
             $result[] = $query['query'];
         }
         return $result;

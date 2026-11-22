@@ -48,15 +48,18 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
         sql('CREATE DATABASE template'); sql(release, 'template')
         sql("INSERT INTO user (id,password,clientid,admin,activated,deleted) VALUES (42,'fixture',7,1,1,0),(43,'fixture',8,1,1,0),(44,'fixture',9,0,1,0)", 'template')
         private = work/'baseline.ini'; private.write_text('[test]\nresources.db.adapter=Pdo_Mysql\nresources.db.params.host=localhost\nresources.db.params.unix_socket="'+db_socket+'"\nresources.db.params.username=root\nresources.db.params.password=""\nresources.db.params.dbname=template\n'); private.chmod(0o600)
-        subprocess.run(['php', str(source/'tools/migrate.php'), '--config='+str(private), '--environment=test', '--command=baseline'], check=True, capture_output=True)
+        baseline_result = subprocess.run(['php', str(source/'tools/migrate.php'), '--config='+str(private), '--environment=test', '--command=baseline'], capture_output=True, text=True)
+        if baseline_result.returncode: raise RuntimeError('Disposable baseline setup failed: '+baseline_result.stdout+baseline_result.stderr)
         sql("CREATE USER overview@localhost IDENTIFIED BY 'fixture-secret'; CREATE USER executor@localhost IDENTIFIED BY 'private-worker-secret'; GRANT READ_ONLY ADMIN ON *.* TO executor@localhost")
         case_number = 0; registry = source/'install/config/migrations/registry.json'; original_catalog = registry.read_bytes(); original_sql = (registry.parent/'1.1.8-1.1.9/001-shop-shipping.sql').read_bytes()
+        original_files = {p.relative_to(registry.parent): p.read_bytes() for p in registry.parent.glob('*/*.sql')}
         def write(path, value, mode=0o640):
             path.write_text(json.dumps(value, separators=(',', ':'))+'\n'); path.chmod(mode)
         def catalog(content=None):
             for entry in (registry.parent/'1.1.8-1.1.9').iterdir(): entry.unlink()
             if content is None:
-                registry.write_bytes(original_catalog); (registry.parent/'1.1.8-1.1.9/001-shop-shipping.sql').write_bytes(original_sql)
+                registry.write_bytes(original_catalog)
+                for relative, data in original_files.items(): (registry.parent/relative).write_bytes(data)
             else:
                 write(registry, {'transitions':[{'from':'1.1.8','to':'1.1.9','migrations':[{'file':'001-test.sql','depends':[]}]}]})
                 (registry.parent/'1.1.8-1.1.9/001-test.sql').write_text(content)
@@ -133,6 +136,15 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
             raise AssertionError('No durable SQL start marker')
         if '--storage-only' in sys.argv:
             runpy.run_path(str(ROOT/'tests/admin/update-hosting.py'))['run'](globals(), True)
+            raise SystemExit(0)
+        if '--database-only' in sys.argv:
+            runpy.run_path(str(ROOT/'tests/admin/update-database.py'))['run'](globals())
+            raise SystemExit(0)
+        if '--configuration-only' in sys.argv:
+            sql('SET GLOBAL read_only=0; CREATE DATABASE dewawi; CREATE DATABASE `%%database%%`; CREATE DATABASE staging_fixture; CREATE DATABASE development_fixture')
+            isolated = dict(env, DEWAWI_CONFIGURATION_SOCKET=db_socket)
+            for args in [['php', str(ROOT/'tests/security/configuration.php')], ['python3', '-B', str(ROOT/'tests/security/error-handling-http.py')]]:
+                subprocess.run(args, env=isolated, check=True)
             raise SystemExit(0)
         if '--hosting-only' in sys.argv:
             runpy.run_path(str(ROOT/'tests/admin/update-hosting.py'))['run'](globals())
@@ -235,7 +247,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-updates-worker-') as directory:
             new_case(full=baseline_browser,baseline=not baseline_browser)
             for locale in ['de_DE','en_US']:
                 for width in [1280,390,320]:
-                    script=r'''const f=document.querySelector('iframe');f.onload=()=>setTimeout(()=>{const d=f.contentDocument,w=f.contentWindow,failures=[];let checks=0;const check=(v,m)=>{checks++;if(!v)failures.push(m)};check(d.documentElement.scrollWidth<=w.innerWidth,'Horizontal overflow');check(!d.body.textContent.includes('UPDATES_'),'Missing translation');const form=d.querySelector('.dw-system-updates form');check(form&&form.getAttribute('data-autosave')==='false','Approval auto-saves or missing');const c=form.querySelector('[name="confirm"]');check(!form.checkValidity(),'No explicit confirmation required');c.focus();check(d.activeElement===c,'Confirmation cannot focus');c.checked=true;check(form.checkValidity(),'Cannot confirm');check(form.querySelector('[name="plan"]').value.length===64,'No exact plan hash');check(!!d.querySelector('#updates-baseline-registration')===EXPECT_BASELINE,'Wrong operation shown');check(form.querySelector('button[type=submit]').textContent.trim()===EXPECTED_BUTTON,'Ambiguous operation confirmation');document.querySelector('#metrics').textContent=JSON.stringify({checks,failures});},250);'''
+                    script=r'''const f=document.querySelector('iframe');f.onload=()=>setTimeout(()=>{const d=f.contentDocument,w=f.contentWindow,failures=[];d.querySelectorAll('details').forEach(x=>x.open=true);let checks=0;const check=(v,m)=>{checks++;if(!v)failures.push(m)};check(d.documentElement.scrollWidth<=w.innerWidth,'Horizontal overflow');check(!d.body.textContent.includes('UPDATES_'),'Missing translation');const form=d.querySelector('.dw-system-updates form');check(form&&form.getAttribute('data-autosave')==='false','Approval auto-saves or missing');const c=form.querySelector('[name="confirm"]');check(!form.checkValidity(),'No explicit confirmation required');c.focus();check(d.activeElement===c,'Confirmation cannot focus');c.checked=true;check(form.checkValidity(),'Cannot confirm');check(form.querySelector('[name="plan"]').value.length===64,'No exact plan hash');check(!!d.querySelector('#updates-baseline-registration')===EXPECT_BASELINE,'Wrong operation shown');check(form.querySelector('button[type=submit]').textContent.trim()===EXPECTED_BUTTON,'Ambiguous operation confirmation');document.querySelector('#metrics').textContent=JSON.stringify({checks,failures});},250);'''
                     script=script.replace('EXPECT_BASELINE','true' if baseline_browser else 'false').replace('EXPECTED_BUTTON',json.dumps(('Basisregistrierung an den Worker freigeben' if locale=='de_DE' else 'Approve baseline registration for the worker') if baseline_browser else ('Diesen Plan an den Worker freigeben' if locale=='de_DE' else 'Approve this plan for the worker')))
                     (work/'browser.html').write_text('<!doctype html><iframe src="'+origin+'/admin/updates/index?locale='+locale+'" style="width:'+str(width)+'px;height:2300px;border:0"></iframe><pre id="metrics"></pre><script>'+script+'</script>')
                     with tempfile.TemporaryDirectory(prefix='dewawi-m2b-chrome-') as profile:

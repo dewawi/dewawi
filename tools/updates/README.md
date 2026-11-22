@@ -1,6 +1,17 @@
-# System update operating modes (M2E)
+# System update operating modes
 
-The regular hosting-compatible mode is now **A: shared PHP account**, documented
+The default is now database-backed administration, described in [DATABASE.md](DATABASE.md).
+It uses the existing authenticated administrator/session/CSRF checks, M1 and a
+small installation-wide state table initialized only after an explicit POST.
+No private state directory, second password prompt, new Linux identity or service
+is required. Backups, recoverability and exclusion of external writers remain
+operational prerequisites. Approval references are attestations, not backup validation.
+
+Existing explicit shared/worker settings, statePath and pinned M2F installations
+retain their mode and state. They are never automatically converted. The legacy
+instructions below apply to those installations; both modes retain their safeguards.
+
+The legacy hosting-compatible mode is **A: shared PHP account**, documented
 in [HOSTING.md](HOSTING.md). It needs no new Linux account, root-owned queue,
 global database read-only flag, systemd or CLI access. Its explicit HTTP execution
 uses M1 with a cooperative maintenance fence and mandatory operational evidence.
@@ -13,7 +24,7 @@ remain supported; unavailable safe storage results in a documented manual fallba
 root-release, private credentials and global read-only requirements are unchanged.
 Set `systemUpdates.mode = worker` to select it explicitly. For compatibility,
 existing `queuePath` installations without an explicit mode still select B.
-Without either setting, A is displayed but cannot execute until privately set up.
+Without a legacy setting or M2F pin, the database-backed UI is used.
 Never switch modes or queues to bypass an unfinished request or M1 state.
 
 # Variant B: controlled separate worker (M2B–M2D)
