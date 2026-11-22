@@ -2,6 +2,8 @@
 
 Prüfdatum: 2026-11-22. Anwendungsversion unverändert **1.1.8**.
 
+**Fortschreibung durch C5B (2026-11-22):** Der folgende Bericht dokumentiert den damaligen C5A-Stand. Für neue Abschlüsse entfällt die Legacy-Ausnahme: Unbekannte Fracht oder Steuer führt zur unverbindlichen Anfrage, ohne Anfragefunktion zum Kontakthinweis. Katalog und Warenkorb bleiben verfügbar; historische Bestellungen bleiben unverändert. Die aktuelle Go-live-Prüfung berücksichtigt das ausdrücklich bestätigte DE-Steuerprofil, gemischte Versandsteuer und weiterhin ungeklärte Auslandslieferungen. Aktueller Vertrag, Quellen, Migration und Regressionen: [C5B-Prüfbericht](shipping-tax.md).
+
 ## Ergebnis und Geltungsbereich
 
 Die unten genannten technischen Prüfungen sind mit synthetischen Daten und isolierten Datenbanken bestanden. Sie erteilen **keine produktive Freigabe für Renocold oder einen anderen realen Shop**. Produktive Shopdaten, Tarife, Bestellungen, Benutzer, SMTP- und Zahlungsdienste wurden nicht verwendet oder verändert. Es gab kein Deployment.

@@ -1,0 +1,9 @@
+<?php $tax = Shops_Service_OrderSnapshot::decode($this->order['snapshot'] ?? null)['tax'] ?? null; ?>
+<?php if (($tax['status'] ?? '') === 'calculated') : ?>
+	<dl class="dw-checkout-totals" data-checkout-tax-groups>
+		<?php foreach ($tax['groups'] as $group) : ?>
+			<dt><?php echo $this->escape($this->translate('SHOPS_ORDER_TAX') . ' ' . Zend_Locale_Format::toNumber($group['taxrate'], ['locale' => Zend_Registry::get('Zend_Locale')]) . ' %'); ?></dt>
+			<dd data-checkout-tax-rate="<?php echo $this->escape((string)$group['taxrate']); ?>"><?php echo $this->escape(Zend_Registry::get('Zend_Currency')->toCurrency($group['taxes'], ['currency' => $this->order['currency']])); ?></dd>
+		<?php endforeach; ?>
+	</dl>
+<?php endif; ?>

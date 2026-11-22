@@ -677,6 +677,11 @@ class Application_Controller_Action_Helper_Email extends Zend_Controller_Action_
 					$content = $key === 'SHOPS_SHIPPING_METHOD' ? $value : ($value === null ? $translate('SHOPS_CHECKOUT_TAX_UNKNOWN') : $currency->toCurrency($value));
 					$summary .= '<dt>' . htmlspecialchars($translate($key)) . '</dt><dd>' . htmlspecialchars((string)$content) . '</dd>';
 				}
+				$tax = Shops_Service_OrderSnapshot::decode($order['snapshot'])['tax'] ?? null;
+				if (($tax['status'] ?? '') === 'calculated') foreach ($tax['groups'] as $group) {
+					$label = $translate('SHOPS_ORDER_TAX') . ' ' . Zend_Locale_Format::toNumber($group['taxrate'], ['locale' => $locale ?: 'en_US']) . ' %';
+					$summary .= '<dt>' . htmlspecialchars($label) . '</dt><dd>' . htmlspecialchars($currency->toCurrency($group['taxes'])) . '</dd>';
+				}
 				$summary .= '</dl>';
 				if (!$freight || !empty($freight['legacy'])) $summary .= '<p>' . htmlspecialchars($translate('SHOPS_CHECKOUT_SHIPPING_NOTICE')) . '</p>';
 				$body = stripos($body, '</body>') === false ? $body . $summary : str_ireplace('</body>', $summary . '</body>', $body);

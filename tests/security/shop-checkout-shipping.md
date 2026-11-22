@@ -2,6 +2,8 @@
 
 Stand: 2026-11-21. Anwendungsversion unverändert 1.1.8.
 
+**Fortschreibung durch C5B (2026-11-22):** Dieser Bericht beschreibt C4B und dessen historische Snapshotversion 2. Neue Bestellungen verwenden Snapshotversion 3 und den [C5B-Steuervertrag](../shops/shipping-tax.md). Auf ausdrückliche fachliche Entscheidung entfällt die Legacy-Freigabe für neue Abschlüsse mit unbekannten Versandkosten: Anfrage beziehungsweise Kontakthinweis. Historische Versionen 1 und 2 behalten ihre Anzeige- und Übernahmeregeln. C5B ergänzt das bestätigte DE-Profil und die gruppenbezogene Versandsteueraufteilung; die hier beschriebenen damaligen Steuergrenzen sind deshalb kein aktueller Freigabekatalog.
+
 ## Berechnung und Abschluss
 
 `ShippingConfiguration::calculateCheckout()` bietet ausschließlich lesenden Zugriff auf den bestehenden C4A-Kern. Shop und Mandant stammen aus `SiteContext`; Checkout-/Warenkorb-Features und der gespeicherte Checkout-Schalter werden geprüft. Artikel, Preise, Versandklassen, Verpackungsdaten und Tarife werden aus dem Serverbestand gelesen. Die administrativen Methoden behalten ihre Rechteprüfungen.

@@ -128,12 +128,13 @@ class Shops_CheckoutController extends Shops_Controller_Action
 		}
 		$fingerprint = hash('sha256', json_encode([$token, $cartRevision, $orderSnapshot, $positions], JSON_THROW_ON_ERROR));
 		$freight = Shops_Service_OrderSnapshot::decode($orderSnapshot['snapshot'])['freight'];
-		$canOrder = $freight['status'] === 'calculated' || !empty($freight['legacy']);
+		$canOrder = Shops_Service_OrderSnapshot::canOrder($orderSnapshot);
 		if (!in_array($post['checkout_stage'] ?? 'preview', ['preview', 'confirm'], true)) return $this->checkoutFailure('SHOPS_FORM_INVALID', 422, $checkout);
 		if (($post['checkout_stage'] ?? 'preview') === 'preview') {
 			$review = ['token' => bin2hex(random_bytes(32)), 'fingerprint' => $fingerprint, 'checkoutToken' => $token];
 			$this->checkoutDataSession->review = $review;
 			$reviewData = ['order' => $orderSnapshot, 'positions' => $positions, 'reviewToken' => $review['token'],
+				'contactEmail' => DEEC_Filter::isValidEmail($shop['emailsender'] ?? '') ? DEEC_Filter::email($shop['emailsender']) : '',
 				'canRequestShipping' => $this->_siteContext->hasFeature('contact') || $this->_siteContext->hasFeature('inquiry')];
 			if ($request->isXmlHttpRequest()) return $this->_helper->json(['success' => true, 'reviewHtml' => $this->view->partial('checkout/_review.phtml', $reviewData),
 				'summaryHtml' => $this->view->partial('checkout/_summary.phtml', $reviewData), 'csrfToken' => $checkout->renewCsrfToken()]);

@@ -4,7 +4,8 @@
             "from": "1.1.8",
             "to": "1.1.9",
             "migrations": [
-                {"file": "001-shop-shipping.sql", "depends": []}
+                {"file": "001-shop-shipping.sql", "depends": []},
+                {"file": "002-shop-shipping-tax.sql", "depends": ["1.1.8-1.1.9/001-shop-shipping.sql"]}
             ]
         }
     ]

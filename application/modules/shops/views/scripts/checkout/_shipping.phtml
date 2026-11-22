@@ -11,7 +11,9 @@ $currency = Zend_Registry::get('Zend_Currency');
 		<dd data-checkout-shipping><?php echo isset($freight['net']) ? $this->escape($currency->toCurrency($freight['net'], ['currency' => $freight['currency']])) : $this->translate('SHOPS_ORDER_SHIPPING_UNKNOWN'); ?></dd>
 	</dl>
 <?php endif; ?>
-<?php if (!$freight || !empty($freight['legacy'])) : ?>
+<?php if (!empty($freight['legacy']) && (Shops_Service_OrderSnapshot::decode($this->order['snapshot'])['version'] ?? 0) >= 3) : ?>
+	<p role="status" data-checkout-shipping-status><?php echo $this->translate('SHOPS_SHIPPING_LEGACY_INQUIRY'); ?></p>
+<?php elseif (!$freight || !empty($freight['legacy'])) : ?>
 	<p class="small" data-checkout-shipping-status><?php echo $this->translate('SHOPS_CHECKOUT_SHIPPING_NOTICE'); ?></p>
 <?php elseif ($freight['status'] !== 'calculated') : ?>
 	<p role="status" data-checkout-shipping-status><?php echo $this->translate($freight['status'] === 'unavailable' ? 'SHOPS_SHIPPING_UNAVAILABLE' : (in_array('shipping_tax_review_required', $freight['reasons'], true) ? 'SHOPS_SHIPPING_TAX_REVIEW' : 'SHOPS_SHIPPING_QUOTE_REQUIRED')); ?></p>

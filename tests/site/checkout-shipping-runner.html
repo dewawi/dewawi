@@ -10,7 +10,7 @@
   await load('/a/checkout?lang='+lang);
   let w=frame.contentWindow,$=w.jQuery,d=w.document;
   const config=JSON.parse($('#shop-cart-state').attr('data-config'));
-  await $.ajax({url:config.addUrl,method:'POST',dataType:'json',data:{id:103,quantity:mode==='quote'?'2.5':'1',csrf_token:config.token,revision:config.revision}});
+  await $.ajax({url:config.addUrl,method:'POST',dataType:'json',data:{id:103,quantity:mode==='quote'?'1.25':'1',csrf_token:config.token,revision:config.revision}});
   await load('/a/checkout');w=frame.contentWindow;$=w.jQuery;d=w.document;
   const $form=$('form#checkout');let posts=0;const ajax=$.ajax;
   $.ajax=function(options){if(options.url==='/a/checkout/send')posts++;return ajax.apply(this,arguments)};

@@ -8,7 +8,11 @@ class Admin_Form_Shipping extends DEEC_Form
 			$this->addElement($extra + ['name' => $name, 'type' => $type, 'label' => 'SHIPPING_' . strtoupper($name), 'col' => 6, 'attribs' => ['id' => 'shipping-' . $name]]);
 		};
 		$select = fn(string $name, string $source) => $add($name, 'select', ['options' => $choices[$source] ?? ['' => 'SHIPPING_SELECT']]);
-		if ($kind === 'settings') { $select('currency', 'currency'); $add('pickup', 'checkbox'); return; }
+		if ($kind === 'settings') {
+			$select('currency', 'currency'); $add('pickup', 'checkbox');
+			if (!empty($choices['taxPolicyAvailable'])) $add('taxpolicy', 'select', ['options' => ['' => 'SHIPPING_TAX_POLICY_NONE', Shops_Service_ShippingConfiguration::TAX_POLICY => 'SHIPPING_TAX_POLICY_DE']]);
+			return;
+		}
 		if (in_array($kind, ['classes', 'zones', 'tariffs'], true)) $add('title');
 		$add('active', 'checkbox'); if (!$itemMode) $add('ordering', 'number', ['default' => 0, 'attribs' => ['id' => 'shipping-ordering', 'min' => 0, 'step' => 1]]);
 		switch ($kind) {

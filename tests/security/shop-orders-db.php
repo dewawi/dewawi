@@ -45,7 +45,7 @@ foreach ([7, 8, 9] as $tenant) {
 	$db->insert('template', ['description' => 'Order test', 'clientid' => $tenant, 'activated' => 1]);
 	$db->insert('increment', ['clientid' => $tenant, 'contactid' => 1, 'creditnoteid' => 1, 'deliveryorderid' => 1, 'invoiceid' => 1, 'purchaseorderid' => 1, 'quoteid' => 1, 'quoterequestid' => 1, 'reminderid' => 1, 'salesorderid' => 1, 'shoporderid' => 1000]);
 }
-$shop = ['id' => 41, 'clientid' => 7, 'title' => 'Original shop', 'url' => 'https://shop.example.test', 'language' => 'de_DE', 'timezone' => 'Europe/Berlin', 'checkoutenabled' => 1, 'activated' => 1];
+$shop = ['id' => 41, 'clientid' => 7, 'title' => 'Original shop', 'url' => 'https://shop.example.test', 'language' => 'de_DE', 'timezone' => 'Europe/Berlin', 'checkoutenabled' => 1, 'activated' => 1, 'shippingcurrency' => 'EUR'];
 $db->insert('shop', $shop);
 $db->insert('shop', array_replace($shop, ['id' => 42, 'title' => 'Other shop']));
 $db->insert('shop', array_replace($shop, ['id' => 43, 'clientid' => 8]));
@@ -81,6 +81,10 @@ $mail = new OrderMailFixture(); Zend_Controller_Action_HelperBroker::addHelper($
 $db->insert('country', ['code' => 'DE', 'name' => 'Germany', 'language' => 'de_DE', 'clientid' => 7]);
 $db->insert('taxrate', ['id' => 11, 'name' => 'VAT', 'rate' => 19, 'clientid' => 7]);
 $db->insert('item', ['id' => 103, 'clientid' => 7, 'shopid' => 41, 'catid' => 0, 'title' => 'Checkout article', 'shopenabled' => 1, 'sku' => 'CHECKOUT', 'price' => 500, 'specialprice' => 100, 'taxid' => 11, 'currency' => 'EUR']);
+$db->insert('client', ['id' => 7, 'country' => 'DE']);
+$db->insert('shopshippingclass', ['id' => 1, 'clientid' => 7, 'shopid' => 41, 'title' => 'Explicit free freight', 'active' => 1, 'combine_same_class' => 1, 'required_fields' => '[]']);
+$db->insert('shopshippingzone', ['id' => 1, 'clientid' => 7, 'shopid' => 41, 'title' => 'Domestic', 'active' => 1, 'countries' => '["DE"]']);
+$db->insert('shopshippingtariff', ['clientid' => 7, 'shopid' => 41, 'classid' => 1, 'zoneid' => 1, 'title' => 'Explicit free freight', 'active' => 1, 'model' => 'fixed', 'currency' => 'EUR', 'parameters' => '{"amount":"0.00"}']);
 $tr = new DEEC_Translate('de_DE'); $tr->loadModule('shops'); Zend_Registry::set('DEEC_Translate', $tr);
 Zend_Registry::set('SiteContext', new DEEC_Site_Context($shop, [], ['catalog', 'checkout', 'cart']));
 $reviewer = Zend_Registry::get('User'); Zend_Registry::set('User', ['id' => 0]);
@@ -127,6 +131,7 @@ $cartSession->items = [];
 $invalidCheckout();
 $cartSession->items = $originalCart;
 $response->clearBody(); $response->clearHeaders(); $response->setHttpResponseCode(200);
+$db->insert('shopitemshipping', ['clientid' => 7, 'shopid' => 41, 'itemid' => 103, 'classid' => 1, 'active' => 1, 'packages_per_unit' => 1, 'separate' => 0]);
 $checkoutPost['checkout_stage'] = 'preview';
 $request->setPost($checkoutPost); $controller->sendAction();
 $preview = json_decode($response->getBody(), true);

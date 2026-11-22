@@ -2804,6 +2804,7 @@ CREATE TABLE IF NOT EXISTS `shop` (
   `indexable` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   `shippingcurrency` char(3) DEFAULT NULL,
+  `shippingtaxpolicy` varchar(32) DEFAULT NULL,
   `pickupenabled` tinyint(1) NOT NULL DEFAULT 0,
   UNIQUE KEY `shipping_clientid_id` (`clientid`,`id`),
   PRIMARY KEY (id),

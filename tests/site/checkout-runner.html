@@ -47,7 +47,7 @@
   await until(()=>$form.find('#checkout-review-title').length&&!$form.find('#checkout-review').prop('hidden'),'Preview did not load');
   check(posts===2,'Double preview sent duplicate requests');
   check($form.find('#checkout-review').text().includes('297,50')&&$form.find('#checkout-review').text().includes('47,50'),'Review has incorrect ERP totals');
-  check($form.find('#checkout-review').text().includes('nicht enthalten')&&$form.find('#checkout-review').text().includes('keine Zahlung'),'Shipping or payment communication missing');
+  check($form.find('#checkout-review').text().includes('Versandkosten netto')&&$form.find('#checkout-review').text().includes('keine Zahlung'),'Explicit freight or payment communication missing');
   check(!$form.find('#checkout-review img').length&&$form.find('#checkout-review').text().includes('Notiz <img src=x>'),'Review did not escape customer notes');
   check(d.activeElement.id==='checkout-review-title','Preview did not receive keyboard focus');
   $form.find('[name="checkout_edit"]').trigger('click');

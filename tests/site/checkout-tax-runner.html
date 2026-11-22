@@ -1,0 +1,53 @@
+<!doctype html><html><body><iframe style="height:1800px;border:0"></iframe><pre id="metrics"></pre><script>
+(async function () {
+ const frame=document.querySelector('iframe'),params=new URLSearchParams(location.search),width=Number(params.get('width')),lang=params.get('lang'),mode=params.get('mode');
+ frame.style.width=width+'px';let checks=0;const failures=[];
+ const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms)),check=(value,message)=>{checks++;if(!value)throw Error(message)};
+ async function until(fn,message){for(let i=0;i<80;i++){if(fn())return;await wait(60)}throw Error(message)}
+ async function load(path){await new Promise(resolve=>{frame.onload=resolve;frame.src=path});await wait(100)}
+ const base=mode==='legacy'?'/b':(mode==='no-channel'?'/c':'/a'),item=mode==='legacy'?203:(mode==='no-channel'?303:103);
+ try {
+  await load(base+'/checkout?lang='+lang);
+  let w=frame.contentWindow,d=w.document,$=w.jQuery;
+  let config=JSON.parse($('#shop-cart-state').attr('data-config'));
+  for(const id of (base==='/a'?[item,107]:[item])) {
+   const result=await $.ajax({url:config.addUrl,method:'POST',dataType:'json',data:{id,quantity:1,csrf_token:config.token,revision:config.revision}});
+   check(result.success,'Cart setup failed');config.revision=result.revision;
+  }
+  await load(base+'/checkout');w=frame.contentWindow;d=w.document;$=w.jQuery;
+  const form=d.querySelector('form#checkout'),$form=$(form);
+  Object.entries({billingname:'Tax browser',billingcompany:'Unverified company',billingstreet:'Street 1',billingpostcode:'10115',billingcity:'Berlin',billingcountry:mode==='tax-quote'?'AT':'DE',email:'tax@example.com'}).forEach(([name,value])=>$form.find('[name="'+name+'"]').val(value).trigger('input'));
+  $form.find('[name="privacy"][type="checkbox"]').prop('checked',true).trigger('change');
+  form.requestSubmit($form.find('[data-checkout-fields] button[type="submit"]')[0]);
+  await until(()=>$form.find('[name="checkout_stage"]').val()==='confirm'&&$form.attr('aria-busy')!=='true','Tax review failed');
+  const review=d.querySelector('#checkout-review'),text=review.textContent;
+  check(!/SHOPS_/.test(text),'Tax or inquiry labels not translated');
+  check(d.documentElement.scrollWidth<=w.innerWidth,'Tax review overflows viewport');
+  check(d.activeElement.id==='checkout-review-title','Tax review lost keyboard focus');
+  if(mode==='order') {
+   check(text.includes(lang==='en'?'239.56':'239,56'),'Mixed-rate gross total missing');
+   check(review.querySelector('[data-checkout-tax-rate="7"]').textContent.includes(lang==='en'?'7.42':'7,42'),'7 percent tax group missing');
+   check(review.querySelector('[data-checkout-tax-rate="19"]').textContent.includes(lang==='en'?'20.14':'20,14'),'19 percent tax group missing');
+   check(review.querySelector('[data-checkout-confirm]'),'Known freight and taxes cannot bind order');
+   review.querySelector('[data-checkout-confirm]').click();
+   await until(()=>frame.contentDocument.querySelector('#success'),'Tax order confirmation failed');
+   d=frame.contentDocument;d.querySelector('details').open=true;
+   check(d.querySelector('[data-checkout-tax-rate="7"]')&&d.querySelector('[data-checkout-tax-rate="19"]'),'Receipt lost immutable tax groups');
+   check(d.querySelector('#success').textContent.includes(lang==='en'?'239.56':'239,56'),'Receipt changed tax total');
+  } else {
+   check(!review.querySelector('[data-checkout-confirm]'),'Unknown freight or tax permits binding order');
+   if(mode==='no-channel') {
+    check(!review.querySelector('[name="checkout_quote"]')&&review.querySelector('a[href="mailto:shop@example.invalid"]'),'Missing inquiry channel lacks a contact possibility');
+   } else {
+    const button=review.querySelector('[name="checkout_quote"]');check(button,'Inquiry action missing');
+    const price=review.querySelector('[data-checkout-shipping]').textContent;
+    check(mode==='legacy'?!/€/.test(price):price.includes(lang==='en'?'12.00':'12,00'),'Known freight and unknown freight not distinguished');
+    button.click();await until(()=>frame.contentDocument.querySelector('#success'),'Non-binding inquiry confirmation failed');
+    check(frame.contentWindow.location.pathname===base+'/contact/success','Unknown tax produced an order receipt');
+   }
+  }
+  check(frame.contentDocument.documentElement.scrollWidth<=frame.contentWindow.innerWidth,'Tax completion overflows');
+ } catch(error) { failures.push(String(error.stack||error)); }
+ document.querySelector('#metrics').textContent=JSON.stringify({checks,failures,width,lang,mode});
+})();
+</script></body></html>

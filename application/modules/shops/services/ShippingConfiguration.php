@@ -2,6 +2,7 @@
 
 class Shops_Service_ShippingConfiguration
 {
+	public const TAX_POLICY = 'de_ancillary_net_v1';
 	public const TABLES = ['classes' => 'shopshippingclass', 'zones' => 'shopshippingzone', 'tariffs' => 'shopshippingtariff', 'assignments' => 'shopitemshipping', 'combinations' => 'shopshippingcombination'];
 	private Zend_Db_Adapter_Abstract $db;
 	private array $client;
@@ -93,7 +94,7 @@ class Shops_Service_ShippingConfiguration
 	{
 		$this->requireAdmin();
 		$shop = $this->shop($shopId);
-		if ($kind === 'settings') return ['currency' => $shop['shippingcurrency'] ?? '', 'pickup' => (int)$shop['pickupenabled']];
+		if ($kind === 'settings') return ['currency' => $shop['shippingcurrency'] ?? '', 'pickup' => (int)$shop['pickupenabled'], 'taxpolicy' => $shop['shippingtaxpolicy'] ?? ''];
 		if ($id === 0) return [];
 		foreach ($this->records($shopId, $kind) as $row) if ((int)$row['id'] === $id) return $this->expand($row, $kind);
 		throw new DomainException('Not found', 404);
@@ -101,8 +102,9 @@ class Shops_Service_ShippingConfiguration
 
 	public function choices(int $shopId, array $current = []): array
 	{
-		$this->requireAdmin(); $this->shop($shopId);
+		$this->requireAdmin(); $shop = $this->shop($shopId);
 		$options = $this->options($shopId);
+		$options['taxPolicyAvailable'] = array_key_exists('shippingtaxpolicy', $shop);
 		foreach (['classes' => ['classid','hostclassid','guestclassid'], 'zones' => ['zoneid']] as $kind => $fields) foreach ($this->records($shopId, $kind) as $row) {
 			foreach ($fields as $field) if ((int)($current[$field] ?? 0) === (int)$row['id']) $options[$kind === 'classes' ? 'classid' : 'zoneid'][$row['id']] = $row['title'] . ' (#' . $row['id'] . ')';
 		}
@@ -182,7 +184,8 @@ class Shops_Service_ShippingConfiguration
 			$ids = array_column($selection, 'itemid');
 			$items = $this->db->fetchAll($this->db->select()->from('item')->where('clientid = ?', $owner)->where('shopid = ?', $shopId)->where('deleted = 0')->where('shopenabled = 1')->where('id IN (?)', $ids ?: [0]));
 			$result = (new Shops_Service_ShippingCalculator())->calculate(['clientid' => $owner, 'shopid' => $shopId], $config, $items, $selection, $destination);
-			$result['configuration_hash'] = hash('sha256', json_encode($config, JSON_THROW_ON_ERROR));
+			$result['tax_policy'] = $shop['shippingtaxpolicy'] ?? null;
+			$result['configuration_hash'] = hash('sha256', json_encode([$config, $result['tax_policy']], JSON_THROW_ON_ERROR));
 			$result['origin_country'] = $this->db->fetchOne($this->db->select()->from('client', ['country'])->where('id = ?', $owner)->where('deleted = 0')) ?: null;
 			return $result;
 		} catch (JsonException | DomainException $e) {
@@ -228,9 +231,15 @@ class Shops_Service_ShippingConfiguration
 		try {
 			$shop = $this->shop($shopId, true);
 			if ($kind === 'settings') {
-				$this->allowed($input, ['currency', 'pickup']);
+				$this->allowed($input, ['currency', 'pickup', 'taxpolicy']);
 				$currency = $this->currency($input['currency'] ?? null);
-				$this->db->update('shop', ['shippingcurrency' => $currency, 'pickupenabled' => $this->flag($input['pickup'] ?? 0, 'pickup'), 'modified' => date('Y-m-d H:i:s'), 'modifiedby' => (int)$this->user['id']], ['id = ?' => $shopId, 'clientid = ?' => $this->owner()]);
+				$settings = ['shippingcurrency' => $currency, 'pickupenabled' => $this->flag($input['pickup'] ?? 0, 'pickup'), 'modified' => date('Y-m-d H:i:s'), 'modifiedby' => (int)$this->user['id']];
+				if (array_key_exists('taxpolicy', $input)) {
+					if (!array_key_exists('shippingtaxpolicy', $shop)) throw new DomainException('taxpolicy:SHIPPING_TAX_SCHEMA_MISSING');
+					if (!in_array($input['taxpolicy'], ['', self::TAX_POLICY], true)) throw new DomainException('taxpolicy:SHIPPING_INVALID_TAX_POLICY');
+					$settings['shippingtaxpolicy'] = $input['taxpolicy'] ?: null;
+				}
+				$this->db->update('shop', $settings, ['id = ?' => $shopId, 'clientid = ?' => $this->owner()]);
 			} else {
 				$old = null;
 				foreach ($this->records($shopId, $kind) as $row) if ((int)$row['id'] === $id) $old = $row;

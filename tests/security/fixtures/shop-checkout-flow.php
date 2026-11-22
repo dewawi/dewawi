@@ -32,7 +32,7 @@ if (PHP_SAPI === 'cli') {
 		}
 		$db->insert('taxrate', ['id' => 11, 'clientid' => 7, 'name' => 'VAT', 'rate' => 19]);
 		$db->insert('taxrate', ['id' => 12, 'clientid' => 7, 'name' => 'Zero', 'rate' => 0]);
-		foreach ([[41, 7], [42, 7], [43, 8]] as [$site, $client]) $db->insert('shop', ['id' => $site, 'clientid' => $client, 'title' => 'Checkout fixture', 'language' => 'de_DE', 'url' => 'https://fixture.invalid', 'checkoutenabled' => 1]);
+		foreach ([[41, 7], [42, 7], [43, 8]] as [$site, $client]) $db->insert('shop', ['id' => $site, 'clientid' => $client, 'title' => 'Checkout fixture', 'language' => 'de_DE', 'url' => 'https://fixture.invalid', 'emailsender' => 'shop@example.invalid', 'checkoutenabled' => 1]);
 		foreach ([[103, 11], [104, 11], [105, null], [106, 12]] as [$id, $tax]) $db->insert('item', ['id' => $id, 'clientid' => 7, 'shopid' => 41, 'catid' => 0, 'shopenabled' => 1, 'title' => 'Wärmepumpe <img src=x onerror=alert(1)>', 'sku' => 'ITEM-' . $id, 'price' => 500, 'specialprice' => 100, 'currency' => 'EUR', 'taxid' => $tax]);
 		$db->query("CREATE TRIGGER reject_checkout_fixture BEFORE INSERT ON shoporderpos FOR EACH ROW BEGIN IF NEW.itemid = 104 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fixture position failure'; END IF; END");
 		mkdir(dirname($socket) . '/checkout-flow-sessions', 0700);
@@ -43,7 +43,7 @@ if (PHP_SAPI === 'cli') {
 		$db->insert('shopshippingclass', ['id' => 1, 'clientid' => 7, 'shopid' => 41, 'title' => 'Parcel', 'active' => 1, 'combine_same_class' => 1, 'required_fields' => '["packweight"]']);
 		$db->insert('shopshippingzone', ['id' => 1, 'clientid' => 7, 'shopid' => 41, 'title' => 'Germany', 'active' => 1, 'countries' => '["DE"]']);
 		$db->insert('shopshippingtariff', ['id' => 1, 'clientid' => 7, 'shopid' => 41, 'classid' => 1, 'zoneid' => 1, 'title' => 'Parcel', 'active' => 1, 'model' => 'fixed', 'currency' => 'EUR', 'parameters' => '{"amount":"12.00"}']);
-		foreach ([103,105,106] as $id) $db->insert('shopitemshipping', ['clientid' => 7, 'shopid' => 41, 'itemid' => $id, 'classid' => 1, 'active' => 1, 'packages_per_unit' => 1, 'separate' => 0]);
+		foreach ([103,104,105,106] as $id) $db->insert('shopitemshipping', ['clientid' => 7, 'shopid' => 41, 'itemid' => $id, 'classid' => 1, 'active' => 1, 'packages_per_unit' => 2, 'separate' => 0]);
 		$db->update('item', ['packweight' => 5], 'shopid = 41');
 	} elseif (($argv[2] ?? '') === 'shipping-tariff') {
 		$db->update('shopshippingtariff', ['model' => $argv[3] === 'manual' ? 'manual' : 'fixed', 'parameters' => $argv[3] === 'manual' ? '{}' : json_encode(['amount' => $argv[3]])], 'id = 1');
@@ -51,6 +51,21 @@ if (PHP_SAPI === 'cli') {
 		$db->update('shop', ['pickupenabled' => (int)$argv[3]], 'id = 41');
 	} elseif (($argv[2] ?? '') === 'tax-change') {
 		$db->update('taxrate', ['rate' => (float)$argv[3]], 'id = 11');
+	} elseif (($argv[2] ?? '') === 'channels') {
+		$db->update('shop', ['contactenabled' => (int)$argv[3], 'inquiryenabled' => (int)$argv[4]], 'id = 41');
+	} elseif (($argv[2] ?? '') === 'tax-init') {
+		$db->update('shop', ['shippingtaxpolicy' => Shops_Service_ShippingConfiguration::TAX_POLICY], 'id = 41');
+		$db->update('shop', ['contactenabled' => 1], 'id = 42');
+		$db->insert('taxrate', ['id' => 13, 'clientid' => 7, 'name' => 'Reduced fixture', 'rate' => 7]);
+		$db->insert('taxrate', ['id' => 21, 'clientid' => 8, 'name' => 'Other fixture', 'rate' => 19]);
+		foreach ([[107, 41, 7, 13], [203, 42, 7, 11], [303, 43, 8, 21]] as [$id, $site, $client, $tax]) $db->insert('item', ['id' => $id, 'clientid' => $client, 'shopid' => $site, 'catid' => 0, 'shopenabled' => 1, 'title' => 'Mixed-rate article', 'sku' => 'ITEM-' . $id, 'price' => 100, 'currency' => 'EUR', 'taxid' => $tax, 'packweight' => 5]);
+		$db->insert('shopitemshipping', ['clientid' => 7, 'shopid' => 41, 'itemid' => 107, 'classid' => 1, 'active' => 1, 'packages_per_unit' => 1, 'separate' => 0]);
+		$db->insert('country', ['clientid' => 7, 'code' => 'CH', 'name' => 'Switzerland', 'language' => 'de_DE']);
+		$db->update('shopshippingzone', ['countries' => '["DE","AT","CH"]'], 'id = 1');
+	} elseif (($argv[2] ?? '') === 'tax-policy') {
+		$db->update('shop', ['shippingtaxpolicy' => ($argv[3] ?? '') === 'approved' ? Shops_Service_ShippingConfiguration::TAX_POLICY : null], 'id = 41');
+	} elseif (($argv[2] ?? '') === 'phase' && in_array($argv[3] ?? '', ['base', 'shipping', 'tax', 'tax-browser'], true)) {
+		file_put_contents(dirname($socket) . '/checkout-phase', $argv[3]);
 	} elseif (($argv[2] ?? '') === 'price-change') {
 		$db->update('item', ['specialprice' => (float)$argv[3]], 'id = 103');
 	} else {
@@ -66,6 +81,7 @@ $assets = ['/_assets/jquery.min.js' => '/tmp/dewawi-jquery-3.7.1.min.js', '/_ass
 if (isset($assets[$path])) { header('Content-Type: ' . (str_ends_with($path, '.css') ? 'text/css' : 'application/javascript')); readfile($assets[$path]); exit; }
 if ($path === '/_checkout-runner') { header('Content-Type: text/html; charset=UTF-8'); readfile($root . '/tests/site/checkout-runner.html'); exit; }
 if ($path === '/_shipping-runner') { header('Content-Type: text/html; charset=UTF-8'); readfile($root . '/tests/site/checkout-shipping-runner.html'); exit; }
+if ($path === '/_tax-runner') { header('Content-Type: text/html; charset=UTF-8'); readfile($root . '/tests/site/checkout-tax-runner.html'); exit; }
 $site = str_starts_with($path, '/b/') ? 42 : (str_starts_with($path, '/c/') ? 43 : 41);
 $client = $site === 43 ? 8 : 7;
 $base = $site === 42 ? '/b' : ($site === 43 ? '/c' : '/a');
@@ -77,7 +93,9 @@ Zend_Session::setOptions(['save_path' => dirname($socket) . '/checkout-flow-sess
 $languageSession = new Zend_Session_Namespace('FixtureLocale');
 if (isset($_GET['lang'])) $languageSession->locale = $_GET['lang'] === 'en' ? 'en_US' : 'de_DE';
 $locale = $languageSession->locale ?? 'de_DE';
-Zend_Registry::set('SiteContext', new DEEC_Site_Context($shop, [], !empty($shop['contactenabled']) ? ['cart', 'checkout', 'contact'] : ['cart', 'checkout']));
+$features = ['cart', 'checkout'];
+foreach (['contact', 'inquiry'] as $feature) if (!empty($shop[$feature . 'enabled'])) $features[] = $feature;
+Zend_Registry::set('SiteContext', new DEEC_Site_Context($shop, [], $features));
 Zend_Registry::set('Zend_Locale', new Zend_Locale($locale));
 Zend_Registry::set('Zend_Currency', new Zend_Currency('EUR', $locale));
 $tr = new DEEC_Translate($locale); $tr->loadModule('shops'); Zend_Registry::set('DEEC_Translate', $tr);
@@ -101,7 +119,9 @@ class CheckoutFlowLimiter extends Zend_Controller_Action_Helper_Abstract {
 		if (!$controller instanceof Shops_Controller_Action) return;
 		$property = new ReflectionProperty(Shops_Controller_Action::class, 'submissionLimiter');
 		$property->setAccessible(true);
-		$property->setValue($controller, new DEEC_Site_SubmissionLimiter(dirname(getenv('DEWAWI_CHECKOUT_TEST_SOCKET')) . (!empty(Zend_Registry::get('Shop')['shippingcurrency']) ? '/shipping-checkout-rate' : '/checkout-rate')));
+		$work = dirname(getenv('DEWAWI_CHECKOUT_TEST_SOCKET'));
+		$phase = is_file($work . '/checkout-phase') ? file_get_contents($work . '/checkout-phase') : 'legacy';
+		$property->setValue($controller, new DEEC_Site_SubmissionLimiter($work . '/' . $phase . '-checkout-rate'));
 	}
 }
 Zend_Controller_Action_HelperBroker::addHelper(new CheckoutFlowLimiter());

@@ -93,8 +93,28 @@ with log_path.open('w') as log:
             except urllib.error.URLError:
                 time.sleep(.05)
         check(status == 404 and 'Wir haben Ihre Bestellung erhalten' not in content, 'Direct success URL claims a saved order')
+        legacy = Client(origin)
+        legacy_values, _ = legacy.checkout()
+        legacy_values, legacy_review = legacy.preview(legacy_values)
+        check('data-checkout-confirm' not in legacy_review and 'name="checkout_quote"' not in legacy_review and 'mailto:shop@example.invalid' in legacy_review, 'Legacy freight without inquiry permits binding completion or lacks contact')
+        before = cli()
+        status, body, _ = legacy.request('/a/checkout/send', legacy_values, True)
+        check(status == 409 and cli() == before, 'Unknown legacy freight stored a new order')
+        legacy_values['csrf_token'] = json.loads(body)['csrfToken']
+        cli('channels', 0, 1)
+        legacy_values, legacy_review = legacy.preview(dict(legacy_values, checkout_stage='preview'))
+        check('name="checkout_quote"' in legacy_review and 'data-checkout-confirm' not in legacy_review, 'Inquiry-only feature did not enable non-binding legacy inquiry')
+        before = cli()
+        status, body, _ = legacy.request('/a/checkout/send', dict(legacy_values, checkout_quote='1'), True)
+        after = cli()
+        check(status == 200 and len(after['orders']) == len(before['orders']) and len(after['inquiries']) == len(before['inquiries']) + 1, 'Legacy inquiry lost existing request workflow')
+        check(float(json.loads(legacy.request('/a/cart/count', xhr=True)[1])['cartItemCount']) == 2.5, 'Legacy inquiry cleared the cart')
+        initial_mails = cli()['mails']
+        cli('shipping-init')
+        cli('shipping-tariff', '0.00')
+        cli('phase', 'base')
         values, page = client.checkout()
-        check('Versandkosten werden in diesem Checkout nicht berechnet' in page and '297,50' in page and '47,50' in page, 'Initial ERP gross/tax or shipping notice missing')
+        check('Versandkosten netto' in page and '297,50' in page and '47,50' in page, 'Initial ERP gross/tax or explicit zero freight missing')
         check('<img src=x' not in page and '&lt;img src=x' in page, 'Initial article title is not escaped')
         check('for="checkout-billingstreet"' in page and 'autocomplete="billing street-address"' in page, 'Visible field labels or autocomplete missing')
         check(cli()['orders'] == [], 'GET checkout created an order')
@@ -119,7 +139,7 @@ with log_path.open('w') as log:
         values, review = client.preview(values)
         check(review.count('Testweg 1') == 2 and '&lt;script&gt;' in review and '<script>' not in review, 'Same-address normalization or escaping failed')
         check('297,50' in review and '47,50' in review and 'keine Zahlung' in review and 'Zahlungspflichtig bestellen' in review, 'Review amounts, payment or existing order semantics missing')
-        check(cli()['orders'] == [] and cli()['mails'] == 0, 'Preview persisted or emailed an order')
+        check(cli()['orders'] == [] and cli()['mails'] == initial_mails, 'Preview persisted or emailed an order')
         status, body, _ = client.request('/a/checkout/send', dict(values, billingstreet='Changed after preview'), True)
         check(status == 409 and json.loads(body)['code'] == 'SHOPS_CHECKOUT_REVIEW_CHANGED', 'Unreviewed address change accepted')
         values['csrf_token'] = json.loads(body)['csrfToken']
@@ -160,12 +180,15 @@ with log_path.open('w') as log:
             check(status == 404 and 'Testweg 1' not in foreign, 'Shop or tenant switch exposed receipt')
         status, body, _ = client.request('/a/checkout/send', dict(values, status_only='1'), True)
         check(status == 403 and not json.loads(body)['success'], 'Old checkout token survived a context switch')
-        # Known missing tax remains unknown, while explicit zero tax is displayed as zero.
-        for item, known in [(105, False), (106, True)]:
+        # Missing tax and a numerical zero without exemption evidence cannot bind a new order.
+        for item in [105, 106]:
             tax_client = Client(origin)
             tax_values, tax_page = tax_client.checkout(item)
             tax_values, tax_review = tax_client.preview(tax_values)
-            check(('Nicht vollständig bekannt' in tax_review) != known, 'Unknown tax was invented or explicit zero lost')
+            check('Nicht vollständig bekannt' in tax_review and 'data-checkout-confirm' not in tax_review, 'Unknown or unproven zero tax permitted a binding order')
+            before = cli()
+            status, body, _ = tax_client.request('/a/checkout/send', dict(tax_values, taxfree='1', vatin='DE123456789', vat_id_verified='1'), True)
+            check(status == 409 and cli() == before, 'Browser tax claims bypassed unknown tax or stored an order')
         # A transaction failure leaves no positions, history or receipt for that attempt.
         failed = Client(origin)
         failed_values, _ = failed.checkout(104)
@@ -210,7 +233,8 @@ with log_path.open('w') as log:
         if browser.returncode:
             raise AssertionError(browser.stderr)
 
-        cli('shipping-init')
+        cli('phase', 'shipping')
+        cli('shipping-tariff', '12.00')
         shipping = Client(origin)
         values, page = shipping.checkout(quantity='2')
         check('value="pickup"' in page, 'Enabled pickup is not selectable')
@@ -277,6 +301,55 @@ with log_path.open('w') as log:
         cli('shipping-tariff', '12.00')
         print(f'PASS: {checks} combined legacy and shipping HTTP checks')
         subprocess.run(['python3', str(ROOT / 'tests/site/checkout-shipping-http.py'), origin], check=True)
+        tax_start = checks
+        cli('phase', 'tax')
+        cli('tax-init')
+        mixed = Client(origin)
+        mixed.checkout(quantity='1')
+        tax_values, _ = mixed.checkout(107, '1')
+        tax_values, tax_review = mixed.preview(dict(tax_values, taxes='0', taxfree='1', shipping_tax='0', shippingtaxpolicy='forged'))
+        check('239,56' in tax_review and 'data-checkout-tax-rate="7"' in tax_review and 'data-checkout-tax-rate="19"' in tax_review, 'Mixed checkout lost ERP tax groups or trusted browser amounts')
+        before = cli()
+        cli('tax-change', 20)
+        status, body, _ = mixed.request('/a/checkout/send', tax_values, True)
+        check(status == 409 and json.loads(body)['code'] == 'SHOPS_CHECKOUT_REVIEW_CHANGED' and cli() == before, 'Item tax change did not invalidate mixed review')
+        tax_values['csrf_token'] = json.loads(body)['csrfToken']
+        cli('tax-change', 19)
+        tax_values, _ = mixed.preview(dict(tax_values, checkout_stage='preview'))
+        cli('tax-policy', 'none')
+        status, body, _ = mixed.request('/a/checkout/send', dict(tax_values, shippingtaxpolicy='de_ancillary_net_v1'), True)
+        check(status == 409 and json.loads(body)['code'] == 'SHOPS_CHECKOUT_REVIEW_CHANGED' and cli() == before, 'Revoked tax policy bypassed final review')
+        tax_values['csrf_token'] = json.loads(body)['csrfToken']
+        cli('tax-policy', 'approved')
+        foreign_billing = dict(tax_values, checkout_stage='preview', billingcountry='AT', differentshippingaddress='1', shippingname='Receiver', shippingstreet='German road 1', shippingpostcode='10115', shippingcity='Berlin', shippingcountry='DE')
+        tax_values, tax_review = mixed.preview(foreign_billing)
+        check('239,56' in tax_review and 'data-checkout-confirm' in tax_review, 'Foreign billing address blocked approved ordinary DE delivery')
+        status, body, _ = mixed.request('/a/checkout/send', dict(tax_values, taxfree='1', vatin='ATU12345678', vat_id_verified='1'), True)
+        check(status == 200 and json.loads(body)['redirect'].endswith('/checkout/success'), 'Mixed foreign-billing domestic-delivery order failed')
+        stored = cli()['orders'][-1]
+        snapshot = json.loads(stored['snapshot'])
+        check(snapshot['version'] == 3 and float(stored['grosstotal']) == 239.56 and snapshot['tax']['context']['billing_country'] == 'AT' and snapshot['tax']['context']['delivery_country'] == 'DE', 'Tax decision or immutable totals missing')
+        check(snapshot['tax']['context']['exemption'] == 'not_applied' and snapshot['tax']['context']['vat_id_verified'] is False and [group['taxes'] for group in snapshot['tax']['groups']] == ['7.42', '20.14'], 'Unverified buyer information granted exemption or changed ERP group rounding')
+        before = cli()
+        mixed.request('/a/checkout/send', tax_values, True)
+        check(cli() == before, 'Mixed tax replay duplicated order or notification')
+        for country, company, vat in [('AT', '', ''), ('AT', 'Unverified company', 'ATU12345678'), ('CH', 'Export company', '')]:
+            requester = Client(origin)
+            request_values, _ = requester.checkout(quantity='1')
+            request_values, review = requester.preview(dict(request_values, billingcountry=country, billingcompany=company, vatin=vat, taxfree='1'))
+            check('data-checkout-confirm' not in review and 'name="checkout_quote"' in review and '12,00' in review and 'Nicht vollständig bekannt' in review, 'Unverified B2C/B2B/export case was taxed, lost known freight or lacks inquiry')
+            before = cli()
+            status, body, _ = requester.request('/a/checkout/send', request_values, True)
+            check(status == 409 and cli() == before, 'Cross-border tax review accepted binding order')
+            request_values['csrf_token'] = json.loads(body)['csrfToken']
+            status, body, _ = requester.request('/a/checkout/send', dict(request_values, checkout_quote='1'), True)
+            after = cli()
+            check(status == 200 and len(after['orders']) == len(before['orders']) and len(after['inquiries']) == len(before['inquiries']) + 1, 'Tax inquiry failed to persist without order')
+            inquiry = json.loads(after['inquiries'][-1]['data'])
+            check(inquiry['_shipping']['net'] == '12.00' and json.loads(inquiry['_order']['snapshot'])['tax']['status'] == 'quote_required', 'Tax inquiry lost known freight or decision')
+        print(f'PASS: {checks - tax_start} mixed-tax HTTP, country decisions, verified-context gates, tampering, review invalidation and replay checks')
+        cli('phase', 'tax-browser')
+        subprocess.run(['python3', '-B', str(ROOT / 'tests/site/checkout-tax-http.py'), origin], check=True)
     except Exception:
         print(log_path.read_text()[-10000:], file=sys.stderr)
         raise

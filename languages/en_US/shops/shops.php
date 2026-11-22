@@ -1,6 +1,7 @@
 <?php
 
 return array(
+	'SHOPS_SHIPPING_LEGACY_INQUIRY' => 'Shipping costs and the final total are still unknown. Only a non-binding inquiry is available; a binding order requires all costs and taxes to be confirmed.',
 	'SHOPS_ERROR_NOT_FOUND_TITLE' => 'Page not found',
 	'SHOPS_ERROR_NOT_FOUND_MESSAGE' => 'The requested page does not exist. Use the navigation or search this website.',
 	'SHOPS_ERROR_GONE_TITLE' => 'Content permanently removed',

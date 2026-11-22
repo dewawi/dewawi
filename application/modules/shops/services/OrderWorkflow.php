@@ -168,14 +168,18 @@ class Shops_Service_OrderWorkflow
 			}
 			if (($freight['status'] ?? '') === 'calculated') {
 				// ERP freight uses an ordinary document position without an invented stock item or SKU.
-				$posDb->addPosition(['parentid' => $salesId, 'possetid' => 0, 'itemid' => null, 'sku' => null,
-					'title' => $freight['label'], 'description' => '', 'price' => $freight['net'], 'quantity' => 1,
-					'taxrate' => $freight['taxrate'], 'currency' => $freight['currency'], 'uom' => null]);
+				$allocations = $snapshot['version'] === 3 ? $freight['tax_allocations'] : [['net' => $freight['net'], 'taxrate' => $freight['taxrate']]];
+				foreach ($allocations as $allocation) $posDb->addPosition(['parentid' => $salesId, 'possetid' => 0, 'itemid' => null, 'sku' => null,
+					'title' => $freight['label'], 'description' => '', 'price' => $allocation['net'], 'quantity' => 1,
+					'taxrate' => $allocation['taxrate'], 'currency' => $freight['currency'], 'uom' => null]);
 			}
 			$calculation = Zend_Controller_Action_HelperBroker::getStaticHelper('Calculate')->direct($salesId, 'sales', 'salesorder', $this->owner('sales'))['row'];
 			foreach (['subtotal' => 'total', 'taxes' => 'taxes', 'total' => 'grosstotal'] as $calculated => $stored) {
 				$value = $calculated === 'taxes' ? $calculation['taxes']['total'] : $calculation[$calculated];
 				if (abs((float)$value - (float)$order[$stored]) > 0.0001) throw new DomainException('SHOPS_ORDER_TOTAL_MISMATCH');
+			}
+			if ($snapshot['version'] === 3) foreach ($snapshot['tax']['groups'] as $group) {
+				if (!isset($calculation['taxes'][(string)(float)$group['taxrate']]) || abs((float)$calculation['taxes'][(string)(float)$group['taxrate']] - (float)$group['taxes']) > 0.0001) throw new DomainException('SHOPS_ORDER_TOTAL_MISMATCH');
 			}
 			$db->updateById($id, ['contactid' => $contactId, 'salesorderid' => $salesId, 'salesclientid' => $this->owner('sales')]);
 			$db->recordStatus($order, 'transferred');

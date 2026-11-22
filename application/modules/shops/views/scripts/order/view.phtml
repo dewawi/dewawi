@@ -67,6 +67,7 @@ echo $this->Messages();
 			</table>
 		</div>
 		<?php echo $this->partial('checkout/_shipping.phtml', ['order' => $order]); ?>
+		<?php echo $this->partial('checkout/_taxes.phtml', ['order' => $order]); ?>
 		<dl class="view">
 			<?php foreach (['total' => 'SHOPS_ORDER_NET', 'taxes' => 'SHOPS_ORDER_TAX', 'grosstotal' => 'SHOPS_ORDER_GROSS'] as $field => $label) : ?>
 				<dt><?php echo $t($label); ?></dt><dd><?php echo $money($order[$field]); ?></dd>

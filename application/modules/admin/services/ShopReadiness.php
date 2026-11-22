@@ -138,22 +138,31 @@ class Admin_Service_ShopReadiness
 		} catch (DomainException | JsonException $e) { $this->add('shipping_config', 'blocked', $e->getMessage()); return; }
 		$this->add('shipping_config', $config['currency'] === 'EUR' && $config['zones'] && $config['tariffs'] ? 'ready' : 'blocked');
 		$calculator = new Shops_Service_ShippingCalculator();
-		$failures = []; $selection = [];
+		$failures = []; $selection = []; $positiveFreight = false;
 		foreach ($items as $item) $selection[] = ['itemid' => (int)$item['id'], 'quantity' => '1'];
 		foreach ($config['zones'] as $zone) foreach ($zone['countries'] as $destination) {
 			foreach ($selection as $line) {
 				$result = $calculator->calculate(['clientid' => (int)$shop['clientid'], 'shopid' => (int)$shop['id']], $config, $items, [$line], ['country' => $destination, 'method' => 'delivery']);
+				if ($result['status'] === 'calculated' && (float)$result['net'] > 0) $positiveFreight = true;
 				if ($result['status'] !== 'calculated') $failures[] = '#' . $line['itemid'] . ' / ' . $destination . ': ' . $this->freightReasons($result);
 			}
 			if (count($selection) > 1) {
 				$result = $calculator->calculate(['clientid' => (int)$shop['clientid'], 'shopid' => (int)$shop['id']], $config, $items, $selection, ['country' => $destination, 'method' => 'delivery']);
+				if ($result['status'] === 'calculated' && (float)$result['net'] > 0) $positiveFreight = true;
 				if ($result['status'] !== 'calculated') $failures[] = $destination . ': ' . $this->freightReasons($result);
 			}
 		}
 		$this->add('freight', $failures || !$selection || !$config['zones'] ? 'blocked' : 'ready', implode('; ', $failures));
 		$rates = $this->db->fetchPairs($this->db->select()->from('taxrate', ['id', 'rate'])->where('clientid = ?', $shop['clientid'])->where('deleted = 0'));
-		$unknown = array_filter($items, static fn(array $item): bool => !isset($rates[$item['taxid']]) || !is_numeric($rates[$item['taxid']]) || (float)$rates[$item['taxid']] < 0 || (float)$rates[$item['taxid']] > 100);
+		$unknown = array_filter($items, static fn(array $item): bool => !isset($rates[$item['taxid']]) || !is_numeric($rates[$item['taxid']]) || (float)$rates[$item['taxid']] <= 0 || (float)$rates[$item['taxid']] > 100);
 		$this->add('taxes', $unknown ? 'blocked' : 'ready', implode(', ', array_column($unknown, 'id')));
+		$profile = ($shop['shippingtaxpolicy'] ?? null) === Shops_Service_ShippingConfiguration::TAX_POLICY && $country === 'DE';
+		$itemRates = array_unique(array_map(static fn(array $item) => $rates[$item['taxid']] ?? null, $items));
+		$profileRequired = count($itemRates) > 1 && $positiveFreight;
+		$this->add('tax_policy', $profile ? 'ready' : ($profileRequired || !empty($shop['shippingtaxpolicy']) ? 'blocked' : 'warning'), array_key_exists('shippingtaxpolicy', $shop) ? '' : 'shop.shippingtaxpolicy', !$profileRequired && empty($shop['shippingtaxpolicy']));
+		$foreign = [];
+		foreach ($config['zones'] as $zone) foreach ($zone['countries'] as $destination) if ($destination !== $country) $foreign[] = $destination;
+		$this->add('tax_destinations', $foreign ? 'warning' : 'ready', implode(', ', array_unique($foreign)), true);
 		$this->add('tax_limits', 'warning', '', true);
 	}
 

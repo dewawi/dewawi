@@ -56,6 +56,7 @@ try:
         raise SystemExit(flow_result.returncode)
 
     subprocess.run(['php', str(Path(__file__).with_name('shop-checkout-shipping-db.php')), socket], check=True)
+    subprocess.run(['php', str(Path(__file__).with_name('shop-checkout-tax-db.php')), socket], check=True)
 
 finally:
     if server is not None:

@@ -221,5 +221,11 @@ foreach (['de_DE', 'en_US'] as $locale) {
     check(str_contains($body, $locale === 'de_DE' ? '133,28' : '133.28') && str_contains($body, $locale === 'de_DE' ? '12,00' : '12.00'), 'Email shipping or gross total missing');
     check(str_contains($body, $locale === 'de_DE' ? 'Versandkosten netto' : 'Shipping net amount') && !str_contains($body, 'SHOPS_'), 'Email shipping labels are untranslated');
     check(!str_contains($body, '<img') && str_contains($body, '&lt;img'), 'Snapshot shipping method is not escaped in mail');
+    $mixedOrder = ['currency' => 'EUR', 'total' => 212, 'taxes' => 27.56, 'grosstotal' => 239.56, 'snapshot' => json_encode(['version' => 3, 'freight' => $freight,
+        'tax' => ['status' => 'calculated', 'groups' => [['taxrate' => 7, 'taxes' => '7.42'], ['taxrate' => 19, 'taxes' => '20.14']]]])];
+    [$mixedBody] = $bodyMethod->invoke(new Application_Controller_Action_Helper_Email(), 'shops', 'checkout', $formData,
+        ['subject' => 'Order', 'message' => 'Saved note', 'orderid' => 124, 'orderdate' => '2026-11-22', '__shop_order' => $mixedOrder], []);
+    check(str_contains($mixedBody, '7 %') && str_contains($mixedBody, '19 %') && str_contains($mixedBody, $locale === 'de_DE' ? '7,42' : '7.42') && str_contains($mixedBody, $locale === 'de_DE' ? '20,14' : '20.14'), 'Saved tax groups missing from localized email');
+    check(str_contains($mixedBody, $locale === 'de_DE' ? '239,56' : '239.56') && !str_contains($mixedBody, 'SHOPS_'), 'Mixed tax email lost its saved total or translations');
 }
 echo "OK ({$checks} checks)\n";

@@ -166,6 +166,28 @@ Zend_Registry::set('Client', ['id' => 7, 'modules' => ['shops' => 7, 'items' => 
 checkLive(statusesLive($service->inspect(51))['modules'] === 'blocked', 'Item sharing granted administrative configuration access');
 Zend_Registry::set('Client', ['id' => 7]); Zend_Registry::set('User', $admin);
 checkLive($service->inspect(51)['technicalStatus'] === 'ready', 'Fixture not restored');
+$db->insert('taxrate', ['id' => 72, 'name' => 'Reduced fixture', 'rate' => 7, 'clientid' => 7]);
+$db->update('item', ['taxid' => 72], 'id = 502');
+checkLive(statusesLive($service->inspect(51))['tax_policy'] === 'blocked', 'Mixed rates released without a confirmed tax profile');
+$originalTariffs = $db->fetchAll('SELECT id, parameters FROM shopshippingtariff WHERE shopid = 51');
+$db->update('shopshippingtariff', ['parameters' => '{"amount":"0"}'], 'shopid = 51');
+checkLive($service->inspect(51)['technicalStatus'] === 'ready', 'Explicit zero freight with known mixed item taxes incorrectly requires a positive-freight allocation profile');
+foreach ($originalTariffs as $originalTariff) $db->update('shopshippingtariff', ['parameters' => $originalTariff['parameters']], ['id = ?' => $originalTariff['id']]);
+$shipping->save(51, 'settings', 0, ['currency' => 'EUR', 'pickup' => 0, 'taxpolicy' => Shops_Service_ShippingConfiguration::TAX_POLICY]);
+checkLive(statusesLive($service->inspect(51))['tax_policy'] === 'ready', 'Approved domestic profile not recognized');
+$db->update('shopshippingzone', ['countries' => '["DE","AT"]'], ['id = ?' => $zone]);
+$foreignReport = $service->inspect(51);
+checkLive(statusesLive($foreignReport)['tax_destinations'] === 'warning', 'A foreign zone was treated as international tax approval');
+checkLive(in_array('AT', array_column($foreignReport['checks'], 'detail'), true), 'Foreign country requiring inquiry was not identified');
+$db->update('shopshippingzone', ['countries' => '["DE"]'], ['id = ?' => $zone]);
+$db->query('ALTER TABLE shop RENAME COLUMN shippingtaxpolicy TO shippingtaxpolicy_absent');
+checkLive(statusesLive($service->inspect(51))['tax_policy'] === 'blocked', 'Missing optional tax migration released mixed rates');
+checkLive(!$shipping->choices(51)['taxPolicyAvailable'], 'Missing tax schema still offers profile activation');
+$rejected = $shipping->save(51, 'settings', 0, ['currency' => 'EUR', 'pickup' => 0, 'taxpolicy' => Shops_Service_ShippingConfiguration::TAX_POLICY]);
+checkLive(($rejected['errors']['taxpolicy'] ?? '') === 'SHIPPING_TAX_SCHEMA_MISSING', 'Tax profile wrote into an absent column');
+checkLive(!$shipping->save(51, 'settings', 0, ['currency' => 'EUR', 'pickup' => 0])['errors'], 'Missing optional tax column broke existing shipping settings');
+$db->query('ALTER TABLE shop RENAME COLUMN shippingtaxpolicy_absent TO shippingtaxpolicy');
+$db->update('item', ['taxid' => 71], 'id = 502');
 foreach (['de_DE', 'en_US'] as $locale) {
 	$translator = new DEEC_Translate($locale); $translator->loadModule('admin');
 	$view = new class($translator) extends Zend_View {

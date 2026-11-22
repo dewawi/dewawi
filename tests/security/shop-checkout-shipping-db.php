@@ -22,7 +22,7 @@ Zend_Auth::getInstance()->getStorage()->write((object)['id' => 42]);
 $checks = 0;
 function check(bool $value, string $message): void { global $checks; $checks++; if (!$value) throw new RuntimeException($message); }
 function deny(callable $fn): void { try { $fn(); } catch (DomainException $e) { check(in_array($e->getCode(), [403,404], true), 'Unexpected denial'); return; } throw new RuntimeException('Expected denial'); }
-$db->insert('client', ['id' => 7, 'country' => 'DE']);
+$db->update('client', ['country' => 'DE'], 'id = 7');
 $shop = ['id' => 141, 'clientid' => 7, 'title' => 'Shipping checkout fixture', 'checkoutenabled' => 1]; $db->insert('shop', $shop);
 $service = new Shops_Service_ShippingConfiguration();
 $save = static function(string $kind, array $values, int $id = 0) use ($service): int {
@@ -88,7 +88,7 @@ $free = Shops_Service_OrderSnapshot::build($shop, $post, $mixed, array_replace($
 check(Shops_Service_OrderSnapshot::decode($free['snapshot'])['freight']['status'] === 'calculated' && $free['grosstotal'] !== null, 'Zero shipping requires an unnecessary mixed-rate allocation');
 $zeroRate = $positions; $row = json_decode($zeroRate[0]['snapshot'], true); $row['taxrate'] = 0; $zeroRate[0]['snapshot'] = json_encode($row);
 $zeroTax = Shops_Service_OrderSnapshot::build($shop, $post, $zeroRate, $freight);
-check($zeroTax['total'] === 112.0 && $zeroTax['taxes'] === 0.0 && $zeroTax['grosstotal'] === 112.0, 'Explicit zero article tax was replaced with a default shipping rate');
+check($zeroTax['total'] === 112.0 && $zeroTax['taxes'] === null && $zeroTax['grosstotal'] === null, 'Unproven zero tax was treated as a verified exemption');
 $row['taxrate'] = null; $zeroRate[0]['snapshot'] = json_encode($row);
 $unknown = Shops_Service_OrderSnapshot::build($shop, $post, $zeroRate, $freight);
 check($unknown['total'] === 112.0 && $unknown['grosstotal'] === null, 'Unknown shipping tax invented a total or excluded known freight net');

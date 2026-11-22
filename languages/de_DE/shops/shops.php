@@ -1,4 +1,5 @@
 <?php return array(
+	'SHOPS_SHIPPING_LEGACY_INQUIRY' => 'Versandkosten und endgültiger Gesamtbetrag sind noch unbekannt. Hier ist nur eine unverbindliche Anfrage möglich; eine verbindliche Bestellung wird erst nach vollständiger Klärung angeboten.',
 	'SHOPS' => 'Shops',
 	//Shops
 	'SHOPS_OVERVIEW' => 'Übersicht',
