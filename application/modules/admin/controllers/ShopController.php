@@ -35,6 +35,7 @@ class Admin_ShopController extends DEEC_Controller_AdminAction
 		}
 
 		return $viewModel + [
+			'shopReadiness' => (new Admin_Service_ShopReadiness())->inspect($id),
 			'legacyRedirects' => $redirectDb->getManagementRows($id),
 			'legacyRedirectTargets' => $redirectDb->getTargetsByShop($id),
 			'legacyRedirectCsrf' => $this->getRedirectCsrfToken($session),

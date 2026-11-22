@@ -246,7 +246,8 @@ checkCms(str_contains($categoryNavigationSource, 'aria-controls=') && str_contai
 checkCms(str_contains($slideSource, 'data-carousel-toggle') && str_contains($slideSource, 'SHOPS_SLIDER_PAUSE') && str_contains($slideSource, 'SHOPS_SLIDER_PLAY'), 'Automatic slider lacks a pause control');
 checkCms(str_contains($shopCss, '@media (prefers-reduced-motion: reduce)') && str_contains($shopCss, ':focus-visible'), 'Public CSS lacks reduced-motion or visible-focus handling');
 checkCms(!str_contains($shopJsSource, '${item.title}') && !str_contains($shopJsSource, '${item.sku}')
-	&& str_contains($shopJsSource, "$('<strong>', { class: 'product-title' }).text(title)"), 'Cart response text is still interpolated as HTML');
+	&& str_contains($shopJsSource, "$('<strong>', { class: 'product-title' }).text(item.title)")
+	&& str_contains($shopJsSource, "$('<div>', { class: 'product-sku text-muted' }).text(item.sku)"), 'Cart response text is still interpolated as HTML');
 checkCms(str_contains($shopJsSource, "trigger('focus')") && str_contains($shopJsSource, "event.key !== 'Escape'"), 'Navigation does not restore focus after Escape');
 checkCms(!preg_match('/<button(?![^>]*\\btype=)/', $itemViewSource), 'Product detail contains a button without an explicit type');
 

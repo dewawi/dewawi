@@ -47,7 +47,14 @@ $front = Zend_Controller_Front::getInstance(); $front->setRequest($request)->set
 foreach (['admin','items','shops','sales','contacts'] as $name) $front->addControllerDirectory($root . '/application/modules/' . $name . '/controllers', $name);
 $front->getRouter()->addDefaultRoutes();
 try {
-    if ($module === 'admin' && $controller === 'shipping') {
+    if ($module === 'admin' && $controller === 'shop' && $action === 'edit') {
+        $acl = new Application_Plugin_Acl(); $acl->setResponse($response); $acl->routeShutdown($request);
+        if ($request->getControllerName() !== 'shop') throw new DomainException('Forbidden', 403);
+        if (!is_dir($work . '/cache')) mkdir($work . '/cache');
+        require_once $root . '/application/modules/admin/controllers/ShopController.php';
+        $instance = new Admin_ShopController($request, $response); $instance->editAction(); $script = 'shop/edit.phtml';
+        $view->addScriptPath($root . '/application/modules/admin/views/scripts');
+    } elseif ($module === 'admin' && $controller === 'shipping') {
         require_once $root . '/application/modules/admin/controllers/ShippingController.php';
         $instance = new Admin_ShippingController($request, $response); $instance->{$action . 'Action'}(); $script = 'shipping/' . $action . '.phtml';
         $view->addScriptPath($root . '/application/modules/admin/views/scripts');

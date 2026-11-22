@@ -35,6 +35,7 @@ with tempfile.TemporaryDirectory(prefix='dewawi-migrations-shipping-') as direct
         print('PASS: shipping fresh/verified 1.1.8 upgrade schema equality, completed migration and repeated apply', flush=True)
         for script in ['tests/security/shop-shipping-db.php']:
             subprocess.run(['php', str(ROOT/script), db_socket], check=True)
+        subprocess.run(['php', str(ROOT/'tests/shops/shop-go-live-db.php'), db_socket], check=True)
         subprocess.run(['python3', str(ROOT/'tests/security/shop-shipping-http.py'), str(work)], check=True)
     finally:
         if server:

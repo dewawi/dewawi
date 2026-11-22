@@ -90,8 +90,9 @@ foreach (['de_DE', 'en_US'] as $locale) {
     }
     $view->items = [12 => ['title' => 'Synthetic item', 'sku' => 'T5', 'price' => '12.34 EUR', 'quantity' => 2, 'total' => '24.68 EUR']];
     $view->total = '24.68 EUR';
+    $view->siteContext = new DEEC_Site_Context(['id' => 41, 'clientid' => 7], [], ['cart', 'checkout']);
     $html = $view->render('cart/index.phtml');
-    verifyCleanup(includesCleanup($html, $translator, ['SHOPS_NET_PRICE_NOTICE', 'SHOPS_SHIPPING_COSTS']) && str_contains($html, '24.68 EUR'), $locale, 'cart shipping CMS link and stored amounts');
+    verifyCleanup(includesCleanup($html, $translator, ['SHOPS_CART_NET_NOTICE', 'SHOPS_SHIPPING_COSTS']) && str_contains($html, '24.68 EUR'), $locale, 'cart shipping CMS link and stored amounts');
     $view->search = [];
     verifyCleanup(includesCleanup($view->render('search/index.phtml'), $translator, ['SHOPS_SEARCH_PLACEHOLDER', 'SHOPS_SEARCH_PROMPT']), $locale, 'public search form');
     $view->tags = []; $view->categories = []; $view->step = 'last'; $view->suggestions = true;

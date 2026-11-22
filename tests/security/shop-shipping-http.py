@@ -134,6 +134,7 @@ const frame=document.querySelector('iframe');frame.onload=()=>{frame.onload=null
             check(result.returncode==0 and metrics and metrics[-1],'Browser did not complete')
             data=json.loads(html.unescape(metrics[-1]));check(not data['failures'],str(width)+' '+locale+': '+'; '.join(data['failures']));checks+=data['checks']
     print(f'PASS: {checks} shipping HTTP, CSRF, admin/item rights, fields and desktop/mobile Chromium checks')
+    subprocess.run([sys.executable, '-B', str(ROOT/'tests/shops/shop-go-live-http.py'), origin, str(work)], check=True)
 finally:
     server.terminate();server.wait(timeout=10);log.close()
     if sys.exc_info()[0]:print((work/'shipping-http.log').read_text()[-5000:])

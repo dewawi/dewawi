@@ -2784,6 +2784,9 @@ cursor: default;
   #inquiry-technical .dw-form-row > label { grid-column: span 12; }
 }
 
+#shop-readiness { max-width: 72rem; overflow-wrap: anywhere; }
+#shop-readiness li { margin-bottom: .75rem; }
+#shop-readiness .shop-readiness-detail { overflow-wrap: anywhere; }
 #inquiry-technical-comparison .dw-alert { display: block; }
 #inquiry-technical-comparison .dw-alert > strong { display: block; }
 #inquiry-technical-comparison .comparison-table { width: 100%; table-layout: fixed; }

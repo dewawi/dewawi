@@ -32,7 +32,7 @@ class DEEC_Site_Resolver
 
 	protected function getActiveSites()
 	{
-		return (new Zend_Db_Table('shop'))->fetchAll(array('activated = ?' => 1));
+		return (new Zend_Db_Table('shop'))->fetchAll(array('activated = ?' => 1, 'deleted = ?' => 0));
 	}
 
 	protected function authorityMatches(array $request, array $canonical): bool

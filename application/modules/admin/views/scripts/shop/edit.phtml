@@ -14,6 +14,10 @@ echo $this->form->renderForm([
 	'activeTab' => $this->activeTab,
 	'tabs' => [
 		'overview' => ['title' => 'TABS_OVERVIEW'],
+		'golive' => [
+			'title' => 'ADMIN_GOLIVE',
+			'html' => $this->partial('shop/_readiness.phtml', ['report' => $this->shopReadiness]),
+		],
 		'pages' => [
 			'title' => 'ADMIN_PAGES',
 			'html' => $this->SitePages([

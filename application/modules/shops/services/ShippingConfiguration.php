@@ -48,6 +48,39 @@ class Shops_Service_ShippingConfiguration
 		return $this->records($shopId, $kind);
 	}
 
+	public function missingSchema(): array
+	{
+		$required = [
+			'shop' => ['shippingcurrency', 'pickupenabled'],
+			'item' => ['packweight', 'packlength', 'packwidth', 'packheight'],
+			'shopshippingclass' => ['title', 'combine_same_class', 'required_fields'],
+			'shopshippingzone' => ['countries'],
+			'shopshippingtariff' => ['classid', 'zoneid', 'currency', 'model', 'parameters'],
+			'shopitemshipping' => ['itemid', 'classid', 'packages_per_unit', 'separate'],
+			'shopshippingcombination' => ['hostclassid', 'guestclassid', 'priority', 'max_guest_packages', 'max_guest_weight', 'max_packlength', 'max_packwidth', 'max_packheight'],
+		];
+		$columns = [];
+		foreach ($this->db->fetchAll($this->db->select()->from('information_schema.COLUMNS', ['TABLE_NAME', 'COLUMN_NAME'])
+			->where('TABLE_SCHEMA = DATABASE()')->where('TABLE_NAME IN (?)', array_keys($required))) as $row) $columns[$row['TABLE_NAME']][] = $row['COLUMN_NAME'];
+		$missing = [];
+		foreach ($required as $table => $fields) {
+			if (!isset($columns[$table])) { $missing[] = $table; continue; }
+			if (in_array($table, self::TABLES, true)) $fields = array_merge($fields, ['id', 'clientid', 'shopid', 'active', 'deleted', 'ordering']);
+			foreach (array_diff($fields, $columns[$table]) as $field) $missing[] = $table . '.' . $field;
+		}
+		return $missing;
+	}
+
+	public function configuration(int $shopId): array
+	{
+		$this->requireAdmin();
+		$shop = $this->shop($shopId);
+		if ($this->missingSchema()) throw new DomainException('SHIPPING_SCHEMA_MISSING');
+		$config = $this->load($shop);
+		(new Shops_Service_ShippingCalculator())->validateConfiguration(['clientid' => $this->owner(), 'shopid' => $shopId], $config);
+		return $config;
+	}
+
 	private function records(int $shopId, string $kind, bool $active = false, ?int $owner = null): array
 	{
 		if (!isset(self::TABLES[$kind])) throw new DomainException('Not found', 404);
@@ -139,7 +172,11 @@ class Shops_Service_ShippingConfiguration
 		if (!$shop) throw new DomainException('Not found', 404);
 		$base = ['version' => 1, 'status' => 'quote_required', 'price_basis' => 'net', 'net' => null, 'currency' => null,
 			'clientid' => $owner, 'shopid' => $shopId, 'destination' => $destination, 'groups' => [], 'reasons' => []];
-		if (!$shop['shippingcurrency']) return $base + ['legacy' => true];
+		if (empty($shop['shippingcurrency'])) return $base + ['legacy' => true];
+		if ($this->missingSchema()) {
+			$base['reasons'] = ['shipping_schema_missing'];
+			return $base;
+		}
 		try {
 			$config = $this->load($shop, $owner);
 			$ids = array_column($selection, 'itemid');

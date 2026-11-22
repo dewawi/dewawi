@@ -1,0 +1,21 @@
+<?php $report = $this->report; $styles = ['ready' => 'success', 'warning' => 'warning', 'blocked' => 'danger']; ?>
+<section id="shop-readiness" aria-labelledby="shop-readiness-heading">
+	<h2 id="shop-readiness-heading"><?php echo $this->escape($this->translate('ADMIN_GOLIVE')); ?></h2>
+	<p><?php echo $this->escape($this->translate('ADMIN_GOLIVE_INFO')); ?></p>
+	<p class="dw-alert dw-alert--<?php echo $styles[$report['status']]; ?>" data-readiness-status="<?php echo $report['status']; ?>">
+		<strong><?php echo $this->escape($this->translate('ADMIN_GOLIVE_' . strtoupper($report['status']))); ?></strong>
+	</p>
+	<p><?php echo $this->escape($this->translate('ADMIN_GOLIVE_TECHNICAL') . ': ' . $this->translate('ADMIN_GOLIVE_' . strtoupper($report['technicalStatus']))); ?></p>
+	<details>
+	<summary><?php echo $this->escape($this->translate('ADMIN_GOLIVE_DETAILS')); ?> (<?php echo count($report['checks']); ?>)</summary>
+	<ul class="shop-readiness-checks">
+		<?php foreach ($report['checks'] as $check): ?>
+			<li data-check="<?php echo $this->escape($check['key']); ?>" data-status="<?php echo $this->escape($check['status']); ?>">
+				<strong><?php echo $this->escape($this->translate('ADMIN_GOLIVE_' . strtoupper($check['status']))); ?>:</strong>
+				<?php echo $this->escape($this->translate('ADMIN_GOLIVE_CHECK_' . strtoupper($check['key']))); ?>
+				<?php if ($check['detail'] !== ''): ?><div class="shop-readiness-detail"><?php echo $this->escape($check['detail']); ?></div><?php endif; ?>
+			</li>
+		<?php endforeach; ?>
+	</ul>
+	</details>
+</section>
